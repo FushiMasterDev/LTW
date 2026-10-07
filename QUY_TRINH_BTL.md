@@ -1,7 +1,7 @@
 # TỔNG QUAN QUY TRÌNH THỰC HIỆN BÀI TẬP LỚN LẬP TRÌNH WEB
 
 **Đề tài:** Hệ thống đặt phòng homestay cho công ty trung gian (Công ty Fuji)
-**Công nghệ:** ASP.NET Core MVC (.NET 8) · Entity Framework Core 8 · ASP.NET Core Identity · SQL Server · Bootstrap 5 · jQuery
+**Công nghệ:** ASP.NET Core MVC (.NET 10) · Entity Framework Core 10 · ASP.NET Core Identity · SQL Server · Bootstrap 5 · jQuery
 **Nhóm:** Phạm Ngọc Phú (trưởng nhóm) · Lã Quốc Thái · Nguyễn Quang Nghĩa · Trần Kỳ Vĩ
 **Đầu vào:** Báo cáo *Phân tích thiết kế yêu cầu* (`phantichyeucaubanchinh.docx`): khảo sát, quy tắc nghiệp vụ BR-01…BR-11, yêu cầu FR-01…FR-24
 
@@ -116,9 +116,9 @@
 
 | Thành phần | Lựa chọn |
 |---|---|
-| Framework | **ASP.NET Core MVC** trên **.NET 8 (LTS)**: mô hình Model – View – Controller, Razor Views |
+| Framework | **ASP.NET Core MVC** trên **.NET 10 (LTS, hỗ trợ đến 11/2028)**: mô hình Model – View – Controller, Razor Views |
 | REST API | Web API của ASP.NET Core (`[ApiController]`), cùng project với MVC |
-| ORM / CSDL | **Entity Framework Core 8** (Code First + Migrations) / **SQL Server** |
+| ORM / CSDL | **Entity Framework Core 10** (Code First + Migrations) / **SQL Server** |
 | Xác thực | **ASP.NET Core Identity** + Roles; `AccountController` tự viết theo MVC (đăng nhập, đăng xuất, đổi mật khẩu) dùng `SignInManager`, `UserManager` |
 | Front-end | Razor Views + Tag Helpers, Bootstrap 5, jQuery, jQuery Validation Unobtrusive, Flatpickr, Chart.js |
 | Phân trang | `PaginatedList<T>` tự viết (hoặc `X.PagedList.Mvc.Core`) |
@@ -126,12 +126,15 @@
 | Chạy nền | `BackgroundService` + `PeriodicTimer` (mỗi phút): cảnh báo đơn quá 30 phút, tự hủy đơn quá hạn cọc |
 | Tài liệu API | Swagger UI (`Swashbuckle.AspNetCore`) |
 | Kiểm thử | xUnit + EF Core InMemory/SQLite + Moq |
-| Công cụ | Visual Studio 2022 (Windows) hoặc VS Code / JetBrains Rider (macOS), .NET CLI, `dotnet-ef`, Docker (SQL Server trên macOS), GitHub, draw.io |
+| Công cụ | Visual Studio 2026 (Windows; VS 2022 không mở được project .NET 10) hoặc VS Code / JetBrains Rider (macOS), .NET CLI, `dotnet-ef`, Docker (SQL Server trên macOS), GitHub, draw.io |
+
+> **Vì sao dùng .NET 10 thay cho .NET 8:** .NET 8 hết hỗ trợ ngày 10/11/2026, trước khi nộp bài. .NET 10 cũng là bản LTS (hỗ trợ đến 11/2028). Kiến trúc và mọi kỹ thuật trong kế hoạch giữ nguyên, chỉ đổi phiên bản. Cả nhóm cài **.NET 10 SDK**; phiên bản được khóa bằng `global.json`.
 
 **Khởi tạo project:**
 
 ```bash
-dotnet new sln -n HomestayBooking
+dotnet new globaljson --sdk-version 10.0.400 --roll-forward latestFeature
+dotnet new sln -n HomestayBooking --format sln   # SDK 10 mặc định tạo .slnx
 dotnet new mvc -n HomestayBooking.Web
 dotnet new xunit -n HomestayBooking.Tests
 dotnet sln add HomestayBooking.Web HomestayBooking.Tests
@@ -140,7 +143,7 @@ dotnet new gitignore
 dotnet tool install --global dotnet-ef
 ```
 
-**Gói NuGet (project Web):** `Microsoft.EntityFrameworkCore.SqlServer`, `Microsoft.EntityFrameworkCore.Tools`, `Microsoft.EntityFrameworkCore.Design`, `Microsoft.AspNetCore.Identity.EntityFrameworkCore`, `Swashbuckle.AspNetCore`, `HtmlSanitizer` (tùy chọn `X.PagedList.Mvc.Core`).
+**Gói NuGet (project Web):** `Microsoft.EntityFrameworkCore.SqlServer`, `Microsoft.EntityFrameworkCore.Tools`, `Microsoft.EntityFrameworkCore.Design`, `Microsoft.AspNetCore.Identity.EntityFrameworkCore`, `Swashbuckle.AspNetCore`, `HtmlSanitizer` (tùy chọn `X.PagedList.Mvc.Core`). Các gói `Microsoft.*` và `dotnet-ef` dùng cùng phiên bản 10.0.x.
 **Gói NuGet (project Tests):** `Microsoft.EntityFrameworkCore.InMemory` hoặc `Microsoft.EntityFrameworkCore.Sqlite`, `Moq`.
 
 **SQL Server trên macOS** (máy Windows dùng LocalDB hoặc SQL Server Express):
@@ -154,7 +157,7 @@ docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=Fuji@12345" -p 1433:1433 \
 
 ```
 HomestayBooking.sln
-├── HomestayBooking.Web/                 # ASP.NET Core MVC (.NET 8)
+├── HomestayBooking.Web/                 # ASP.NET Core MVC (.NET 10)
 │   ├── Areas/
 │   │   ├── Admin/                       # Controllers + Views, [Area("Admin")] [Authorize(Roles="Admin")]
 │   │   ├── Owner/                       # Chủ homestay
@@ -304,7 +307,7 @@ Mỗi đêm bị chiếm của một phòng là **một dòng** trong `RoomNight
 - Chủ homestay **khóa ngày** → thêm dòng có `BlockReason` (khách kênh khác / bảo trì), `BookingId = null`.
 - Đơn **bị hủy / không đến** → xóa các dòng của đơn đó, phòng được mở lại.
 - Hai thao tác đồng thời cùng chiếm một đêm → thao tác sau vi phạm **unique index** và bị CSDL từ chối. Service bắt `DbUpdateException` có `InnerException` là `SqlException` với `Number` = 2601/2627 và báo "Phòng vừa được đặt".
-- Khai báo trong EF Core: `modelBuilder.Entity<RoomNight>().HasIndex(x => new { x.RoomId, x.Date }).IsUnique();` trong `OnModelCreating` (hoặc attribute `[Index(nameof(RoomId), nameof(Date), IsUnique = true)]` trên lớp `RoomNight`). Kiểu `Date` dùng `DateOnly` (EF Core 8 ánh xạ sang cột `date`).
+- Khai báo trong EF Core: `modelBuilder.Entity<RoomNight>().HasIndex(x => new { x.RoomId, x.Date }).IsUnique();` trong `OnModelCreating` (hoặc attribute `[Index(nameof(RoomId), nameof(Date), IsUnique = true)]` trên lớp `RoomNight`). Kiểu `Date` dùng `DateOnly` (EF Core 10 ánh xạ sang cột `date`).
 
 → Đảm bảo **0 đơn trùng phòng** ở mức CSDL, không phụ thuộc code ứng dụng (NFR-01).
 
@@ -415,7 +418,7 @@ Khu vực Quản trị (/Admin)
 
 | GĐ | Tên | Công việc | Đầu ra | Mục báo cáo |
 |---|---|---|---|---|
-| **0** | Khởi động | Chốt đề tài; cài .NET 8 SDK, Visual Studio 2022 / VS Code + C# Dev Kit / Rider, SQL Server (LocalDB trên Windows, Docker trên macOS), `dotnet-ef`; tạo repo GitHub, bảng Kanban; thống nhất quy ước ([mục 12](#12-quy-ước-làm-việc-nhóm)) | Repo + backlog | — |
+| **0** | Khởi động | Chốt đề tài; cài .NET 10 SDK, Visual Studio 2026 / VS Code + C# Dev Kit / Rider, SQL Server (LocalDB trên Windows, Docker trên macOS), `dotnet-ef`; tạo repo GitHub, bảng Kanban; thống nhất quy ước ([mục 12](#12-quy-ước-làm-việc-nhóm)) | Repo + backlog | — |
 | **1** | Phân tích | Tóm tắt file PTTKYC: mô tả hệ thống, nghiệp vụ, biểu mẫu khảo sát; xác định chức năng 4 lớp người dùng; vẽ **use-case** tổng quát + phân rã | Use-case (draw.io) | 5.1, 5.2 |
 | **2** | Thiết kế | **ERD**, mô tả bảng và ràng buộc; **sitemap**; **wireframe** các màn hình chính (tìm kiếm, chi tiết, đặt phòng, lịch phòng, quản lý đơn, dashboard) | ERD, sitemap, wireframe | 5.2 |
 | **3** | Nền tảng | Tạo solution bằng `dotnet new mvc` + `dotnet new xunit`; cấu hình `Program.cs`; entity, `ApplicationDbContext`, `dotnet ef migrations add Init` / `dotnet ef database update`, seed trong `SeedData` (35 homestay mẫu, tài khoản mỗi role); Identity + 4 role; `_Layout` Bootstrap responsive; cấu hình i18n + cookie ngôn ngữ; partial phân trang dùng chung; CRUD danh mục (Admin) | Chạy được, đăng nhập theo role | 5.3 |
@@ -528,7 +531,7 @@ Danh sách đầy đủ do Vĩ tổng hợp, khoảng 30–40 test case, mỗi m
 - [ ] Báo cáo `.docx`/`.pdf` đúng bố cục và định dạng
 - [ ] Toàn bộ mã nguồn (đã xóa `bin/`, `obj/`, `.vs/`; chạy được bằng `dotnet restore` + `dotnet run`)
 - [ ] `database/HomestayBooking.sql`: script tạo CSDL + dữ liệu mẫu, đã chạy thử trên máy sạch
-- [ ] `README.md`: yêu cầu môi trường (.NET 8 SDK, SQL Server), cách chạy script SQL hoặc `dotnet ef database update`, chỗ sửa chuỗi kết nối, tài khoản mẫu cho từng role
+- [ ] `README.md`: yêu cầu môi trường (.NET 10 SDK, SQL Server), cách chạy script SQL hoặc `dotnet ef database update`, chỗ sửa chuỗi kết nối, tài khoản mẫu cho từng role
 - [ ] File nén duy nhất đặt tên theo quy tắc: `QLHomestay_Nhom<số>_<Lớp>.zip`
 - [ ] Slide thuyết trình + kịch bản demo (luồng đặt phòng end-to-end + các mục kỹ thuật)
 
@@ -541,7 +544,7 @@ Danh sách đầy đủ do Vĩ tổng hợp, khoảng 30–40 test case, mỗi m
 | Phạm vi quá lớn so với thời gian | Cao | Ưu tiên luồng chính (GĐ 3–6); chức năng ở GĐ 7 làm theo thứ tự: cọc → quản lý đơn → cảnh báo → đánh giá → đối soát → dashboard |
 | Xung đột migration / merge | Trung bình | Một người tạo migration tại một thời điểm; merge `develop` thường xuyên |
 | Thành viên chậm tiến độ | Trung bình | Kanban cập nhật hằng ngày; trưởng nhóm điều chỉnh phân công ở buổi planning |
-| Môi trường khác nhau giữa Windows và macOS | Trung bình | .NET 8 chạy được trên cả hai; máy macOS dùng SQL Server qua Docker; thống nhất phiên bản SDK bằng `global.json`; cài đặt ngay ở GĐ 0 |
+| Môi trường khác nhau giữa Windows và macOS | Trung bình | .NET 10 chạy được trên cả hai; máy macOS dùng SQL Server qua Docker; thống nhất phiên bản SDK bằng `global.json`; cài đặt ngay ở GĐ 0 |
 | Giảng viên yêu cầu đúng ASP.NET MVC 5 | Thấp | Xác nhận với giảng viên ở GĐ 0; ASP.NET Core MVC vẫn là mô hình MVC của ASP.NET nên mọi yêu cầu ở mục 3.3 đều đáp ứng được |
 | Mất dữ liệu demo trước buổi thuyết trình | Thấp | Seed data + script `.sql`; tập demo trên máy sẽ dùng để trình bày |
 | Báo cáo dồn về cuối | Cao | Mỗi giai đoạn hoàn thành phần báo cáo tương ứng (cột "Mục báo cáo" ở [mục 10](#10-kế-hoạch-triển-khai-theo-giai-đoạn)) |
