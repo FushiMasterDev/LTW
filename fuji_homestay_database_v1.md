@@ -845,7 +845,7 @@ Vì chưa triển khai thật: sửa entity xong thì **tạo lại migration `I
 | # | Câu hỏi | Ảnh hưởng | Tạm thời |
 |---|---|---|---|
 | Q1 | ~~Kế toán chỉ làm giờ hành chính~~ — **đã giải quyết bằng D13**: chuyển khoản qua QR được tự xác nhận 24/7. Chỉ đơn đi đường ảnh bill vào ban đêm mới phải chờ tới giờ làm việc | Thời gian chờ | Giao diện khuyến khích quét QR; báo khách đi đường bill rằng Fuji duyệt trong giờ làm việc |
-| Q2 | Kế toán từ chối bill bao nhiêu lần thì hủy hẳn? | `Bookings`, `Payments` | Không giới hạn số lần; mỗi lần được thêm 15' |
+| Q2 | ~~Kế toán từ chối bill bao nhiêu lần thì hủy hẳn?~~ — **đã chốt (11/10)**: lần 1 khách được thêm 15'; lần 2 đơn `Expired`, mở lại phòng (`Booking:MaxReceiptRejections` = 2) | `Bookings`, `Payments` | — |
 | Q3 | Khoản Fuji bù chênh lệch khi trùng phòng (BR-11) có trừ vào homestay gây ra không? | `SettlementItems` | Không trừ; ghi `Payments.Compensation` để thống kê |
 | Q4 | Voucher bồi thường: giá trị, thời hạn, điều kiện | Bảng `Vouchers` | Chưa thiết kế |
 | Q5 | Đơn bị hủy có giữ cọc: xếp kỳ đối soát theo ngày `CheckOut` dự kiến hay ngày hủy? | `SettlementItems` | Theo `CheckOut` dự kiến (thống nhất D7) |

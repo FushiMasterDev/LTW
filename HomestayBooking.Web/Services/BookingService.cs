@@ -28,7 +28,7 @@ public class BookingService
     private static readonly Dictionary<BookingStatus, BookingStatus[]> Transitions = new()
     {
         [BookingStatus.AwaitingPayment] = [BookingStatus.PaymentSubmitted, BookingStatus.Deposited, BookingStatus.Expired, BookingStatus.Cancelled],
-        [BookingStatus.PaymentSubmitted] = [BookingStatus.Deposited, BookingStatus.AwaitingPayment, BookingStatus.Cancelled],
+        [BookingStatus.PaymentSubmitted] = [BookingStatus.Deposited, BookingStatus.AwaitingPayment, BookingStatus.Expired, BookingStatus.Cancelled],
         [BookingStatus.Deposited] = [BookingStatus.Confirmed, BookingStatus.Rejected, BookingStatus.Cancelled],
         [BookingStatus.Confirmed] = [BookingStatus.CheckedIn, BookingStatus.Cancelled, BookingStatus.NoShow],
         [BookingStatus.CheckedIn] = [BookingStatus.Completed],
