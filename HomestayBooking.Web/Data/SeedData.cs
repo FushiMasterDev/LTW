@@ -10,7 +10,7 @@ namespace HomestayBooking.Web.Data;
 /// Dữ liệu mẫu: role, nhân viên, chủ homestay, khách hàng (mô hình tài khoản v5), danh mục, ngày lễ và 35 homestay.
 /// Chạy lại nhiều lần không bị nhân đôi: mỗi phần chỉ thêm khi chưa có.
 /// </summary>
-public static class SeedData
+public static partial class SeedData
 {
     /// <summary>Mật khẩu chung của các tài khoản mẫu (ghi trong README để demo).</summary>
     public const string DefaultPassword = "Fuji@2026";
@@ -45,6 +45,19 @@ public static class SeedData
         ("Nguyễn Văn Minh", "0987000001", true),
         ("Trần Thị Bích", "0987000002", false),
         ("Lê Văn Hùng", "0912000001", true),
+        // Khách mẫu cho đơn đặt phòng mẫu (SeedData.Bookings.cs)
+        ("Đặng Thị Thu", "0987000003", true),
+        ("Bùi Quốc Bảo", "0987000004", true),
+        ("Phan Ngọc Ánh", "0987000005", true),
+        ("Trịnh Văn Long", "0987000006", false),
+        ("Võ Thị Hồng", "0987000007", true),
+        ("Hồ Minh Khang", "0987000008", false),
+        ("Lý Thanh Tâm", "0987000009", true),
+        ("Mai Đức Anh", "0987000010", true),
+        ("Chu Thị Ngân", "0987000011", false),
+        ("Tạ Quang Vinh", "0987000012", true),
+        ("Đinh Thị Yến", "0987000013", true),
+        ("Kiều Văn Phúc", "0987000014", false),
     ];
 
     // Khu vực Hà Nội; Sóc Sơn, Ba Vì là ngoại thành
@@ -167,6 +180,7 @@ public static class SeedData
         await SeedPeopleAsync(db, userManager);
         await SeedCategoriesAsync(db);
         await SeedHomestaysAsync(db);
+        await SeedSampleBookingsAsync(db, scope.ServiceProvider);
     }
 
     private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
@@ -365,8 +379,8 @@ public static class SeedData
                 ContactPhone = owner.Person.PhoneNumber,
                 CheckinTime = new TimeOnly(14, 0),
                 CheckoutTime = new TimeOnly(12, 0),
-                DescriptionHtml = $"<p><strong>{name}</strong> nằm tại khu vực {area.Name}, không gian ấm cúng, " +
-                                  "phù hợp cho cặp đôi, gia đình và nhóm bạn.</p>",
+                // Nội dung mẫu cố định, không chứa ký tự HTML đặc biệt nên ghép thẳng
+                DescriptionHtml = $"<p>{HomestayDescriptions[i]}</p>",
                 CheckinGuideHtml = "<p>Nhận phòng từ 14:00. Gọi chủ nhà khi đến nơi để được hướng dẫn chỗ để xe và lấy chìa khóa.</p>",
             };
 
@@ -428,23 +442,27 @@ public static class SeedData
     {
         var basePrice = 400_000m + index % 7 * 100_000m;
 
-        yield return CreateRoomType("Phòng đôi", categories["Phòng đôi"], 2, basePrice, "101", "102");
-        yield return CreateRoomType("Phòng gia đình", categories["Phòng gia đình"], 4, basePrice * 1.6m, "201");
+        yield return CreateRoomType(index, isSuburb, "Phòng đôi", categories["Phòng đôi"], 2, basePrice, "101", "102");
+        yield return CreateRoomType(index, isSuburb, "Phòng gia đình", categories["Phòng gia đình"], 4, basePrice * 1.6m, "201");
 
         if (isSuburb)
         {
-            yield return CreateRoomType("Nguyên căn", categories["Nguyên căn"], 10, basePrice * 4, "Căn A");
+            yield return CreateRoomType(index, isSuburb, "Nguyên căn", categories["Nguyên căn"], 10, basePrice * 4, "Căn A");
         }
         else if (index % 2 == 0)
         {
-            yield return CreateRoomType("Phòng đơn", categories["Phòng đơn"], 1, basePrice * 0.8m, "103");
+            yield return CreateRoomType(index, isSuburb, "Phòng đơn", categories["Phòng đơn"], 1, basePrice * 0.8m, "103");
         }
     }
 
     /// <summary>Giá cuối tuần +20%, lễ Tết +50% so với ngày thường (tài liệu bảng giá Fuji).</summary>
-    private static RoomType CreateRoomType(string name, RoomCategory category, int maxGuests, decimal weekday, params string[] roomCodes)
+    private static RoomType CreateRoomType(int index, bool isSuburb, string name, RoomCategory category, int maxGuests, decimal weekday, params string[] roomCodes)
     {
-        var roomType = new RoomType { Name = name, Category = category, MaxGuests = maxGuests };
+        var (description, areaM2) = RoomTypeDetails(category.Name, isSuburb, index);
+        var roomType = new RoomType
+        {
+            Name = name, Category = category, MaxGuests = maxGuests, Description = description, AreaM2 = areaM2,
+        };
         foreach (var code in roomCodes)
         {
             roomType.Rooms.Add(new Room { RoomCode = code });
