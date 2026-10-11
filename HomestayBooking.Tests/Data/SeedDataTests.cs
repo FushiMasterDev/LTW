@@ -1,4 +1,5 @@
 using HomestayBooking.Web.Data;
+using HomestayBooking.Web.Extensions;
 using HomestayBooking.Web.Models;
 using HomestayBooking.Web.Models.Entities;
 using HomestayBooking.Web.Services;
@@ -187,5 +188,88 @@ public class SeedDataTests
         Assert.NotNull(existing);
         Assert.True(await manager.IsInRoleAsync(existing, AppRoles.Owner));
         Assert.Equal(ExpectedAccounts, await manager.Users.CountAsync());
+    }
+    [Fact]
+    public async Task InitializeAsync_SeedsDistinctDescriptions()
+    {
+        await using var services = BuildServices();
+        await SeedData.InitializeAsync(services);
+
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var descriptions = await db.Homestays.Select(h => h.DescriptionHtml).ToListAsync();
+        Assert.Equal(descriptions.Count, descriptions.Distinct().Count());
+        Assert.All(await db.RoomTypes.ToListAsync(), t =>
+        {
+            Assert.False(string.IsNullOrEmpty(t.Description));
+            Assert.True(t.AreaM2 > 0);
+        });
+    }
+
+    [Fact]
+    public async Task InitializeAsync_SampleBookingsFollowBusinessRules()
+    {
+        await using var services = BuildServices();
+        await SeedData.InitializeAsync(services);
+
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var bookings = await db.Bookings
+            .Include(b => b.Nights).Include(b => b.RoomNights).Include(b => b.Payments).Include(b => b.Histories)
+            .ToListAsync();
+
+        Assert.Equal(SeedData.SampleBookingCount, bookings.Count);
+        // Đủ mọi trạng thái để demo các màn hình
+        BookingStatus[] expected =
+        [
+            BookingStatus.PaymentSubmitted, BookingStatus.Deposited, BookingStatus.Confirmed, BookingStatus.CheckedIn,
+            BookingStatus.Completed, BookingStatus.Expired, BookingStatus.Rejected, BookingStatus.Cancelled, BookingStatus.NoShow,
+        ];
+        Assert.All(expected, s => Assert.Contains(bookings, b => b.Status == s));
+        Assert.Equal(bookings.Count, bookings.Select(b => b.Code).Distinct().Count());
+
+        Assert.All(bookings, b =>
+        {
+            Assert.Equal(b.CheckOut.DayNumber - b.CheckIn.DayNumber, b.Nights.Count);
+            Assert.Equal(b.Nights.Sum(n => n.Price), b.TotalAmount);
+            Assert.Equal(PricingService.RoundToThousand(b.TotalAmount * 0.30m), b.DepositAmount);
+            // Chỉ trạng thái giữ phòng mới chiếm lịch phòng
+            Assert.Equal(b.Status.HoldsRoom() ? b.Nights.Count : 0, b.RoomNights.Count);
+            // Lịch sử nối tiếp nhau và kết thúc ở trạng thái hiện tại
+            var history = b.Histories.OrderBy(h => h.ChangedAt).ThenBy(h => h.Id).ToList();
+            Assert.Null(history[0].FromStatus);
+            Assert.Equal(b.Status, history[^1].ToStatus);
+            for (var i = 1; i < history.Count; i++)
+            {
+                Assert.Equal(history[i - 1].ToStatus, history[i].FromStatus);
+                Assert.True(BookingService.CanTransition(history[i].FromStatus!.Value, history[i].ToStatus));
+            }
+            Assert.True(b.Payments.Count(p => p.Type == PaymentType.Deposit) <= 1);
+            Assert.True(b.CreatedAt < b.CheckIn.ToDateTime(new TimeOnly(14, 0)));
+        });
+
+        var roomNights = await db.RoomNights.ToListAsync();
+        Assert.Equal(roomNights.Count, roomNights.Select(n => (n.RoomId, n.Date)).Distinct().Count());
+
+        // Mã đơn đã sinh không trùng với mã đơn thật đặt sau đó
+        var counters = await db.BookingCodeCounters.ToDictionaryAsync(c => c.Date, c => c.LastSeq);
+        Assert.All(bookings, b =>
+        {
+            var date = DateOnly.ParseExact(b.Code[2..8], "yyMMdd");
+            Assert.True(counters[date] >= int.Parse(b.Code[9..]));
+        });
+
+        // Có việc cho kế toán: bill chờ duyệt, giao dịch thiếu tiền / đến muộn / không mã đơn
+        Assert.True(await db.Payments.CountAsync(p => p.Method == PaymentMethod.ManualReceipt && p.Status == PaymentStatus.Submitted) >= 2);
+        foreach (var status in new[] { BankMatchStatus.Underpaid, BankMatchStatus.LatePayment, BankMatchStatus.Unmatched })
+        {
+            Assert.True(await db.BankTransactions.AnyAsync(t => t.MatchStatus == status), status.ToString());
+        }
+
+        var reviews = await db.Reviews.Include(r => r.Booking).ToListAsync();
+        Assert.Equal(SeedData.SampleReviewCount, reviews.Count);
+        Assert.All(reviews, r => Assert.Equal(BookingStatus.Completed, r.Booking.Status));
+        Assert.Contains(reviews, r => r.IsHidden);
+        Assert.Contains(reviews, r => r.OwnerReply != null);
     }
 }
