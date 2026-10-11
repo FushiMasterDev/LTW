@@ -243,3 +243,11 @@ public enum ActorType
     Employee,
     System
 }
+
+public enum VoucherStatus
+{
+    Active,   // Còn số dư và còn hạn
+    UsedUp,   // Số dư = 0 (có thể Active lại nếu đơn dùng voucher bị hủy)
+    Expired,
+    Revoked   // Quản lý thu hồi
+}

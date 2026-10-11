@@ -437,6 +437,10 @@ namespace HomestayBooking.Web.Data.Migrations
                     b.Property<DateTime?>("DepositedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<decimal>("DiscountAmount")
+                        .HasPrecision(18)
+                        .HasColumnType("decimal(18,0)");
+
                     b.Property<int>("Guests")
                         .HasColumnType("int");
 
@@ -484,6 +488,9 @@ namespace HomestayBooking.Web.Data.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("VoucherId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CancellationPolicyId");
@@ -503,6 +510,8 @@ namespace HomestayBooking.Web.Data.Migrations
 
                     b.HasIndex("RoomTypeId");
 
+                    b.HasIndex("VoucherId");
+
                     b.HasIndex("AssignedEmployeeId", "Status");
 
                     b.HasIndex("HomestayId", "CheckIn");
@@ -516,6 +525,8 @@ namespace HomestayBooking.Web.Data.Migrations
                             t.HasCheckConstraint("CK_Bookings_Amounts", "[TotalAmount] > 0 AND [DepositAmount] >= 0 AND [DepositAmount] <= [TotalAmount]");
 
                             t.HasCheckConstraint("CK_Bookings_Dates", "[CheckOut] > [CheckIn]");
+
+                            t.HasCheckConstraint("CK_Bookings_Discount", "[DiscountAmount] >= 0 AND [DiscountAmount] < [DepositAmount]");
 
                             t.HasCheckConstraint("CK_Bookings_Guests", "[Guests] > 0");
                         });
@@ -1777,6 +1788,81 @@ namespace HomestayBooking.Web.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HomestayBooking.Web.Models.Entities.Voucher", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18)
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("Balance")
+                        .IsConcurrencyToken()
+                        .HasPrecision(18)
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("ExpiresOn")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("IssuedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("IssuedByEmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("RevokeReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("SourceBookingId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("IssuedByEmployeeId");
+
+                    b.HasIndex("SourceBookingId")
+                        .IsUnique()
+                        .HasFilter("[SourceBookingId] IS NOT NULL");
+
+                    b.HasIndex("CustomerId", "Status");
+
+                    b.ToTable("Vouchers", t =>
+                        {
+                            t.HasCheckConstraint("CK_Vouchers_Amount", "[Amount] > 0");
+
+                            t.HasCheckConstraint("CK_Vouchers_Balance", "[Balance] >= 0 AND [Balance] <= [Amount]");
+                        });
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -2008,6 +2094,10 @@ namespace HomestayBooking.Web.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("HomestayBooking.Web.Models.Entities.Voucher", "Voucher")
+                        .WithMany("UsedByBookings")
+                        .HasForeignKey("VoucherId");
+
                     b.Navigation("AssignedEmployee");
 
                     b.Navigation("CancellationPolicy");
@@ -2023,6 +2113,8 @@ namespace HomestayBooking.Web.Data.Migrations
                     b.Navigation("Room");
 
                     b.Navigation("RoomType");
+
+                    b.Navigation("Voucher");
                 });
 
             modelBuilder.Entity("HomestayBooking.Web.Models.Entities.BookingChangeRequest", b =>
@@ -2444,6 +2536,31 @@ namespace HomestayBooking.Web.Data.Migrations
                     b.Navigation("OwnerRegistration");
                 });
 
+            modelBuilder.Entity("HomestayBooking.Web.Models.Entities.Voucher", b =>
+                {
+                    b.HasOne("HomestayBooking.Web.Models.Entities.Customer", "Customer")
+                        .WithMany("Vouchers")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HomestayBooking.Web.Models.Entities.Employee", "IssuedByEmployee")
+                        .WithMany()
+                        .HasForeignKey("IssuedByEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HomestayBooking.Web.Models.Entities.Booking", "SourceBooking")
+                        .WithMany()
+                        .HasForeignKey("SourceBookingId");
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("IssuedByEmployee");
+
+                    b.Navigation("SourceBooking");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -2527,6 +2644,8 @@ namespace HomestayBooking.Web.Data.Migrations
                     b.Navigation("Bookings");
 
                     b.Navigation("Profile");
+
+                    b.Navigation("Vouchers");
                 });
 
             modelBuilder.Entity("HomestayBooking.Web.Models.Entities.Homestay", b =>
@@ -2598,6 +2717,11 @@ namespace HomestayBooking.Web.Data.Migrations
             modelBuilder.Entity("HomestayBooking.Web.Models.Entities.Settlement", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("HomestayBooking.Web.Models.Entities.Voucher", b =>
+                {
+                    b.Navigation("UsedByBookings");
                 });
 #pragma warning restore 612, 618
         }

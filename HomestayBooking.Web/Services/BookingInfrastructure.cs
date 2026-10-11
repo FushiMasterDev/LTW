@@ -99,3 +99,19 @@ public class BankAccountOptions
     /// <summary>Khóa API dịch vụ theo dõi tài khoản (SePay) gửi trong header "Authorization: Apikey ...".</summary>
     public string? WebhookApiKey { get; set; }
 }
+
+/// <summary>Quy tắc voucher (appsettings: "Voucher"), Q4 / D14.</summary>
+public class VoucherOptions
+{
+    public const string Section = "Voucher";
+
+    /// <summary>Giá trị voucher = tỷ lệ này × tổng tiền đơn gốc, làm tròn nghìn, kẹp trong [MinAmount, MaxAmount].</summary>
+    public decimal IssueRate { get; set; } = 0.05m;
+
+    public decimal MinAmount { get; set; } = 50_000m;
+    public decimal MaxAmount { get; set; } = 200_000m;
+    public int ValidMonths { get; set; } = 6;
+
+    /// <summary>Mỗi đơn giảm tối đa tỷ lệ này của hoa hồng Fuji trên đơn đó (Fuji nhận 300k thì chịu tối đa 60k).</summary>
+    public decimal MaxDiscountShareOfCommission { get; set; } = 0.20m;
+}

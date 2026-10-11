@@ -55,11 +55,13 @@ builder.Services.AddScoped<AccountActivityLogger>();
 // Nghiệp vụ đặt phòng và thanh toán (fuji_homestay_database_v1 mục 6, 7)
 builder.Services.Configure<BookingOptions>(builder.Configuration.GetSection(BookingOptions.Section));
 builder.Services.Configure<BankAccountOptions>(builder.Configuration.GetSection(BankAccountOptions.Section));
+builder.Services.Configure<VoucherOptions>(builder.Configuration.GetSection(VoucherOptions.Section));
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<PricingService>();
 builder.Services.AddScoped<BookingCodeGenerator>();
 builder.Services.AddScoped<RefundService>();
 builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<VoucherService>();
 builder.Services.AddScoped<BookingService>();
 builder.Services.AddScoped<BankMatchingService>();
 builder.Services.AddScoped<ReceiptReviewService>();

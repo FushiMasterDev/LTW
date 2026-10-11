@@ -156,6 +156,71 @@ public sealed class DatabaseConstraintTests : IDisposable
         await AssertRejectedAsync(booking);
     }
 
+    // ---- Voucher (Q4, D14) ----
+
+    private int _issuerId;
+
+    /// <summary>Quản lý cấp voucher, tạo một lần để lỗi trong test chỉ đến từ ràng buộc của bảng Vouchers.</summary>
+    private int IssuerId()
+    {
+        if (_issuerId == 0)
+        {
+            var manager = new Employee { EmployeeCode = "QL001", Person = new PersonProfile { PhoneNumber = "+84901000031" } };
+            _db.Employees.Add(manager);
+            _db.SaveChanges();
+            _issuerId = manager.Id;
+        }
+        return _issuerId;
+    }
+
+    private Voucher NewVoucher(string code, decimal amount, decimal balance, int? sourceBookingId = null) => new()
+    {
+        Code = code,
+        CustomerId = _customer.Id,
+        Amount = amount,
+        Balance = balance,
+        ExpiresOn = new(2027, 5, 1),
+        Reason = "Trùng phòng",
+        SourceBookingId = sourceBookingId,
+        IssuedByEmployeeId = IssuerId(),
+    };
+
+    [Fact]
+    public async Task Voucher_BalanceAboveAmount_IsRejected()
+    {
+        await AssertRejectedAsync(NewVoucher("VC00010001", 100_000, 150_000));
+    }
+
+    [Fact]
+    public async Task Voucher_DuplicateCode_IsRejected()
+    {
+        _db.Vouchers.Add(NewVoucher("VC00010001", 100_000, 100_000));
+        await _db.SaveChangesAsync();
+
+        await AssertRejectedAsync(NewVoucher("VC00010001", 50_000, 50_000));
+    }
+
+    [Fact]
+    public async Task Voucher_SecondVoucherForSameSourceBooking_IsRejected()
+    {
+        var source = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        _db.Bookings.Add(source);
+        await _db.SaveChangesAsync();
+        _db.Vouchers.Add(NewVoucher("VC00010001", 100_000, 100_000, source.Id));
+        await _db.SaveChangesAsync();
+
+        await AssertRejectedAsync(NewVoucher("VC00010002", 100_000, 100_000, source.Id));
+    }
+
+    [Fact]
+    public async Task Booking_DiscountNotBelowDeposit_IsRejected()
+    {
+        var booking = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        booking.DiscountAmount = booking.DepositAmount; // khách luôn phải chuyển một khoản > 0
+
+        await AssertRejectedAsync(booking);
+    }
+
     [Fact]
     public async Task BookingNight_SameDateTwice_IsRejected()
     {

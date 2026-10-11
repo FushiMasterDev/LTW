@@ -77,6 +77,16 @@ public class Booking
     /// <summary>Số tiền hoàn khi hủy/từ chối (BR-04).</summary>
     public decimal? RefundAmount { get; set; }
 
+    /// <summary>Voucher dùng cho đơn này (Q4, D14).</summary>
+    public int? VoucherId { get; set; }
+
+    /// <summary>Số tiền giảm từ voucher, trừ vào tiền cọc. Snapshot lúc đặt; ≤ 20% hoa hồng Fuji của đơn.</summary>
+    public decimal DiscountAmount { get; set; }
+
+    /// <summary>Tiền khách phải chuyển khoản = cọc − giảm giá voucher (số tiền trên QR, số tiền webhook so khớp).</summary>
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public decimal AmountDue => DepositAmount - DiscountAmount;
+
     /// <summary>Đơn thay thế khi Fuji chuyển khách sang phòng khác vì trùng phòng (BR-11).</summary>
     public int? ReplacedByBookingId { get; set; }
 
@@ -91,6 +101,7 @@ public class Booking
     public Room Room { get; set; } = null!;
     public CancellationPolicy CancellationPolicy { get; set; } = null!;
     public Booking? ReplacedByBooking { get; set; }
+    public Voucher? Voucher { get; set; }
     public ICollection<BookingNight> Nights { get; set; } = new List<BookingNight>();
     public ICollection<RoomNight> RoomNights { get; set; } = new List<RoomNight>();
     public ICollection<BookingStatusHistory> Histories { get; set; } = new List<BookingStatusHistory>();

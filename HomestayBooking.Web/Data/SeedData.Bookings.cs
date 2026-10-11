@@ -198,6 +198,7 @@ public static partial class SeedData
         });
 
         AddSampleReviews(rng, bookings, nowUtc);
+        AddSampleVouchers(bookings, employees.Single(e => e.EmployeeCode == "QL001"));
         await db.SaveChangesAsync();
     }
 
@@ -577,6 +578,33 @@ public static partial class SeedData
                 RepliedAt = reply ? createdAt.AddHours(rng.Next(1, 25)) : null,
                 CreatedAt = createdAt,
             };
+        }
+    }
+
+    /// <summary>
+    /// Voucher xin lỗi cho khách của các đơn bị homestay từ chối sau khi đã cọc (Q4, D14), theo đúng quy tắc của VoucherService:
+    /// 5% tổng đơn gốc, kẹp 50.000–200.000đ, hạn 6 tháng kể từ lúc cấp.
+    /// </summary>
+    private static void AddSampleVouchers(IReadOnlyList<Booking> bookings, Employee manager)
+    {
+        var rules = new VoucherOptions();
+        var rejected = bookings.Where(b => b.Status == BookingStatus.Rejected).OrderBy(b => b.CancelledAt).ToList();
+        for (var i = 0; i < rejected.Count; i++)
+        {
+            var source = rejected[i];
+            var amount = Math.Clamp(PricingService.RoundToThousand(source.TotalAmount * rules.IssueRate), rules.MinAmount, rules.MaxAmount);
+            var issuedAt = source.CancelledAt!.Value.AddHours(1);
+            source.Customer.Vouchers.Add(new Voucher
+            {
+                Code = $"VCDEMO{(char)('A' + i)}{(char)('A' + i)}2K",
+                Amount = amount,
+                Balance = amount,
+                ExpiresOn = DateOnly.FromDateTime(VietnamTime.ToLocal(issuedAt)).AddMonths(rules.ValidMonths),
+                Reason = "Homestay từ chối đơn sau khi khách đã đặt cọc.",
+                SourceBooking = source,
+                IssuedByEmployeeId = manager.Id,
+                IssuedAt = issuedAt,
+            });
         }
     }
 

@@ -29,6 +29,7 @@ public class BookingTimeoutJob : BackgroundService
                 var expired = await bookings.ExpireOverdueHoldsAsync();
                 var alerted = await bookings.AlertOverdueConfirmationsAsync();
                 var slowReceipts = await scope.ServiceProvider.GetRequiredService<ReceiptReviewService>().AlertSlowReviewsAsync();
+                await scope.ServiceProvider.GetRequiredService<VoucherService>().ExpireAsync();
                 if (expired + alerted + slowReceipts > 0)
                 {
                     _logger.LogInformation("Hết hạn {Expired} đơn, cảnh báo {Alerted} đơn quá hạn xác nhận, {Receipts} bill chậm duyệt.",

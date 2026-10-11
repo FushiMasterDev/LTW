@@ -83,6 +83,20 @@
                         <div class="d-flex justify-content-between text-accent fw-bold"><span>@L["Cọc cần thanh toán ngay"]</span><span>@Model.Quote.Deposit.ToString("N0")đ</span></div>
                     }
                 </div>
+                @if (Model.Vouchers.Count > 0)
+                {
+                    <div class="mt-3">
+                        <label asp-for="VoucherId" class="form-label small fw-semibold"><i class="bi bi-ticket-perforated text-brand" aria-hidden="true"></i> @L["Dùng voucher"]</label>
+                        <select asp-for="VoucherId" class="form-select">
+                            <option value="">@L["Không dùng"]</option>
+                            @foreach (var v in Model.Vouchers)
+                            {
+                                <option value="@v.Id">@v.Code · @L["còn {0:N0}đ, hạn {1}", v.Balance, v.ExpiresOn.ToString("dd/MM/yyyy")]</option>
+                            }
+                        </select>
+                        <div class="form-text">@L["Mỗi đơn được giảm một phần, số dư còn lại dùng cho lần sau."]</div>
+                    </div>
+                }
                 <div class="alert tone-amber small mt-3 mb-3" role="note">
                     <i class="bi bi-hourglass-split" aria-hidden="true"></i>
                     <div>@L["Sau khi bấm đặt, phòng được giữ 15 phút để bạn chuyển khoản tiền cọc qua mã QR. Phần còn lại thanh toán tại homestay."]</div>
@@ -103,10 +117,13 @@
             const checkIn = document.getElementById('CheckIn');
             const checkOut = document.getElementById('CheckOut');
             const url = '@Url.Action("Quote")';
+            const voucher = document.getElementById('VoucherId');
             const roomTypeId = @Model.RoomTypeId;
             const text = {
                 total: @Json.Serialize(L["Tổng tiền phòng"].Value),
-                deposit: @Json.Serialize(L["Cọc cần thanh toán ngay"].Value),
+                deposit: @Json.Serialize(L["Cọc (30%)"].Value),
+                discount: @Json.Serialize(L["Giảm từ voucher"].Value),
+                due: @Json.Serialize(L["Cọc cần thanh toán ngay"].Value),
                 free: @Json.Serialize(L["Còn {0} phòng trống"].Value),
                 soldOut: @Json.Serialize(L["Hết phòng trong thời gian này."].Value),
                 loading: @Json.Serialize(L["Đang tính giá..."].Value),
@@ -121,7 +138,8 @@
                 const my = ++seq;
                 box.innerHTML = `<p class="text-muted small mb-0">${esc(text.loading)}</p>`;
                 try {
-                    const res = await fetch(`${url}?roomTypeId=${roomTypeId}&checkIn=${checkIn.value}&checkOut=${checkOut.value}`);
+                    const v = voucher && voucher.value ? `&voucherId=${voucher.value}` : '';
+                    const res = await fetch(`${url}?roomTypeId=${roomTypeId}&checkIn=${checkIn.value}&checkOut=${checkOut.value}${v}`);
                     const q = await res.json();
                     if (my !== seq) return;
                     if (!q.ok) {
@@ -136,7 +154,9 @@
                     box.innerHTML = `<div class="mb-2">${avail}</div>
                         <ul class="list-unstyled small night-list mb-2">${nights}</ul>
                         <div class="d-flex justify-content-between fw-bold border-top pt-2"><span>${esc(text.total)}</span><span>${money(q.total)}</span></div>
-                        <div class="d-flex justify-content-between text-accent fw-bold"><span>${esc(text.deposit)}</span><span>${money(q.deposit)}</span></div>`;
+                        <div class="d-flex justify-content-between small"><span>${esc(text.deposit)}</span><span>${money(q.deposit)}</span></div>
+                        ${q.discount > 0 ? `<div class="d-flex justify-content-between small text-success"><span>${esc(text.discount)}</span><span>−${money(q.discount)}</span></div>` : ''}
+                        <div class="d-flex justify-content-between text-accent fw-bold"><span>${esc(text.due)}</span><span>${money(q.amountDue)}</span></div>`;
                 } catch {
                     if (my === seq) box.innerHTML = `<p class="text-danger small mb-0">${esc(text.failed)}</p>`;
                 }
@@ -147,6 +167,7 @@
                 refresh();
             });
             checkOut.addEventListener('change', refresh);
+            if (voucher) voucher.addEventListener('change', refresh);
             refresh();
         })();
     </script>

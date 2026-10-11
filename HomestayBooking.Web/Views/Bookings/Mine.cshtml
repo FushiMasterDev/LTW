@@ -1,6 +1,7 @@
 @model PaginatedList<MyBookingRow>
 @{
     ViewData["Title"] = L["Đơn của tôi"];
+    var vouchers = (List<VoucherOption>)ViewBag.Vouchers;
 }
 <div class="page-head">
     <div class="d-flex align-items-center gap-3">
@@ -12,6 +13,20 @@
     </div>
     <a class="btn btn-brand" asp-controller="Homestays" asp-action="Index"><i class="bi bi-plus-lg" aria-hidden="true"></i> @L["Đặt phòng mới"]</a>
 </div>
+
+@if (vouchers.Count > 0)
+{
+    <section class="card-soft p-3 mb-3" aria-labelledby="voucherTitle">
+        <h2 class="h6 mb-2" id="voucherTitle"><i class="bi bi-ticket-perforated text-brand" aria-hidden="true"></i> @L["Voucher của bạn"]</h2>
+        <div class="d-flex flex-wrap gap-2">
+            @foreach (var v in vouchers)
+            {
+                <span class="badge-tone tone-pink">@v.Code · @L["còn {0:N0}đ, hạn {1}", v.Balance, v.ExpiresOn.ToString("dd/MM/yyyy")]</span>
+            }
+        </div>
+        <p class="small text-muted mt-2 mb-0">@L["Chọn voucher ở bước đặt phòng để được trừ vào tiền cọc."]</p>
+    </section>
+}
 
 @if (Model.TotalCount == 0)
 {
