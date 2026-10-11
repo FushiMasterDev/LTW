@@ -55,6 +55,20 @@
                                 <i class="bi bi-house-door" aria-hidden="true"></i> @L["Trang chủ"]
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link tone-indigo @Active(null, "Homestays")" asp-area="" asp-controller="Homestays" asp-action="Index">
+                                <i class="bi bi-search-heart" aria-hidden="true"></i> @L["Tìm homestay"]
+                            </a>
+                        </li>
+                        @if (!User.IsActiveEmployee())
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link tone-pink @Active(null, "Bookings")"
+                                   asp-area="" asp-controller="Bookings" asp-action="@(User.Identity?.IsAuthenticated == true ? "Mine" : "Lookup")">
+                                    <i class="bi bi-receipt" aria-hidden="true"></i> @(User.Identity?.IsAuthenticated == true ? L["Đơn của tôi"] : L["Tra cứu đơn"])
+                                </a>
+                            </li>
+                        }
                         @if (User.IsManagement())
                         {
                             <li class="nav-item dropdown">

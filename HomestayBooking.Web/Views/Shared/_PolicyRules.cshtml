@@ -1,0 +1,25 @@
+@model IReadOnlyList<PolicyRuleView>
+@* Bảng quy tắc hoàn cọc, sắp theo số ngày giảm dần *@
+@{
+    var lowestThreshold = Model.Where(r => r.MinDaysBefore > 0).Select(r => (int?)r.MinDaysBefore).Min();
+}
+<ul class="list-unstyled small mb-0 policy-rules">
+    @foreach (var r in Model)
+    {
+        <li>
+            <span class="badge-tone @(r.RefundPercent == 100 ? "tone-emerald" : r.RefundPercent > 0 ? "tone-amber" : "tone-rose")">@r.RefundPercent%</span>
+            @if (r.MinDaysBefore > 0)
+            {
+                @L["Hủy trước ngày nhận phòng từ {0} ngày trở lên: hoàn {1}% tiền cọc", r.MinDaysBefore, r.RefundPercent]
+            }
+            else if (lowestThreshold is int days)
+            {
+                @L["Hủy khi còn dưới {0} ngày: hoàn {1}% tiền cọc", days, r.RefundPercent]
+            }
+            else
+            {
+                @L["Hủy bất cứ lúc nào: hoàn {0}% tiền cọc", r.RefundPercent]
+            }
+        </li>
+    }
+</ul>

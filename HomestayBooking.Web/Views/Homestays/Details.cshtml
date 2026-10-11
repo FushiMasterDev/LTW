@@ -1,0 +1,149 @@
+@model HomestayDetailsViewModel
+@{
+    ViewData["Title"] = Model.Name;
+    var q = Model.Query;
+    var today = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
+    var nights = q.HasDates ? q.CheckOut!.Value.DayNumber - q.CheckIn!.Value.DayNumber : 0;
+    string Money(decimal? v) => v is decimal d ? d.ToString("N0") + "đ" : "—";
+}
+
+<nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb small mb-0">
+        <li class="breadcrumb-item"><a asp-action="Index">@L["Tìm homestay"]</a></li>
+        <li class="breadcrumb-item active" aria-current="page">@Model.Name</li>
+    </ol>
+</nav>
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+    <div>
+        <h1 class="mb-1">@Model.Name</h1>
+        <p class="text-muted mb-0"><i class="bi bi-geo-alt" aria-hidden="true"></i> @Model.AreaName, @L["Hà Nội"]
+            · <i class="bi bi-clock" aria-hidden="true"></i> @L["Nhận phòng từ {0}, trả phòng trước {1}", Model.CheckinTime.ToString("HH:mm"), Model.CheckoutTime.ToString("HH:mm")]</p>
+    </div>
+</div>
+
+@if (Model.Images.Count > 0)
+{
+    <div class="stay-gallery mb-4">
+        @foreach (var url in Model.Images.Take(5))
+        {
+            <img src="@url" alt="" loading="lazy" />
+        }
+    </div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-8 order-2 order-lg-1">
+        <h2 class="section-title mt-0"><i class="bi bi-door-open text-brand" aria-hidden="true"></i> @L["Loại phòng"]</h2>
+        @if (!q.HasDates)
+        {
+            <div class="alert tone-sky" role="status">
+                <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
+                <div>@L["Chọn ngày nhận và trả phòng để xem phòng trống và tổng tiền."]</div>
+            </div>
+        }
+        <div class="d-grid gap-3">
+            @foreach (var t in Model.RoomTypes)
+            {
+                var fits = t.MaxGuests >= q.Guests;
+                var soldOut = t.FreeRooms == 0;
+                <article class="card-soft p-3 room-offer @(fits && !soldOut ? "" : "is-muted")">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-7">
+                            <h3 class="h5 mb-1">@t.Name</h3>
+                            <p class="small text-muted mb-2">
+                                @t.CategoryName · @L["Tối đa {0} khách", t.MaxGuests]@(t.AreaM2 is int m2 ? $" · {m2} m²" : "")
+                            </p>
+                            @if (!string.IsNullOrEmpty(t.Description))
+                            {
+                                <p class="small mb-2">@t.Description</p>
+                            }
+                            <dl class="price-table small mb-0">
+                                <div><dt>@L["Ngày thường"]</dt><dd>@Money(t.WeekdayPrice)</dd></div>
+                                <div><dt>@L["Cuối tuần"]</dt><dd>@Money(t.WeekendPrice)</dd></div>
+                                <div><dt>@L["Ngày lễ"]</dt><dd>@Money(t.HolidayPrice)</dd></div>
+                            </dl>
+                        </div>
+                        <div class="col-md-5 text-md-end">
+                            @if (t.Quote is not null)
+                            {
+                                <div class="small text-muted">@L["{0} đêm", nights]</div>
+                                <div class="fs-4 fw-bold price">@Money(t.Quote.Total)</div>
+                                <div class="small text-muted mb-2">@L["Cọc {0}", Money(t.Quote.Deposit)]</div>
+                            }
+                            @if (!fits)
+                            {
+                                <span class="badge-tone tone-amber">@L["Không đủ chỗ cho {0} khách", q.Guests]</span>
+                            }
+                            else if (soldOut)
+                            {
+                                <span class="badge-tone tone-rose">@L["Hết phòng"]</span>
+                            }
+                            else
+                            {
+                                @if (t.FreeRooms is int free)
+                                {
+                                    <div class="small mb-2"><span class="badge-tone tone-emerald">@L["Còn {0} phòng", free]</span></div>
+                                }
+                                <a class="btn btn-accent" asp-controller="Bookings" asp-action="Create" asp-route-roomTypeId="@t.Id"
+                                   asp-route-checkIn="@q.CheckIn?.ToString("yyyy-MM-dd")" asp-route-checkOut="@q.CheckOut?.ToString("yyyy-MM-dd")" asp-route-guests="@q.Guests">
+                                    <i class="bi bi-calendar-check" aria-hidden="true"></i> @L["Đặt phòng"]
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.DescriptionHtml))
+        {
+            <h2 class="section-title"><i class="bi bi-card-text text-brand" aria-hidden="true"></i> @L["Giới thiệu"]</h2>
+            <div class="card-soft p-3 rich-text">@Html.Raw(Model.DescriptionHtml)</div>
+        }
+
+        @if (Model.Amenities.Count > 0)
+        {
+            <h2 class="section-title"><i class="bi bi-stars text-brand" aria-hidden="true"></i> @L["Tiện nghi"]</h2>
+            <ul class="amenity-list list-unstyled mb-0">
+                @foreach (var (name, icon) in Model.Amenities)
+                {
+                    <li><i class="bi @(icon ?? "bi-check2")" aria-hidden="true"></i> @name</li>
+                }
+            </ul>
+        }
+
+        <h2 class="section-title"><i class="bi bi-shield-check text-brand" aria-hidden="true"></i> @L["Chính sách hủy"]</h2>
+        <div class="card-soft p-3">
+            <p class="small text-muted">@L["Tiền cọc {0:P0} tổng tiền phòng. Số tiền hoàn tính theo số ngày còn lại trước ngày nhận phòng.", Model.DepositRate]</p>
+            <partial name="_PolicyRules" model="Model.GeneralPolicy" />
+            @if (Model.HolidayPolicy is not null)
+            {
+                <p class="small fw-semibold mt-3 mb-1">@L["Đơn có đêm ngày lễ"]</p>
+                <partial name="_PolicyRules" model="Model.HolidayPolicy" />
+            }
+        </div>
+    </div>
+
+    <aside class="col-lg-4 order-1 order-lg-2">
+        <form method="get" class="card-soft p-3 sticky-lg-top" style="top:6rem" aria-label="@L["Chọn ngày"]">
+            <h2 class="h6 mb-3"><i class="bi bi-calendar-range" aria-hidden="true"></i> @L["Chọn ngày"]</h2>
+            <div class="row g-2">
+                <div class="col-6">
+                    <label class="form-label small" for="CheckIn">@L["Nhận phòng"]</label>
+                    <input class="form-control" type="date" id="CheckIn" name="CheckIn" min="@today" value="@q.CheckIn?.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div class="col-6">
+                    <label class="form-label small" for="CheckOut">@L["Trả phòng"]</label>
+                    <input class="form-control" type="date" id="CheckOut" name="CheckOut" min="@today" value="@q.CheckOut?.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div class="col-12">
+                    <label class="form-label small" for="Guests">@L["Số khách"]</label>
+                    <input class="form-control" type="number" id="Guests" name="Guests" min="1" max="20" value="@q.Guests" />
+                </div>
+            </div>
+            <button type="submit" class="btn btn-brand w-100 mt-3"><i class="bi bi-search" aria-hidden="true"></i> @L["Xem phòng trống"]</button>
+            <p class="small text-muted mt-3 mb-0"><i class="bi bi-lock" aria-hidden="true"></i> @L["Địa chỉ chính xác và số điện thoại homestay được gửi sau khi đơn được xác nhận."]</p>
+        </form>
+    </aside>
+</div>

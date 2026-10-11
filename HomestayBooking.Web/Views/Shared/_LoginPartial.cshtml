@@ -13,6 +13,14 @@
             <span class="text-truncate" style="max-width: 12rem">@displayName</span>
         </button>
         <ul class="dropdown-menu dropdown-menu-end">
+            @if (!User.IsActiveEmployee())
+            {
+                <li>
+                    <a class="dropdown-item" asp-area="" asp-controller="Bookings" asp-action="Mine">
+                        <span class="icon-chip tone-pink" aria-hidden="true"><i class="bi bi-receipt"></i></span> @L["Đơn của tôi"]
+                    </a>
+                </li>
+            }
             <li>
                 <a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="ChangePassword">
                     <span class="icon-chip tone-sky" aria-hidden="true"><i class="bi bi-key"></i></span> @L["Đổi mật khẩu"]
@@ -31,6 +39,9 @@
 }
 else
 {
+    <a class="btn btn-outline-secondary" asp-area="" asp-controller="Account" asp-action="Register">
+        <i class="bi bi-person-plus" aria-hidden="true"></i> @L["Đăng ký"]
+    </a>
     <a class="btn btn-accent" asp-area="" asp-controller="Account" asp-action="Login">
         <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i> @L["Đăng nhập"]
     </a>

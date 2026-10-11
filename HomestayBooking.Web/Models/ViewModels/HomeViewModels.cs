@@ -1,6 +1,6 @@
 namespace HomestayBooking.Web.Models.ViewModels;
 
-public record AreaSummary(string Name, int HomestayCount);
+public record AreaSummary(int Id, string Name, int HomestayCount);
 
 public class HomeIndexViewModel
 {

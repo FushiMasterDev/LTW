@@ -10,9 +10,9 @@
     };
     var steps = new (string Tone, string Title, string Text)[]
     {
-        ("tone-sky", L["Chọn phòng và ngày"], L["Xem lịch trống và báo giá theo từng đêm."]),
-        ("tone-violet", L["Nhập thông tin"], L["Chỉ cần họ tên và số điện thoại, không cần tài khoản."]),
-        ("tone-pink", L["Đặt cọc 30%"], L["Chủ homestay xác nhận, bạn chuyển cọc kèm mã đơn."]),
+        ("tone-sky", L["Chọn phòng và ngày"], L["Xem phòng trống và báo giá theo từng đêm."]),
+        ("tone-violet", L["Đặt và giữ phòng"], L["Đăng ký bằng số điện thoại, phòng được giữ 15 phút cho bạn."]),
+        ("tone-pink", L["Quét QR đặt cọc 30%"], L["Tiền về là đơn tự cập nhật, homestay xác nhận trong khoảng 30 phút."]),
     };
 }
 
@@ -25,8 +25,8 @@
         <h1 id="heroTitle" class="mb-3">@L["Đặt homestay tại Hà Nội, nhanh và rõ ràng"]</h1>
         <p class="lead mb-4">@L["Lịch phòng cập nhật liên tục, báo giá minh bạch theo từng đêm, đặt phòng chỉ cần số điện thoại."]</p>
         <div class="d-flex flex-wrap gap-2 mb-4">
-            <a class="btn btn-accent btn-lg" href="tel:19000000"><i class="bi bi-telephone-fill" aria-hidden="true"></i> @L["Gọi tư vấn"] 1900 0000</a>
-            <a class="btn btn-light-glass btn-lg" href="#areas"><i class="bi bi-compass" aria-hidden="true"></i> @L["Khám phá khu vực"]</a>
+            <a class="btn btn-accent btn-lg" asp-controller="Homestays" asp-action="Index"><i class="bi bi-search-heart" aria-hidden="true"></i> @L["Tìm homestay"]</a>
+            <a class="btn btn-light-glass btn-lg" href="tel:19000000"><i class="bi bi-telephone-fill" aria-hidden="true"></i> @L["Gọi tư vấn"] 1900 0000</a>
         </div>
         <div class="d-flex flex-wrap gap-4">
             <div class="hero-stat"><strong>@Model.HomestayCount</strong><span>@L["Homestay"]</span></div>
@@ -55,13 +55,13 @@
     {
         var a = Model.Areas[i];
         <div class="col-6 col-md-4 col-lg-3">
-            <div class="area-tile @areaTones[i % areaTones.Length]">
+            <a class="area-tile @areaTones[i % areaTones.Length]" asp-controller="Homestays" asp-action="Index" asp-route-areaId="@a.Id">
                 <span class="icon-chip" aria-hidden="true"><i class="bi bi-pin-map-fill"></i></span>
                 <div>
                     <strong>@a.Name</strong>
                     <small>@L["{0} homestay", a.HomestayCount]</small>
                 </div>
-            </div>
+            </a>
         </div>
     }
 </div>

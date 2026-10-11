@@ -1,0 +1,38 @@
+@model SimulateBankViewModel
+@{
+    ViewData["Title"] = "Giả lập tiền vào";
+}
+@* Chỉ Development + quản lý. Trang nội bộ để demo nên không dịch. *@
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card-soft p-4">
+            <span class="icon-chip icon-chip-lg tone-amber mb-3" aria-hidden="true"><i class="bi bi-bug"></i></span>
+            <h1 class="h3 mb-1">Giả lập tiền vào tài khoản MB</h1>
+            <p class="text-muted small">Tạo một giao dịch "tiền vào" giống webhook SePay, đi qua đúng logic tự khớp. Chỉ có ở môi trường Development.</p>
+            <form asp-action="SimulateBank" method="post" novalidate>
+                <div asp-validation-summary="ModelOnly" class="alert tone-rose" role="alert"></div>
+                <div class="mb-3">
+                    <label asp-for="Content" class="form-label"></label>
+                    <input asp-for="Content" class="form-control" placeholder="FJ261110-001 dat coc" />
+                    <span asp-validation-for="Content" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Amount" class="form-label"></label>
+                    <input asp-for="Amount" class="form-control" type="number" step="1000" />
+                    <span asp-validation-for="Amount" class="text-danger small"></span>
+                    <div class="form-text">Thử nhập thiếu tiền (Underpaid) hoặc dư tiền để xem các trường hợp.</div>
+                </div>
+                <div class="mb-4">
+                    <label asp-for="AccountNumber" class="form-label"></label>
+                    <input asp-for="AccountNumber" class="form-control" />
+                    <div class="form-text">Đổi số khác để thử trường hợp sai tài khoản (Ignored).</div>
+                </div>
+                <button type="submit" class="btn btn-accent w-100"><i class="bi bi-cash-coin" aria-hidden="true"></i> Gửi giao dịch</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

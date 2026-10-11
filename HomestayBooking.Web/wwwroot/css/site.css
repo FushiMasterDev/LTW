@@ -780,3 +780,193 @@ a, button, .btn, [role="button"], summary {
     transform: none;
   }
 }
+
+/* =========================================================================
+   Đặt phòng (khách hàng): tìm homestay, chi tiết, đặt phòng, thanh toán QR
+   ========================================================================= */
+.text-accent {
+  color: var(--fx-accent) !important;
+}
+
+.price {
+  color: var(--fx-accent);
+  font-weight: 700;
+}
+
+.booking-code {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* Thẻ homestay trong danh sách: cả thẻ là một link */
+.stay-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  transition: box-shadow 0.2s var(--fx-ease), transform 0.2s var(--fx-ease);
+}
+
+.stay-card:hover {
+  color: inherit;
+  box-shadow: var(--fx-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.stay-cover {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.stay-cover-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--tone-bg), #fff);
+  color: var(--tone-solid);
+  font-size: 3rem;
+}
+
+.stay-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.5rem;
+}
+
+.stay-gallery img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--fx-radius-sm);
+}
+
+.room-offer.is-muted {
+  opacity: 0.7;
+}
+
+.price-table {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+}
+
+.price-table dt {
+  font-weight: 500;
+  color: var(--fx-muted);
+}
+
+.price-table dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.amenity-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+.amenity-list .bi {
+  color: var(--fx-primary);
+  margin-right: 0.35rem;
+}
+
+.policy-rules li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0;
+}
+
+.policy-rules .badge-tone {
+  min-width: 4.2rem;
+  justify-content: center;
+}
+
+.night-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.15rem 0;
+}
+
+/* Trang thanh toán */
+.pay-card {
+  border-top: 4px solid var(--fx-accent);
+}
+
+.countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown.is-urgent {
+  background: #ffe4e6;
+  color: #9f1239;
+}
+
+.qr-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--fx-radius-sm);
+  border: 1px solid var(--fx-border);
+  background: #fff;
+}
+
+.transfer-info dt {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--fx-muted);
+}
+
+.transfer-info dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+  font-weight: 600;
+}
+
+.transfer-info .btn-sm {
+  min-height: 2rem;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.receipt-box summary {
+  font-weight: 600;
+  color: var(--fx-primary);
+}
+
+.dev-box {
+  padding: 0.6rem 0.8rem;
+  border: 1px dashed #b45309;
+  border-radius: var(--fx-radius-sm);
+  background: #fffbeb;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stay-card,
+  .stay-card:hover {
+    transition: none;
+    transform: none;
+  }
+}
+
+.text-brand {
+  color: var(--fx-primary) !important;
+}
+
+a.area-tile {
+  color: inherit;
+  text-decoration: none;
+}

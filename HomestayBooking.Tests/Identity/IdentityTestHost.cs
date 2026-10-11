@@ -22,13 +22,18 @@ internal static class IdentityTestHost
         services.AddLogging();
         services.AddDataProtection();
         services.AddHttpContextAccessor();
-        services.AddDbContext<ApplicationDbContext>(o => o.UseInMemoryDatabase(dbName));
+        services.AddDbContext<ApplicationDbContext>(o => o
+            .UseInMemoryDatabase(dbName)
+            .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning)));
         services.AddIdentity<ApplicationUser, IdentityRole>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddSignInManager<AppSignInManager>()
             .AddClaimsPrincipalFactory<AppClaimsPrincipalFactory>()
+            .AddErrorDescriber<VietnameseIdentityErrorDescriber>()
             .AddDefaultTokenProviders();
         services.AddScoped<AccountLookupService>();
+        services.AddScoped<AccountActivityLogger>();
+        services.AddScoped<CustomerAccountService>();
         return services.BuildServiceProvider();
     }
 

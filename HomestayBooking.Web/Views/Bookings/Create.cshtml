@@ -1,0 +1,153 @@
+@model BookingCreateViewModel
+@{
+    ViewData["Title"] = L["Đặt phòng"];
+    var today = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
+}
+
+<nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb small mb-0">
+        <li class="breadcrumb-item"><a asp-controller="Homestays" asp-action="Index">@L["Tìm homestay"]</a></li>
+        <li class="breadcrumb-item"><a asp-controller="Homestays" asp-action="Details" asp-route-id="@Model.HomestayId">@Model.HomestayName</a></li>
+        <li class="breadcrumb-item active" aria-current="page">@L["Đặt phòng"]</li>
+    </ol>
+</nav>
+
+<h1 class="mb-1">@L["Đặt phòng"]</h1>
+<p class="text-muted">@Model.HomestayName · <strong>@Model.RoomTypeName</strong> · @L["Tối đa {0} khách", Model.MaxGuests]</p>
+
+<form asp-action="Create" method="post" novalidate id="bookingForm">
+    <input type="hidden" asp-for="RoomTypeId" />
+    <div asp-validation-summary="ModelOnly" class="alert tone-rose" role="alert"></div>
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <section class="card-soft p-3 p-md-4 mb-3" aria-labelledby="stayTitle">
+                <h2 class="h5 mb-3" id="stayTitle"><i class="bi bi-calendar-range text-brand" aria-hidden="true"></i> @L["Thời gian lưu trú"]</h2>
+                <div class="row g-3">
+                    <div class="col-sm-5">
+                        <label asp-for="CheckIn" class="form-label"></label>
+                        <input asp-for="CheckIn" class="form-control" type="date" min="@today" data-quote />
+                        <span asp-validation-for="CheckIn" class="text-danger small"></span>
+                    </div>
+                    <div class="col-sm-5">
+                        <label asp-for="CheckOut" class="form-label"></label>
+                        <input asp-for="CheckOut" class="form-control" type="date" min="@today" data-quote />
+                        <span asp-validation-for="CheckOut" class="text-danger small"></span>
+                    </div>
+                    <div class="col-sm-2">
+                        <label asp-for="Guests" class="form-label"></label>
+                        <input asp-for="Guests" class="form-control" type="number" min="1" max="@Model.MaxGuests" />
+                        <span asp-validation-for="Guests" class="text-danger small"></span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card-soft p-3 p-md-4" aria-labelledby="contactTitle">
+                <h2 class="h5 mb-3" id="contactTitle"><i class="bi bi-person-vcard text-brand" aria-hidden="true"></i> @L["Người nhận phòng"]</h2>
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label asp-for="ContactName" class="form-label"></label>
+                        <input asp-for="ContactName" class="form-control" autocomplete="name" />
+                        <span asp-validation-for="ContactName" class="text-danger small"></span>
+                    </div>
+                    <div class="col-sm-6">
+                        <label asp-for="ContactPhone" class="form-label"></label>
+                        <input asp-for="ContactPhone" class="form-control" type="tel" inputmode="tel" autocomplete="tel" />
+                        <span asp-validation-for="ContactPhone" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="SpecialRequests" class="form-label"></label>
+                        <textarea asp-for="SpecialRequests" class="form-control" rows="3" placeholder="@L["Ví dụ: nhận phòng muộn, cần nôi em bé..."]"></textarea>
+                        <span asp-validation-for="SpecialRequests" class="text-danger small"></span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <aside class="col-lg-5">
+            <div class="card-soft p-3 p-md-4 sticky-lg-top" style="top:6rem">
+                <h2 class="h5 mb-3"><i class="bi bi-receipt text-brand" aria-hidden="true"></i> @L["Chi tiết giá"]</h2>
+                <div id="quoteBox" aria-live="polite">
+                    @if (Model.Quote is null)
+                    {
+                        <p class="text-muted small mb-0" data-empty>@L["Chọn ngày để xem giá."]</p>
+                    }
+                    else
+                    {
+                        <ul class="list-unstyled small night-list mb-2">
+                            @foreach (var n in Model.Quote.Nights)
+                            {
+                                <li><span>@n.Date.ToString("dd/MM (ddd)")</span><span>@n.Price.ToString("N0")đ</span></li>
+                            }
+                        </ul>
+                        <div class="d-flex justify-content-between fw-bold border-top pt-2"><span>@L["Tổng tiền phòng"]</span><span>@Model.Quote.Total.ToString("N0")đ</span></div>
+                        <div class="d-flex justify-content-between text-accent fw-bold"><span>@L["Cọc cần thanh toán ngay"]</span><span>@Model.Quote.Deposit.ToString("N0")đ</span></div>
+                    }
+                </div>
+                <div class="alert tone-amber small mt-3 mb-3" role="note">
+                    <i class="bi bi-hourglass-split" aria-hidden="true"></i>
+                    <div>@L["Sau khi bấm đặt, phòng được giữ 15 phút để bạn chuyển khoản tiền cọc qua mã QR. Phần còn lại thanh toán tại homestay."]</div>
+                </div>
+                <button type="submit" class="btn btn-accent btn-lg w-100" data-loading-text="@L["Đang giữ phòng..."]">
+                    <i class="bi bi-lock-fill" aria-hidden="true"></i> @L["Đặt và giữ phòng"]
+                </button>
+            </div>
+        </aside>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const box = document.getElementById('quoteBox');
+            const checkIn = document.getElementById('CheckIn');
+            const checkOut = document.getElementById('CheckOut');
+            const url = '@Url.Action("Quote")';
+            const roomTypeId = @Model.RoomTypeId;
+            const text = {
+                total: @Json.Serialize(L["Tổng tiền phòng"].Value),
+                deposit: @Json.Serialize(L["Cọc cần thanh toán ngay"].Value),
+                free: @Json.Serialize(L["Còn {0} phòng trống"].Value),
+                soldOut: @Json.Serialize(L["Hết phòng trong thời gian này."].Value),
+                loading: @Json.Serialize(L["Đang tính giá..."].Value),
+                failed: @Json.Serialize(L["Không tải được giá, vui lòng thử lại."].Value),
+            };
+            const money = v => Number(v).toLocaleString('vi-VN') + 'đ';
+            const esc = s => $('<span>').text(s).html();
+            let seq = 0;
+
+            async function refresh() {
+                if (!checkIn.value || !checkOut.value) return;
+                const my = ++seq;
+                box.innerHTML = `<p class="text-muted small mb-0">${esc(text.loading)}</p>`;
+                try {
+                    const res = await fetch(`${url}?roomTypeId=${roomTypeId}&checkIn=${checkIn.value}&checkOut=${checkOut.value}`);
+                    const q = await res.json();
+                    if (my !== seq) return;
+                    if (!q.ok) {
+                        box.innerHTML = `<p class="text-danger small mb-0">${esc(q.error)}</p>`;
+                        return;
+                    }
+                    const nights = q.nights.map(n =>
+                        `<li><span>${esc(n.date)} <span class="text-muted">· ${esc(n.dayType)}</span></span><span>${money(n.price)}</span></li>`).join('');
+                    const avail = q.freeRooms > 0
+                        ? `<span class="badge-tone tone-emerald">${esc(text.free.replace('{0}', q.freeRooms))}</span>`
+                        : `<span class="badge-tone tone-rose">${esc(text.soldOut)}</span>`;
+                    box.innerHTML = `<div class="mb-2">${avail}</div>
+                        <ul class="list-unstyled small night-list mb-2">${nights}</ul>
+                        <div class="d-flex justify-content-between fw-bold border-top pt-2"><span>${esc(text.total)}</span><span>${money(q.total)}</span></div>
+                        <div class="d-flex justify-content-between text-accent fw-bold"><span>${esc(text.deposit)}</span><span>${money(q.deposit)}</span></div>`;
+                } catch {
+                    if (my === seq) box.innerHTML = `<p class="text-danger small mb-0">${esc(text.failed)}</p>`;
+                }
+            }
+
+            checkIn.addEventListener('change', () => {
+                if (checkIn.value) checkOut.min = checkIn.value;
+                refresh();
+            });
+            checkOut.addEventListener('change', refresh);
+            refresh();
+        })();
+    </script>
+}

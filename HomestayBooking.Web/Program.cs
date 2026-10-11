@@ -34,6 +34,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(o =>
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddSignInManager<AppSignInManager>()
     .AddClaimsPrincipalFactory<AppClaimsPrincipalFactory>()
+    .AddErrorDescriber<VietnameseIdentityErrorDescriber>()
     .AddDefaultTokenProviders();
 
 builder.Services.AddAuthorizationBuilder()
@@ -63,6 +64,8 @@ builder.Services.AddScoped<BookingService>();
 builder.Services.AddScoped<BankMatchingService>();
 builder.Services.AddScoped<ReceiptReviewService>();
 builder.Services.AddScoped<VietQrService>();
+builder.Services.AddScoped<CustomerAccountService>();
+builder.Services.AddSingleton<ReceiptFileStore>();
 builder.Services.AddHostedService<BookingTimeoutJob>();
 
 // Kiểm tra lại cookie mỗi phút: tài khoản bị vô hiệu hóa hoặc đổi security stamp sẽ bị đăng xuất

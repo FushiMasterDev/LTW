@@ -1,0 +1,51 @@
+@model PaginatedList<MyBookingRow>
+@{
+    ViewData["Title"] = L["Đơn của tôi"];
+}
+<div class="page-head">
+    <div class="d-flex align-items-center gap-3">
+        <span class="icon-chip icon-chip-lg tone-pink" aria-hidden="true"><i class="bi bi-receipt"></i></span>
+        <div>
+            <h1>@L["Đơn của tôi"]</h1>
+            <p class="text-muted mb-0">@L["Gồm cả đơn nhân viên tư vấn đặt giúp bằng số điện thoại của bạn."]</p>
+        </div>
+    </div>
+    <a class="btn btn-brand" asp-controller="Homestays" asp-action="Index"><i class="bi bi-plus-lg" aria-hidden="true"></i> @L["Đặt phòng mới"]</a>
+</div>
+
+@if (Model.TotalCount == 0)
+{
+    <div class="empty-state">
+        <span class="icon-chip icon-chip-lg tone-slate" aria-hidden="true"><i class="bi bi-inbox"></i></span>
+        <p class="mb-0">@L["Bạn chưa có đơn đặt phòng nào."]</p>
+    </div>
+}
+else
+{
+    <div class="card-soft table-responsive">
+        <table class="table table-modern align-middle mb-0">
+            <thead>
+                <tr>
+                    <th scope="col">@L["Mã đơn"]</th>
+                    <th scope="col">@L["Homestay"]</th>
+                    <th scope="col">@L["Ngày ở"]</th>
+                    <th scope="col" class="text-end">@L["Tổng tiền"]</th>
+                    <th scope="col">@L["Trạng thái"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model)
+                {
+                    <tr>
+                        <td><a class="fw-semibold booking-code" asp-action="Details" asp-route-id="@r.Code">@r.Code</a></td>
+                        <td>@r.HomestayName<div class="small text-muted">@r.RoomTypeName</div></td>
+                        <td class="text-nowrap">@r.CheckIn.ToString("dd/MM") – @r.CheckOut.ToString("dd/MM/yyyy")</td>
+                        <td class="text-end text-nowrap">@r.TotalAmount.ToString("N0")đ</td>
+                        <td><span class="badge-tone @r.Status.ToneClass()">@L[r.Status.DisplayName()]</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_Pager" model="Model" />
+}

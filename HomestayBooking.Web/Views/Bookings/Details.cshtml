@@ -1,0 +1,261 @@
+@using HomestayBooking.Web.Identity
+@using HomestayBooking.Web.Services
+@model BookingDetailsViewModel
+@{
+    var b = Model.Booking;
+    ViewData["Title"] = L["Đơn {0}", b.Code];
+    var nights = b.CheckOut.DayNumber - b.CheckIn.DayNumber;
+    string Money(decimal v) => v.ToString("N0") + "đ";
+    var polling = b.Status is BookingStatus.AwaitingPayment or BookingStatus.PaymentSubmitted or BookingStatus.Deposited;
+    var hold = DateTime.SpecifyKind(b.HoldExpiresAt, DateTimeKind.Utc);
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+        <p class="text-muted small mb-1">@L["Mã đơn"]</p>
+        <h1 class="mb-0 booking-code">@b.Code</h1>
+    </div>
+    <span class="badge-tone @b.Status.ToneClass() fs-6"><i class="bi @b.Status.Icon()" aria-hidden="true"></i> @L[b.Status.DisplayName()]</span>
+</div>
+
+@* ---------------- Thông báo theo trạng thái ---------------- *@
+@switch (b.Status)
+{
+    case BookingStatus.AwaitingPayment when Model.QrImageUrl is null:
+        <div class="alert tone-slate" role="status"><i class="bi bi-hourglass-bottom" aria-hidden="true"></i>
+            <div>@L["Đã hết thời gian giữ phòng. Hệ thống đang hủy giữ chỗ; nếu bạn vừa chuyển khoản, đơn sẽ tự cập nhật."]</div></div>
+        break;
+    case BookingStatus.PaymentSubmitted:
+        <div class="alert tone-orange" role="status"><i class="bi bi-receipt" aria-hidden="true"></i>
+            <div>
+                <strong>@L["Fuji đã nhận ảnh bill và đang kiểm tra."]</strong>
+                @L["Phòng vẫn được giữ cho bạn. Bill được duyệt trong giờ hành chính (thứ Hai–thứ Sáu, 8h–17h); bill gửi ngoài giờ sẽ được duyệt vào sáng ngày làm việc kế tiếp."]
+                @if (Model.PendingReceipt is not null)
+                {
+                    <a asp-action="Receipt" asp-route-paymentId="@Model.PendingReceipt.Id" target="_blank" rel="noopener">@L["Xem ảnh đã gửi"]</a>
+                }
+            </div></div>
+        break;
+    case BookingStatus.Deposited:
+        <div class="alert tone-violet" role="status"><i class="bi bi-wallet2" aria-hidden="true"></i>
+            <div><strong>@L["Fuji đã nhận tiền cọc."]</strong> @L["Homestay sẽ xác nhận đơn trong khoảng 30 phút. Trang này tự cập nhật."]</div></div>
+        break;
+    case BookingStatus.Confirmed:
+        <div class="alert tone-emerald" role="status"><i class="bi bi-check2-circle" aria-hidden="true"></i>
+            <div><strong>@L["Đơn đã được xác nhận."]</strong> @L["Hẹn gặp bạn ngày {0}.", b.CheckIn.ToString("dd/MM/yyyy")]</div></div>
+        break;
+    case BookingStatus.Expired:
+        <div class="alert tone-slate" role="status"><i class="bi bi-hourglass-bottom" aria-hidden="true"></i>
+            <div>@L["Đơn đã hết hạn giữ phòng. Nếu bạn đã chuyển khoản, vui lòng gọi 1900 0000 để được hoàn tiền."]</div></div>
+        break;
+    case BookingStatus.Rejected:
+        <div class="alert tone-rose" role="status"><i class="bi bi-x-circle" aria-hidden="true"></i>
+            <div>@L["Homestay không nhận được đơn này. Fuji sẽ hoàn 100% tiền cọc ({0}) cho bạn.", Money(b.RefundAmount ?? b.DepositAmount)]</div></div>
+        break;
+    case BookingStatus.Cancelled:
+        <div class="alert tone-slate" role="status"><i class="bi bi-slash-circle" aria-hidden="true"></i>
+            <div>@L["Đơn đã hủy."] @if (b.RefundAmount > 0) { @L["Số tiền hoàn: {0}.", Money(b.RefundAmount.Value)] }</div></div>
+        break;
+}
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        @* ---------------- Thanh toán bằng QR ---------------- *@
+        @if (Model.QrImageUrl is not null)
+        {
+            <section class="card-soft p-3 p-md-4 mb-4 pay-card" aria-labelledby="payTitle">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <h2 class="h5 mb-0" id="payTitle"><i class="bi bi-qr-code-scan text-brand" aria-hidden="true"></i> @L["Chuyển khoản tiền cọc"]</h2>
+                    <div class="countdown" role="timer" aria-live="off">
+                        <i class="bi bi-alarm" aria-hidden="true"></i> @L["Giữ phòng còn"] <strong id="countdown" data-expires="@hold.ToString("o")">--:--</strong>
+                    </div>
+                </div>
+
+                @if (Model.LastRejectedReceipt is not null)
+                {
+                    <div class="alert tone-rose small" role="alert"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+                        <div>@L["Ảnh bill trước chưa hợp lệ: {0}. Vui lòng thanh toán lại hoặc gửi ảnh khác.", Model.LastRejectedReceipt.RejectReason ?? ""]</div></div>
+                }
+
+                <div class="row g-3 align-items-center">
+                    <div class="col-sm-6 text-center">
+                        <img class="qr-image" src="@Model.QrImageUrl" width="270" height="320"
+                             alt="@L["Mã QR chuyển khoản MB Bank cho đơn {0}", b.Code]"
+                             onerror="this.onerror=null;this.src='@VietQrService.StaticImagePath';document.getElementById('qrFallback').hidden=false;" />
+                        <p id="qrFallback" class="small text-danger mt-2" hidden>@L["Không tải được mã QR theo đơn. Khi quét mã này, hãy tự nhập đúng số tiền và nội dung bên cạnh."]</p>
+                    </div>
+                    <div class="col-sm-6">
+                        <dl class="transfer-info mb-0">
+                            <dt>@L["Ngân hàng"]</dt>
+                            <dd>MB Bank (@L["Ngân hàng Quân đội"])</dd>
+                            <dt>@L["Số tài khoản"]</dt>
+                            <dd><span>@Model.Bank.AccountNumber</span> <button type="button" class="btn btn-sm btn-outline-secondary" data-copy="@Model.Bank.AccountNumber">@L["Sao chép"]</button></dd>
+                            <dt>@L["Chủ tài khoản"]</dt>
+                            <dd>@Model.Bank.AccountName</dd>
+                            <dt>@L["Số tiền"]</dt>
+                            <dd><span class="price">@Money(b.DepositAmount)</span> <button type="button" class="btn btn-sm btn-outline-secondary" data-copy="@decimal.ToInt64(b.DepositAmount)">@L["Sao chép"]</button></dd>
+                            <dt>@L["Nội dung chuyển khoản"]</dt>
+                            <dd><strong class="booking-code">@b.Code</strong> <button type="button" class="btn btn-sm btn-outline-secondary" data-copy="@b.Code">@L["Sao chép"]</button></dd>
+                        </dl>
+                    </div>
+                </div>
+                <ol class="small text-muted mt-3 mb-0 ps-3">
+                    <li>@L["Mở app ngân hàng, quét mã QR (số tiền và nội dung đã điền sẵn)."]</li>
+                    <li>@L["Giữ nguyên nội dung chuyển khoản là mã đơn để hệ thống tự xác nhận."]</li>
+                    <li>@L["Trang này tự cập nhật khi Fuji nhận được tiền, thường trong 1–2 phút."]</li>
+                </ol>
+
+                @if (Model.CanUploadReceipt)
+                {
+                    <details class="mt-3 receipt-box">
+                        <summary>@L["Đã chuyển khoản nhưng sau vài phút trang vẫn chưa cập nhật?"]</summary>
+                        <form asp-action="UploadReceipt" asp-route-id="@b.Code" method="post" enctype="multipart/form-data" class="mt-3">
+                            <p class="small text-muted">@L["Gửi ảnh chụp màn hình giao dịch để kế toán kiểm tra. Phòng vẫn được giữ trong lúc chờ duyệt. Bill gửi ngoài giờ hành chính sẽ được duyệt vào sáng hôm sau."]</p>
+                            <div class="mb-2">
+                                <label class="form-label small" for="receipt">@L["Ảnh bill (JPG, PNG, WEBP, tối đa 5MB)"]</label>
+                                <input class="form-control" type="file" id="receipt" name="receipt" accept="image/jpeg,image/png,image/webp" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small" for="transferContent">@L["Nội dung bạn đã ghi khi chuyển khoản (nếu nhớ)"]</label>
+                                <input class="form-control" id="transferContent" name="transferContent" maxlength="200" />
+                            </div>
+                            <button type="submit" class="btn btn-brand" data-loading-text="@L["Đang gửi..."]"><i class="bi bi-upload" aria-hidden="true"></i> @L["Gửi ảnh bill"]</button>
+                        </form>
+                    </details>
+                }
+
+                @if (Model.ShowDevSimulator)
+                {
+                    <div class="dev-box small mt-3">
+                        <i class="bi bi-bug" aria-hidden="true"></i> <strong>Development:</strong>
+                        @L["Giả lập tiền về cho đơn này (cần đăng nhập quản lý, nên mở ở cửa sổ ẩn danh):"]
+                        <a asp-controller="Dev" asp-action="SimulateBank" asp-route-code="@b.Code" asp-route-amount="@decimal.ToInt64(b.DepositAmount)" target="_blank" rel="noopener">@L["Mở trang giả lập"]</a>
+                    </div>
+                }
+            </section>
+        }
+
+        @* ---------------- Thông tin nhận phòng (chỉ khi đã xác nhận, BR-13) ---------------- *@
+        @if (Model.ShowAddress)
+        {
+            <section class="card-soft p-3 p-md-4 mb-4" aria-labelledby="checkinTitle">
+                <h2 class="h5 mb-3" id="checkinTitle"><i class="bi bi-signpost-split text-brand" aria-hidden="true"></i> @L["Thông tin nhận phòng"]</h2>
+                <dl class="row small mb-0">
+                    <dt class="col-sm-4">@L["Địa chỉ"]</dt><dd class="col-sm-8">@b.Homestay.Address</dd>
+                    <dt class="col-sm-4">@L["Số phòng"]</dt><dd class="col-sm-8">@b.Room.RoomCode</dd>
+                    @if (b.Homestay.ContactPhone is string phone)
+                    {
+                        <dt class="col-sm-4">@L["Điện thoại homestay"]</dt><dd class="col-sm-8"><a href="tel:@phone">@PhoneNumberNormalizer.ToNational(phone)</a></dd>
+                    }
+                    <dt class="col-sm-4">@L["Giờ nhận / trả phòng"]</dt><dd class="col-sm-8">@b.Homestay.CheckinTime.ToString("HH:mm") / @b.Homestay.CheckoutTime.ToString("HH:mm")</dd>
+                </dl>
+                @if (!string.IsNullOrEmpty(b.Homestay.CheckinGuideHtml))
+                {
+                    <div class="rich-text small border-top pt-3 mt-2">@Html.Raw(b.Homestay.CheckinGuideHtml)</div>
+                }
+            </section>
+        }
+
+        @* ---------------- Hủy đơn ---------------- *@
+        @if (Model.CanCancel && Model.CancelQuote is not null)
+        {
+            var refund = Model.CancelQuote;
+            <section class="card-soft p-3 p-md-4 mb-4" aria-labelledby="cancelTitle">
+                <h2 class="h5 mb-2" id="cancelTitle"><i class="bi bi-slash-circle text-danger" aria-hidden="true"></i> @L["Hủy đơn"]</h2>
+                @if (b.Status is BookingStatus.Deposited or BookingStatus.Confirmed)
+                {
+                    <p class="small mb-3">@L["Hủy hôm nay (còn {0} ngày trước ngày nhận phòng): hoàn {1}% tiền cọc = {2}.", refund.DaysBefore, refund.RefundPercent, Money(refund.RefundAmount)]</p>
+                }
+                else
+                {
+                    <p class="small mb-3">@L["Đơn chưa có tiền cọc nên hủy không mất phí."]</p>
+                }
+                <form asp-action="Cancel" asp-route-id="@b.Code" method="post" data-confirm="@L["Bạn chắc chắn muốn hủy đơn {0}?", b.Code]">
+                    <div class="input-group">
+                        <input class="form-control" name="reason" maxlength="200" placeholder="@L["Lý do hủy (không bắt buộc)"]" aria-label="@L["Lý do hủy"]" />
+                        <button type="submit" class="btn btn-outline-danger">@L["Hủy đơn"]</button>
+                    </div>
+                </form>
+            </section>
+        }
+    </div>
+
+    @* ---------------- Tóm tắt đơn ---------------- *@
+    <aside class="col-lg-5">
+        <section class="card-soft p-3 p-md-4" aria-labelledby="summaryTitle">
+            <h2 class="h5 mb-3" id="summaryTitle"><i class="bi bi-house-heart text-brand" aria-hidden="true"></i> @b.Homestay.Name</h2>
+            <dl class="row small mb-2">
+                <dt class="col-5">@L["Khu vực"]</dt><dd class="col-7">@b.Homestay.Area.Name</dd>
+                <dt class="col-5">@L["Loại phòng"]</dt><dd class="col-7">@b.RoomType.Name</dd>
+                <dt class="col-5">@L["Nhận phòng"]</dt><dd class="col-7">@b.CheckIn.ToString("dd/MM/yyyy")</dd>
+                <dt class="col-5">@L["Trả phòng"]</dt><dd class="col-7">@b.CheckOut.ToString("dd/MM/yyyy") (@L["{0} đêm", nights])</dd>
+                <dt class="col-5">@L["Số khách"]</dt><dd class="col-7">@b.Guests</dd>
+                <dt class="col-5">@L["Người nhận phòng"]</dt><dd class="col-7">@b.ContactName · @PhoneNumberNormalizer.ToNational(b.ContactPhone)</dd>
+                @if (!string.IsNullOrEmpty(b.SpecialRequests))
+                {
+                    <dt class="col-5">@L["Yêu cầu đặc biệt"]</dt><dd class="col-7">@b.SpecialRequests</dd>
+                }
+            </dl>
+            <ul class="list-unstyled small night-list border-top pt-2 mb-2">
+                @foreach (var n in b.Nights.OrderBy(n => n.Date))
+                {
+                    <li><span>@n.Date.ToString("dd/MM (ddd)")</span><span>@Money(n.Price)</span></li>
+                }
+            </ul>
+            <div class="d-flex justify-content-between fw-bold border-top pt-2"><span>@L["Tổng tiền phòng"]</span><span>@Money(b.TotalAmount)</span></div>
+            <div class="d-flex justify-content-between small"><span>@L["Tiền cọc ({0:P0})", b.DepositRate]</span><span>@Money(b.DepositAmount)</span></div>
+            <div class="d-flex justify-content-between small text-muted"><span>@L["Thanh toán tại homestay"]</span><span>@Money(b.TotalAmount - b.DepositAmount)</span></div>
+        </section>
+        @if (Model.IsOwnAccount)
+        {
+            <a class="btn btn-outline-secondary mt-3" asp-action="Mine"><i class="bi bi-arrow-left" aria-hidden="true"></i> @L["Đơn của tôi"]</a>
+        }
+    </aside>
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            // Sao chép số tài khoản / số tiền / mã đơn
+            const copied = @Json.Serialize(L["Đã chép"].Value);
+            document.querySelectorAll('[data-copy]').forEach(btn => btn.addEventListener('click', async () => {
+                try {
+                    await navigator.clipboard.writeText(btn.dataset.copy);
+                    const old = btn.textContent;
+                    btn.textContent = copied;
+                    setTimeout(() => btn.textContent = old, 1500);
+                } catch { /* trình duyệt chặn clipboard: người dùng tự chọn chữ */ }
+            }));
+
+            // Đếm ngược thời gian giữ phòng
+            const cd = document.getElementById('countdown');
+            if (cd) {
+                const expires = new Date(cd.dataset.expires).getTime();
+                const tick = () => {
+                    const left = Math.max(0, Math.floor((expires - Date.now()) / 1000));
+                    cd.textContent = String(Math.floor(left / 60)).padStart(2, '0') + ':' + String(left % 60).padStart(2, '0');
+                    cd.closest('.countdown').classList.toggle('is-urgent', left < 120);
+                    if (left === 0) { clearInterval(timer); setTimeout(() => location.reload(), 3000); }
+                };
+                const timer = setInterval(tick, 1000);
+                tick();
+            }
+
+            // Tự tải lại khi trạng thái đơn đổi (tiền về, homestay xác nhận, hết hạn)
+            @if (polling)
+            {
+                <text>
+                const initial = @Json.Serialize(b.Status.ToString());
+                const statusUrl = '@Url.Action("Status", new { id = b.Code })';
+                setInterval(async () => {
+                    if (document.hidden) return;
+                    try {
+                        const res = await fetch(statusUrl, { cache: 'no-store' });
+                        if (res.ok && (await res.json()).status !== initial) location.reload();
+                    } catch { /* mất mạng tạm thời: lần sau thử lại */ }
+                }, 5000);
+                </text>
+            }
+        })();
+    </script>
+}

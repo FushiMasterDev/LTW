@@ -31,6 +31,13 @@ public class PricingService
         : DayType.Weekday;
 
     /// <summary>Làm tròn đến 1.000đ.</summary>
+    /// <summary>Giá đang áp dụng hôm nay cho từng (loại phòng, loại ngày): bảng giá có EffectiveFrom gần nhất ≤ hôm nay.</summary>
+    public static Dictionary<(int RoomTypeId, DayType DayType), decimal> CurrentPrices(IEnumerable<RoomTypePrice> prices, DateOnly today) =>
+        prices
+            .Where(p => p.EffectiveFrom <= today)
+            .GroupBy(p => (p.RoomTypeId, p.DayType))
+            .ToDictionary(g => g.Key, g => g.MaxBy(p => p.EffectiveFrom)!.Price);
+
     public static decimal RoundToThousand(decimal amount) =>
         Math.Round(amount / 1_000m, MidpointRounding.AwayFromZero) * 1_000m;
 

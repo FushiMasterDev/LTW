@@ -483,3 +483,6 @@ $RECYCLE.BIN/
 
 # User-uploaded images (BTL plan §12)
 **/wwwroot/uploads/
+
+# Ảnh bill khách tải lên (dữ liệu nhạy cảm, không đưa lên repo)
+HomestayBooking.Web/App_Data/
