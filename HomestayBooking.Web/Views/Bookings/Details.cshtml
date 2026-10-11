@@ -50,7 +50,7 @@
         break;
     case BookingStatus.Rejected:
         <div class="alert tone-rose" role="status"><i class="bi bi-x-circle" aria-hidden="true"></i>
-            <div>@L["Homestay không nhận được đơn này. Fuji sẽ hoàn 100% tiền cọc ({0}) cho bạn.", Money(b.RefundAmount ?? b.DepositAmount)]</div></div>
+            <div>@L["Homestay không nhận được đơn này. Fuji sẽ hoàn 100% tiền cọc ({0}) cho bạn.", Money(b.RefundAmount ?? b.AmountDue)]</div></div>
         break;
     case BookingStatus.Cancelled:
         <div class="alert tone-slate" role="status"><i class="bi bi-slash-circle" aria-hidden="true"></i>
@@ -93,7 +93,7 @@
                             <dt>@L["Chủ tài khoản"]</dt>
                             <dd>@Model.Bank.AccountName</dd>
                             <dt>@L["Số tiền"]</dt>
-                            <dd><span class="price">@Money(b.DepositAmount)</span> <button type="button" class="btn btn-sm btn-outline-secondary" data-copy="@decimal.ToInt64(b.DepositAmount)">@L["Sao chép"]</button></dd>
+                            <dd><span class="price">@Money(b.AmountDue)</span> <button type="button" class="btn btn-sm btn-outline-secondary" data-copy="@decimal.ToInt64(b.AmountDue)">@L["Sao chép"]</button></dd>
                             <dt>@L["Nội dung chuyển khoản"]</dt>
                             <dd><strong class="booking-code">@b.Code</strong> <button type="button" class="btn btn-sm btn-outline-secondary" data-copy="@b.Code">@L["Sao chép"]</button></dd>
                         </dl>
@@ -129,7 +129,7 @@
                     <div class="dev-box small mt-3">
                         <i class="bi bi-bug" aria-hidden="true"></i> <strong>Development:</strong>
                         @L["Giả lập tiền về cho đơn này (cần đăng nhập quản lý, nên mở ở cửa sổ ẩn danh):"]
-                        <a asp-controller="Dev" asp-action="SimulateBank" asp-route-code="@b.Code" asp-route-amount="@decimal.ToInt64(b.DepositAmount)" target="_blank" rel="noopener">@L["Mở trang giả lập"]</a>
+                        <a asp-controller="Dev" asp-action="SimulateBank" asp-route-code="@b.Code" asp-route-amount="@decimal.ToInt64(b.AmountDue)" target="_blank" rel="noopener">@L["Mở trang giả lập"]</a>
                     </div>
                 }
             </section>
@@ -204,6 +204,11 @@
             </ul>
             <div class="d-flex justify-content-between fw-bold border-top pt-2"><span>@L["Tổng tiền phòng"]</span><span>@Money(b.TotalAmount)</span></div>
             <div class="d-flex justify-content-between small"><span>@L["Tiền cọc ({0:P0})", b.DepositRate]</span><span>@Money(b.DepositAmount)</span></div>
+            @if (b.DiscountAmount > 0)
+            {
+                <div class="d-flex justify-content-between small text-success"><span>@L["Giảm từ voucher {0}", b.Voucher?.Code ?? ""]</span><span>−@Money(b.DiscountAmount)</span></div>
+                <div class="d-flex justify-content-between small fw-semibold"><span>@L["Cọc cần chuyển"]</span><span>@Money(b.AmountDue)</span></div>
+            }
             <div class="d-flex justify-content-between small text-muted"><span>@L["Thanh toán tại homestay"]</span><span>@Money(b.TotalAmount - b.DepositAmount)</span></div>
         </section>
         @if (Model.IsOwnAccount)

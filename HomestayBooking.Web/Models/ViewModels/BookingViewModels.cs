@@ -35,7 +35,11 @@ public class BookingCreateViewModel
     [Display(Name = "Yêu cầu đặc biệt")]
     public string? SpecialRequests { get; set; }
 
+    [Display(Name = "Voucher")]
+    public int? VoucherId { get; set; }
+
     // Hiển thị
+    public IReadOnlyList<VoucherOption> Vouchers { get; set; } = [];
     public string HomestayName { get; set; } = string.Empty;
     public int HomestayId { get; set; }
     public string RoomTypeName { get; set; } = string.Empty;
@@ -121,3 +125,21 @@ public class RegisterViewModel
 
     public string? ReturnUrl { get; set; }
 }
+
+public record VoucherOption(int Id, string Code, decimal Balance, DateOnly ExpiresOn);
+
+public class VoucherIssueViewModel
+{
+    [Required(ErrorMessage = "Vui lòng nhập {0}.")]
+    [StringLength(20)]
+    [Display(Name = "Mã đơn bị ảnh hưởng")]
+    public string BookingCode { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Vui lòng nhập {0}.")]
+    [StringLength(500, ErrorMessage = "{0} tối đa {1} ký tự.")]
+    [Display(Name = "Lý do cấp")]
+    public string Reason { get; set; } = string.Empty;
+}
+
+public record VoucherRow(int Id, string Code, string CustomerName, string CustomerPhone, decimal Amount, decimal Balance,
+    DateOnly ExpiresOn, VoucherStatus Status, string Reason, string? SourceBookingCode, string IssuedBy, DateTime IssuedAt, int UsedCount);

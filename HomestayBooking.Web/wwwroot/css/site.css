@@ -970,3 +970,8 @@ a.area-tile {
   color: inherit;
   text-decoration: none;
 }
+
+.site-nav .nav-link,
+.site-nav .btn {
+  white-space: nowrap;
+}

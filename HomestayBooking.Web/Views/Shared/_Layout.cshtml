@@ -18,6 +18,7 @@
         ("RoomCategories", L["Loại phòng"], "bi-grid-3x3-gap", "tone-emerald"),
         ("Amenities", L["Tiện nghi"], "bi-stars", "tone-amber"),
         ("Holidays", L["Ngày lễ"], "bi-calendar-heart", "tone-rose"),
+        ("Vouchers", L["Voucher"], "bi-ticket-perforated", "tone-pink"),
     };
 }
 <!DOCTYPE html>
@@ -38,7 +39,7 @@
     <a class="visually-hidden-focusable position-absolute top-0 start-0 m-2 btn btn-brand" href="#main">@L["Bỏ qua đến nội dung chính"]</a>
     <header class="sticky-top">
         <div class="rainbow-bar" aria-hidden="true"></div>
-        <nav class="navbar navbar-expand-lg site-nav py-2">
+        <nav class="navbar navbar-expand-xl site-nav py-2">
             <div class="container">
                 <a class="navbar-brand d-flex align-items-center gap-2" asp-area="" asp-controller="Home" asp-action="Index">
                     <span class="brand-mark" aria-hidden="true"><i class="bi bi-house-heart-fill"></i></span>
@@ -49,7 +50,7 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="mainNav">
-                    <ul class="navbar-nav me-auto gap-lg-1 mt-2 mt-lg-0">
+                    <ul class="navbar-nav me-auto gap-xl-1 mt-2 mt-xl-0">
                         <li class="nav-item">
                             <a class="nav-link tone-sky @Active(null, "Home")" asp-area="" asp-controller="Home" asp-action="Index">
                                 <i class="bi bi-house-door" aria-hidden="true"></i> @L["Trang chủ"]
@@ -105,7 +106,7 @@
                             </li>
                         }
                     </ul>
-                    <div class="d-flex flex-wrap align-items-center gap-2 py-2 py-lg-0">
+                    <div class="d-flex flex-wrap flex-xl-nowrap align-items-center gap-2 py-2 py-xl-0">
                         <form asp-area="" asp-controller="Language" asp-action="Set" method="post" class="btn-group lang-switch" role="group" aria-label="@L["Ngôn ngữ"]">
                             <input type="hidden" name="returnUrl" value="@currentUrl" />
                             <button type="submit" name="culture" value="vi-VN" lang="vi" aria-pressed="@(culture == "vi-VN" ? "true" : "false")"

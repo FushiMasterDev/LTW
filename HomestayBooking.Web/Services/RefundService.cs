@@ -52,7 +52,7 @@ public class RefundService
     }
 
     /// <summary>
-    /// Hoàn = cọc × % của quy tắc có MinDaysBefore lớn nhất mà ≤ số ngày còn lại trước ngày nhận phòng.
+    /// Hoàn = tiền khách đã chuyển (cọc − giảm giá voucher) × % của quy tắc có MinDaysBefore lớn nhất mà ≤ số ngày còn lại trước ngày nhận phòng.
     /// Chỉ tính khi cọc đã được duyệt (Deposited, Confirmed); chưa có cọc thì hoàn 0.
     /// </summary>
     public async Task<RefundQuote> QuoteCancellationAsync(Booking booking)
@@ -70,6 +70,6 @@ public class RefundService
             .Where(r => r.MinDaysBefore <= daysBefore)
             .MaxBy(r => r.MinDaysBefore)?.RefundPercent ?? 0;
 
-        return new RefundQuote(daysBefore, percent, PricingService.RoundToThousand(booking.DepositAmount * percent / 100m));
+        return new RefundQuote(daysBefore, percent, PricingService.RoundToThousand(booking.AmountDue * percent / 100m));
     }
 }

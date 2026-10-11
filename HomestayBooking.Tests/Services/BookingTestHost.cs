@@ -30,6 +30,7 @@ public sealed class BookingTestHost : IDisposable
 
     public TestClock Clock { get; } = new() { Now = new DateTimeOffset(2026, 11, 10, 3, 0, 0, TimeSpan.Zero) };
     public BookingOptions Options { get; } = new();
+    public VoucherOptions VoucherRules { get; } = new();
     public BankAccountOptions Bank { get; } = new() { BankCode = "MB", AccountNumber = FujiAccount, AccountName = "CONG TY FUJI" };
     public ApplicationDbContext Db { get; }
 
@@ -107,8 +108,11 @@ public sealed class BookingTestHost : IDisposable
     {
         db ??= Db;
         return new BookingService(db, Pricing(db), Refunds(db), new BookingCodeGenerator(db), new NotificationService(db),
-            Clock, Microsoft.Extensions.Options.Options.Create(Options));
+            Clock, Microsoft.Extensions.Options.Options.Create(Options), Vouchers(db));
     }
+
+    public VoucherService Vouchers(ApplicationDbContext? db = null) =>
+        new(db ?? Db, new NotificationService(db ?? Db), Clock, Microsoft.Extensions.Options.Options.Create(VoucherRules));
 
     public ReceiptReviewService Receipts(ApplicationDbContext? db = null)
     {

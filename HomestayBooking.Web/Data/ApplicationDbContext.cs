@@ -56,6 +56,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<SettlementItem> SettlementItems => Set<SettlementItem>();
 
     public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<Voucher> Vouchers => Set<Voucher>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<MessageLog> MessageLogs => Set<MessageLog>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
@@ -76,6 +77,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         AsString<PaymentStatus>(20);
         AsString<BankProvider>(20);
         AsString<BankMatchStatus>(20);
+        AsString<VoucherStatus>(20);
         AsString<RoomBlockReason>(20);
         AsString<DayType>(10);
         AsString<AreaGroup>(20);
@@ -338,6 +340,26 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
             e.HasOne(x => x.Booking).WithMany(b => b.RoomNights).HasForeignKey(x => x.BookingId);
         });
 
+        builder.Entity<Voucher>(e =>
+        {
+            e.Property(x => x.Code).HasMaxLength(20).IsRequired();
+            e.HasIndex(x => x.Code).IsUnique();
+            e.Property(x => x.Reason).HasMaxLength(500).IsRequired();
+            e.Property(x => x.RevokeReason).HasMaxLength(500);
+            e.Property(x => x.Balance).IsConcurrencyToken();
+            e.HasIndex(x => new { x.CustomerId, x.Status });
+            // Mỗi đơn bị làm hỏng chỉ được cấp một voucher
+            e.HasIndex(x => x.SourceBookingId).IsUnique().HasFilter("[SourceBookingId] IS NOT NULL");
+            e.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_Vouchers_Amount", "[Amount] > 0");
+                t.HasCheckConstraint("CK_Vouchers_Balance", "[Balance] >= 0 AND [Balance] <= [Amount]");
+            });
+            e.HasOne(x => x.Customer).WithMany(c => c.Vouchers).HasForeignKey(x => x.CustomerId);
+            e.HasOne(x => x.SourceBooking).WithMany().HasForeignKey(x => x.SourceBookingId);
+            e.HasOne(x => x.IssuedByEmployee).WithMany().HasForeignKey(x => x.IssuedByEmployeeId);
+        });
+
         // ---- E. Đơn đặt phòng ----
 
         builder.Entity<Booking>(e =>
@@ -363,7 +385,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
                 t.HasCheckConstraint("CK_Bookings_Dates", "[CheckOut] > [CheckIn]");
                 t.HasCheckConstraint("CK_Bookings_Guests", "[Guests] > 0");
                 t.HasCheckConstraint("CK_Bookings_Amounts", "[TotalAmount] > 0 AND [DepositAmount] >= 0 AND [DepositAmount] <= [TotalAmount]");
+                // Voucher chỉ trừ vào cọc và khách luôn phải chuyển một khoản > 0
+                t.HasCheckConstraint("CK_Bookings_Discount", "[DiscountAmount] >= 0 AND [DiscountAmount] < [DepositAmount]");
             });
+            e.HasOne(x => x.Voucher).WithMany(v => v.UsedByBookings).HasForeignKey(x => x.VoucherId);
             e.HasOne(x => x.Customer).WithMany(c => c.Bookings).HasForeignKey(x => x.CustomerId);
             e.HasOne(x => x.CreatedByEmployee).WithMany().HasForeignKey(x => x.CreatedByEmployeeId);
             e.HasOne(x => x.AssignedEmployee).WithMany().HasForeignKey(x => x.AssignedEmployeeId);

@@ -31,6 +31,7 @@ public class BookingsController : Controller
     private readonly ReceiptFileStore _receiptFiles;
     private readonly VietQrService _qr;
     private readonly CustomerAccountService _customers;
+    private readonly VoucherService _vouchers;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IWebHostEnvironment _env;
     private readonly TimeProvider _clock;
@@ -45,6 +46,7 @@ public class BookingsController : Controller
         ReceiptFileStore receiptFiles,
         VietQrService qr,
         CustomerAccountService customers,
+        VoucherService vouchers,
         UserManager<ApplicationUser> userManager,
         IWebHostEnvironment env,
         TimeProvider clock,
@@ -58,6 +60,7 @@ public class BookingsController : Controller
         _receiptFiles = receiptFiles;
         _qr = qr;
         _customers = customers;
+        _vouchers = vouchers;
         _userManager = userManager;
         _env = env;
         _clock = clock;
@@ -70,7 +73,7 @@ public class BookingsController : Controller
 
     /// <summary>Giá từng đêm + tiền cọc + số phòng trống cho form đặt phòng.</summary>
     [HttpGet]
-    public async Task<IActionResult> Quote(int roomTypeId, DateOnly checkIn, DateOnly checkOut)
+    public async Task<IActionResult> Quote(int roomTypeId, DateOnly checkIn, DateOnly checkOut, int? voucherId)
     {
         if (checkIn < VietnamTime.Today(_clock))
         {
@@ -80,12 +83,15 @@ public class BookingsController : Controller
         {
             var quote = await _pricing.QuoteAsync(roomTypeId, checkIn, checkOut);
             var free = (await _bookings.FreeRoomIdsAsync(roomTypeId, checkIn, checkOut)).Count;
+            var discount = voucherId is int id ? await PreviewDiscountAsync(id, roomTypeId, quote.Total) : 0;
             return Json(new
             {
                 ok = true,
                 freeRooms = free,
                 total = quote.Total,
                 deposit = quote.Deposit,
+                discount,
+                amountDue = quote.Deposit - discount,
                 nights = quote.Nights.Select(n => new { date = n.Date.ToString("dd/MM (ddd)"), dayType = DayTypeLabel(n.DayType), price = n.Price }),
             });
         }
@@ -93,6 +99,22 @@ public class BookingsController : Controller
         {
             return Json(new { ok = false, error = _localizer[ex.Message].Value });
         }
+    }
+
+    /// <summary>Số tiền voucher sẽ giảm cho đơn này; 0 nếu voucher không thuộc khách đang đăng nhập hoặc không dùng được.</summary>
+    private async Task<decimal> PreviewDiscountAsync(int voucherId, int roomTypeId, decimal total)
+    {
+        var personId = User.PersonId();
+        var today = VietnamTime.Today(_clock);
+        var voucher = await _db.Vouchers.AsNoTracking().SingleOrDefaultAsync(v => v.Id == voucherId
+            && v.Customer.PersonId == personId && v.Status == VoucherStatus.Active && v.Balance > 0 && v.ExpiresOn >= today);
+        var commissionRate = await _db.RoomTypes
+            .Where(t => t.Id == roomTypeId)
+            .SelectMany(t => t.Homestay.Contracts)
+            .Where(c => c.Status == ContractStatus.Active && c.StartDate <= today && c.EndDate >= today)
+            .Select(c => (decimal?)c.CommissionRate)
+            .SingleOrDefaultAsync();
+        return voucher is null || commissionRate is null ? 0 : _vouchers.PreviewDiscount(voucher, total, commissionRate.Value);
     }
 
     private string DayTypeLabel(DayType type) => type switch
@@ -153,7 +175,7 @@ public class BookingsController : Controller
             var booking = await _bookings.CreateAsync(new CreateBookingRequest(
                 customer.Id, model.RoomTypeId, model.CheckIn!.Value, model.CheckOut!.Value, model.Guests,
                 model.ContactName, PhoneNumberNormalizer.ToE164(model.ContactPhone)!, model.SpecialRequests,
-                SourceChannel.Web, new Actor(ActorType.Customer, user!.Id)));
+                SourceChannel.Web, new Actor(ActorType.Customer, user!.Id), model.VoucherId));
             return RedirectToAction(nameof(Details), new { id = booking.Code });
         }
         catch (BookingException ex)
@@ -180,6 +202,11 @@ public class BookingsController : Controller
         model.MaxGuests = type.MaxGuests;
         model.HomestayId = type.HomestayId;
         model.HomestayName = type.HomestayName;
+        var personId = User.PersonId();
+        var customerId = await _db.Customers.Where(c => c.PersonId == personId).Select(c => (int?)c.Id).SingleOrDefaultAsync();
+        model.Vouchers = customerId is int cid
+            ? (await _vouchers.UsableAsync(cid)).Select(v => new VoucherOption(v.Id, v.Code, v.Balance, v.ExpiresOn)).ToList()
+            : [];
         if (model.CheckIn >= today && model.CheckOut > model.CheckIn)
         {
             try
@@ -208,6 +235,7 @@ public class BookingsController : Controller
             .Include(b => b.Payments)
             .Include(b => b.Histories)
             .Include(b => b.CancellationPolicy).ThenInclude(p => p.Rules)
+            .Include(b => b.Voucher)
             .AsSplitQuery()
             .SingleOrDefaultAsync(b => b.Code == id);
         if (booking is null || !CanAccess(booking))
@@ -221,7 +249,7 @@ public class BookingsController : Controller
         {
             Booking = booking,
             Bank = _qr.Account,
-            QrImageUrl = awaiting ? _qr.BuildImageUrl(booking.DepositAmount, booking.Code) : null,
+            QrImageUrl = awaiting ? _qr.BuildImageUrl(booking.AmountDue, booking.Code) : null,
             CanUploadReceipt = awaiting,
             CancelQuote = cancelQuote,
             CanCancel = BookingService.CanTransition(booking.Status, BookingStatus.Cancelled) && cancelQuote.DaysBefore >= 0,
@@ -335,6 +363,10 @@ public class BookingsController : Controller
             .Where(b => b.Customer.PersonId == personId)
             .OrderByDescending(b => b.CreatedAt)
             .Select(b => new MyBookingRow(b.Code, b.Homestay.Name, b.RoomType.Name, b.CheckIn, b.CheckOut, b.TotalAmount, b.Status, b.CreatedAt));
+        var customerId = await _db.Customers.Where(c => c.PersonId == personId).Select(c => (int?)c.Id).SingleOrDefaultAsync();
+        ViewBag.Vouchers = customerId is int cid
+            ? (await _vouchers.UsableAsync(cid)).Select(v => new VoucherOption(v.Id, v.Code, v.Balance, v.ExpiresOn)).ToList()
+            : new List<VoucherOption>();
         return View(await PaginatedList<MyBookingRow>.CreateAsync(query, page, PageSize));
     }
 

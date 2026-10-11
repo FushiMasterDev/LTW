@@ -271,5 +271,15 @@ public class SeedDataTests
         Assert.All(reviews, r => Assert.Equal(BookingStatus.Completed, r.Booking.Status));
         Assert.Contains(reviews, r => r.IsHidden);
         Assert.Contains(reviews, r => r.OwnerReply != null);
+
+        // Mỗi đơn bị homestay từ chối có một voucher xin lỗi cho đúng khách đó
+        var vouchers = await db.Vouchers.Include(v => v.SourceBooking).ToListAsync();
+        Assert.Equal(bookings.Count(b => b.Status == BookingStatus.Rejected), vouchers.Count);
+        Assert.All(vouchers, v =>
+        {
+            Assert.Equal(v.SourceBooking!.CustomerId, v.CustomerId);
+            Assert.InRange(v.Amount, 50_000, 200_000);
+            Assert.Equal(v.Amount, v.Balance);
+        });
     }
 }

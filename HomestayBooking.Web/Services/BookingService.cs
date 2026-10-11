@@ -16,7 +16,8 @@ public record CreateBookingRequest(
     string ContactPhone,
     string? SpecialRequests,
     SourceChannel SourceChannel,
-    Actor Actor);
+    Actor Actor,
+    int? VoucherId = null);
 
 /// <summary>
 /// Tạo đơn và đổi trạng thái đơn — mọi thay đổi trạng thái đi qua <see cref="ChangeStatusAsync"/>
@@ -41,6 +42,7 @@ public class BookingService
     private readonly NotificationService _notifications;
     private readonly TimeProvider _clock;
     private readonly BookingOptions _options;
+    private readonly VoucherService _vouchers;
 
     public BookingService(
         ApplicationDbContext db,
@@ -49,8 +51,10 @@ public class BookingService
         BookingCodeGenerator codes,
         NotificationService notifications,
         TimeProvider clock,
-        IOptions<BookingOptions> options)
+        IOptions<BookingOptions> options,
+        VoucherService vouchers)
     {
+        _vouchers = vouchers;
         _db = db;
         _pricing = pricing;
         _refunds = refunds;
@@ -158,6 +162,11 @@ public class BookingService
                 ActorAccountId = request.Actor.AccountId,
                 ChangedAt = now,
             });
+            if (request.VoucherId is int voucherId)
+            {
+                // Trừ số dư voucher trong cùng lần lưu với đơn: đặt phòng lỗi thì voucher không bị trừ
+                await _vouchers.ApplyAsync(booking, voucherId, request.CustomerId);
+            }
             _db.Bookings.Add(booking);
 
             try
@@ -165,6 +174,12 @@ public class BookingService
                 await _db.SaveChangesAsync();
                 await transaction.CommitAsync();
                 return booking;
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // Số dư voucher vừa bị một đơn khác cùng lúc trừ (Balance là concurrency token)
+                _db.ChangeTracker.Clear();
+                throw new BookingException("Voucher vừa được dùng cho đơn khác, vui lòng thử lại.");
             }
             catch (DbUpdateException)
             {
@@ -214,6 +229,7 @@ public class BookingService
         }
 
         var now = UtcNow;
+        var voucherRestorePercent = 100;
         switch (to)
         {
             case BookingStatus.AwaitingPayment:
@@ -238,12 +254,15 @@ public class BookingService
                 break;
             case BookingStatus.Rejected:
                 // Homestay từ chối sau khi khách đã cọc → hoàn 100% (D12)
-                booking.RefundAmount = booking.DepositAmount;
+                booking.RefundAmount = booking.AmountDue;
                 booking.CancelledAt = now;
                 booking.CancelReason = note;
                 break;
             case BookingStatus.Cancelled:
-                booking.RefundAmount = (await _refunds.QuoteCancellationAsync(booking)).RefundAmount;
+                var refund = await _refunds.QuoteCancellationAsync(booking);
+                booking.RefundAmount = refund.RefundAmount;
+                // Đã có cọc: voucher trả lại theo cùng tỷ lệ hoàn tiền; chưa có cọc: trả lại đủ
+                voucherRestorePercent = from is BookingStatus.Deposited or BookingStatus.Confirmed ? refund.RefundPercent : 100;
                 booking.CancelledAt = now;
                 booking.CancelReason = note;
                 break;
@@ -253,6 +272,12 @@ public class BookingService
             case BookingStatus.Expired:
                 booking.CancelledAt = now;
                 break;
+        }
+
+        if (to is BookingStatus.Cancelled or BookingStatus.Rejected or BookingStatus.Expired)
+        {
+            // Đơn không thành (không do khách vắng mặt) → trả lại số tiền đã giảm vào voucher
+            await _vouchers.RestoreAsync(booking, voucherRestorePercent);
         }
 
         if (!to.HoldsRoom())

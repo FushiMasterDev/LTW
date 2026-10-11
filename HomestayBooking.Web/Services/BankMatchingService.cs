@@ -137,11 +137,11 @@ public partial class BankMatchingService
         tx.MatchedBooking = booking;
         switch (booking.Status)
         {
-            case BookingStatus.AwaitingPayment or BookingStatus.PaymentSubmitted when tx.Amount >= booking.DepositAmount:
+            case BookingStatus.AwaitingPayment or BookingStatus.PaymentSubmitted when tx.Amount >= booking.AmountDue:
                 tx.MatchStatus = BankMatchStatus.Matched;
-                if (tx.Amount > booking.DepositAmount)
+                if (tx.Amount > booking.AmountDue)
                 {
-                    tx.Note = $"Chuyển dư {tx.Amount - booking.DepositAmount:N0}đ.";
+                    tx.Note = $"Chuyển dư {tx.Amount - booking.AmountDue:N0}đ.";
                 }
                 ApprovePayment(booking, tx);
                 await _bookings.ApplyStatusAsync(booking, BookingStatus.Deposited, Actor.System, $"Tự khớp giao dịch {tx.ProviderTransactionId}.");
@@ -149,7 +149,7 @@ public partial class BankMatchingService
 
             case BookingStatus.AwaitingPayment or BookingStatus.PaymentSubmitted:
                 tx.MatchStatus = BankMatchStatus.Underpaid;
-                tx.Note = $"Thiếu {booking.DepositAmount - tx.Amount:N0}đ so với tiền cọc.";
+                tx.Note = $"Thiếu {booking.AmountDue - tx.Amount:N0}đ so với số tiền cần chuyển.";
                 break;
 
             case BookingStatus.Expired or BookingStatus.Cancelled or BookingStatus.Rejected:

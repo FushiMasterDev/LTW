@@ -50,7 +50,7 @@ public class ReceiptReviewService
         {
             Type = PaymentType.Deposit,
             Method = PaymentMethod.ManualReceipt,
-            Amount = booking.DepositAmount,
+            Amount = booking.AmountDue,
             ReceiptImageUrl = receiptPath,
             TransferContent = string.IsNullOrWhiteSpace(transferContent) ? null : transferContent.Trim(),
             SubmittedByAccountId = actor.AccountId,

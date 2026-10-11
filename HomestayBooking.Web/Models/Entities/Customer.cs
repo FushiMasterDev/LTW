@@ -15,4 +15,5 @@ public class Customer
     public PersonProfile Person { get; set; } = null!;
     public CustomerProfile? Profile { get; set; }
     public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+    public ICollection<Voucher> Vouchers { get; set; } = new List<Voucher>();
 }

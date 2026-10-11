@@ -1,6 +1,7 @@
 # Fuji Homestay — Thiết kế Database v1.0
 
-> **Phiên bản:** 1.3 — 2026-10-11 (giữ phòng 15 phút khi đặt; cọc qua QR **MB Bank** tự đối soát, ảnh bill làm dự phòng; **đã áp vào code**, migration `Init`)
+> **Phiên bản:** 1.4 — 2026-10-11 (thêm **voucher** — Q4, D14, migration `Vouchers`)  
+> 1.3 — 2026-10-11 (giữ phòng 15 phút khi đặt; cọc qua QR **MB Bank** tự đối soát, ảnh bill làm dự phòng; **đã áp vào code**, migration `Init`)
 > **Trạng thái:** Đã chốt các quyết định ở mục 1; dùng làm cơ sở viết ERD và sửa code (EF Core Code First).
 > **Nguồn:**
 > - `fuij_homestay_login_design_v5.md` → toàn bộ module **Tài khoản** (đã triển khai trong code).
@@ -44,6 +45,7 @@
 | D8 | **Tiền cọc không được hoàn** (hủy muộn, không đến): Fuji giữ hoa hồng, homestay nhận phần còn lại — tính như đơn hoàn thành | Công thức mục 7.3 |
 | D9 | Homestay có **30 phút** để xác nhận (BR-06), tính từ khi cọc được duyệt (D12); quá hạn → cảnh báo nhân viên, đơn không tự đổi trạng thái | `Booking.ConfirmDeadlineAt` |
 | D10 | Chính sách hủy riêng của homestay **được ưu tiên** hơn chính sách chung của Fuji | `CancellationPolicy`, `CancellationRule` |
+| D14 | **Voucher xin lỗi khách** (Q4): chỉ quản lý cấp, gắn với một khách; giá trị = 5% tổng đơn gốc (50.000–200.000đ), hạn 6 tháng; có **số dư**, dùng nhiều lần. Mỗi đơn chỉ giảm tối đa **20% hoa hồng Fuji** của đơn đó (Fuji nhận 300k hoa hồng thì chịu tối đa 60k), trừ vào tiền cọc. Fuji chịu toàn bộ, homestay nhận đủ | Bảng `Vouchers`; `Booking.VoucherId`, `Booking.DiscountAmount` |
 
 ---
 
@@ -146,6 +148,7 @@ BankTransaction ──o Booking (MatchedBookingId: kể cả giao dịch đến 
 | | `BookingChangeRequests` | ○ | **Mới** |
 | **F. Tiền** | `Payments` | ⭐ | Sửa: thêm `Method` (tự khớp / bill), `BankTransactionId`, **ảnh bill** `ReceiptImageUrl`, `Status`, người duyệt |
 | | `BankTransactions` | ⭐ | **Mới** — giao dịch ngân hàng báo về (D13) |
+| | `Vouchers` | ⭐ | **Mới** — voucher xin lỗi khách (Q4, D14) |
 | | `Settlements` | ⭐ | Sửa: kỳ theo năm/tháng/số kỳ, trạng thái |
 | | `SettlementItems` | ⭐ | **Mới** |
 | **G. Khác** | `Reviews` | ⭐ | Sửa: thêm `HomestayId`, trả lời của chủ |
@@ -153,7 +156,7 @@ BankTransaction ──o Booking (MatchedBookingId: kể cả giao dịch đến 
 | | `MessageLogs` | ○ | **Mới** |
 | | `AuditLogs` | ○ | **Mới** |
 
-**Tổng:** 39 bảng của ứng dụng (36 ⭐, 3 ○), tính cả `AspNetUsers`, `AspNetRoles`, `AspNetUserRoles` cộng 4 bảng phụ sẵn có của ASP.NET Identity (`AspNetUserClaims`, `AspNetUserLogins`, `AspNetUserTokens`, `AspNetRoleClaims`) → **43 bảng** trong migration.
+**Tổng:** 40 bảng của ứng dụng (37 ⭐, 3 ○), tính cả `AspNetUsers`, `AspNetRoles`, `AspNetUserRoles` cộng 4 bảng phụ sẵn có của ASP.NET Identity (`AspNetUserClaims`, `AspNetUserLogins`, `AspNetUserTokens`, `AspNetRoleClaims`) → **44 bảng** trong migration.
 
 ---
 
@@ -458,7 +461,9 @@ Chính sách đã có đơn dùng thì **không sửa**; muốn đổi thì tạ
 | | DepositAmount | decimal(18,0) | NOT NULL; CHECK `DepositAmount <= TotalAmount` |
 | | CommissionRate | decimal(5,4) | NOT NULL — lấy từ hợp đồng đang hiệu lực |
 | | CancellationPolicyId | int | FK, NOT NULL |
-| | RefundAmount | decimal(18,0) | NULL — tính khi hủy (BR-04) |
+| | RefundAmount | decimal(18,0) | NULL — tính khi hủy (BR-04), trên số tiền khách **thực chuyển** (`DepositAmount − DiscountAmount`) |
+| Voucher | VoucherId | int | FK → Vouchers, NULL (D14) |
+| | DiscountAmount | decimal(18,0) | NOT NULL, mặc định 0 — số tiền voucher đã giảm (snapshot). CHECK `0 ≤ DiscountAmount < DepositAmount`. Số tiền trên QR / webhook so khớp = `DepositAmount − DiscountAmount` |
 | Trùng phòng | ReplacedByBookingId | int | FK → Bookings, NULL — đơn thay thế khi Fuji chuyển khách sang phòng khác (BR-11) |
 
 **Vì sao lưu snapshot:** giá, tỷ lệ cọc, hoa hồng và chính sách hủy có thể thay đổi sau khi đặt. Đơn cũ và bảng đối soát cũ phải giữ đúng số liệu tại thời điểm đặt.
@@ -577,6 +582,32 @@ Lưu **mọi** khoản tiền vào tài khoản nhận cọc của Fuji mà dị
 4. Toàn bộ chạy trong **một transaction**; webhook trả `200` ngay cả khi giao dịch đã có (trùng `ProviderTransactionId`).
 
 **Bảo mật webhook:** chỉ nhận qua HTTPS, kiểm tra khóa API trong header (`Authorization: Apikey …`) do SePay/Casso gửi; khóa để trong user-secrets. Endpoint giả lập (`Simulator`) **chỉ bật ở môi trường Development** và chỉ nhân viên quản lý dùng được.
+
+#### `Vouchers` — voucher xin lỗi khách (**mới**, Q4, D14)
+
+| Cột | Kiểu | Ràng buộc / ghi chú |
+|---|---|---|
+| Id | int | PK |
+| Code | nvarchar(20) | NOT NULL, UNIQUE — `VC` + 8 ký tự (bỏ 0/O, 1/I) |
+| CustomerId | int | FK, NOT NULL — chỉ khách này dùng được |
+| Amount | decimal(18,0) | NOT NULL, CHECK > 0 — giá trị lúc cấp |
+| Balance | decimal(18,0) | NOT NULL, CHECK `0 ≤ Balance ≤ Amount`. **Concurrency token**: hai đơn dùng cùng lúc → đơn sau phải thử lại |
+| ExpiresOn | date | NOT NULL = ngày cấp + 6 tháng |
+| Status | nvarchar(20) | `Active` / `UsedUp` / `Expired` / `Revoked` |
+| Reason | nvarchar(500) | NOT NULL |
+| SourceBookingId | int | FK → Bookings, NULL; UNIQUE (lọc khác NULL) — mỗi đơn bị ảnh hưởng chỉ được cấp một voucher |
+| IssuedByEmployeeId | int | FK, NOT NULL — Manager / Administrator (service) |
+| IssuedAt | datetime2 | NOT NULL |
+| RevokedAt, RevokeReason | datetime2, nvarchar(500) | NULL |
+
+Quy tắc (service `VoucherService`, cấu hình `appsettings: Voucher`):
+- Giảm cho một đơn = `MIN(Balance, làm tròn xuống nghìn(TotalAmount × CommissionRate × 20%))`; giảm 0đ thì không cho dùng.
+- Trừ số dư trong **cùng transaction** với việc tạo đơn: đặt phòng lỗi thì voucher không bị trừ.
+- Đơn không thành → cộng trả vào số dư (nếu voucher chưa hết hạn / chưa bị thu hồi):
+  - Homestay từ chối, hết hạn giữ phòng, hủy khi chưa có cọc → trả 100% số đã giảm.
+  - Hủy sau khi có cọc → trả **theo cùng tỷ lệ hoàn tiền** (hoàn 50% thì voucher cũng trả 50%), để khách dùng voucher không mất ít hơn khách không dùng.
+  - Không đến (`NoShow`) → không trả.
+- Job mỗi phút chuyển voucher quá `ExpiresOn` sang `Expired`.
 
 #### `Settlements` — bảng đối soát một homestay một kỳ
 
@@ -721,14 +752,15 @@ Mọi lần đổi trạng thái đi qua một hàm duy nhất (`BookingService.
 - `TotalAmount = Σ BookingNights.Price`
 - `DepositAmount = làm tròn đến 1.000đ (TotalAmount × DepositRate)` (BR-01)
 - `CommissionRate` = `Contracts.CommissionRate` của hợp đồng `Active` tại ngày đặt.
+- Có voucher (D14): `DiscountAmount = MIN(Voucher.Balance, làm tròn xuống nghìn(TotalAmount × CommissionRate × 20%))`; khách chuyển `AmountDue = DepositAmount − DiscountAmount`.
 
 ### 7.2. Khi hủy
 
 - `DaysBefore = CheckIn − ngày hủy` (theo giờ Việt Nam).
 - `RefundPercent` = quy tắc có `MinDaysBefore` lớn nhất mà ≤ `DaysBefore` trong chính sách của đơn.
-- `RefundAmount = DepositAmount × RefundPercent / 100`. Đơn chưa có cọc → 0.
+- `RefundAmount = (DepositAmount − DiscountAmount) × RefundPercent / 100` (tính trên tiền khách thực chuyển). Đơn chưa có cọc → 0. Voucher được trả lại `DiscountAmount × RefundPercent / 100`.
 - `NoShow` → `RefundAmount = 0`.
-- Homestay từ chối (`Rejected`) → `RefundAmount = DepositAmount` (100%), không phụ thuộc chính sách hủy.
+- Homestay từ chối (`Rejected`) → `RefundAmount = DepositAmount − DiscountAmount` (100% tiền đã chuyển) và trả đủ voucher, không phụ thuộc chính sách hủy.
 - Hủy khi đơn đang `AwaitingPayment` / `PaymentSubmitted` (chưa duyệt cọc): không có cọc được ghi nhận → 0; nếu khách đã chuyển tiền thì kế toán duyệt rồi hoàn theo chính sách.
 
 ### 7.3. Khi đối soát (D7, D8)
@@ -740,6 +772,10 @@ RetainedAmount   = DepositAmount − RefundAmount            (đơn hoàn thành
 CommissionAmount = MIN(TotalAmount × CommissionRate, RetainedAmount)
 PayoutAmount     = RetainedAmount − CommissionAmount        (Fuji chuyển cho homestay)
 ```
+
+Có voucher: `RetainedAmount` tính **như đơn không có voucher** = `DepositAmount × (1 − p)`, với `p = RefundAmount / (DepositAmount − DiscountAmount)` là tỷ lệ hoàn đã áp, nên **homestay nhận đủ**. Phần giảm giá do Fuji chịu: Fuji thực thu `CommissionAmount − DiscountAmount × (1 − RefundPercent/100)` ≥ 80% hoa hồng.
+
+Ví dụ voucher: tổng 2.700.000đ, hoa hồng 12% = 324.000đ → giảm tối đa 64.000đ; khách chuyển 810.000 − 64.000 = 746.000đ; Fuji chuyển homestay 486.000đ như bình thường; Fuji còn 260.000đ.
 
 Ví dụ: tổng 2.000.000đ, cọc 600.000đ, hoa hồng 12%.
 
@@ -847,7 +883,7 @@ Vì chưa triển khai thật: sửa entity xong thì **tạo lại migration `I
 | Q1 | ~~Kế toán chỉ làm giờ hành chính~~ — **đã giải quyết bằng D13**: chuyển khoản qua QR được tự xác nhận 24/7. Chỉ đơn đi đường ảnh bill vào ban đêm mới phải chờ tới giờ làm việc | Thời gian chờ | Giao diện khuyến khích quét QR; báo khách đi đường bill rằng Fuji duyệt trong giờ làm việc |
 | Q2 | ~~Kế toán từ chối bill bao nhiêu lần thì hủy hẳn?~~ — **đã chốt (11/10)**: lần 1 khách được thêm 15'; lần 2 đơn `Expired`, mở lại phòng (`Booking:MaxReceiptRejections` = 2) | `Bookings`, `Payments` | — |
 | Q3 | Khoản Fuji bù chênh lệch khi trùng phòng (BR-11) có trừ vào homestay gây ra không? — **đã chốt (11/10)**: Không trừ; ghi `Payments.Compensation` để thống kê | `SettlementItems` | — |
-| Q4 | Voucher bồi thường: giá trị, thời hạn, điều kiện | Bảng `Vouchers` | Chưa thiết kế |
+| Q4 | ~~Voucher bồi thường: giá trị, thời hạn, điều kiện~~ — **đã chốt (11/10)**: xem D14 và bảng `Vouchers` | Bảng `Vouchers` | — |
 | Q5 | Đơn bị hủy có giữ cọc: xếp kỳ đối soát theo ngày `CheckOut` dự kiến hay ngày hủy? — **đã chốt (11/10)**: Theo `CheckOut` dự kiến (thống nhất D7) | `SettlementItems` | — |
 | Q6 | Một Owner có cần nhiều tài khoản ngân hàng (mỗi homestay một tài khoản) không? — **đã chốt (11/10)**: Một tài khoản / Owner | `Owners` | — |
 | Q7 | Tiện nghi gắn với homestay hay với từng loại phòng? — **đã chốt (11/10)**: Theo homestay | `HomestayAmenities` | — |
