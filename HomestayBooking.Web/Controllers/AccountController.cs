@@ -22,14 +22,17 @@ public class AccountController : Controller
     private readonly AccountLookupService _lookup;
     private readonly AccountActivityLogger _activityLogger;
     private readonly IStringLocalizer<SharedResource> _localizer;
+    private readonly CustomerAccountService _customers;
 
     public AccountController(
         SignInManager<ApplicationUser> signInManager,
         UserManager<ApplicationUser> userManager,
         AccountLookupService lookup,
         AccountActivityLogger activityLogger,
-        IStringLocalizer<SharedResource> localizer)
+        IStringLocalizer<SharedResource> localizer,
+        CustomerAccountService customers)
     {
+        _customers = customers;
         _signInManager = signInManager;
         _userManager = userManager;
         _lookup = lookup;
@@ -71,6 +74,38 @@ public class AccountController : Controller
         }
 
         return await RedirectAfterSignInAsync(user!, model.ReturnUrl);
+    }
+
+    /// <summary>Khách tự đăng ký bằng SĐT + mật khẩu (tạm thời chưa có bước OTP).</summary>
+    [AllowAnonymous]
+    [HttpGet]
+    public IActionResult Register(string? returnUrl = null) =>
+        User.Identity?.IsAuthenticated == true
+            ? LocalRedirect(Url.IsLocalUrl(returnUrl) ? returnUrl! : "/")
+            : View(new RegisterViewModel { ReturnUrl = returnUrl });
+
+    [AllowAnonymous]
+    [HttpPost]
+    public async Task<IActionResult> Register(RegisterViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var result = await _customers.RegisterAsync(model.FullName, model.PhoneNumber, model.Email, model.Password);
+        if (!result.Succeeded)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, _localizer[error]);
+            }
+            return View(model);
+        }
+
+        await _signInManager.SignInAsync(result.User!, isPersistent: false);
+        TempData["Success"] = _localizer["Đăng ký thành công. Chào mừng bạn đến Fuji Homestay!"].Value;
+        return LocalRedirect(Url.IsLocalUrl(model.ReturnUrl) ? model.ReturnUrl! : "/");
     }
 
     [AllowAnonymous]
