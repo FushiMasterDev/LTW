@@ -1,0 +1,49 @@
+@model AmenityFormViewModel
+@{
+    var isNew = Model.Id == 0;
+    ViewData["Title"] = isNew ? L["Thêm tiện nghi"] : L["Sửa tiện nghi"];
+}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <a asp-action="Index" class="btn btn-outline-secondary mb-3"><i class="bi bi-arrow-left" aria-hidden="true"></i> @L["Tiện nghi"]</a>
+        <div class="card-soft card-accent-top tone-amber p-4">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <span class="icon-chip" aria-hidden="true"><i class="bi bi-stars"></i></span>
+                <h1 class="h4 mb-0">@ViewData["Title"]</h1>
+            </div>
+            <form asp-action="@(isNew ? "Create" : "Edit")" asp-route-id="@(isNew ? null : Model.Id)" method="post" novalidate>
+                <div class="mb-4">
+                    <label asp-for="Name" class="form-label"></label>
+                    <input asp-for="Name" class="form-control" autofocus />
+                    <span asp-validation-for="Name" class="text-danger small"></span>
+                </div>
+                <div class="mb-4">
+                    <label asp-for="Icon" class="form-label"></label>
+                    <div class="input-group">
+                        <span class="input-group-text" aria-hidden="true"><i id="iconPreview" class="bi @(Model.Icon ?? "bi-question-circle")"></i></span>
+                        <input asp-for="Icon" class="form-control" placeholder="bi-wifi" aria-describedby="iconHelp" />
+                    </div>
+                    <div id="iconHelp" class="form-text">
+                        @L["Tên class trong"] <a href="https://icons.getbootstrap.com/" target="_blank" rel="noopener">Bootstrap Icons</a>
+                    </div>
+                    <span asp-validation-for="Icon" class="text-danger small"></span>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-brand" data-loading-text="@L["Đang lưu..."]"><i class="bi bi-check2" aria-hidden="true"></i> @L["Lưu"]</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">@L["Hủy"]</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Xem trước biểu tượng khi gõ
+        $('#Icon').on('input', function () {
+            const icon = /^bi-[a-z0-9-]+$/.test(this.value.trim()) ? this.value.trim() : 'bi-question-circle';
+            $('#iconPreview').attr('class', 'bi ' + icon);
+        });
+    </script>
+}

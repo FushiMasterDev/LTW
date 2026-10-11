@@ -1,0 +1,71 @@
+@model PaginatedList<Holiday>
+@{
+    ViewData["Title"] = L["Ngày lễ"];
+    var years = (List<int>)ViewBag.Years;
+    var selectedYear = ViewData["Year"] as int?;
+}
+<partial name="_PageHead" model="@(new PageHeadModel(L["Ngày lễ"], "bi-calendar-heart", "tone-rose", L["Đêm rơi vào các ngày này được tính giá ngày lễ."]))" />
+
+<form method="get" class="card-soft filter-bar row g-2 mx-0" role="search">
+    <div class="col-sm-4 col-md-3">
+        <label for="year" class="visually-hidden">@L["Năm"]</label>
+        <select id="year" name="year" class="form-select">
+            <option value="">@L["Tất cả các năm"]</option>
+            @foreach (var y in years)
+            {
+                <option value="@y" selected="@(y == selectedYear)">@y</option>
+            }
+        </select>
+    </div>
+    <div class="col-sm-8 col-md-6">
+        <label for="q" class="visually-hidden">@L["Tìm theo tên"]</label>
+        <div class="input-group">
+            <span class="input-group-text" aria-hidden="true"><i class="bi bi-search"></i></span>
+            <input type="search" id="q" name="q" value="@ViewData["Query"]" class="form-control" placeholder="@L["Tìm theo tên"]" />
+        </div>
+    </div>
+    <div class="col-md-3 d-grid">
+        <button type="submit" class="btn btn-brand"><i class="bi bi-funnel" aria-hidden="true"></i> @L["Lọc"]</button>
+    </div>
+</form>
+
+<div class="card-soft overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-modern">
+            <thead>
+                <tr>
+                    <th scope="col">@L["Ngày"]</th>
+                    <th scope="col">@L["Tên ngày lễ"]</th>
+                    <th scope="col" class="text-end">@L["Thao tác"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    var key = item.Date.ToString("yyyy-MM-dd");
+                    var weekend = item.Date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+                    <tr>
+                        <td class="text-nowrap">
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="icon-chip tone-rose fw-bold" aria-hidden="true">@item.Date.Day</span>
+                                <div>
+                                    <div class="fw-semibold">@item.Date.ToString("d")</div>
+                                    <small class="@(weekend ? "text-danger" : "text-muted")">@item.Date.ToString("dddd")</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>@item.Name</td>
+                        <td class="text-end">
+                            <partial name="_RowActions" model="@(new RowActionsModel(key, item.Name, L["Xóa \"{0}\"?", $"{item.Name} ({item.Date:d})"]))" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (Model.Count == 0)
+    {
+        <partial name="_EmptyState" />
+    }
+</div>
+<partial name="_Pager" model="Model" />

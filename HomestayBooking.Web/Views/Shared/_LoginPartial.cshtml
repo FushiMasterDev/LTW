@@ -1,0 +1,37 @@
+@using HomestayBooking.Web.Identity
+@if (User.Identity?.IsAuthenticated == true)
+{
+    var displayName = User.DisplayName();
+    var initial = displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries).LastOrDefault()?[..1].ToUpper() ?? "?";
+    var roleTone = User.IsManagement() ? "tone-violet"
+        : User.IsActiveEmployee() ? "tone-orange"
+        : User.IsInRole(AppRoles.Owner) ? "tone-emerald"
+        : "tone-sky";
+    <div class="dropdown">
+        <button class="btn btn-outline-secondary dropdown-toggle ps-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="icon-chip @roleTone rounded-circle" style="width:2rem;height:2rem;font-size:.9rem;font-weight:700" aria-hidden="true">@initial</span>
+            <span class="text-truncate" style="max-width: 12rem">@displayName</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+                <a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="ChangePassword">
+                    <span class="icon-chip tone-sky" aria-hidden="true"><i class="bi bi-key"></i></span> @L["Đổi mật khẩu"]
+                </a>
+            </li>
+            <li><hr class="dropdown-divider" /></li>
+            <li>
+                <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
+                    <button type="submit" class="dropdown-item">
+                        <span class="icon-chip tone-rose" aria-hidden="true"><i class="bi bi-box-arrow-right"></i></span> @L["Đăng xuất"]
+                    </button>
+                </form>
+            </li>
+        </ul>
+    </div>
+}
+else
+{
+    <a class="btn btn-accent" asp-area="" asp-controller="Account" asp-action="Login">
+        <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i> @L["Đăng nhập"]
+    </a>
+}

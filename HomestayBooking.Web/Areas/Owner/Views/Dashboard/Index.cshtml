@@ -1,0 +1,82 @@
+@using HomestayBooking.Web.Areas.Owner.Controllers
+@model OwnerDashboardViewModel
+@{
+    ViewData["Title"] = L["Tổng quan chủ homestay"];
+    var homestays = Model.Homestays;
+    var activeCount = homestays.Count(h => h.Status == HomestayStatus.Active);
+    var roomCount = homestays.Sum(h => h.RoomCount);
+}
+<section class="page-banner banner-owner mb-4">
+    <h1 class="h3">@L["Tổng quan chủ homestay"]</h1>
+    <p>@L["Bạn đang quản lý {0} homestay.", homestays.Count]</p>
+</section>
+
+@if (Model.RegistrationStatus is { } status && status != OwnerRegistrationStatus.Approved)
+{
+    @* Owner chưa được duyệt chỉ xem được trạng thái hồ sơ (v5 mục 6.1) *@
+    <div class="alert @status.ToneClass() d-flex gap-2" role="status">
+        <i class="bi bi-info-circle" aria-hidden="true"></i>
+        <div>
+            <strong>@L["Trạng thái hồ sơ đăng ký"]: @L[status.DisplayName()]</strong>
+            <div>@L["Các chức năng quản lý homestay sẽ mở sau khi Fuji duyệt hồ sơ."]</div>
+            @if (!string.IsNullOrWhiteSpace(Model.ReviewNote))
+            {
+                <div class="mt-1"><em>@L["Ghi chú của Fuji"]:</em> @Model.ReviewNote</div>
+            }
+        </div>
+    </div>
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-4">
+        <div class="card-soft stat-card tone-emerald">
+            <span class="icon-chip" aria-hidden="true"><i class="bi bi-houses"></i></span>
+            <div><div class="stat-value">@homestays.Count</div><div class="stat-label">@L["Homestay"]</div></div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card-soft stat-card tone-teal">
+            <span class="icon-chip" aria-hidden="true"><i class="bi bi-toggle-on"></i></span>
+            <div><div class="stat-value">@activeCount</div><div class="stat-label">@L["Đang hoạt động"]</div></div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card-soft stat-card tone-sky">
+            <span class="icon-chip" aria-hidden="true"><i class="bi bi-door-closed"></i></span>
+            <div><div class="stat-value">@roomCount</div><div class="stat-label">@L["Phòng"]</div></div>
+        </div>
+    </div>
+</div>
+
+<h2 class="section-title"><i class="bi bi-house-gear text-brand" aria-hidden="true"></i> @L["Homestay của tôi"]</h2>
+<div class="card-soft overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-modern">
+            <thead>
+                <tr>
+                    <th scope="col">@L["Homestay"]</th>
+                    <th scope="col">@L["Khu vực"]</th>
+                    <th scope="col" class="text-end">@L["Số phòng"]</th>
+                    <th scope="col" class="text-end">@L["Trạng thái"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var h in homestays)
+                {
+                    <tr>
+                        <td class="fw-semibold">@h.Name</td>
+                        <td><i class="bi bi-geo-alt text-muted me-1" aria-hidden="true"></i>@h.AreaName</td>
+                        <td class="text-end"><span class="count-pill tone-sky">@h.RoomCount</span></td>
+                        <td class="text-end">
+                            <span class="badge-tone @h.Status.ToneClass()">@L[h.Status.DisplayName()]</span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (homestays.Count == 0)
+    {
+        <partial name="_EmptyState" />
+    }
+</div>
