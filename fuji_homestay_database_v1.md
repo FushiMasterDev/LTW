@@ -532,6 +532,7 @@ Hiển thị chi tiết giá cho khách trước khi gửi yêu cầu (FR-02).
 | ReviewedByEmployeeId | int | FK, NULL | Kế toán; **NULL khi hệ thống tự duyệt** (`BankAutoMatch`) |
 | ReviewedAt | datetime2 | NULL | |
 | RejectReason | nvarchar(500) | NULL | "Ảnh mờ", "Sai số tiền", "Không thấy giao dịch"… — gửi lại cho khách |
+| ReviewAlertSentAt | datetime2 | NULL | Bill chờ duyệt quá 2 giờ hành chính (T2–T6, 8h–17h) đã báo quản lý; job không gửi lặp. Bill gửi ngoài giờ chờ đến sáng hôm sau |
 
 - 70% còn lại khách trả **trực tiếp cho homestay** → không ghi ở đây.
 - Mỗi đơn tối đa **một** khoản cọc đang chờ duyệt hoặc đã duyệt: **UNIQUE (BookingId) WHERE Type = 'Deposit' AND Status <> 'Rejected'**. Bill bị từ chối được giữ lại làm lịch sử.

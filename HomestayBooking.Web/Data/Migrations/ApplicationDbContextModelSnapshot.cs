@@ -1263,6 +1263,9 @@ namespace HomestayBooking.Web.Data.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<DateTime?>("ReviewAlertSentAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime?>("ReviewedAt")
                         .HasColumnType("datetime2");
 

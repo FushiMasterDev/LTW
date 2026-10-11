@@ -110,6 +110,13 @@ public sealed class BookingTestHost : IDisposable
             Clock, Microsoft.Extensions.Options.Options.Create(Options));
     }
 
+    public ReceiptReviewService Receipts(ApplicationDbContext? db = null)
+    {
+        db ??= Db;
+        return new ReceiptReviewService(db, Bookings(db), new NotificationService(db), Clock,
+            Microsoft.Extensions.Options.Options.Create(Options));
+    }
+
     public BankMatchingService Matching(ApplicationDbContext? db = null)
     {
         db ??= Db;

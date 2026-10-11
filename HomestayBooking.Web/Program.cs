@@ -61,6 +61,7 @@ builder.Services.AddScoped<RefundService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<BookingService>();
 builder.Services.AddScoped<BankMatchingService>();
+builder.Services.AddScoped<ReceiptReviewService>();
 builder.Services.AddScoped<VietQrService>();
 builder.Services.AddHostedService<BookingTimeoutJob>();
 

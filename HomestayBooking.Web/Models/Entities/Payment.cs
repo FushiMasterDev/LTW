@@ -36,6 +36,9 @@ public class Payment
     public DateTime? ReviewedAt { get; set; }
     public string? RejectReason { get; set; }
 
+    /// <summary>Bill chờ duyệt quá lâu đã báo quản lý (chỉ báo một lần).</summary>
+    public DateTime? ReviewAlertSentAt { get; set; }
+
     public Booking Booking { get; set; } = null!;
     public BankTransaction? BankTransaction { get; set; }
     public ApplicationUser? SubmittedByAccount { get; set; }
