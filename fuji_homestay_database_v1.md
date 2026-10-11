@@ -846,11 +846,11 @@ Vì chưa triển khai thật: sửa entity xong thì **tạo lại migration `I
 |---|---|---|---|
 | Q1 | ~~Kế toán chỉ làm giờ hành chính~~ — **đã giải quyết bằng D13**: chuyển khoản qua QR được tự xác nhận 24/7. Chỉ đơn đi đường ảnh bill vào ban đêm mới phải chờ tới giờ làm việc | Thời gian chờ | Giao diện khuyến khích quét QR; báo khách đi đường bill rằng Fuji duyệt trong giờ làm việc |
 | Q2 | ~~Kế toán từ chối bill bao nhiêu lần thì hủy hẳn?~~ — **đã chốt (11/10)**: lần 1 khách được thêm 15'; lần 2 đơn `Expired`, mở lại phòng (`Booking:MaxReceiptRejections` = 2) | `Bookings`, `Payments` | — |
-| Q3 | Khoản Fuji bù chênh lệch khi trùng phòng (BR-11) có trừ vào homestay gây ra không? | `SettlementItems` | Không trừ; ghi `Payments.Compensation` để thống kê |
+| Q3 | Khoản Fuji bù chênh lệch khi trùng phòng (BR-11) có trừ vào homestay gây ra không? — **đã chốt (11/10)**: Không trừ; ghi `Payments.Compensation` để thống kê | `SettlementItems` | — |
 | Q4 | Voucher bồi thường: giá trị, thời hạn, điều kiện | Bảng `Vouchers` | Chưa thiết kế |
-| Q5 | Đơn bị hủy có giữ cọc: xếp kỳ đối soát theo ngày `CheckOut` dự kiến hay ngày hủy? | `SettlementItems` | Theo `CheckOut` dự kiến (thống nhất D7) |
-| Q6 | Một Owner có cần nhiều tài khoản ngân hàng (mỗi homestay một tài khoản) không? | `Owners` | Một tài khoản / Owner |
-| Q7 | Tiện nghi gắn với homestay hay với từng loại phòng? | `HomestayAmenities` | Theo homestay |
-| Q8 | Chủ homestay có được đổi sang phòng khác cùng loại khi xác nhận (phòng hệ thống gán đang có vấn đề) không? | `Bookings.RoomId`, `RoomNights` | Cho phép, đổi trong một transaction; ghi lịch sử |
+| Q5 | Đơn bị hủy có giữ cọc: xếp kỳ đối soát theo ngày `CheckOut` dự kiến hay ngày hủy? — **đã chốt (11/10)**: Theo `CheckOut` dự kiến (thống nhất D7) | `SettlementItems` | — |
+| Q6 | Một Owner có cần nhiều tài khoản ngân hàng (mỗi homestay một tài khoản) không? — **đã chốt (11/10)**: Một tài khoản / Owner | `Owners` | — |
+| Q7 | Tiện nghi gắn với homestay hay với từng loại phòng? — **đã chốt (11/10)**: Theo homestay | `HomestayAmenities` | — |
+| Q8 | Chủ homestay có được đổi sang phòng khác cùng loại khi xác nhận (phòng hệ thống gán đang có vấn đề) không? — **đã chốt (11/10)**: Cho phép, đổi trong một transaction; ghi lịch sử | `Bookings.RoomId`, `RoomNights` | — |
 | Q9 | Fuji dùng dịch vụ nào (SePay / Casso / khác) khi triển khai thật? Phí dịch vụ? Ngân hàng: **MB Bank** (đã chốt) | Chỉ cấu hình, không đổi DB | BTL dùng giả lập `Simulator`; số tài khoản MB để trong `appsettings` |
-| Q10 | Khách chuyển **dư** tiền cọc: hoàn ngay hay trừ vào số tiền trả tại homestay? | `BankTransactions.Note`, `Payments` | Ghi chú lại, hoàn khi khách yêu cầu |
+| Q10 | Khách chuyển **dư** tiền cọc: hoàn ngay hay trừ vào số tiền trả tại homestay? — **đã chốt (11/10)**: Ghi chú lại, hoàn khi khách yêu cầu | `BankTransactions.Note`, `Payments` | — |
