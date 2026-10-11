@@ -73,6 +73,9 @@ public class BookingOptions
 
     public int MaxNights { get; set; } = 30;
 
+    /// <summary>Bill bị từ chối đến lần này thì đơn hết hạn, mở lại phòng (chống gửi bill giả để giữ phòng mãi).</summary>
+    public int MaxReceiptRejections { get; set; } = 2;
+
     /// <summary>Bill chờ duyệt quá số phút làm việc này → báo quản lý.</summary>
     public int ReceiptReviewAlertMinutes { get; set; } = 120;
 

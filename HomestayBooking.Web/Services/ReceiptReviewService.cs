@@ -73,7 +73,10 @@ public class ReceiptReviewService
         await _db.SaveChangesAsync();
     }
 
-    /// <summary>Từ chối bill: đơn về chờ thanh toán với hạn giữ phòng mới 15 phút (BookingService.ApplyStatusAsync).</summary>
+    /// <summary>
+    /// Từ chối bill: đơn về chờ thanh toán với hạn giữ phòng mới 15 phút (BookingService.ApplyStatusAsync).
+    /// Bị từ chối đến lần thứ MaxReceiptRejections (mặc định 2) thì đơn hết hạn và mở lại phòng.
+    /// </summary>
     public async Task RejectAsync(int paymentId, int employeeId, string reason)
     {
         if (string.IsNullOrWhiteSpace(reason))
@@ -85,14 +88,21 @@ public class ReceiptReviewService
         payment.ReviewedByEmployeeId = employeeId;
         payment.ReviewedAt = UtcNow;
         payment.RejectReason = reason.Trim();
-        await _bookings.ApplyStatusAsync(payment.Booking, BookingStatus.AwaitingPayment, actor, $"Từ chối bill: {payment.RejectReason}");
+
+        var booking = payment.Booking;
+        var rejections = 1 + await _db.Payments.CountAsync(p =>
+            p.BookingId == booking.Id && p.Id != payment.Id && p.Method == PaymentMethod.ManualReceipt && p.Status == PaymentStatus.Rejected);
+        var giveUp = rejections >= _options.MaxReceiptRejections;
+        await _bookings.ApplyStatusAsync(booking, giveUp ? BookingStatus.Expired : BookingStatus.AwaitingPayment, actor,
+            $"Từ chối bill lần {rejections}: {payment.RejectReason}");
 
         var customer = await _db.Bookings
-            .Where(b => b.Id == payment.BookingId)
+            .Where(b => b.Id == booking.Id)
             .Select(b => b.Customer.Person.Account == null ? null : b.Customer.Person.Account.Id)
             .SingleAsync();
-        _notifications.Add([customer],
-            $"Ảnh bill đơn {payment.Booking.Code} chưa hợp lệ ({payment.RejectReason}). Bạn có {_options.HoldMinutes} phút để thanh toán lại.");
+        _notifications.Add([customer], giveUp
+            ? $"Ảnh bill đơn {booking.Code} bị từ chối lần {rejections} ({payment.RejectReason}) nên đơn đã hết hạn. Nếu bạn đã chuyển tiền, vui lòng liên hệ Fuji để được hoàn."
+            : $"Ảnh bill đơn {booking.Code} chưa hợp lệ ({payment.RejectReason}). Bạn có {_options.HoldMinutes} phút để thanh toán lại.");
         await _db.SaveChangesAsync();
     }
 

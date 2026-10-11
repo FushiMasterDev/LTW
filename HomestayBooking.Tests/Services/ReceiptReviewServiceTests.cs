@@ -109,6 +109,23 @@ public sealed class ReceiptReviewServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task SecondRejection_ExpiresBookingAndFreesRoom()
+    {
+        var (booking, first) = await SubmittedAsync();
+        await _host.Receipts().RejectAsync(first.Id, _accountant.Id, "Ảnh mờ");
+        _host.Db.ChangeTracker.Clear();
+        var second = await _host.Receipts().SubmitAsync(booking.Id, "receipts/b.jpg", null, new Actor(ActorType.Customer));
+        _host.Db.ChangeTracker.Clear();
+
+        await _host.Receipts().RejectAsync(second.Id, _accountant.Id, "Không thấy giao dịch");
+
+        var saved = await LoadAsync(booking.Id);
+        Assert.Equal(BookingStatus.Expired, saved.Status);
+        Assert.All(saved.Payments, p => Assert.Equal(PaymentStatus.Rejected, p.Status));
+        Assert.Equal(0, await _host.Db.RoomNights.CountAsync(n => n.BookingId == booking.Id));
+    }
+
+    [Fact]
     public async Task Review_Twice_IsRefused()
     {
         var (_, payment) = await SubmittedAsync();
