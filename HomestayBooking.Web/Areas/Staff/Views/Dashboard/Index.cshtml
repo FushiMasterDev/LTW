@@ -1,0 +1,24 @@
+@model Dictionary<BookingStatus, int>
+@{
+    ViewData["Title"] = L["Tổng quan nhân viên"];
+}
+<section class="page-banner banner-staff mb-4">
+    <h1 class="h3">@L["Tổng quan nhân viên"]</h1>
+    <p>@L["Hệ thống đang có {0} homestay hoạt động.", ViewBag.ActiveHomestayCount]</p>
+</section>
+
+<h2 class="section-title"><i class="bi bi-kanban text-brand" aria-hidden="true"></i> @L["Đơn đặt phòng theo trạng thái"]</h2>
+<div class="row g-3">
+    @foreach (var (status, count) in Model)
+    {
+        <div class="col-6 col-md-4 col-xl-3">
+            <div class="card-soft stat-card @status.ToneClass()">
+                <span class="icon-chip" aria-hidden="true"><i class="bi @status.Icon()"></i></span>
+                <div>
+                    <div class="stat-value">@count</div>
+                    <div class="stat-label">@L[status.DisplayName()]</div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

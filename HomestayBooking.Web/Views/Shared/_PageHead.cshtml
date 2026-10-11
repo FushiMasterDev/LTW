@@ -1,0 +1,18 @@
+@model PageHeadModel
+@* Tiêu đề trang danh sách: biểu tượng màu + tiêu đề + mô tả + nút "Thêm mới" *@
+<div class="page-head">
+    <div class="d-flex align-items-center gap-3">
+        <span class="icon-chip icon-chip-lg @Model.Tone" aria-hidden="true"><i class="bi @Model.Icon"></i></span>
+        <div>
+            <h1>@Model.Title</h1>
+            @if (!string.IsNullOrEmpty(Model.Subtitle))
+            {
+                <p class="text-muted mb-0">@Model.Subtitle</p>
+            }
+        </div>
+    </div>
+    @if (Model.ShowCreate)
+    {
+        <a class="btn btn-brand" asp-action="Create"><i class="bi bi-plus-lg" aria-hidden="true"></i> @L["Thêm mới"]</a>
+    }
+</div>

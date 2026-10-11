@@ -1,0 +1,445 @@
+using HomestayBooking.Web.Data;
+using HomestayBooking.Web.Models.Entities;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+
+namespace HomestayBooking.Tests.Data;
+
+/// <summary>
+/// Kiểm tra các ràng buộc ở mức CSDL (khóa chính, unique index, filtered index, check constraint)
+/// theo fuji_homestay_database_v1.md, bằng SQLite in-memory vì EF Core InMemory không thực thi ràng buộc.
+/// </summary>
+public sealed class DatabaseConstraintTests : IDisposable
+{
+    private readonly SqliteConnection _connection;
+    private readonly ApplicationDbContext _db;
+    private readonly Homestay _homestay;
+    private readonly RoomType _roomType;
+    private readonly Room _room;
+    private readonly Customer _customer;
+    private readonly CancellationPolicy _policy;
+
+    public DatabaseConstraintTests()
+    {
+        _connection = new SqliteConnection("DataSource=:memory:");
+        _connection.Open();
+        _db = new SqliteTestDbContext(new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlite(_connection).Options);
+        _db.Database.EnsureCreated();
+
+        _homestay = new Homestay
+        {
+            Name = "Test Homestay",
+            Address = "Hà Nội",
+            Status = HomestayStatus.Active,
+            Owner = new Owner { Person = new PersonProfile { FullName = "Owner", PhoneNumber = "+84912000001" } },
+            Area = new Area { Name = "Tây Hồ", Province = "Hà Nội" },
+        };
+        _roomType = new RoomType
+        {
+            Homestay = _homestay,
+            Name = "Phòng đôi",
+            Category = new RoomCategory { Name = "Phòng đôi" },
+            MaxGuests = 2,
+        };
+        _room = new Room { RoomType = _roomType, RoomCode = "101" };
+        _customer = new Customer
+        {
+            Person = new PersonProfile { FullName = "Nguyễn Văn A", PhoneNumber = "+84987000001" },
+            Profile = new CustomerProfile(),
+        };
+        _policy = new CancellationPolicy { Name = "Chung", Scope = PolicyScope.All };
+        _db.AddRange(_room, _customer, _policy);
+        _db.SaveChanges();
+    }
+
+    public void Dispose()
+    {
+        _db.Dispose();
+        _connection.Dispose();
+    }
+
+    private Booking NewBooking(string code, DateOnly checkIn, DateOnly checkOut, decimal total = 1_000_000) => new()
+    {
+        Code = code,
+        CustomerId = _customer.Id,
+        ContactName = "Nguyễn Văn A",
+        ContactPhone = "+84987000001",
+        HomestayId = _homestay.Id,
+        RoomTypeId = _roomType.Id,
+        RoomId = _room.Id,
+        CheckIn = checkIn,
+        CheckOut = checkOut,
+        Guests = 2,
+        HoldExpiresAt = DateTime.UtcNow.AddMinutes(15),
+        TotalAmount = total,
+        DepositAmount = total * 0.3m,
+        CommissionRate = 0.12m,
+        CancellationPolicyId = _policy.Id,
+    };
+
+    /// <summary>Bỏ theo dõi để lỗi đến từ CSDL chứ không phải từ change tracker của EF.</summary>
+    private async Task AssertRejectedAsync(object entity)
+    {
+        _db.ChangeTracker.Clear();
+        _db.Add(entity);
+        await Assert.ThrowsAsync<DbUpdateException>(() => _db.SaveChangesAsync());
+    }
+
+    // ---- D. Chống trùng phòng ----
+
+    [Fact]
+    public async Task RoomNight_SameRoomSameDate_IsRejected()
+    {
+        var booking = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 21));
+        booking.RoomNights.Add(new RoomNight { RoomId = _room.Id, Date = new(2026, 11, 20) });
+        var other = NewBooking("FJ261120-002", new(2026, 11, 20), new(2026, 11, 21));
+        _db.Bookings.AddRange(booking, other);
+        await _db.SaveChangesAsync();
+
+        // Đơn khác chiếm cùng phòng cùng đêm → vi phạm khóa chính (RoomId, Date)
+        await AssertRejectedAsync(new RoomNight { RoomId = _room.Id, Date = new(2026, 11, 20), BookingId = other.Id });
+    }
+
+    [Fact]
+    public async Task RoomNight_WithoutBookingOrBlock_IsRejected()
+    {
+        await AssertRejectedAsync(new RoomNight { RoomId = _room.Id, Date = new(2026, 11, 20) });
+    }
+
+    [Fact]
+    public async Task RoomBlock_Deleted_ReleasesItsNights()
+    {
+        var block = new RoomBlock
+        {
+            RoomId = _room.Id,
+            StartDate = new(2026, 11, 20),
+            EndDate = new(2026, 11, 22),
+            Reason = RoomBlockReason.Maintenance,
+            CreatedByAccount = new ApplicationUser { PersonId = _homestay.Owner.PersonId },
+        };
+        block.Nights.Add(new RoomNight { RoomId = _room.Id, Date = new(2026, 11, 20) });
+        block.Nights.Add(new RoomNight { RoomId = _room.Id, Date = new(2026, 11, 21) });
+        _db.RoomBlocks.Add(block);
+        await _db.SaveChangesAsync();
+
+        // Mở khóa ngày: xóa RoomBlock, các đêm bị chiếm tự xóa theo (cascade)
+        _db.ChangeTracker.Clear();
+        _db.RoomBlocks.Remove(await _db.RoomBlocks.SingleAsync());
+        await _db.SaveChangesAsync();
+
+        Assert.Equal(0, await _db.RoomNights.CountAsync());
+    }
+
+    // ---- E. Đơn đặt phòng ----
+
+    [Fact]
+    public async Task Booking_DuplicateCode_IsRejected()
+    {
+        _db.Bookings.Add(NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22)));
+        await _db.SaveChangesAsync();
+
+        await AssertRejectedAsync(NewBooking("FJ261120-001", new(2026, 12, 1), new(2026, 12, 2)));
+    }
+
+    [Fact]
+    public async Task Booking_CheckOutNotAfterCheckIn_IsRejected()
+    {
+        await AssertRejectedAsync(NewBooking("FJ261122-001", new(2026, 11, 22), new(2026, 11, 20)));
+    }
+
+    [Fact]
+    public async Task Booking_DepositGreaterThanTotal_IsRejected()
+    {
+        var booking = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        booking.DepositAmount = booking.TotalAmount + 1;
+
+        await AssertRejectedAsync(booking);
+    }
+
+    [Fact]
+    public async Task BookingNight_SameDateTwice_IsRejected()
+    {
+        var booking = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        booking.Nights.Add(new BookingNight { Date = new(2026, 11, 20), DayType = DayType.Weekday, Price = 500_000 });
+        _db.Bookings.Add(booking);
+        await _db.SaveChangesAsync();
+
+        await AssertRejectedAsync(new BookingNight { BookingId = booking.Id, Date = new(2026, 11, 20), DayType = DayType.Weekday, Price = 500_000 });
+    }
+
+    // ---- F. Thanh toán và giao dịch ngân hàng ----
+
+    private static Payment Deposit(int bookingId, PaymentStatus status, int? bankTransactionId = null) => new()
+    {
+        BookingId = bookingId,
+        Type = PaymentType.Deposit,
+        Method = bankTransactionId is null ? PaymentMethod.ManualReceipt : PaymentMethod.BankAutoMatch,
+        BankTransactionId = bankTransactionId,
+        Amount = 300_000,
+        Status = status,
+    };
+
+    private static BankTransaction BankTx(string providerId) => new()
+    {
+        Provider = BankProvider.SePay,
+        ProviderTransactionId = providerId,
+        AccountNumber = "0901000001",
+        Amount = 300_000,
+        TransferContent = "FJ261120001",
+        TransactionTime = DateTime.UtcNow,
+    };
+
+    [Fact]
+    public async Task Payment_SecondOpenDepositForBooking_IsRejected()
+    {
+        var booking = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        _db.Bookings.Add(booking);
+        await _db.SaveChangesAsync();
+        _db.Payments.Add(Deposit(booking.Id, PaymentStatus.Submitted));
+        await _db.SaveChangesAsync();
+
+        await AssertRejectedAsync(Deposit(booking.Id, PaymentStatus.Submitted));
+    }
+
+    [Fact]
+    public async Task Payment_RejectedBillThenNewDeposit_IsAllowed()
+    {
+        // Bill bị từ chối giữ làm lịch sử, khách được tải bill mới
+        var booking = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        _db.Bookings.Add(booking);
+        await _db.SaveChangesAsync();
+        _db.Payments.AddRange(Deposit(booking.Id, PaymentStatus.Rejected), Deposit(booking.Id, PaymentStatus.Submitted));
+
+        await _db.SaveChangesAsync();
+
+        Assert.Equal(2, await _db.Payments.CountAsync());
+    }
+
+    [Fact]
+    public async Task BankTransaction_SameProviderIdTwice_IsRejected()
+    {
+        // Webhook gửi lặp không được ghi nhận hai lần
+        _db.BankTransactions.Add(BankTx("SP-1001"));
+        await _db.SaveChangesAsync();
+
+        await AssertRejectedAsync(BankTx("SP-1001"));
+    }
+
+    [Fact]
+    public async Task Payment_SameBankTransactionTwice_IsRejected()
+    {
+        var first = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        var second = NewBooking("FJ261120-002", new(2026, 12, 20), new(2026, 12, 22));
+        var tx = BankTx("SP-1001");
+        _db.AddRange(first, second, tx);
+        await _db.SaveChangesAsync();
+        _db.Payments.Add(Deposit(first.Id, PaymentStatus.Approved, tx.Id));
+        await _db.SaveChangesAsync();
+
+        await AssertRejectedAsync(Deposit(second.Id, PaymentStatus.Approved, tx.Id));
+    }
+
+    [Fact]
+    public async Task SettlementItem_BookingInTwoSettlements_IsRejected()
+    {
+        var booking = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        var first = new Settlement { HomestayId = _homestay.Id, Year = 2026, Month = 11, PeriodNo = 2 };
+        var second = new Settlement { HomestayId = _homestay.Id, Year = 2026, Month = 12, PeriodNo = 1 };
+        _db.AddRange(booking, first, second);
+        await _db.SaveChangesAsync();
+        _db.SettlementItems.Add(new SettlementItem { SettlementId = first.Id, BookingId = booking.Id });
+        await _db.SaveChangesAsync();
+
+        await AssertRejectedAsync(new SettlementItem { SettlementId = second.Id, BookingId = booking.Id });
+    }
+
+    [Theory]
+    [InlineData(0, 11)]
+    [InlineData(3, 11)]
+    [InlineData(1, 13)]
+    public async Task Settlement_InvalidPeriod_IsRejected(int periodNo, int month)
+    {
+        await AssertRejectedAsync(new Settlement { HomestayId = _homestay.Id, Year = 2026, Month = month, PeriodNo = periodNo });
+    }
+
+    // ---- B, C. Hợp đồng, giá, chính sách hủy, ảnh, giấy tờ ----
+
+    private Contract NewContract(string no, ContractStatus status, decimal rate = 0.12m) => new()
+    {
+        HomestayId = _homestay.Id,
+        ContractNo = no,
+        StartDate = new(2026, 6, 1),
+        EndDate = new(2027, 5, 31),
+        CommissionRate = rate,
+        Status = status,
+    };
+
+    [Fact]
+    public async Task Contract_TwoActiveForSameHomestay_IsRejected()
+    {
+        _db.Contracts.Add(NewContract("HD-01", ContractStatus.Active));
+        await _db.SaveChangesAsync();
+
+        await AssertRejectedAsync(NewContract("HD-02", ContractStatus.Active));
+    }
+
+    [Fact]
+    public async Task Contract_ExpiredHistoryPlusOneActive_IsAllowed()
+    {
+        _db.Contracts.AddRange(NewContract("HD-01", ContractStatus.Expired), NewContract("HD-02", ContractStatus.Active));
+
+        await _db.SaveChangesAsync();
+
+        Assert.Equal(2, await _db.Contracts.CountAsync());
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public async Task Contract_CommissionRateOutOfRange_IsRejected(int rate)
+    {
+        await AssertRejectedAsync(NewContract("HD-01", ContractStatus.Active, rate));
+    }
+
+    [Fact]
+    public async Task RoomTypePrice_SameDayTypeAndEffectiveDate_IsRejected()
+    {
+        _db.RoomTypePrices.Add(new RoomTypePrice { RoomTypeId = _roomType.Id, DayType = DayType.Weekday, Price = 500_000, EffectiveFrom = new(2026, 1, 1) });
+        await _db.SaveChangesAsync();
+
+        await AssertRejectedAsync(new RoomTypePrice { RoomTypeId = _roomType.Id, DayType = DayType.Weekday, Price = 550_000, EffectiveFrom = new(2026, 1, 1) });
+    }
+
+    [Fact]
+    public async Task Room_DuplicateCodeInRoomType_IsRejected()
+    {
+        await AssertRejectedAsync(new Room { RoomTypeId = _roomType.Id, RoomCode = "101" });
+    }
+
+    [Fact]
+    public async Task CancellationPolicy_TwoActiveForSameHomestayAndScope_IsRejected()
+    {
+        _db.CancellationPolicies.Add(new CancellationPolicy { HomestayId = _homestay.Id, Name = "Lễ 1", Scope = PolicyScope.Holiday });
+        await _db.SaveChangesAsync();
+
+        await AssertRejectedAsync(new CancellationPolicy { HomestayId = _homestay.Id, Name = "Lễ 2", Scope = PolicyScope.Holiday });
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(101)]
+    public async Task CancellationRule_PercentOutOfRange_IsRejected(int percent)
+    {
+        await AssertRejectedAsync(new CancellationRule { PolicyId = _policy.Id, MinDaysBefore = 7, RefundPercent = percent });
+    }
+
+    [Fact]
+    public async Task HomestayImage_TwoCoversForSameHomestay_IsRejected()
+    {
+        _db.HomestayImages.Add(new HomestayImage { HomestayId = _homestay.Id, Url = "/a.jpg", IsCover = true });
+        await _db.SaveChangesAsync();
+
+        await AssertRejectedAsync(new HomestayImage { HomestayId = _homestay.Id, Url = "/b.jpg", IsCover = true });
+    }
+
+    [Fact]
+    public async Task VerificationDocument_WithoutOwnerOrHomestay_IsRejected()
+    {
+        await AssertRejectedAsync(new VerificationDocument { DocumentType = DocumentType.BusinessLicense, FileUrl = "x.pdf" });
+    }
+
+    // ---- G. Đánh giá ----
+
+    [Fact]
+    public async Task Review_SecondReviewForSameBooking_IsRejected()
+    {
+        var booking = NewBooking("FJ261120-002", new(2026, 11, 20), new(2026, 11, 22));
+        _db.Bookings.Add(booking);
+        _db.Reviews.Add(new Review { Booking = booking, HomestayId = _homestay.Id, Rating = 5 });
+        await _db.SaveChangesAsync();
+
+        await AssertRejectedAsync(new Review { BookingId = booking.Id, HomestayId = _homestay.Id, Rating = 4 });
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(6)]
+    public async Task Review_RatingOutsideOneToFive_IsRejected(int rating)
+    {
+        var booking = NewBooking("FJ261120-003", new(2026, 11, 20), new(2026, 11, 22));
+        _db.Bookings.Add(booking);
+        await _db.SaveChangesAsync();
+
+        await AssertRejectedAsync(new Review { BookingId = booking.Id, HomestayId = _homestay.Id, Rating = rating });
+    }
+
+    [Fact]
+    public async Task Room_WithBookings_CannotBeDeleted()
+    {
+        _db.Bookings.Add(NewBooking("FJ261120-004", new(2026, 11, 20), new(2026, 11, 22)));
+        await _db.SaveChangesAsync();
+
+        // Không xóa cứng dữ liệu nghiệp vụ: khóa ngoại Restrict
+        _db.ChangeTracker.Clear();
+        _db.Rooms.Remove(await _db.Rooms.SingleAsync());
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => _db.SaveChangesAsync());
+    }
+
+    // ---- A. Tài khoản dùng chung (v5) ----
+
+    [Fact]
+    public async Task PersonProfile_DuplicatePhone_IsRejected()
+    {
+        await AssertRejectedAsync(new PersonProfile { FullName = "Người khác", PhoneNumber = "+84987000001" });
+    }
+
+    [Fact]
+    public async Task Account_SecondAccountForSamePerson_IsRejected()
+    {
+        var personId = _customer.PersonId;
+        _db.Users.Add(new ApplicationUser { PersonId = personId });
+        await _db.SaveChangesAsync();
+
+        await AssertRejectedAsync(new ApplicationUser { PersonId = personId });
+    }
+
+    [Fact]
+    public async Task Customer_SecondCustomerForSamePerson_IsRejected()
+    {
+        await AssertRejectedAsync(new Customer { PersonId = _customer.PersonId });
+    }
+
+    [Fact]
+    public async Task Employee_DuplicateCode_IsRejected()
+    {
+        _db.Employees.Add(new Employee { EmployeeCode = "NV001", Person = new PersonProfile { PhoneNumber = "+84901000011" } });
+        await _db.SaveChangesAsync();
+
+        await AssertRejectedAsync(new Employee { EmployeeCode = "NV001", Person = new PersonProfile { PhoneNumber = "+84901000012" } });
+    }
+
+    [Fact]
+    public async Task OwnerRegistration_TwoOpenForSameOwner_IsRejected()
+    {
+        var ownerId = _homestay.OwnerId;
+        _db.OwnerRegistrations.Add(new OwnerRegistration { OwnerId = ownerId, Status = OwnerRegistrationStatus.PendingReview });
+        await _db.SaveChangesAsync();
+
+        await AssertRejectedAsync(new OwnerRegistration { OwnerId = ownerId, Status = OwnerRegistrationStatus.Draft });
+    }
+
+    [Fact]
+    public async Task OwnerRegistration_ClosedHistoryPlusOneOpen_IsAllowed()
+    {
+        var ownerId = _homestay.OwnerId;
+        _db.OwnerRegistrations.AddRange(
+            new OwnerRegistration { OwnerId = ownerId, Status = OwnerRegistrationStatus.Rejected },
+            new OwnerRegistration { OwnerId = ownerId, Status = OwnerRegistrationStatus.Approved },
+            new OwnerRegistration { OwnerId = ownerId, Status = OwnerRegistrationStatus.PendingReview });
+
+        await _db.SaveChangesAsync();
+
+        Assert.Equal(3, await _db.OwnerRegistrations.CountAsync());
+    }
+}

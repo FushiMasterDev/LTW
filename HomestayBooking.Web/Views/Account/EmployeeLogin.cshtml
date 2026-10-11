@@ -1,0 +1,67 @@
+@model EmployeeLoginViewModel
+@{
+    ViewData["Title"] = L["Cổng nhân viên Fuji"];
+}
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-9">
+        <div class="card-soft auth-card">
+            <div class="row g-0">
+                <div class="col-md-5 auth-side d-none d-md-block">
+                    <div class="position-relative">
+                        <span class="brand-mark mb-3" style="background:rgba(255,255,255,.18)" aria-hidden="true"><i class="bi bi-person-badge-fill"></i></span>
+                        <h2>@L["Cổng nội bộ Fuji"]</h2>
+                        <ul>
+                            <li><i class="bi bi-check-circle-fill" aria-hidden="true"></i> @L["Nhân viên tư vấn: tra phòng trống, tạo đơn thay khách."]</li>
+                            <li><i class="bi bi-check-circle-fill" aria-hidden="true"></i> @L["Kế toán: xác nhận cọc, đối soát."]</li>
+                            <li><i class="bi bi-check-circle-fill" aria-hidden="true"></i> @L["Quản lý: danh mục, duyệt chủ homestay, báo cáo."]</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-7 p-4 p-lg-5">
+                    <h1 class="h3 mb-1">@L["Cổng nhân viên Fuji"]</h1>
+                    <p class="text-muted">@L["Đăng nhập bằng mã nhân viên do Fuji cấp."]</p>
+                    <form asp-action="EmployeeLogin" method="post" novalidate>
+                        <div asp-validation-summary="ModelOnly" class="alert tone-rose" role="alert"></div>
+                        <input type="hidden" asp-for="ReturnUrl" />
+                        <div class="mb-3">
+                            <label asp-for="EmployeeCode" class="form-label"></label>
+                            <div class="input-group">
+                                <span class="input-group-text" aria-hidden="true"><i class="bi bi-person-vcard"></i></span>
+                                <input asp-for="EmployeeCode" class="form-control text-uppercase" autocomplete="username" placeholder="NV001" autofocus />
+                            </div>
+                            <span asp-validation-for="EmployeeCode" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label"></label>
+                            <div class="input-group">
+                                <span class="input-group-text" aria-hidden="true"><i class="bi bi-lock"></i></span>
+                                <input asp-for="Password" class="form-control" autocomplete="current-password" />
+                                <button type="button" class="btn btn-outline-secondary" data-toggle-password="#Password"
+                                        aria-label="@L["Hiện mật khẩu"]" data-label-show="@L["Hiện mật khẩu"]" data-label-hide="@L["Ẩn mật khẩu"]">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+                        <div class="form-check mb-4">
+                            <input asp-for="RememberMe" class="form-check-input" />
+                            <label asp-for="RememberMe" class="form-check-label"></label>
+                        </div>
+                        <button type="submit" class="btn btn-brand w-100 btn-lg" data-loading-text="@L["Đang đăng nhập..."]">
+                            <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i> @L["Đăng nhập"]
+                        </button>
+                    </form>
+                    <p class="text-center text-muted small mt-4 mb-0">
+                        <a asp-action="Login" asp-route-returnUrl="@Model.ReturnUrl">
+                            <i class="bi bi-arrow-left" aria-hidden="true"></i> @L["Khách hàng / chủ homestay đăng nhập bằng số điện thoại"]
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

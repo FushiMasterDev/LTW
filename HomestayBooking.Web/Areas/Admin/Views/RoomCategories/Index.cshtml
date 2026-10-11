@@ -1,0 +1,38 @@
+@model PaginatedList<RoomCategory>
+@{
+    ViewData["Title"] = L["Loại phòng"];
+    var counts = (Dictionary<int, int>)ViewBag.RoomCounts;
+}
+<partial name="_PageHead" model="@(new PageHeadModel(L["Loại phòng"], "bi-grid-3x3-gap", "tone-emerald", L["Phòng đôi, gia đình, nguyên căn..."]))" />
+<partial name="_SearchBar" />
+
+<div class="card-soft overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-modern">
+            <thead>
+                <tr>
+                    <th scope="col">@L["Tên loại phòng"]</th>
+                    <th scope="col" class="text-end d-none d-sm-table-cell">@L["Đang dùng"]</th>
+                    <th scope="col" class="text-end">@L["Thao tác"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@item.Name</td>
+                        <td class="text-end d-none d-sm-table-cell"><span class="count-pill tone-emerald">@counts.GetValueOrDefault(item.Id)</span></td>
+                        <td class="text-end">
+                            <partial name="_RowActions" model="@(new RowActionsModel(item.Id.ToString(), item.Name, L["Xóa \"{0}\"?", item.Name]))" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (Model.Count == 0)
+    {
+        <partial name="_EmptyState" />
+    }
+</div>
+<partial name="_Pager" model="Model" />

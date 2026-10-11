@@ -1,0 +1,55 @@
+@{
+    ViewData["Title"] = L["Tổng quan quản trị"];
+    var stats = new (string Label, object Value, string Icon, string Tone)[]
+    {
+        (L["Homestay"], ViewBag.HomestayCount, "bi-houses", "tone-sky"),
+        (L["Phòng"], ViewBag.RoomCount, "bi-door-closed", "tone-emerald"),
+        (L["Chủ homestay"], ViewBag.OwnerCount, "bi-person-badge", "tone-teal"),
+        (L["Nhân viên"], ViewBag.StaffCount, "bi-headset", "tone-orange"),
+        (L["Hồ sơ Owner chờ duyệt"], ViewBag.PendingOwnerCount, "bi-person-check", "tone-rose"),
+        (L["Đơn chờ xác nhận"], ViewBag.PendingBookingCount, "bi-hourglass-split", "tone-amber"),
+    };
+    var links = new (string Controller, string Label, string Hint, string Icon, string Tone)[]
+    {
+        ("Areas", L["Khu vực"], L["Quận, huyện có homestay"], "bi-geo-alt", "tone-sky"),
+        ("RoomCategories", L["Loại phòng"], L["Phòng đôi, gia đình, nguyên căn..."], "bi-grid-3x3-gap", "tone-emerald"),
+        ("Amenities", L["Tiện nghi"], L["Wifi, bể bơi, BBQ..."], "bi-stars", "tone-amber"),
+        ("Holidays", L["Ngày lễ"], L["Ngày áp giá lễ"], "bi-calendar-heart", "tone-rose"),
+    };
+}
+<section class="page-banner banner-admin mb-4">
+    <h1 class="h3">@L["Tổng quan quản trị"]</h1>
+    <p>@L["Theo dõi nhanh hệ thống và quản lý danh mục dùng chung."]</p>
+</section>
+
+<div class="row g-3 mb-2">
+    @foreach (var s in stats)
+    {
+        <div class="col-6 col-md-4 col-xl">
+            <div class="card-soft stat-card @s.Tone">
+                <span class="icon-chip" aria-hidden="true"><i class="bi @s.Icon"></i></span>
+                <div>
+                    <div class="stat-value">@s.Value</div>
+                    <div class="stat-label">@s.Label</div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<h2 class="section-title"><i class="bi bi-collection text-brand" aria-hidden="true"></i> @L["Danh mục"]</h2>
+<div class="row g-3">
+    @foreach (var link in links)
+    {
+        <div class="col-sm-6 col-lg-3">
+            <a class="card-soft tile-link @link.Tone" asp-controller="@link.Controller" asp-action="Index">
+                <span class="icon-chip" aria-hidden="true"><i class="bi @link.Icon"></i></span>
+                <span>
+                    <strong class="d-block">@link.Label</strong>
+                    <small class="text-muted">@link.Hint</small>
+                </span>
+                <i class="bi bi-chevron-right tile-arrow" aria-hidden="true"></i>
+            </a>
+        </div>
+    }
+</div>

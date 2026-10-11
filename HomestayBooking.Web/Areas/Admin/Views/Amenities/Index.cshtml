@@ -1,0 +1,54 @@
+@model PaginatedList<Amenity>
+@{
+    ViewData["Title"] = L["Tiện nghi"];
+    var counts = (Dictionary<int, int>)ViewBag.HomestayCounts;
+    string[] tones = ["tone-sky", "tone-emerald", "tone-violet", "tone-orange", "tone-pink", "tone-teal", "tone-amber", "tone-indigo"];
+}
+<partial name="_PageHead" model="@(new PageHeadModel(L["Tiện nghi"], "bi-stars", "tone-amber", L["Wifi, bể bơi, BBQ..."]))" />
+<partial name="_SearchBar" />
+
+<div class="card-soft overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-modern">
+            <thead>
+                <tr>
+                    <th scope="col">@L["Tên tiện nghi"]</th>
+                    <th scope="col" class="text-end d-none d-sm-table-cell">@L["Số homestay"]</th>
+                    <th scope="col" class="text-end">@L["Thao tác"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    var used = counts.GetValueOrDefault(item.Id);
+                    var confirm = used > 0
+                        ? L["Xóa \"{0}\"? Tiện nghi này sẽ bị gỡ khỏi {1} homestay.", item.Name, used]
+                        : L["Xóa \"{0}\"?", item.Name];
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="icon-chip @tones[item.Id % tones.Length]" aria-hidden="true"><i class="bi @(item.Icon ?? "bi-question-circle")"></i></span>
+                                <div>
+                                    <div class="fw-semibold">@item.Name</div>
+                                    @if (item.Icon is not null)
+                                    {
+                                        <code class="small text-muted d-none d-sm-inline">@item.Icon</code>
+                                    }
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-end d-none d-sm-table-cell"><span class="count-pill tone-amber">@used</span></td>
+                        <td class="text-end">
+                            <partial name="_RowActions" model="@(new RowActionsModel(item.Id.ToString(), item.Name, confirm))" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (Model.Count == 0)
+    {
+        <partial name="_EmptyState" />
+    }
+</div>
+<partial name="_Pager" model="Model" />

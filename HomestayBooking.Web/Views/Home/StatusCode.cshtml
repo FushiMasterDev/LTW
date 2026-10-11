@@ -1,0 +1,17 @@
+@model int
+@{
+    var (title, message, icon, tone) = Model switch
+    {
+        403 => (L["Không có quyền truy cập"], L["Bạn không có quyền xem trang này."], "bi-shield-lock", "tone-rose"),
+        404 => (L["Không tìm thấy trang"], L["Trang bạn tìm không tồn tại hoặc đã bị xóa."], "bi-signpost-split", "tone-amber"),
+        _ => (L["Đã có lỗi xảy ra"], L["Vui lòng thử lại sau."], "bi-bug", "tone-violet"),
+    };
+    ViewData["Title"] = title;
+}
+<div class="text-center py-5">
+    <span class="icon-chip icon-chip-lg @tone mb-3" aria-hidden="true"><i class="bi @icon"></i></span>
+    <div class="status-code">@Model</div>
+    <h1 class="h3 mt-2">@title</h1>
+    <p class="text-muted">@message</p>
+    <a class="btn btn-brand" asp-area="" asp-controller="Home" asp-action="Index"><i class="bi bi-house-door" aria-hidden="true"></i> @L["Về trang chủ"]</a>
+</div>
