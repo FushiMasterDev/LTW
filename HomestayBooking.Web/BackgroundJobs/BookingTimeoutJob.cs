@@ -4,7 +4,7 @@ namespace HomestayBooking.Web.BackgroundJobs;
 
 /// <summary>
 /// Chạy mỗi phút: đơn quá 15 phút chưa thanh toán → Hết hạn (D5); đơn đã cọc mà homestay quá 30 phút
-/// chưa xác nhận → cảnh báo nhân viên (BR-06). DbContext là scoped nên mỗi lượt tạo một scope mới.
+/// chưa xác nhận → cảnh báo nhân viên (BR-06); bill chờ duyệt quá 2 giờ làm việc → báo quản lý. DbContext là scoped nên mỗi lượt tạo một scope mới.
 /// </summary>
 public class BookingTimeoutJob : BackgroundService
 {
@@ -28,9 +28,11 @@ public class BookingTimeoutJob : BackgroundService
                 var bookings = scope.ServiceProvider.GetRequiredService<BookingService>();
                 var expired = await bookings.ExpireOverdueHoldsAsync();
                 var alerted = await bookings.AlertOverdueConfirmationsAsync();
-                if (expired + alerted > 0)
+                var slowReceipts = await scope.ServiceProvider.GetRequiredService<ReceiptReviewService>().AlertSlowReviewsAsync();
+                if (expired + alerted + slowReceipts > 0)
                 {
-                    _logger.LogInformation("Hết hạn {Expired} đơn, cảnh báo {Alerted} đơn quá hạn xác nhận.", expired, alerted);
+                    _logger.LogInformation("Hết hạn {Expired} đơn, cảnh báo {Alerted} đơn quá hạn xác nhận, {Receipts} bill chậm duyệt.",
+                        expired, alerted, slowReceipts);
                 }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

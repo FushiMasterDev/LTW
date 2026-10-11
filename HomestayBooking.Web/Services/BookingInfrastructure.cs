@@ -9,6 +9,34 @@ public static class VietnamTime
 
     public static DateTime ToLocal(DateTime utc) => TimeZoneInfo.ConvertTimeFromUtc(utc, Zone);
 
+    /// <summary>Số phút giờ hành chính (thứ Hai–thứ Sáu, [startHour, endHour) giờ Việt Nam) nằm trong khoảng [fromUtc, toUtc).</summary>
+    public static double OfficeMinutesBetween(DateTime fromUtc, DateTime toUtc, int startHour, int endHour)
+    {
+        if (toUtc <= fromUtc)
+        {
+            return 0;
+        }
+        var from = ToLocal(fromUtc);
+        var to = ToLocal(toUtc);
+        var minutes = 0.0;
+        for (var day = from.Date; day <= to.Date; day = day.AddDays(1))
+        {
+            if (day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+            {
+                continue;
+            }
+            var open = day.AddHours(startHour);
+            var close = day.AddHours(endHour);
+            var start = from > open ? from : open;
+            var end = to < close ? to : close;
+            if (end > start)
+            {
+                minutes += (end - start).TotalMinutes;
+            }
+        }
+        return minutes;
+    }
+
     public static DateOnly Today(TimeProvider clock) => DateOnly.FromDateTime(ToLocal(clock.GetUtcNow().UtcDateTime));
 }
 
@@ -44,6 +72,14 @@ public class BookingOptions
     public int MaxAwaitingPerCustomer { get; set; } = 3;
 
     public int MaxNights { get; set; } = 30;
+
+    /// <summary>Bill chờ duyệt quá số phút làm việc này → báo quản lý.</summary>
+    public int ReceiptReviewAlertMinutes { get; set; } = 120;
+
+    /// <summary>Giờ hành chính (giờ Việt Nam, thứ Hai–thứ Sáu) để tính thời gian chờ duyệt bill.</summary>
+    public int OfficeStartHour { get; set; } = 8;
+
+    public int OfficeEndHour { get; set; } = 17;
 }
 
 /// <summary>Tài khoản MB Bank nhận tiền cọc và khóa webhook (appsettings: "BankAccount"; khóa để trong user-secrets).</summary>
