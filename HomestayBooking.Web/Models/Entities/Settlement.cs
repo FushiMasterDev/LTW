@@ -13,7 +13,13 @@ public class Settlement
     public decimal TotalCommission { get; set; }
     public decimal PayoutAmount { get; set; }
     public SettlementStatus Status { get; set; } = SettlementStatus.Draft;
+    /// <summary>Lúc kế toán gửi bảng cho chủ homestay (Draft → Sent).</summary>
+    public DateTime? SentAt { get; set; }
+    /// <summary>Lúc chủ homestay xác nhận số liệu (Sent → Confirmed).</summary>
+    public DateTime? ConfirmedAt { get; set; }
     public DateTime? PaidAt { get; set; }
+    /// <summary>Mã giao dịch Fuji chuyển tiền cho chủ homestay.</summary>
+    public string? PaidBankRef { get; set; }
     public int? PaidByEmployeeId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
@@ -40,6 +46,8 @@ public class SettlementItem
     public decimal CommissionRate { get; set; }
     public decimal CommissionAmount { get; set; }
     public decimal PayoutAmount { get; set; }
+    /// <summary>Phần voucher Fuji chịu cho đơn này (đã trừ phần trả lại voucher khi hủy) — Fuji thực thu = CommissionAmount − DiscountAmount.</summary>
+    public decimal DiscountAmount { get; set; }
 
     public Settlement Settlement { get; set; } = null!;
     public Booking Booking { get; set; } = null!;

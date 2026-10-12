@@ -73,7 +73,7 @@ public static partial class SeedData
         {
             return;
         }
-        CopySampleReceipt(services);
+        CopySampleFile(services, SampleReceiptFile, "receipts");
 
         var nowUtc = DateTime.UtcNow;
         var today = DateOnly.FromDateTime(VietnamTime.ToLocal(nowUtc));
@@ -605,23 +605,6 @@ public static partial class SeedData
                 IssuedByEmployeeId = manager.Id,
                 IssuedAt = issuedAt,
             });
-        }
-    }
-
-    /// <summary>Chép ảnh bill mẫu vào nơi ReceiptFileStore đọc (chỉ khi chạy trong ứng dụng có IWebHostEnvironment).</summary>
-    private static void CopySampleReceipt(IServiceProvider services)
-    {
-        if (services.GetService(typeof(IWebHostEnvironment)) is not IWebHostEnvironment env)
-        {
-            return;
-        }
-        var source = Path.Combine(env.ContentRootPath, "Data", "SampleFiles", SampleReceiptFile);
-        var targetDir = Path.Combine(env.ContentRootPath, "App_Data", "receipts");
-        var target = Path.Combine(targetDir, SampleReceiptFile);
-        if (File.Exists(source) && !File.Exists(target))
-        {
-            Directory.CreateDirectory(targetDir);
-            File.Copy(source, target);
         }
     }
 }

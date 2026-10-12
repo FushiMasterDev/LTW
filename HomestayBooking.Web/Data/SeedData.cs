@@ -181,6 +181,7 @@ public static partial class SeedData
         await SeedCategoriesAsync(db);
         await SeedHomestaysAsync(db);
         await SeedSampleBookingsAsync(db, scope.ServiceProvider);
+        await SeedOperationsAsync(db, scope.ServiceProvider);
     }
 
     private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
