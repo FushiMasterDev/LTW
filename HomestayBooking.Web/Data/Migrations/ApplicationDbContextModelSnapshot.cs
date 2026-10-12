@@ -332,6 +332,13 @@ namespace HomestayBooking.Web.Data.Migrations
                     b.Property<DateTime>("ReceivedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("RefundBankRef")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("RefundedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("TransactionTime")
                         .HasColumnType("datetime2");
 
@@ -353,6 +360,8 @@ namespace HomestayBooking.Web.Data.Migrations
                     b.ToTable("BankTransactions", t =>
                         {
                             t.HasCheckConstraint("CK_BankTransactions_Amount", "[Amount] > 0");
+
+                            t.HasCheckConstraint("CK_BankTransactions_Refunded", "[MatchStatus] <> 'Refunded' OR [RefundedAt] IS NOT NULL");
                         });
                 });
 
@@ -529,6 +538,10 @@ namespace HomestayBooking.Web.Data.Migrations
                             t.HasCheckConstraint("CK_Bookings_Discount", "[DiscountAmount] >= 0 AND [DiscountAmount] < [DepositAmount]");
 
                             t.HasCheckConstraint("CK_Bookings_Guests", "[Guests] > 0");
+
+                            t.HasCheckConstraint("CK_Bookings_Refund", "[RefundAmount] IS NULL OR ([RefundAmount] >= 0 AND [RefundAmount] <= [DepositAmount] - [DiscountAmount])");
+
+                            t.HasCheckConstraint("CK_Bookings_Voucher", "([VoucherId] IS NULL AND [DiscountAmount] = 0) OR ([VoucherId] IS NOT NULL AND [DiscountAmount] > 0)");
                         });
                 });
 
@@ -1627,6 +1640,9 @@ namespace HomestayBooking.Web.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("ConfirmedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -1639,6 +1655,10 @@ namespace HomestayBooking.Web.Data.Migrations
                     b.Property<DateTime?>("PaidAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("PaidBankRef")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<int?>("PaidByEmployeeId")
                         .HasColumnType("int");
 
@@ -1648,6 +1668,9 @@ namespace HomestayBooking.Web.Data.Migrations
 
                     b.Property<int>("PeriodNo")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1681,6 +1704,10 @@ namespace HomestayBooking.Web.Data.Migrations
 
                     b.ToTable("Settlements", t =>
                         {
+                            t.HasCheckConstraint("CK_Settlements_Amounts", "[TotalRoomAmount] >= 0 AND [TotalRetained] >= 0 AND [TotalCommission] >= 0 AND [TotalCommission] <= [TotalRetained] AND [PayoutAmount] = [TotalRetained] - [TotalCommission]");
+
+                            t.HasCheckConstraint("CK_Settlements_Paid", "[Status] <> 'Paid' OR [PaidAt] IS NOT NULL");
+
                             t.HasCheckConstraint("CK_Settlements_Period", "[PeriodNo] IN (1, 2) AND [Month] BETWEEN 1 AND 12");
                         });
                 });
@@ -1705,6 +1732,10 @@ namespace HomestayBooking.Web.Data.Migrations
                         .HasColumnType("decimal(5,4)");
 
                     b.Property<decimal>("DepositAmount")
+                        .HasPrecision(18)
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("DiscountAmount")
                         .HasPrecision(18)
                         .HasColumnType("decimal(18,0)");
 
@@ -1739,7 +1770,10 @@ namespace HomestayBooking.Web.Data.Migrations
 
                     b.HasIndex("SettlementId");
 
-                    b.ToTable("SettlementItems");
+                    b.ToTable("SettlementItems", t =>
+                        {
+                            t.HasCheckConstraint("CK_SettlementItems_Amounts", "[RoomAmount] >= 0 AND [DepositAmount] >= 0 AND [RefundAmount] >= 0 AND [DiscountAmount] >= 0 AND [RetainedAmount] > 0 AND [RetainedAmount] <= [DepositAmount] AND [CommissionAmount] >= 0 AND [CommissionAmount] <= [RetainedAmount] AND [PayoutAmount] = [RetainedAmount] - [CommissionAmount]");
+                        });
                 });
 
             modelBuilder.Entity("HomestayBooking.Web.Models.Entities.VerificationDocument", b =>

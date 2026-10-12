@@ -1,6 +1,7 @@
 # Fuji Homestay — Thiết kế Database v1.0
 
-> **Phiên bản:** 1.4 — 2026-10-11 (thêm **voucher** — Q4, D14, migration `Vouchers`)  
+> **Phiên bản:** 1.5 — 2026-10-12 (rà soát: thêm CHECK cho đơn, đối soát, giao dịch hoàn; mốc gửi/xác nhận/chuyển tiền đối soát; tiền hoàn giao dịch không khớp — migration `ReviewFixes`)  
+> 1.4 — 2026-10-11 (thêm **voucher** — Q4, D14, migration `Vouchers`)  
 > 1.3 — 2026-10-11 (giữ phòng 15 phút khi đặt; cọc qua QR **MB Bank** tự đối soát, ảnh bill làm dự phòng; **đã áp vào code**, migration `Init`)
 > **Trạng thái:** Đã chốt các quyết định ở mục 1; dùng làm cơ sở viết ERD và sửa code (EF Core Code First).
 > **Nguồn:**
@@ -461,9 +462,9 @@ Chính sách đã có đơn dùng thì **không sửa**; muốn đổi thì tạ
 | | DepositAmount | decimal(18,0) | NOT NULL; CHECK `DepositAmount <= TotalAmount` |
 | | CommissionRate | decimal(5,4) | NOT NULL — lấy từ hợp đồng đang hiệu lực |
 | | CancellationPolicyId | int | FK, NOT NULL |
-| | RefundAmount | decimal(18,0) | NULL — tính khi hủy (BR-04), trên số tiền khách **thực chuyển** (`DepositAmount − DiscountAmount`) |
+| | RefundAmount | decimal(18,0) | NULL — tính khi hủy (BR-04), trên số tiền khách **thực chuyển** (`DepositAmount − DiscountAmount`). CHECK `0 ≤ RefundAmount ≤ DepositAmount − DiscountAmount` |
 | Voucher | VoucherId | int | FK → Vouchers, NULL (D14) |
-| | DiscountAmount | decimal(18,0) | NOT NULL, mặc định 0 — số tiền voucher đã giảm (snapshot). CHECK `0 ≤ DiscountAmount < DepositAmount`. Số tiền trên QR / webhook so khớp = `DepositAmount − DiscountAmount` |
+| | DiscountAmount | decimal(18,0) | NOT NULL, mặc định 0 — số tiền voucher đã giảm (snapshot). CHECK `0 ≤ DiscountAmount < DepositAmount`; CHECK có `VoucherId` ⇔ `DiscountAmount > 0`. Số tiền trên QR / webhook so khớp = `DepositAmount − DiscountAmount` |
 | Trùng phòng | ReplacedByBookingId | int | FK → Bookings, NULL — đơn thay thế khi Fuji chuyển khách sang phòng khác (BR-11) |
 
 **Vì sao lưu snapshot:** giá, tỷ lệ cọc, hoa hồng và chính sách hủy có thể thay đổi sau khi đặt. Đơn cũ và bảng đối soát cũ phải giữ đúng số liệu tại thời điểm đặt.
@@ -564,6 +565,8 @@ Lưu **mọi** khoản tiền vào tài khoản nhận cọc của Fuji mà dị
 | MatchedBookingId | int | FK → Bookings, NULL | Đơn tìm được từ nội dung chuyển khoản |
 | ProcessedByEmployeeId | int | FK, NULL | Người xử lý tay (khớp tay, hoàn tiền, bỏ qua) |
 | ProcessedAt | datetime2 | NULL | |
+| RefundedAt | datetime2 | NULL — CHECK bắt buộc khi `MatchStatus = Refunded` | Lúc Fuji chuyển trả khoản này. Ghi ở đây vì giao dịch `Unmatched` không có đơn để tạo `Payments(Refund)` |
+| RefundBankRef | nvarchar(100) | NULL | Mã giao dịch chuyển trả |
 | Note | nvarchar(500) | NULL | |
 
 | MatchStatus | Ý nghĩa | Xử lý |
@@ -616,9 +619,11 @@ Quy tắc (service `VoucherService`, cấu hình `appsettings: Voucher`):
 | HomestayId | int | FK, NOT NULL |
 | Year, Month | int | NOT NULL |
 | PeriodNo | int | CHECK IN (1, 2) — kỳ 1: ngày 1–15; kỳ 2: 16 – cuối tháng |
-| TotalRoomAmount, TotalRetained, TotalCommission, PayoutAmount | decimal(18,0) | NOT NULL |
-| Status | nvarchar(20) | `Draft`, `Sent`, `Confirmed`, `Paid` |
-| PaidAt | datetime2 | NULL |
+| TotalRoomAmount, TotalRetained, TotalCommission, PayoutAmount | decimal(18,0) | NOT NULL; CHECK ≥ 0, `TotalCommission ≤ TotalRetained`, `PayoutAmount = TotalRetained − TotalCommission` |
+| Status | nvarchar(20) | `Draft` (kế toán lập) → `Sent` (gửi chủ homestay) → `Confirmed` (chủ xác nhận số liệu) → `Paid` (Fuji đã chuyển) |
+| SentAt, ConfirmedAt | datetime2 | NULL — mốc gửi và mốc chủ homestay xác nhận |
+| PaidAt | datetime2 | NULL; CHECK bắt buộc khi `Status = Paid` |
+| PaidBankRef | nvarchar(100) | NULL — mã giao dịch Fuji chuyển tiền cho chủ homestay |
 | PaidByEmployeeId | int | FK, NULL |
 | | | **UNIQUE (HomestayId, Year, Month, PeriodNo)** |
 
@@ -629,9 +634,10 @@ Quy tắc (service `VoucherService`, cấu hình `appsettings: Voucher`):
 | SettlementId | FK, NOT NULL, cascade |
 | BookingId | FK, NOT NULL, **UNIQUE** — một đơn chỉ vào một kỳ |
 | ItemType | `Completed`, `CancelledRetained`, `NoShow` |
-| RoomAmount, DepositAmount, RefundAmount, RetainedAmount, CommissionRate, CommissionAmount, PayoutAmount | Sao chép từ đơn lúc lập bảng (công thức mục 7) |
+| RoomAmount, DepositAmount, RefundAmount, RetainedAmount, CommissionRate, CommissionAmount, PayoutAmount | Sao chép từ đơn lúc lập bảng (công thức mục 7). CHECK: các khoản ≥ 0, `0 < RetainedAmount ≤ DepositAmount`, `CommissionAmount ≤ RetainedAmount`, `PayoutAmount = RetainedAmount − CommissionAmount` |
+| DiscountAmount | Phần voucher **Fuji chịu** cho đơn (đã trừ phần trả lại vào voucher khi hủy). Fuji thực thu = `CommissionAmount − DiscountAmount` — báo cáo lãi lấy thẳng từ bảng này |
 
-- Đơn vào kỳ theo **ngày `CheckOut`** (D7).
+- Đơn vào kỳ theo **ngày `CheckOut`** (D7). Công thức nằm ở `Services/SettlementCalculator.cs` (dùng chung cho seed và màn đối soát).
 - Khi `Settlement.Status` khác `Draft`, các đơn trong kỳ không được sửa số tiền.
 
 ---
@@ -807,7 +813,8 @@ Ví dụ: tổng 2.000.000đ, cọc 600.000đ, hoa hồng 12%.
 | Ảnh bill khi không tự khớp được (D11) | `Payments.Method = ManualReceipt`, `ReceiptImageUrl` | Kế toán xem bill, khớp tay / từ chối |
 | Không bỏ sót tiền khách chuyển | `BankTransactions.MatchStatus` | Danh sách giao dịch chưa khớp / đến muộn cho kế toán |
 | Chống giữ phòng ảo | — | Tối đa 3 đơn `AwaitingPayment` / khách |
-| Đối soát 2 kỳ / tháng (BR-03) | UNIQUE `Settlements (HomestayId, Year, Month, PeriodNo)`, UNIQUE `SettlementItems.BookingId` | Lập bảng theo công thức 7.3 |
+| Đối soát 2 kỳ / tháng (BR-03) | UNIQUE `Settlements (HomestayId, Year, Month, PeriodNo)`, UNIQUE `SettlementItems.BookingId`, CHECK `Payout = Retained − Commission` ở cả hai bảng | Lập bảng theo công thức 7.3 (`SettlementCalculator`) |
+| Không hoàn quá tiền khách đã chuyển (BR-04) | CHECK `Bookings.RefundAmount ≤ DepositAmount − DiscountAmount` | |
 | Đánh giá một lần sau khi hoàn thành (BR-09) | UNIQUE `Reviews.BookingId`, CHECK 1–5 | Kiểm tra `Status = Completed` |
 | Homestay phải được duyệt mới hiện (BR-12) | `Homestays.Status`, `VerificationDocuments` | Lọc `Status = Active` |
 | Ẩn SĐT, địa chỉ trước khi xác nhận (BR-13) | `Homestays.ContactPhone`, `CheckinGuideHtml` | Chỉ trả về khi đơn từ `Confirmed` |

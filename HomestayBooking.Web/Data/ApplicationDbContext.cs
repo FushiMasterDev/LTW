@@ -387,6 +387,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
                 t.HasCheckConstraint("CK_Bookings_Amounts", "[TotalAmount] > 0 AND [DepositAmount] >= 0 AND [DepositAmount] <= [TotalAmount]");
                 // Voucher chỉ trừ vào cọc và khách luôn phải chuyển một khoản > 0
                 t.HasCheckConstraint("CK_Bookings_Discount", "[DiscountAmount] >= 0 AND [DiscountAmount] < [DepositAmount]");
+                // Có giảm giá thì phải biết voucher nào; gắn voucher thì phải giảm được > 0
+                t.HasCheckConstraint("CK_Bookings_Voucher",
+                    "([VoucherId] IS NULL AND [DiscountAmount] = 0) OR ([VoucherId] IS NOT NULL AND [DiscountAmount] > 0)");
+                // Hoàn tối đa số tiền khách thực chuyển (BR-04, mục 7.2)
+                t.HasCheckConstraint("CK_Bookings_Refund",
+                    "[RefundAmount] IS NULL OR ([RefundAmount] >= 0 AND [RefundAmount] <= [DepositAmount] - [DiscountAmount])");
             });
             e.HasOne(x => x.Voucher).WithMany(v => v.UsedByBookings).HasForeignKey(x => x.VoucherId);
             e.HasOne(x => x.Customer).WithMany(c => c.Bookings).HasForeignKey(x => x.CustomerId);
@@ -457,7 +463,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
             e.HasIndex(x => new { x.Provider, x.ProviderTransactionId }).IsUnique();
             e.HasIndex(x => new { x.MatchStatus, x.TransactionTime });
             e.HasIndex(x => x.MatchedBookingId);
-            e.ToTable(t => t.HasCheckConstraint("CK_BankTransactions_Amount", "[Amount] > 0"));
+            e.Property(x => x.RefundBankRef).HasMaxLength(100);
+            e.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_BankTransactions_Amount", "[Amount] > 0");
+                t.HasCheckConstraint("CK_BankTransactions_Refunded",
+                    $"[MatchStatus] <> '{BankMatchStatus.Refunded}' OR [RefundedAt] IS NOT NULL");
+            });
             e.HasOne(x => x.MatchedBooking).WithMany().HasForeignKey(x => x.MatchedBookingId);
             e.HasOne(x => x.ProcessedByEmployee).WithMany().HasForeignKey(x => x.ProcessedByEmployeeId);
         });
@@ -465,9 +477,14 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         builder.Entity<Settlement>(e =>
         {
             e.HasIndex(x => new { x.HomestayId, x.Year, x.Month, x.PeriodNo }).IsUnique();
+            e.Property(x => x.PaidBankRef).HasMaxLength(100);
             e.ToTable(t =>
             {
                 t.HasCheckConstraint("CK_Settlements_Period", "[PeriodNo] IN (1, 2) AND [Month] BETWEEN 1 AND 12");
+                t.HasCheckConstraint("CK_Settlements_Amounts",
+                    "[TotalRoomAmount] >= 0 AND [TotalRetained] >= 0 AND [TotalCommission] >= 0 AND [TotalCommission] <= [TotalRetained]"
+                    + " AND [PayoutAmount] = [TotalRetained] - [TotalCommission]");
+                t.HasCheckConstraint("CK_Settlements_Paid", $"[Status] <> '{SettlementStatus.Paid}' OR [PaidAt] IS NOT NULL");
             });
             e.HasOne(x => x.Homestay).WithMany(h => h.Settlements).HasForeignKey(x => x.HomestayId);
             e.HasOne(x => x.PaidByEmployee).WithMany().HasForeignKey(x => x.PaidByEmployeeId);
@@ -476,6 +493,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         builder.Entity<SettlementItem>(e =>
         {
             e.Property(x => x.CommissionRate).HasPrecision(5, 4);
+            e.ToTable(t => t.HasCheckConstraint("CK_SettlementItems_Amounts",
+                "[RoomAmount] >= 0 AND [DepositAmount] >= 0 AND [RefundAmount] >= 0 AND [DiscountAmount] >= 0"
+                + " AND [RetainedAmount] > 0 AND [RetainedAmount] <= [DepositAmount]"
+                + " AND [CommissionAmount] >= 0 AND [CommissionAmount] <= [RetainedAmount]"
+                + " AND [PayoutAmount] = [RetainedAmount] - [CommissionAmount]"));
             // Một đơn chỉ vào một kỳ đối soát
             e.HasIndex(x => x.BookingId).IsUnique();
             e.HasOne(x => x.Booking).WithOne(b => b.SettlementItem).HasForeignKey<SettlementItem>(x => x.BookingId);

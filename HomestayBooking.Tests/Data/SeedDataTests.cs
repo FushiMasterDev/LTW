@@ -282,4 +282,68 @@ public class SeedDataTests
             Assert.Equal(v.Amount, v.Balance);
         });
     }
+
+    [Fact]
+    public async Task InitializeAsync_SeedsOperationsData()
+    {
+        await using var services = BuildServices();
+        await SeedData.InitializeAsync(services);
+
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var today = DateOnly.FromDateTime(VietnamTime.ToLocal(DateTime.UtcNow));
+
+        // Đối soát: chỉ kỳ đã kết thúc, đơn đúng kỳ theo CheckOut, tổng khớp từng dòng, công thức mục 7.3
+        var settlements = await db.Settlements.Include(s => s.Items).ThenInclude(i => i.Booking).ToListAsync();
+        Assert.NotEmpty(settlements);
+        // Kỳ gần nhất xoay vòng các bước để demo; kỳ cũ hơn đã trả
+        Assert.Contains(settlements, s => s.Status == SettlementStatus.Draft);
+        Assert.Contains(settlements, s => s.Status == SettlementStatus.Paid);
+        Assert.All(settlements, s => Assert.True(s.CreatedAt <= DateTime.UtcNow && (s.SentAt ?? s.CreatedAt) >= s.CreatedAt));
+        Assert.All(settlements, s =>
+        {
+            var period = new SettlementPeriod(s.Year, s.Month, s.PeriodNo);
+            Assert.True(period.End < today);
+            Assert.NotEmpty(s.Items);
+            Assert.Equal(s.Items.Sum(i => i.PayoutAmount), s.PayoutAmount);
+            Assert.Equal(s.TotalRetained - s.TotalCommission, s.PayoutAmount);
+            Assert.Equal(s.Status == SettlementStatus.Paid, s.PaidAt != null && s.PaidBankRef != null);
+            Assert.All(s.Items, i =>
+            {
+                Assert.Equal(s.HomestayId, i.Booking.HomestayId);
+                Assert.Equal(period, SettlementCalculator.PeriodOf(i.Booking.CheckOut));
+                Assert.True(i.RetainedAmount > 0);
+                Assert.Equal(i.RetainedAmount - i.CommissionAmount, i.PayoutAmount);
+            });
+        });
+        // Mọi đơn hoàn thành của kỳ đã qua đều đã vào đối soát
+        var completedPast = await db.Bookings.Where(b => b.Status == BookingStatus.Completed).ToListAsync();
+        Assert.All(completedPast.Where(b => SettlementCalculator.PeriodOf(b.CheckOut).End < today),
+            b => Assert.Contains(settlements.SelectMany(s => s.Items), i => i.BookingId == b.Id));
+
+        // Khóa ngày không đè lên đêm đã có đơn
+        var blocks = await db.RoomBlocks.Include(b => b.Nights).ToListAsync();
+        Assert.Equal(SeedData.SampleRoomBlockCount, blocks.Count);
+        Assert.All(blocks, b => Assert.Equal(b.EndDate.DayNumber - b.StartDate.DayNumber, b.Nights.Count));
+        var roomNights = await db.RoomNights.ToListAsync();
+        Assert.Equal(roomNights.Count, roomNights.Select(n => (n.RoomId, n.Date)).Distinct().Count());
+
+        // Mỗi homestay có giấy phép kinh doanh và PCCC; hồ sơ Owner chờ duyệt có đủ giấy tờ
+        var documents = await db.VerificationDocuments.ToListAsync();
+        Assert.All(await db.Homestays.Select(h => h.Id).ToListAsync(), id =>
+        {
+            Assert.Contains(documents, d => d.HomestayId == id && d.DocumentType == DocumentType.BusinessLicense);
+            Assert.Contains(documents, d => d.HomestayId == id && d.DocumentType == DocumentType.FireSafety);
+        });
+        var pending = await db.OwnerRegistrations.SingleAsync(r => r.Status == OwnerRegistrationStatus.PendingReview);
+        Assert.True(documents.Count(d => d.OwnerRegistrationId == pending.Id) >= 4);
+
+        var requests = await db.BookingChangeRequests.Include(r => r.Booking).ToListAsync();
+        Assert.Contains(requests, r => r.Status == ChangeRequestStatus.Pending);
+        Assert.Contains(requests, r => r.RequestType == ChangeRequestType.Cancel && r.RefundAmount != null);
+        Assert.All(requests.Where(r => r.Status != ChangeRequestStatus.Pending), r => Assert.NotNull(r.DecidedAt));
+
+        var refunded = await db.BankTransactions.SingleAsync(t => t.MatchStatus == BankMatchStatus.Refunded);
+        Assert.NotNull(refunded.RefundedAt);
+    }
 }

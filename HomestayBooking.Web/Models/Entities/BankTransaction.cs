@@ -26,6 +26,10 @@ public class BankTransaction
     public int? MatchedBookingId { get; set; }
     public int? ProcessedByEmployeeId { get; set; }
     public DateTime? ProcessedAt { get; set; }
+    /// <summary>Lúc Fuji chuyển trả khoản tiền này (MatchStatus = Refunded), kể cả khi không khớp được đơn nào.</summary>
+    public DateTime? RefundedAt { get; set; }
+    /// <summary>Mã giao dịch chuyển trả.</summary>
+    public string? RefundBankRef { get; set; }
     public string? Note { get; set; }
 
     public Booking? MatchedBooking { get; set; }

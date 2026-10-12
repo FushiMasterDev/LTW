@@ -215,8 +215,59 @@ public sealed class DatabaseConstraintTests : IDisposable
     [Fact]
     public async Task Booking_DiscountNotBelowDeposit_IsRejected()
     {
+        var voucher = NewVoucher("VC00010001", 500_000, 500_000);
+        _db.Vouchers.Add(voucher);
+        await _db.SaveChangesAsync();
         var booking = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        booking.VoucherId = voucher.Id;
         booking.DiscountAmount = booking.DepositAmount; // khách luôn phải chuyển một khoản > 0
+
+        await AssertRejectedAsync(booking);
+    }
+
+    [Fact]
+    public async Task Booking_DiscountWithoutVoucher_IsRejected()
+    {
+        var booking = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        booking.DiscountAmount = 50_000;
+
+        await AssertRejectedAsync(booking);
+    }
+
+    [Fact]
+    public async Task Booking_VoucherWithoutDiscount_IsRejected()
+    {
+        var voucher = NewVoucher("VC00010001", 100_000, 100_000);
+        _db.Vouchers.Add(voucher);
+        await _db.SaveChangesAsync();
+        var booking = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        booking.VoucherId = voucher.Id;
+
+        await AssertRejectedAsync(booking);
+    }
+
+    [Fact]
+    public async Task Booking_WithVoucherDiscount_IsAllowed()
+    {
+        var voucher = NewVoucher("VC00010001", 100_000, 100_000);
+        _db.Vouchers.Add(voucher);
+        await _db.SaveChangesAsync();
+        var booking = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        booking.VoucherId = voucher.Id;
+        booking.DiscountAmount = 36_000;
+        booking.RefundAmount = booking.DepositAmount - booking.DiscountAmount; // hoàn đủ số khách thực chuyển
+        _db.Bookings.Add(booking);
+
+        await _db.SaveChangesAsync();
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(300_001)] // cọc 300.000đ: không hoàn quá số khách đã chuyển
+    public async Task Booking_RefundOutsideAmountPaid_IsRejected(int refund)
+    {
+        var booking = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        booking.RefundAmount = refund;
 
         await AssertRejectedAsync(booking);
     }
@@ -312,10 +363,86 @@ public sealed class DatabaseConstraintTests : IDisposable
         var second = new Settlement { HomestayId = _homestay.Id, Year = 2026, Month = 12, PeriodNo = 1 };
         _db.AddRange(booking, first, second);
         await _db.SaveChangesAsync();
-        _db.SettlementItems.Add(new SettlementItem { SettlementId = first.Id, BookingId = booking.Id });
+        _db.SettlementItems.Add(Item(first.Id, booking.Id));
         await _db.SaveChangesAsync();
 
-        await AssertRejectedAsync(new SettlementItem { SettlementId = second.Id, BookingId = booking.Id });
+        await AssertRejectedAsync(Item(second.Id, booking.Id));
+    }
+
+    /// <summary>Đơn hoàn thành: tổng 1.000.000đ, cọc 300.000đ, hoa hồng 12% (mục 7.3).</summary>
+    private static SettlementItem Item(int settlementId, int bookingId) => new()
+    {
+        SettlementId = settlementId,
+        BookingId = bookingId,
+        ItemType = SettlementItemType.Completed,
+        RoomAmount = 1_000_000,
+        DepositAmount = 300_000,
+        RetainedAmount = 300_000,
+        CommissionRate = 0.12m,
+        CommissionAmount = 120_000,
+        PayoutAmount = 180_000,
+    };
+
+    [Fact]
+    public async Task SettlementItem_ValidAmounts_IsAllowed()
+    {
+        var booking = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        var settlement = new Settlement { HomestayId = _homestay.Id, Year = 2026, Month = 11, PeriodNo = 2 };
+        _db.AddRange(booking, settlement);
+        await _db.SaveChangesAsync();
+        _db.SettlementItems.Add(Item(settlement.Id, booking.Id));
+
+        await _db.SaveChangesAsync();
+    }
+
+    public static TheoryData<string> BadItems => ["payout", "commission", "retained", "zero"];
+
+    [Theory]
+    [MemberData(nameof(BadItems))]
+    public async Task SettlementItem_InconsistentAmounts_IsRejected(string kind)
+    {
+        var booking = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        var settlement = new Settlement { HomestayId = _homestay.Id, Year = 2026, Month = 11, PeriodNo = 2 };
+        _db.AddRange(booking, settlement);
+        await _db.SaveChangesAsync();
+        var item = Item(settlement.Id, booking.Id);
+        switch (kind)
+        {
+            case "payout": item.PayoutAmount = 200_000; break;                                       // ≠ giữ lại − hoa hồng
+            case "commission": item.CommissionAmount = 400_000; item.PayoutAmount = -100_000; break; // hoa hồng > tiền giữ lại
+            case "retained": item.RetainedAmount = 400_000; item.PayoutAmount = 280_000; break;     // giữ lại > cọc
+            case "zero": item.RetainedAmount = 0; item.CommissionAmount = 0; item.PayoutAmount = 0; break; // hoàn 100% không vào đối soát
+        }
+
+        await AssertRejectedAsync(item);
+    }
+
+    [Fact]
+    public async Task Settlement_PayoutNotRetainedMinusCommission_IsRejected()
+    {
+        await AssertRejectedAsync(new Settlement
+        {
+            HomestayId = _homestay.Id, Year = 2026, Month = 11, PeriodNo = 2,
+            TotalRoomAmount = 1_000_000, TotalRetained = 300_000, TotalCommission = 120_000, PayoutAmount = 300_000,
+        });
+    }
+
+    [Fact]
+    public async Task Settlement_PaidWithoutPaidAt_IsRejected()
+    {
+        await AssertRejectedAsync(new Settlement
+        {
+            HomestayId = _homestay.Id, Year = 2026, Month = 11, PeriodNo = 2, Status = SettlementStatus.Paid,
+        });
+    }
+
+    [Fact]
+    public async Task BankTransaction_RefundedWithoutRefundedAt_IsRejected()
+    {
+        var tx = BankTx("SEPAY-REFUND");
+        tx.MatchStatus = BankMatchStatus.Refunded;
+
+        await AssertRejectedAsync(tx);
     }
 
     [Theory]
