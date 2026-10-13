@@ -299,6 +299,7 @@ namespace HomestayBooking.Web.Data.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("MatchStatus")
+                        .IsConcurrencyToken()
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
@@ -533,7 +534,13 @@ namespace HomestayBooking.Web.Data.Migrations
                         {
                             t.HasCheckConstraint("CK_Bookings_Amounts", "[TotalAmount] > 0 AND [DepositAmount] >= 0 AND [DepositAmount] <= [TotalAmount]");
 
+                            t.HasCheckConstraint("CK_Bookings_CommissionRate", "[CommissionRate] > 0 AND [CommissionRate] < 1");
+
+                            t.HasCheckConstraint("CK_Bookings_ConfirmedAt", "([Status] IN ('Confirmed', 'CheckedIn', 'Completed', 'NoShow') AND [ConfirmedAt] IS NOT NULL) OR ([Status] IN ('AwaitingPayment', 'PaymentSubmitted', 'Deposited', 'Rejected', 'Expired') AND [ConfirmedAt] IS NULL) OR [Status] = 'Cancelled'");
+
                             t.HasCheckConstraint("CK_Bookings_Dates", "[CheckOut] > [CheckIn]");
+
+                            t.HasCheckConstraint("CK_Bookings_DepositRate", "[DepositRate] > 0 AND [DepositRate] <= 1");
 
                             t.HasCheckConstraint("CK_Bookings_Discount", "[DiscountAmount] >= 0 AND [DiscountAmount] < [DepositAmount]");
 
@@ -609,7 +616,18 @@ namespace HomestayBooking.Web.Data.Migrations
 
                     b.HasIndex("NewRoomTypeId");
 
-                    b.ToTable("BookingChangeRequests");
+                    b.ToTable("BookingChangeRequests", t =>
+                        {
+                            t.HasCheckConstraint("CK_BookingChangeRequests_Decision", "([Status] = 'Pending' AND [DecidedAt] IS NULL AND [DecidedByAccountId] IS NULL) OR ([Status] <> 'Pending' AND [DecidedAt] IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_BookingChangeRequests_Fields", "([RequestType] <> 'Cancel' OR ([NewCheckIn] IS NULL AND [NewCheckOut] IS NULL AND [NewRoomTypeId] IS NULL)) AND ([RequestType] <> 'ChangeDates' OR ([NewCheckIn] IS NOT NULL AND [NewCheckOut] IS NOT NULL AND [NewCheckOut] > [NewCheckIn])) AND ([RequestType] <> 'ChangeRoomType' OR [NewRoomTypeId] IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_BookingChangeRequests_RequestedBy", "[RequestedByType] IN ('Customer', 'Employee')");
+
+                            t.HasCheckConstraint("CK_BookingChangeRequests_Status", "[Status] IN ('Pending', 'Approved', 'Rejected')");
+
+                            t.HasCheckConstraint("CK_BookingChangeRequests_Type", "[RequestType] IN ('ChangeDates', 'ChangeRoomType', 'Cancel')");
+                        });
                 });
 
             modelBuilder.Entity("HomestayBooking.Web.Models.Entities.BookingCodeCounter", b =>
@@ -1050,7 +1068,9 @@ namespace HomestayBooking.Web.Data.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("SortOrder")
-                        .HasColumnType("int");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
 
                     b.Property<string>("Url")
                         .IsRequired()
@@ -1322,10 +1342,7 @@ namespace HomestayBooking.Web.Data.Migrations
                         .IsUnique()
                         .HasFilter("[BankTransactionId] IS NOT NULL");
 
-                    b.HasIndex("BookingId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_Payments_OneDepositPerBooking")
-                        .HasFilter("[Type] = 'Deposit' AND [Status] <> 'Rejected'");
+                    b.HasIndex("BookingId");
 
                     b.HasIndex("ReviewedByEmployeeId");
 
@@ -1333,9 +1350,19 @@ namespace HomestayBooking.Web.Data.Migrations
 
                     b.HasIndex("Status", "SubmittedAt");
 
+                    b.HasIndex(new[] { "BookingId" }, "IX_Payments_OneDepositPerBooking")
+                        .IsUnique()
+                        .HasFilter("[Type] = 'Deposit' AND [Status] <> 'Rejected'");
+
+                    b.HasIndex(new[] { "BookingId" }, "IX_Payments_OneRefundPerBooking")
+                        .IsUnique()
+                        .HasFilter("[Type] = 'Refund'");
+
                     b.ToTable("Payments", t =>
                         {
                             t.HasCheckConstraint("CK_Payments_Amount", "[Amount] > 0");
+
+                            t.HasCheckConstraint("CK_Payments_Receipt", "[Method] <> 'ManualReceipt' OR ([ReceiptImageUrl] IS NOT NULL AND [ReceiptImageUrl] <> '')");
                         });
                 });
 
@@ -1709,6 +1736,8 @@ namespace HomestayBooking.Web.Data.Migrations
                             t.HasCheckConstraint("CK_Settlements_Paid", "[Status] <> 'Paid' OR [PaidAt] IS NOT NULL");
 
                             t.HasCheckConstraint("CK_Settlements_Period", "[PeriodNo] IN (1, 2) AND [Month] BETWEEN 1 AND 12");
+
+                            t.HasCheckConstraint("CK_Settlements_Sent", "[Status] = 'Draft' OR [SentAt] IS NOT NULL");
                         });
                 });
 
@@ -1773,6 +1802,8 @@ namespace HomestayBooking.Web.Data.Migrations
                     b.ToTable("SettlementItems", t =>
                         {
                             t.HasCheckConstraint("CK_SettlementItems_Amounts", "[RoomAmount] >= 0 AND [DepositAmount] >= 0 AND [RefundAmount] >= 0 AND [DiscountAmount] >= 0 AND [RetainedAmount] > 0 AND [RetainedAmount] <= [DepositAmount] AND [CommissionAmount] >= 0 AND [CommissionAmount] <= [RetainedAmount] AND [PayoutAmount] = [RetainedAmount] - [CommissionAmount]");
+
+                            t.HasCheckConstraint("CK_SettlementItems_CommissionRate", "[CommissionRate] > 0 AND [CommissionRate] < 1");
                         });
                 });
 

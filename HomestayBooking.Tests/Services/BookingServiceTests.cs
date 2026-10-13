@@ -154,6 +154,7 @@ public sealed class BookingServiceTests : IDisposable
         await bookings.ChangeStatusAsync(booking, BookingStatus.Deposited, Actor.System);
         Assert.Equal(_host.Clock.Now.UtcDateTime.AddMinutes(30), booking.ConfirmDeadlineAt);
         await bookings.ChangeStatusAsync(booking, BookingStatus.Confirmed, new Actor(ActorType.Owner));
+        _host.Clock.Advance(TimeSpan.FromDays(9)); // tới ngày nhận phòng 19/11
         await bookings.ChangeStatusAsync(booking, BookingStatus.CheckedIn, new Actor(ActorType.Owner));
         await bookings.ChangeStatusAsync(booking, BookingStatus.Completed, new Actor(ActorType.Owner));
 
@@ -188,6 +189,40 @@ public sealed class BookingServiceTests : IDisposable
         await bookings.ChangeStatusAsync(booking, BookingStatus.Cancelled, new Actor(ActorType.Customer));
 
         Assert.Equal(booking.DepositAmount, booking.RefundAmount);
+    }
+
+    // CK_Bookings_ConfirmedAt cho phép đơn hủy có hoặc không có ConfirmedAt: hủy không được xóa mốc xác nhận cũ
+    [Fact]
+    public async Task Cancelled_AfterConfirmed_KeepsConfirmedAt()
+    {
+        var bookings = _host.Bookings();
+        var booking = await bookings.CreateAsync(_host.Request(CheckIn, CheckOut));
+        await bookings.ChangeStatusAsync(booking, BookingStatus.Deposited, Actor.System);
+        await bookings.ChangeStatusAsync(booking, BookingStatus.Confirmed, new Actor(ActorType.Owner));
+        var confirmedAt = _host.Clock.Now.UtcDateTime;
+        _host.Clock.Advance(TimeSpan.FromHours(1));
+
+        await bookings.ChangeStatusAsync(booking, BookingStatus.Cancelled, new Actor(ActorType.Customer));
+
+        await using var db = _host.NewContext();
+        var saved = await db.Bookings.SingleAsync(b => b.Id == booking.Id);
+        Assert.Equal(BookingStatus.Cancelled, saved.Status);
+        Assert.Equal(confirmedAt, saved.ConfirmedAt);
+    }
+
+    [Fact]
+    public async Task Cancelled_BeforeConfirmed_HasNoConfirmedAt()
+    {
+        var bookings = _host.Bookings();
+        var booking = await bookings.CreateAsync(_host.Request(CheckIn, CheckOut));
+        await bookings.ChangeStatusAsync(booking, BookingStatus.Deposited, Actor.System);
+
+        await bookings.ChangeStatusAsync(booking, BookingStatus.Cancelled, new Actor(ActorType.Customer));
+
+        await using var db = _host.NewContext();
+        var saved = await db.Bookings.SingleAsync(b => b.Id == booking.Id);
+        Assert.Equal(BookingStatus.Cancelled, saved.Status);
+        Assert.Null(saved.ConfirmedAt);
     }
 
     [Fact]
