@@ -2,6 +2,8 @@ using HomestayBooking.Web.Data;
 using HomestayBooking.Web.Models.Entities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace HomestayBooking.Tests.Data;
 
@@ -283,14 +285,185 @@ public sealed class DatabaseConstraintTests : IDisposable
         await AssertRejectedAsync(new BookingNight { BookingId = booking.Id, Date = new(2026, 11, 20), DayType = DayType.Weekday, Price = 500_000 });
     }
 
+    /// <summary>Phải bị chặn bởi đúng CHECK này, không phải lỗi CSDL bất kỳ.</summary>
+    private async Task AssertRejectedByAsync(object entity, string constraint)
+    {
+        _db.ChangeTracker.Clear();
+        _db.Add(entity);
+        var ex = await Assert.ThrowsAsync<DbUpdateException>(() => _db.SaveChangesAsync());
+        Assert.Contains(constraint, ex.InnerException?.Message);
+    }
+
+    private async Task AssertAcceptedAsync(object entity)
+    {
+        _db.ChangeTracker.Clear();
+        _db.Add(entity);
+        await _db.SaveChangesAsync();
+    }
+
+    // CK_Bookings_ConfirmedAt: sau xác nhận phải có, trước xác nhận phải trống, đã hủy thì tùy
+    [Theory]
+    [InlineData(BookingStatus.Confirmed, true, true)]
+    [InlineData(BookingStatus.CheckedIn, true, true)]
+    [InlineData(BookingStatus.Completed, true, true)]
+    [InlineData(BookingStatus.NoShow, true, true)]
+    [InlineData(BookingStatus.Confirmed, false, false)]
+    [InlineData(BookingStatus.CheckedIn, false, false)]
+    [InlineData(BookingStatus.Completed, false, false)]
+    [InlineData(BookingStatus.NoShow, false, false)]
+    [InlineData(BookingStatus.AwaitingPayment, false, true)]
+    [InlineData(BookingStatus.PaymentSubmitted, false, true)]
+    [InlineData(BookingStatus.Deposited, false, true)]
+    [InlineData(BookingStatus.Rejected, false, true)]
+    [InlineData(BookingStatus.Expired, false, true)]
+    [InlineData(BookingStatus.AwaitingPayment, true, false)]
+    [InlineData(BookingStatus.PaymentSubmitted, true, false)]
+    [InlineData(BookingStatus.Deposited, true, false)]
+    [InlineData(BookingStatus.Rejected, true, false)]
+    [InlineData(BookingStatus.Expired, true, false)]
+    [InlineData(BookingStatus.Cancelled, true, true)]
+    [InlineData(BookingStatus.Cancelled, false, true)]
+    public async Task Booking_ConfirmedAtMatchesStatus(BookingStatus status, bool hasConfirmedAt, bool allowed)
+    {
+        var booking = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        booking.Status = status;
+        booking.ConfirmedAt = hasConfirmedAt ? new DateTime(2026, 11, 1, 3, 0, 0, DateTimeKind.Utc) : null;
+
+        if (allowed)
+        {
+            await AssertAcceptedAsync(booking);
+        }
+        else
+        {
+            await AssertRejectedByAsync(booking, "CK_Bookings_ConfirmedAt");
+        }
+    }
+
+    [Fact]
+    public void Booking_ConfirmedAtCheck_CoversEveryStatus()
+    {
+        // Trạng thái mới phải được xếp vào nhóm trong CHECK, nếu không mọi đơn ở trạng thái đó bị chặn
+        var model = _db.GetService<IDesignTimeModel>().Model;
+        var sql = model.FindEntityType(typeof(Booking))!.GetCheckConstraints().Single(c => c.Name == "CK_Bookings_ConfirmedAt").Sql;
+        Assert.All(Enum.GetNames<BookingStatus>(), name => Assert.Contains($"'{name}'", sql));
+    }
+
+    // ---- Yêu cầu đổi/hủy ----
+
+    private async Task<int> SavedBookingIdAsync()
+    {
+        var booking = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        _db.Bookings.Add(booking);
+        await _db.SaveChangesAsync();
+        return booking.Id;
+    }
+
+    private static BookingChangeRequest Request(int bookingId, ChangeRequestType type, ActorType by = ActorType.Customer) => new()
+    {
+        BookingId = bookingId,
+        RequestType = type,
+        RequestedByType = by,
+        NewCheckIn = type == ChangeRequestType.ChangeDates ? new DateOnly(2026, 12, 1) : null,
+        NewCheckOut = type == ChangeRequestType.ChangeDates ? new DateOnly(2026, 12, 3) : null,
+    };
+
+    // CK_BookingChangeRequests_RequestedBy: FR-05 — khách gửi, hoặc nhân viên gửi thay
+    [Theory]
+    [InlineData(ActorType.Customer, true)]
+    [InlineData(ActorType.Employee, true)]
+    [InlineData(ActorType.Owner, false)]
+    [InlineData(ActorType.System, false)]
+    public async Task ChangeRequest_RequestedByType(ActorType by, bool allowed)
+    {
+        var request = Request(await SavedBookingIdAsync(), ChangeRequestType.Cancel, by);
+
+        if (allowed)
+        {
+            await AssertAcceptedAsync(request);
+        }
+        else
+        {
+            await AssertRejectedByAsync(request, "CK_BookingChangeRequests_RequestedBy");
+        }
+    }
+
+    // CK_BookingChangeRequests_Fields: trường bắt buộc theo loại yêu cầu
+    [Theory]
+    [InlineData(ChangeRequestType.Cancel, null, null, false, true)]
+    [InlineData(ChangeRequestType.Cancel, "2026-12-01", null, false, false)]
+    [InlineData(ChangeRequestType.Cancel, null, "2026-12-03", false, false)]
+    [InlineData(ChangeRequestType.Cancel, null, null, true, false)]
+    [InlineData(ChangeRequestType.ChangeDates, "2026-12-01", "2026-12-03", false, true)]
+    [InlineData(ChangeRequestType.ChangeDates, "2026-12-01", null, false, false)]
+    [InlineData(ChangeRequestType.ChangeDates, null, "2026-12-03", false, false)]
+    [InlineData(ChangeRequestType.ChangeDates, null, null, false, false)]
+    [InlineData(ChangeRequestType.ChangeDates, "2026-12-03", "2026-12-03", false, false)]
+    [InlineData(ChangeRequestType.ChangeDates, "2026-12-03", "2026-12-01", false, false)]
+    [InlineData(ChangeRequestType.ChangeRoomType, null, null, true, true)]
+    [InlineData(ChangeRequestType.ChangeRoomType, null, null, false, false)]
+    // Chưa chốt đổi kết hợp: trường thừa đang được cho phép có chủ đích
+    [InlineData(ChangeRequestType.ChangeDates, "2026-12-01", "2026-12-03", true, true)]
+    [InlineData(ChangeRequestType.ChangeRoomType, "2026-12-01", "2026-12-03", true, true)]
+    public async Task ChangeRequest_FieldsMatchType(ChangeRequestType type, string? newIn, string? newOut, bool newRoomType, bool allowed)
+    {
+        var request = Request(await SavedBookingIdAsync(), type);
+        request.NewCheckIn = newIn is null ? null : DateOnly.Parse(newIn);
+        request.NewCheckOut = newOut is null ? null : DateOnly.Parse(newOut);
+        request.NewRoomTypeId = newRoomType ? _roomType.Id : null;
+
+        if (allowed)
+        {
+            await AssertAcceptedAsync(request);
+        }
+        else
+        {
+            await AssertRejectedByAsync(request, "CK_BookingChangeRequests_Fields");
+        }
+    }
+
+    // CK_BookingChangeRequests_Decision: chờ duyệt thì chưa có quyết định; đã quyết thì có thời điểm, người quyết chưa bắt buộc
+    [Theory]
+    [InlineData(ChangeRequestStatus.Pending, false, false, true)]
+    [InlineData(ChangeRequestStatus.Pending, true, false, false)]
+    [InlineData(ChangeRequestStatus.Pending, false, true, false)]
+    [InlineData(ChangeRequestStatus.Pending, true, true, false)]
+    [InlineData(ChangeRequestStatus.Approved, true, true, true)]
+    [InlineData(ChangeRequestStatus.Approved, true, false, true)]
+    [InlineData(ChangeRequestStatus.Approved, false, false, false)]
+    [InlineData(ChangeRequestStatus.Approved, false, true, false)]
+    [InlineData(ChangeRequestStatus.Rejected, true, true, true)]
+    [InlineData(ChangeRequestStatus.Rejected, true, false, true)]
+    [InlineData(ChangeRequestStatus.Rejected, false, false, false)]
+    [InlineData(ChangeRequestStatus.Rejected, false, true, false)]
+    public async Task ChangeRequest_DecisionMatchesStatus(ChangeRequestStatus status, bool hasDecidedAt, bool hasDecider, bool allowed)
+    {
+        var decider = new ApplicationUser { Person = new PersonProfile { FullName = "Nhân viên", PhoneNumber = "+84901000099" } };
+        _db.Users.Add(decider);
+        var request = Request(await SavedBookingIdAsync(), ChangeRequestType.Cancel);
+        request.Status = status;
+        request.DecidedAt = hasDecidedAt ? new DateTime(2026, 11, 5, 3, 0, 0, DateTimeKind.Utc) : null;
+        request.DecidedByAccountId = hasDecider ? decider.Id : null;
+
+        if (allowed)
+        {
+            await AssertAcceptedAsync(request);
+        }
+        else
+        {
+            await AssertRejectedByAsync(request, "CK_BookingChangeRequests_Decision");
+        }
+    }
+
     // ---- F. Thanh toán và giao dịch ngân hàng ----
 
+    /// <summary>Không có giao dịch ngân hàng = bill tay, luôn kèm ảnh như ReceiptReviewService (CK_Payments_Receipt).</summary>
     private static Payment Deposit(int bookingId, PaymentStatus status, int? bankTransactionId = null) => new()
     {
         BookingId = bookingId,
         Type = PaymentType.Deposit,
         Method = bankTransactionId is null ? PaymentMethod.ManualReceipt : PaymentMethod.BankAutoMatch,
         BankTransactionId = bankTransactionId,
+        ReceiptImageUrl = bankTransactionId is null ? "receipts/test-receipt.png" : null,
         Amount = 300_000,
         Status = status,
     };
@@ -329,6 +502,25 @@ public sealed class DatabaseConstraintTests : IDisposable
         await _db.SaveChangesAsync();
 
         Assert.Equal(2, await _db.Payments.CountAsync());
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task Payment_ManualReceiptWithoutImage_IsRejectedByReceiptCheck(string? receiptImageUrl)
+    {
+        var booking = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        _db.Bookings.Add(booking);
+        await _db.SaveChangesAsync();
+        var payment = Deposit(booking.Id, PaymentStatus.Submitted);
+        payment.ReceiptImageUrl = receiptImageUrl;
+
+        _db.ChangeTracker.Clear();
+        _db.Add(payment);
+        var ex = await Assert.ThrowsAsync<DbUpdateException>(() => _db.SaveChangesAsync());
+
+        // Phải đúng CHECK này, không phải lỗi CSDL bất kỳ
+        Assert.Contains("CK_Payments_Receipt", ex.InnerException?.Message);
     }
 
     [Fact]

@@ -1,6 +1,9 @@
-# Fuji Homestay — Thiết kế Database v1.0
+# Fuji Homestay — Thiết kế Database v1.8
 
-> **Phiên bản:** 1.5 — 2026-10-12 (rà soát: thêm CHECK cho đơn, đối soát, giao dịch hoàn; mốc gửi/xác nhận/chuyển tiền đối soát; tiền hoàn giao dịch không khớp — migration `ReviewFixes`)  
+> **Phiên bản:** 1.8 — 2026-10-13 (nhất quán trạng thái: 4 CHECK — `ConfirmedAt` của đơn theo trạng thái; yêu cầu đổi/hủy: người gửi `Customer`/`Employee`, trường bắt buộc theo loại, `DecidedAt` theo trạng thái — migration `StatusConsistency`)  
+> 1.7 — 2026-10-13 (siết ràng buộc: 7 CHECK — tỷ lệ cọc, hoa hồng của đơn và mục đối soát, bill tay phải có ảnh, đối soát đã gửi phải có `SentAt`, loại/trạng thái yêu cầu đổi/hủy; DEFAULT 0 cho `HomestayImages.SortOrder` — migration `DatabaseHardening`; tài liệu sửa `Notifications.AccountId` → `UserId` cho khớp schema sẵn có, không đổi database)  
+> 1.6 — 2026-10-12 (màn kế toán: migration `AccountingGuards` thêm 2 index trên `Payments` — `IX_Payments_BookingId` và `IX_Payments_OneRefundPerBooking` (UNIQUE một khoản hoàn mỗi đơn); concurrency token `BankTransactions.MatchStatus` ở cấu hình EF Core)  
+> 1.5 — 2026-10-12 (rà soát: thêm CHECK cho đơn, đối soát, giao dịch hoàn; mốc gửi/xác nhận/chuyển tiền đối soát; tiền hoàn giao dịch không khớp — migration `ReviewFixes`)  
 > 1.4 — 2026-10-11 (thêm **voucher** — Q4, D14, migration `Vouchers`)  
 > 1.3 — 2026-10-11 (giữ phòng 15 phút khi đặt; cọc qua QR **MB Bank** tự đối soát, ảnh bill làm dự phòng; **đã áp vào code**, migration `Init`)
 > **Trạng thái:** Đã chốt các quyết định ở mục 1; dùng làm cơ sở viết ERD và sửa code (EF Core Code First).
@@ -285,7 +288,7 @@ Nguồn: v5 mục 4.6 ("bảng tài liệu xác minh riêng"); BR-12 (giấy ph�
 | DescriptionHtml | nvarchar(max) | NULL | Đã lọc bằng HtmlSanitizer |
 | CheckinGuideHtml | nvarchar(max) | NULL | Hướng dẫn nhận phòng, chỉ gửi khách sau khi xác nhận |
 | ContactPhone | nvarchar(16) | NULL | E.164; chỉ gửi khách sau khi xác nhận (BR-13) |
-| CheckinTime, CheckoutTime | time | NOT NULL, mặc định 14:00 / 12:00 | |
+| CheckinTime, CheckoutTime | time | NOT NULL; 14:00 / 12:00 là mặc định **trong C#** (`Homestay`), database không có DEFAULT | |
 | Status | nvarchar(20) | NOT NULL | `Draft`, `PendingReview`, `Active`, `Suspended`, `Ended` |
 | ApprovedByEmployeeId | int | FK, NULL | FR-27 |
 | ApprovedAt | datetime2 | NULL | |
@@ -319,7 +322,7 @@ Giữ như code: `Amenities(Name UNIQUE, Icon)`, `HomestayAmenities(HomestayId, 
 | HomestayId | int | FK, NOT NULL, cascade |
 | RoomTypeId | int | FK, NULL — NULL = ảnh chung của homestay |
 | Url | nvarchar(300) | NOT NULL |
-| SortOrder | int | NOT NULL, mặc định 0 |
+| SortOrder | int | NOT NULL, **DEFAULT 0** ở database |
 | IsCover | bit | Mỗi homestay một ảnh bìa: **UNIQUE (HomestayId) WHERE IsCover = 1** |
 
 ---
@@ -454,13 +457,13 @@ Chính sách đã có đơn dùng thì **không sửa**; muốn đổi thì tạ
 | | DepositedAt | datetime2 | NULL — lúc kế toán duyệt cọc |
 | | ConfirmDeadlineAt | datetime2 | NULL = `DepositedAt + 30 phút` (D12, BR-06) |
 | | ConfirmAlertSentAt | datetime2 | NULL — đã cảnh báo nhân viên vì quá hạn xác nhận; job không gửi lặp |
-| | ConfirmedAt, CheckedInAt, CompletedAt | datetime2 | NULL |
+| | ConfirmedAt, CheckedInAt, CompletedAt | datetime2 | NULL. CHECK `CK_Bookings_ConfirmedAt`: `Confirmed`, `CheckedIn`, `Completed`, `NoShow` phải có `ConfirmedAt`; `AwaitingPayment`, `PaymentSubmitted`, `Deposited`, `Rejected`, `Expired` phải không có; `Cancelled` tùy (hủy trước hoặc sau xác nhận). `ConfirmedAt` chỉ được gán khi `Deposited → Confirmed` |
 | | CancelledAt | datetime2 | NULL |
 | | CancelReason | nvarchar(500) | NULL |
 | Tiền (snapshot) | TotalAmount | decimal(18,0) | NOT NULL = Σ `BookingNights.Price` |
-| | DepositRate | decimal(5,4) | NOT NULL, mặc định 0.3000 (BR-01) |
+| | DepositRate | decimal(5,4) | NOT NULL, CHECK `0 < DepositRate ≤ 1` (`CK_Bookings_DepositRate`). Ứng dụng gán 0.3000 theo cấu hình `Booking:DepositRate` (BR-01); database không có DEFAULT để giá trị ứng dụng gửi không bị thay |
 | | DepositAmount | decimal(18,0) | NOT NULL; CHECK `DepositAmount <= TotalAmount` |
-| | CommissionRate | decimal(5,4) | NOT NULL — lấy từ hợp đồng đang hiệu lực |
+| | CommissionRate | decimal(5,4) | NOT NULL — lấy từ hợp đồng đang hiệu lực; CHECK `0 < CommissionRate < 1` (`CK_Bookings_CommissionRate`, cùng khoảng với `Contracts`) |
 | | CancellationPolicyId | int | FK, NOT NULL |
 | | RefundAmount | decimal(18,0) | NULL — tính khi hủy (BR-04), trên số tiền khách **thực chuyển** (`DepositAmount − DiscountAmount`). CHECK `0 ≤ RefundAmount ≤ DepositAmount − DiscountAmount` |
 | Voucher | VoucherId | int | FK → Vouchers, NULL (D14) |
@@ -506,15 +509,17 @@ Hiển thị chi tiết giá cho khách trước khi gửi yêu cầu (FR-02).
 | Cột | Ghi chú |
 |---|---|
 | BookingId | FK |
-| RequestType | `ChangeDates`, `ChangeRoomType`, `Cancel` |
-| RequestedByType | `Customer` / `Employee` |
-| NewCheckIn, NewCheckOut, NewRoomTypeId | NULL nếu là hủy |
+| RequestType | `ChangeDates`, `ChangeRoomType`, `Cancel` — CHECK `CK_BookingChangeRequests_Type` (danh sách sinh từ enum `ChangeRequestType`) |
+| RequestedByType | `Customer` / `Employee` — CHECK `CK_BookingChangeRequests_RequestedBy` (FR-05: khách gửi, hoặc nhân viên gửi thay) |
+| NewCheckIn, NewCheckOut, NewRoomTypeId | CHECK `CK_BookingChangeRequests_Fields`: `Cancel` → cả ba NULL; `ChangeDates` → có `NewCheckIn`, `NewCheckOut` và `NewCheckOut > NewCheckIn`; `ChangeRoomType` → có `NewRoomTypeId` |
 | PriceDifference | Chênh lệch tiền khi đổi (có thể âm) |
 | RefundAmount | Số tiền hoàn dự kiến theo BR-04 — khách xem trước (FR-05) |
-| Status | `Pending`, `Approved`, `Rejected` |
-| DecidedByAccountId, DecidedAt, DecisionNote | |
+| Status | `Pending`, `Approved`, `Rejected` — CHECK `CK_BookingChangeRequests_Status` (danh sách sinh từ enum `ChangeRequestStatus`) |
+| DecidedByAccountId, DecidedAt, DecisionNote | CHECK `CK_BookingChangeRequests_Decision`: `Pending` → `DecidedAt` và `DecidedByAccountId` đều NULL; `Approved`/`Rejected` → có `DecidedAt` (người quyết định chưa bắt buộc) |
 
 Đổi ngày/đổi loại phòng được duyệt → service cập nhật đơn và `RoomNights` trong một transaction.
+
+Các quy tắc sau **chưa** có CHECK (chờ chốt nghiệp vụ, hiện chưa có service/màn hình xử lý yêu cầu): có cho đổi **cả ngày lẫn loại phòng** trong một yêu cầu không (CHECK hiện cố ý **không cấm** trường thừa); `DecidedByAccountId` có bắt buộc khi đã quyết không (phụ thuộc việc hệ thống có tự đóng yêu cầu); ai có quyền duyệt (FR-10: nhân viên). Loại phòng mới thuộc cùng homestay, đủ sức chứa, còn phòng, ngày không ở quá khứ: kiểm tra ở service (liên bảng, CHECK không làm được).
 
 ---
 
@@ -529,7 +534,7 @@ Hiển thị chi tiết giá cho khách trước khi gửi yêu cầu (FR-02).
 | Method | nvarchar(20) | NOT NULL | `BankAutoMatch` (tự khớp từ giao dịch ngân hàng, D13), `ManualReceipt` (ảnh bill, kế toán duyệt, D11), `ManualTransfer` (Fuji chuyển ra: hoàn cọc, bù chênh lệch) |
 | BankTransactionId | int | FK → BankTransactions, NULL; **UNIQUE WHERE NOT NULL** | Một giao dịch ngân hàng chỉ thành **một** khoản thanh toán |
 | Amount | decimal(18,0) | NOT NULL, CHECK > 0 | Số tiền thực nhận (tự khớp) hoặc số tiền theo bill |
-| ReceiptImageUrl | nvarchar(300) | NULL — **bắt buộc khi `Method = ManualReceipt`** (service) | **Ảnh bill chuyển khoản** (D11). Với `Refund`: ảnh bill Fuji hoàn tiền (tùy chọn) |
+| ReceiptImageUrl | nvarchar(300) | NULL — **bắt buộc khi `Method = ManualReceipt`**: CHECK `CK_Payments_Receipt` (`Method <> 'ManualReceipt' OR (ReceiptImageUrl IS NOT NULL AND ReceiptImageUrl <> '')`) | **Ảnh bill chuyển khoản** (D11). Với `Refund`: ảnh bill Fuji hoàn tiền (tùy chọn) |
 | TransferContent | nvarchar(255) | NULL | Nội dung chuyển khoản trên bill, phải chứa mã đơn (BR-10) |
 | BankRef | nvarchar(100) | NULL | Mã giao dịch kế toán ghi khi đối chiếu |
 | Status | nvarchar(20) | NOT NULL | `Submitted` (đã tải bill, chờ duyệt), `Approved` (kế toán duyệt), `Rejected` (bill không hợp lệ) |
@@ -542,6 +547,7 @@ Hiển thị chi tiết giá cho khách trước khi gửi yêu cầu (FR-02).
 
 - 70% còn lại khách trả **trực tiếp cho homestay** → không ghi ở đây.
 - Mỗi đơn tối đa **một** khoản cọc đang chờ duyệt hoặc đã duyệt: **UNIQUE (BookingId) WHERE Type = 'Deposit' AND Status <> 'Rejected'**. Bill bị từ chối được giữ lại làm lịch sử.
+- Mỗi đơn hoàn cọc **một lần**: **UNIQUE (BookingId) WHERE Type = 'Refund'** — hai kế toán cùng bấm "Đã hoàn" thì lần sau bị chặn.
 - Khách đã tải bill (`ManualReceipt`, `Submitted`) rồi giao dịch ngân hàng mới về và khớp → hệ thống **duyệt luôn khoản đó** (gắn `BankTransactionId`, `Status = Approved`), không tạo khoản thứ hai.
 - **Ảnh bill là dữ liệu nhạy cảm** (có số tài khoản, tên người chuyển): lưu **ngoài** `wwwroot` (ví dụ `App_Data/receipts/`), tên file GUID, chỉ phục vụ qua controller có kiểm tra quyền (khách của đơn, nhân viên, kế toán). Kiểm tra định dạng jpg/png/webp/pdf, ≤ 5 MB.
 
@@ -561,7 +567,7 @@ Lưu **mọi** khoản tiền vào tài khoản nhận cọc của Fuji mà dị
 | TransactionTime | datetime2 | NOT NULL | Thời điểm ngân hàng ghi nhận |
 | ReceivedAt | datetime2 | NOT NULL | Thời điểm hệ thống nhận webhook |
 | RawPayload | nvarchar(max) | NULL | JSON gốc, để tra soát khi có tranh chấp |
-| MatchStatus | nvarchar(20) | NOT NULL | Xem bảng dưới |
+| MatchStatus | nvarchar(20) | NOT NULL | Xem bảng dưới. **Concurrency token**: hai kế toán xử lý cùng giao dịch → chỉ một người thành công |
 | MatchedBookingId | int | FK → Bookings, NULL | Đơn tìm được từ nội dung chuyển khoản |
 | ProcessedByEmployeeId | int | FK, NULL | Người xử lý tay (khớp tay, hoàn tiền, bỏ qua) |
 | ProcessedAt | datetime2 | NULL | |
@@ -621,7 +627,7 @@ Quy tắc (service `VoucherService`, cấu hình `appsettings: Voucher`):
 | PeriodNo | int | CHECK IN (1, 2) — kỳ 1: ngày 1–15; kỳ 2: 16 – cuối tháng |
 | TotalRoomAmount, TotalRetained, TotalCommission, PayoutAmount | decimal(18,0) | NOT NULL; CHECK ≥ 0, `TotalCommission ≤ TotalRetained`, `PayoutAmount = TotalRetained − TotalCommission` |
 | Status | nvarchar(20) | `Draft` (kế toán lập) → `Sent` (gửi chủ homestay) → `Confirmed` (chủ xác nhận số liệu) → `Paid` (Fuji đã chuyển) |
-| SentAt, ConfirmedAt | datetime2 | NULL — mốc gửi và mốc chủ homestay xác nhận |
+| SentAt, ConfirmedAt | datetime2 | NULL — mốc gửi và mốc chủ homestay xác nhận. CHECK `CK_Settlements_Sent`: khác `Draft` thì phải có `SentAt` (`Sent`, `Confirmed`, `Paid` đều đã qua bước gửi). `ConfirmedAt` **chưa** có CHECK |
 | PaidAt | datetime2 | NULL; CHECK bắt buộc khi `Status = Paid` |
 | PaidBankRef | nvarchar(100) | NULL — mã giao dịch Fuji chuyển tiền cho chủ homestay |
 | PaidByEmployeeId | int | FK, NULL |
@@ -634,7 +640,7 @@ Quy tắc (service `VoucherService`, cấu hình `appsettings: Voucher`):
 | SettlementId | FK, NOT NULL, cascade |
 | BookingId | FK, NOT NULL, **UNIQUE** — một đơn chỉ vào một kỳ |
 | ItemType | `Completed`, `CancelledRetained`, `NoShow` |
-| RoomAmount, DepositAmount, RefundAmount, RetainedAmount, CommissionRate, CommissionAmount, PayoutAmount | Sao chép từ đơn lúc lập bảng (công thức mục 7). CHECK: các khoản ≥ 0, `0 < RetainedAmount ≤ DepositAmount`, `CommissionAmount ≤ RetainedAmount`, `PayoutAmount = RetainedAmount − CommissionAmount` |
+| RoomAmount, DepositAmount, RefundAmount, RetainedAmount, CommissionRate, CommissionAmount, PayoutAmount | Sao chép từ đơn lúc lập bảng (công thức mục 7). CHECK: các khoản ≥ 0, `0 < RetainedAmount ≤ DepositAmount`, `CommissionAmount ≤ RetainedAmount`, `PayoutAmount = RetainedAmount − CommissionAmount`; `0 < CommissionRate < 1` (`CK_SettlementItems_CommissionRate`) |
 | DiscountAmount | Phần voucher **Fuji chịu** cho đơn (đã trừ phần trả lại vào voucher khi hủy). Fuji thực thu = `CommissionAmount − DiscountAmount` — báo cáo lãi lấy thẳng từ bảng này |
 
 - Đơn vào kỳ theo **ngày `CheckOut`** (D7). Công thức nằm ở `Services/SettlementCalculator.cs` (dùng chung cho seed và màn đối soát).
@@ -660,7 +666,7 @@ Chỉ cho đánh giá khi đơn `Completed` (service).
 
 #### `Notifications` — thông báo trong hệ thống
 
-Giữ như code: `AccountId`, `Message`, `Url`, `IsRead`, `CreatedAt`; chỉ mục `(AccountId, IsRead)`.
+Giữ như code: `UserId` (FK → AspNetUsers), `Message`, `Url`, `IsRead`, `CreatedAt`; chỉ mục `(UserId, IsRead)`.
 
 #### `MessageLogs` — tin gửi ra ngoài (○, **mới**)
 
@@ -803,17 +809,20 @@ Ví dụ: tổng 2.000.000đ, cọc 600.000đ, hoa hồng 12%.
 | Một người một tài khoản (v5) | UNIQUE `AspNetUsers.PersonId`, `PersonProfiles.PhoneNumber` | Chuẩn hóa SĐT |
 | Một hồ sơ Owner đang xử lý | Filtered UNIQUE `OwnerRegistrations` | |
 | Một hợp đồng đang hiệu lực / homestay | Filtered UNIQUE `Contracts` | |
-| Hoa hồng theo hợp đồng (BR-02) | `Contracts.CommissionRate` → snapshot `Bookings.CommissionRate` | |
-| Cọc 30% (BR-01) | `Bookings.DepositRate`, CHECK `DepositAmount <= TotalAmount` | Tính và làm tròn |
+| Hoa hồng theo hợp đồng (BR-02) | `Contracts.CommissionRate` → snapshot `Bookings.CommissionRate` → `SettlementItems.CommissionRate`; CHECK `0 < CommissionRate < 1` ở cả ba bảng | Lấy hợp đồng `Active` tại ngày đặt |
+| Cọc 30% (BR-01) | `Bookings.DepositRate`, CHECK `0 < DepositRate ≤ 1`, CHECK `DepositAmount <= TotalAmount` | Lấy tỷ lệ từ cấu hình, tính và làm tròn |
 | Giá 3 mức (BR-08) | `RoomTypePrices`, `Holidays` → `BookingNights` | Chọn mức giá cho từng đêm |
 | Hoàn cọc, ưu tiên chính sách riêng (BR-04) | `CancellationPolicies/Rules`, `Bookings.CancellationPolicyId` | Chọn chính sách, tính `RefundAmount` |
 | Homestay xác nhận trong 30 phút sau khi có cọc (BR-06, D12) | `Bookings.ConfirmDeadlineAt` | Job mỗi phút tạo cảnh báo |
+| Mốc xác nhận đơn khớp trạng thái | CHECK `CK_Bookings_ConfirmedAt` | `ApplyStatusAsync` gán `ConfirmedAt` khi `Deposited → Confirmed`, hủy không xóa mốc |
 | Giữ phòng 15 phút khi đặt (D4, D5) | `RoomNights` tạo ngay khi đặt, `Bookings.HoldExpiresAt` | Job mỗi phút chuyển `Expired` |
 | Cọc khớp mã đơn và số tiền (BR-10, D13) | UNIQUE `BankTransactions (Provider, ProviderTransactionId)`, UNIQUE `Payments.BankTransactionId`, filtered UNIQUE khoản cọc | Tự khớp nội dung + số tiền trong transaction |
-| Ảnh bill khi không tự khớp được (D11) | `Payments.Method = ManualReceipt`, `ReceiptImageUrl` | Kế toán xem bill, khớp tay / từ chối |
+| Ảnh bill khi không tự khớp được (D11) | `Payments.Method = ManualReceipt`; CHECK `CK_Payments_Receipt`: bill tay phải có `ReceiptImageUrl` khác NULL, khác rỗng | Lưu ảnh (tên file do server sinh); kế toán xem bill, khớp tay / từ chối |
 | Không bỏ sót tiền khách chuyển | `BankTransactions.MatchStatus` | Danh sách giao dịch chưa khớp / đến muộn cho kế toán |
 | Chống giữ phòng ảo | — | Tối đa 3 đơn `AwaitingPayment` / khách |
 | Đối soát 2 kỳ / tháng (BR-03) | UNIQUE `Settlements (HomestayId, Year, Month, PeriodNo)`, UNIQUE `SettlementItems.BookingId`, CHECK `Payout = Retained − Commission` ở cả hai bảng | Lập bảng theo công thức 7.3 (`SettlementCalculator`) |
+| Đối soát đã gửi / đã trả có mốc thời gian | CHECK `CK_Settlements_Sent` (khác `Draft` ⇒ có `SentAt`), `CK_Settlements_Paid` (`Paid` ⇒ có `PaidAt`) | Màn đối soát gán mốc khi chuyển trạng thái. `Confirmed` ⇒ `ConfirmedAt` **chưa** có CHECK |
+| Yêu cầu đổi/hủy hợp lệ | CHECK `CK_BookingChangeRequests_Type`, `_Status`, `_RequestedBy`, `_Fields`, `_Decision` | Đổi kết hợp ngày + loại phòng, người quyết bắt buộc, quyền duyệt: **chưa** chốt (mục 5.E); loại phòng cùng homestay, sức chứa, phòng trống: service |
 | Không hoàn quá tiền khách đã chuyển (BR-04) | CHECK `Bookings.RefundAmount ≤ DepositAmount − DiscountAmount` | |
 | Đánh giá một lần sau khi hoàn thành (BR-09) | UNIQUE `Reviews.BookingId`, CHECK 1–5 | Kiểm tra `Status = Completed` |
 | Homestay phải được duyệt mới hiện (BR-12) | `Homestays.Status`, `VerificationDocuments` | Lọc `Status = Active` |
@@ -854,7 +863,7 @@ Chủ homestay chỉ truy vấn dữ liệu có `Homestay.OwnerId` = chính mìn
 | Payments | (BookingId); filtered UNIQUE khoản cọc; (Status, SubmittedAt) | Danh sách bill chờ duyệt |
 | SettlementItems | UNIQUE (BookingId) | |
 | BankTransactions | UNIQUE (Provider, ProviderTransactionId); (MatchStatus, TransactionTime); (MatchedBookingId) | Chống ghi trùng webhook; danh sách chờ xử lý |
-| Notifications | (AccountId, IsRead) | Đếm thông báo chưa đọc |
+| Notifications | (UserId, IsRead) | Đếm thông báo chưa đọc |
 | AccountActivityLogs | (AccountId, CreatedAt) | |
 
 Quy mô dự kiến (khoảng 150 homestay, vài chục nghìn đơn mỗi năm) là **nhỏ** với SQL Server: không cần phân vùng bảng.

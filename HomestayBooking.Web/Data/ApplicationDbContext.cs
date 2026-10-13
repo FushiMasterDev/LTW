@@ -61,6 +61,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<MessageLog> MessageLogs => Set<MessageLog>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    /// <summary>Giá trị enum dạng danh sách SQL: 'A', 'B', 'C' (enum lưu dạng chuỗi). Không truyền giá trị = toàn bộ enum.</summary>
+    private static string SqlList<TEnum>(params TEnum[] values) where TEnum : struct, Enum =>
+        string.Join(", ", (values.Length == 0 ? Enum.GetValues<TEnum>() : values).Select(v => $"'{v}'"));
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         // Tiền VND không có phần lẻ; tỷ lệ cấu hình riêng (5,4) ở từng cột
@@ -253,6 +257,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         builder.Entity<HomestayImage>(e =>
         {
             e.Property(x => x.Url).HasMaxLength(300).IsRequired();
+            // Default 0 trùng giá trị mặc định của int nên EF không bao giờ thay giá trị app gửi
+            e.Property(x => x.SortOrder).HasDefaultValue(0);
             // Mỗi homestay một ảnh bìa
             e.HasIndex(x => x.HomestayId).IsUnique().HasFilter("[IsCover] = 1").HasDatabaseName("IX_HomestayImages_Cover");
             e.HasIndex(x => new { x.HomestayId, x.SortOrder });
@@ -393,6 +399,16 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
                 // Hoàn tối đa số tiền khách thực chuyển (BR-04, mục 7.2)
                 t.HasCheckConstraint("CK_Bookings_Refund",
                     "[RefundAmount] IS NULL OR ([RefundAmount] >= 0 AND [RefundAmount] <= [DepositAmount] - [DiscountAmount])");
+                // BR-01: cọc là một phần tổng tiền; tỷ lệ 0 sẽ sinh khoản cọc 0đ mà Payments không nhận
+                t.HasCheckConstraint("CK_Bookings_DepositRate", "[DepositRate] > 0 AND [DepositRate] <= 1");
+                // Snapshot từ hợp đồng, cùng khoảng với CK_Contracts_CommissionRate (BR-02)
+                t.HasCheckConstraint("CK_Bookings_CommissionRate", "[CommissionRate] > 0 AND [CommissionRate] < 1");
+                // ConfirmedAt chỉ được gán khi Deposited → Confirmed (BookingService.ApplyStatusAsync). Hủy được cả trước
+                // lẫn sau xác nhận. Liệt kê đủ trạng thái: trạng thái mới chưa được xếp nhóm sẽ bị chặn tới khi sửa CHECK.
+                t.HasCheckConstraint("CK_Bookings_ConfirmedAt",
+                    $"([Status] IN ({SqlList(BookingStatus.Confirmed, BookingStatus.CheckedIn, BookingStatus.Completed, BookingStatus.NoShow)}) AND [ConfirmedAt] IS NOT NULL)"
+                    + $" OR ([Status] IN ({SqlList(BookingStatus.AwaitingPayment, BookingStatus.PaymentSubmitted, BookingStatus.Deposited, BookingStatus.Rejected, BookingStatus.Expired)}) AND [ConfirmedAt] IS NULL)"
+                    + $" OR [Status] = '{BookingStatus.Cancelled}'");
             });
             e.HasOne(x => x.Voucher).WithMany(v => v.UsedByBookings).HasForeignKey(x => x.VoucherId);
             e.HasOne(x => x.Customer).WithMany(c => c.Bookings).HasForeignKey(x => x.CustomerId);
@@ -424,6 +440,24 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         builder.Entity<BookingChangeRequest>(e =>
         {
             e.Property(x => x.DecisionNote).HasMaxLength(500);
+            // Danh sách lấy từ enum: thêm giá trị mới thì EF thấy model đổi và buộc tạo migration
+            e.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_BookingChangeRequests_Type", $"[RequestType] IN ({SqlList<ChangeRequestType>()})");
+                t.HasCheckConstraint("CK_BookingChangeRequests_Status", $"[Status] IN ({SqlList<ChangeRequestStatus>()})");
+                // FR-05, Bảng 1.21: khách gửi, hoặc nhân viên gửi thay khách
+                t.HasCheckConstraint("CK_BookingChangeRequests_RequestedBy",
+                    $"[RequestedByType] IN ({SqlList(ActorType.Customer, ActorType.Employee)})");
+                // Trường bắt buộc theo loại; cố ý chưa cấm trường thừa (đổi ngày kèm loại phòng chưa được chốt)
+                t.HasCheckConstraint("CK_BookingChangeRequests_Fields",
+                    $"([RequestType] <> '{ChangeRequestType.Cancel}' OR ([NewCheckIn] IS NULL AND [NewCheckOut] IS NULL AND [NewRoomTypeId] IS NULL))"
+                    + $" AND ([RequestType] <> '{ChangeRequestType.ChangeDates}' OR ([NewCheckIn] IS NOT NULL AND [NewCheckOut] IS NOT NULL AND [NewCheckOut] > [NewCheckIn]))"
+                    + $" AND ([RequestType] <> '{ChangeRequestType.ChangeRoomType}' OR [NewRoomTypeId] IS NOT NULL)");
+                // Người quyết định chưa bắt buộc: chưa chốt việc hệ thống tự đóng yêu cầu
+                t.HasCheckConstraint("CK_BookingChangeRequests_Decision",
+                    $"([Status] = '{ChangeRequestStatus.Pending}' AND [DecidedAt] IS NULL AND [DecidedByAccountId] IS NULL)"
+                    + $" OR ([Status] <> '{ChangeRequestStatus.Pending}' AND [DecidedAt] IS NOT NULL)");
+            });
             e.HasOne(x => x.Booking).WithMany(b => b.ChangeRequests).HasForeignKey(x => x.BookingId);
             e.HasOne(x => x.NewRoomType).WithMany().HasForeignKey(x => x.NewRoomTypeId);
             e.HasOne(x => x.DecidedByAccount).WithMany().HasForeignKey(x => x.DecidedByAccountId);
@@ -442,10 +476,19 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
             // Một giao dịch ngân hàng chỉ thành một khoản thanh toán
             e.HasIndex(x => x.BankTransactionId).IsUnique().HasFilter("[BankTransactionId] IS NOT NULL");
             // Mỗi đơn tối đa một khoản cọc đang chờ duyệt hoặc đã duyệt; bill bị từ chối giữ làm lịch sử
-            e.HasIndex(x => x.BookingId).IsUnique()
-                .HasFilter($"[Type] = '{PaymentType.Deposit}' AND [Status] <> '{PaymentStatus.Rejected}'")
-                .HasDatabaseName("IX_Payments_OneDepositPerBooking");
-            e.ToTable(t => t.HasCheckConstraint("CK_Payments_Amount", "[Amount] > 0"));
+            // Hai index lọc cùng cột BookingId → phải đặt tên, nếu không EF gộp làm một
+            e.HasIndex(x => x.BookingId, "IX_Payments_OneDepositPerBooking").IsUnique()
+                .HasFilter($"[Type] = '{PaymentType.Deposit}' AND [Status] <> '{PaymentStatus.Rejected}'");
+            // Mỗi đơn hoàn cọc một lần: hai kế toán cùng bấm "Đã chuyển hoàn" → lần sau bị chặn
+            e.HasIndex(x => x.BookingId, "IX_Payments_OneRefundPerBooking").IsUnique()
+                .HasFilter($"[Type] = '{PaymentType.Refund}'");
+            e.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_Payments_Amount", "[Amount] > 0");
+                // D11: bill tay phải có ảnh để kế toán duyệt
+                t.HasCheckConstraint("CK_Payments_Receipt",
+                    $"[Method] <> '{PaymentMethod.ManualReceipt}' OR ([ReceiptImageUrl] IS NOT NULL AND [ReceiptImageUrl] <> '')");
+            });
             e.HasOne(x => x.Booking).WithMany(b => b.Payments).HasForeignKey(x => x.BookingId);
             e.HasOne(x => x.BankTransaction).WithOne(t => t.Payment).HasForeignKey<Payment>(x => x.BankTransactionId);
             e.HasOne(x => x.SubmittedByAccount).WithMany().HasForeignKey(x => x.SubmittedByAccountId);
@@ -464,6 +507,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
             e.HasIndex(x => new { x.MatchStatus, x.TransactionTime });
             e.HasIndex(x => x.MatchedBookingId);
             e.Property(x => x.RefundBankRef).HasMaxLength(100);
+            // Hai kế toán xử lý cùng một giao dịch (khớp tay / hoàn / bỏ qua) → chỉ một người thành công
+            e.Property(x => x.MatchStatus).IsConcurrencyToken();
             e.ToTable(t =>
             {
                 t.HasCheckConstraint("CK_BankTransactions_Amount", "[Amount] > 0");
@@ -485,6 +530,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
                     "[TotalRoomAmount] >= 0 AND [TotalRetained] >= 0 AND [TotalCommission] >= 0 AND [TotalCommission] <= [TotalRetained]"
                     + " AND [PayoutAmount] = [TotalRetained] - [TotalCommission]");
                 t.HasCheckConstraint("CK_Settlements_Paid", $"[Status] <> '{SettlementStatus.Paid}' OR [PaidAt] IS NOT NULL");
+                // Sent → Confirmed → Paid đều đã qua bước gửi chủ homestay
+                t.HasCheckConstraint("CK_Settlements_Sent", $"[Status] = '{SettlementStatus.Draft}' OR [SentAt] IS NOT NULL");
             });
             e.HasOne(x => x.Homestay).WithMany(h => h.Settlements).HasForeignKey(x => x.HomestayId);
             e.HasOne(x => x.PaidByEmployee).WithMany().HasForeignKey(x => x.PaidByEmployeeId);
@@ -493,11 +540,15 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         builder.Entity<SettlementItem>(e =>
         {
             e.Property(x => x.CommissionRate).HasPrecision(5, 4);
-            e.ToTable(t => t.HasCheckConstraint("CK_SettlementItems_Amounts",
-                "[RoomAmount] >= 0 AND [DepositAmount] >= 0 AND [RefundAmount] >= 0 AND [DiscountAmount] >= 0"
-                + " AND [RetainedAmount] > 0 AND [RetainedAmount] <= [DepositAmount]"
-                + " AND [CommissionAmount] >= 0 AND [CommissionAmount] <= [RetainedAmount]"
-                + " AND [PayoutAmount] = [RetainedAmount] - [CommissionAmount]"));
+            e.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_SettlementItems_Amounts",
+                    "[RoomAmount] >= 0 AND [DepositAmount] >= 0 AND [RefundAmount] >= 0 AND [DiscountAmount] >= 0"
+                    + " AND [RetainedAmount] > 0 AND [RetainedAmount] <= [DepositAmount]"
+                    + " AND [CommissionAmount] >= 0 AND [CommissionAmount] <= [RetainedAmount]"
+                    + " AND [PayoutAmount] = [RetainedAmount] - [CommissionAmount]");
+                t.HasCheckConstraint("CK_SettlementItems_CommissionRate", "[CommissionRate] > 0 AND [CommissionRate] < 1");
+            });
             // Một đơn chỉ vào một kỳ đối soát
             e.HasIndex(x => x.BookingId).IsUnique();
             e.HasOne(x => x.Booking).WithOne(b => b.SettlementItem).HasForeignKey<SettlementItem>(x => x.BookingId);
