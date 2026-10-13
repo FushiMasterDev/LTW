@@ -14,4 +14,7 @@ public static class AppPolicies
 
     /// <summary>Owner có hồ sơ đăng ký đã được duyệt: được quản lý homestay, giá, nhận booking.</summary>
     public const string ApprovedOwner = "ApprovedOwner";
+
+    /// <summary>Màn hình kế toán (bill, giao dịch ngân hàng, hoàn tiền): Kế toán, Quản lý, Quản trị hệ thống.</summary>
+    public const string Accounting = "Accounting";
 }

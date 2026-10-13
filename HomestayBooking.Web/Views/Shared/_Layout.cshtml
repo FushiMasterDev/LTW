@@ -1,119 +1,83 @@
 @using HomestayBooking.Web.Identity
-@using Microsoft.AspNetCore.Diagnostics
 @using Microsoft.AspNetCore.Localization
 @{
     var culture = Context.Features.Get<IRequestCultureFeature>()?.RequestCulture.UICulture.Name ?? "vi-VN";
     var area = ViewContext.RouteData.Values["area"]?.ToString();
     var controller = ViewContext.RouteData.Values["controller"]?.ToString();
-    // Trên trang 403/404 (UseStatusCodePagesWithReExecute), Request.Path đã bị đổi thành /Home/StatusCode/...
-    var reExecute = Context.Features.Get<IStatusCodeReExecuteFeature>();
-    var currentUrl = reExecute is null
-        ? Context.Request.Path + Context.Request.QueryString
-        : reExecute.OriginalPathBase + reExecute.OriginalPath + reExecute.OriginalQueryString;
     string Active(string? a, string c) => area == a && controller == c ? "active" : "";
-    var adminLinks = new (string Controller, string Label, string Icon, string Tone)[]
-    {
-        ("Dashboard", L["Tổng quan"], "bi-speedometer2", "tone-violet"),
-        ("Areas", L["Khu vực"], "bi-geo-alt", "tone-sky"),
-        ("RoomCategories", L["Loại phòng"], "bi-grid-3x3-gap", "tone-emerald"),
-        ("Amenities", L["Tiện nghi"], "bi-stars", "tone-amber"),
-        ("Holidays", L["Ngày lễ"], "bi-calendar-heart", "tone-rose"),
-        ("Vouchers", L["Voucher"], "bi-ticket-perforated", "tone-pink"),
-    };
+    string? Current(string? a, string c) => area == a && controller == c ? "page" : null;
+    var signedIn = User.Identity?.IsAuthenticated == true;
+    var workspaces = Workspaces.For(User);
 }
 <!DOCTYPE html>
 <html lang="@culture[..2]">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0369a1" />
-    <title>@ViewData["Title"] - Fuji Homestay</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap&subset=vietnamese" />
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <partial name="_HeadAssets" />
+    <link rel="stylesheet" href="~/css/public.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/motion.css" asp-append-version="true" />
+    @await RenderSectionAsync("Head", required: false)
 </head>
-<body class="d-flex flex-column min-vh-100">
-    <a class="visually-hidden-focusable position-absolute top-0 start-0 m-2 btn btn-brand" href="#main">@L["Bỏ qua đến nội dung chính"]</a>
-    <header class="sticky-top">
-        <div class="rainbow-bar" aria-hidden="true"></div>
-        <nav class="navbar navbar-expand-xl site-nav py-2">
+<body class="site-public d-flex flex-column min-vh-100">
+    <a class="visually-hidden-focusable position-absolute top-0 start-0 m-2 btn btn-brand" style="z-index:1100" href="#main">@L["Bỏ qua đến nội dung chính"]</a>
+    <header class="site-header sticky-top">
+        <nav class="navbar navbar-expand-xl site-nav py-2" aria-label="@L["Điều hướng chính"]">
             <div class="container">
-                <a class="navbar-brand d-flex align-items-center gap-2" asp-area="" asp-controller="Home" asp-action="Index">
+                <a class="navbar-brand d-flex align-items-center gap-2 me-xl-4" asp-area="" asp-controller="Home" asp-action="Index">
                     <span class="brand-mark" aria-hidden="true"><i class="bi bi-house-heart-fill"></i></span>
                     <span class="brand-name">Fuji <span>Homestay</span></span>
                 </a>
                 <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
                         aria-controls="mainNav" aria-expanded="false" aria-label="@L["Mở menu"]">
-                    <span class="navbar-toggler-icon"></span>
+                    <i class="bi bi-list fs-3" aria-hidden="true"></i>
                 </button>
                 <div class="collapse navbar-collapse" id="mainNav">
                     <ul class="navbar-nav me-auto gap-xl-1 mt-2 mt-xl-0">
                         <li class="nav-item">
-                            <a class="nav-link tone-sky @Active(null, "Home")" asp-area="" asp-controller="Home" asp-action="Index">
-                                <i class="bi bi-house-door" aria-hidden="true"></i> @L["Trang chủ"]
-                            </a>
+                            <a class="nav-link @Active(null, "Home")" aria-current="@Current(null, "Home")" asp-area="" asp-controller="Home" asp-action="Index">@L["Trang chủ"]</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link tone-indigo @Active(null, "Homestays")" asp-area="" asp-controller="Homestays" asp-action="Index">
-                                <i class="bi bi-search-heart" aria-hidden="true"></i> @L["Tìm homestay"]
-                            </a>
+                            <a class="nav-link @Active(null, "Homestays")" aria-current="@Current(null, "Homestays")" asp-area="" asp-controller="Homestays" asp-action="Index">@L["Tìm homestay"]</a>
                         </li>
                         @if (!User.IsActiveEmployee())
                         {
                             <li class="nav-item">
-                                <a class="nav-link tone-pink @Active(null, "Bookings")"
-                                   asp-area="" asp-controller="Bookings" asp-action="@(User.Identity?.IsAuthenticated == true ? "Mine" : "Lookup")">
-                                    <i class="bi bi-receipt" aria-hidden="true"></i> @(User.Identity?.IsAuthenticated == true ? L["Đơn của tôi"] : L["Tra cứu đơn"])
+                                <a class="nav-link @Active(null, "Bookings")" aria-current="@Current(null, "Bookings")"
+                                   asp-area="" asp-controller="Bookings" asp-action="@(signedIn ? "Mine" : "Lookup")">
+                                    @(signedIn ? L["Đơn của tôi"] : L["Tra cứu đơn"])
                                 </a>
                             </li>
                         }
-                        @if (User.IsManagement())
+                        @if (workspaces.Count == 1)
+                        {
+                            var w = workspaces[0];
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="@w.Area" asp-controller="Dashboard" asp-action="Index">
+                                    <i class="bi @w.Icon" aria-hidden="true"></i> @L[w.Label]
+                                </a>
+                            </li>
+                        }
+                        else if (workspaces.Count > 1)
                         {
                             <li class="nav-item dropdown">
-                                <a class="nav-link tone-violet dropdown-toggle @(area == "Admin" ? "active" : "")" href="#" role="button"
-                                   data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="bi bi-shield-lock" aria-hidden="true"></i> @L["Quản trị"]
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-grid" aria-hidden="true"></i> @L["Trang quản lý"]
                                 </a>
                                 <ul class="dropdown-menu">
-                                    @foreach (var link in adminLinks)
+                                    @foreach (var w in workspaces)
                                     {
                                         <li>
-                                            <a class="dropdown-item @(Active("Admin", link.Controller))" asp-area="Admin" asp-controller="@link.Controller" asp-action="Index">
-                                                <span class="icon-chip @link.Tone" aria-hidden="true"><i class="bi @link.Icon"></i></span> @link.Label
+                                            <a class="dropdown-item" asp-area="@w.Area" asp-controller="Dashboard" asp-action="Index">
+                                                <i class="bi @w.Icon" aria-hidden="true"></i> @L[w.Label]
                                             </a>
                                         </li>
                                     }
                                 </ul>
                             </li>
                         }
-                        @if (User.IsActiveEmployee())
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link tone-orange @Active("Staff", "Dashboard")" asp-area="Staff" asp-controller="Dashboard" asp-action="Index">
-                                    <i class="bi bi-headset" aria-hidden="true"></i> @L["Nhân viên"]
-                                </a>
-                            </li>
-                        }
-                        @if (User.IsInRole(AppRoles.Owner))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link tone-emerald @Active(AppRoles.Owner, "Dashboard")" asp-area="Owner" asp-controller="Dashboard" asp-action="Index">
-                                    <i class="bi bi-house-gear" aria-hidden="true"></i> @L["Chủ homestay"]
-                                </a>
-                            </li>
-                        }
                     </ul>
                     <div class="d-flex flex-wrap flex-xl-nowrap align-items-center gap-2 py-2 py-xl-0">
-                        <form asp-area="" asp-controller="Language" asp-action="Set" method="post" class="btn-group lang-switch" role="group" aria-label="@L["Ngôn ngữ"]">
-                            <input type="hidden" name="returnUrl" value="@currentUrl" />
-                            <button type="submit" name="culture" value="vi-VN" lang="vi" aria-pressed="@(culture == "vi-VN" ? "true" : "false")"
-                                    class="btn @(culture == "vi-VN" ? "btn-brand" : "btn-outline-secondary")" title="Tiếng Việt">VI</button>
-                            <button type="submit" name="culture" value="en-US" lang="en" aria-pressed="@(culture == "en-US" ? "true" : "false")"
-                                    class="btn @(culture == "en-US" ? "btn-brand" : "btn-outline-secondary")" title="English">EN</button>
-                        </form>
+                        <partial name="_LanguageSwitch" />
+                        <partial name="_ThemeToggle" />
                         <partial name="_LoginPartial" />
                     </div>
                 </div>
@@ -121,33 +85,35 @@
         </nav>
     </header>
 
-    <main role="main" id="main" class="container flex-grow-1 py-4">
+    @await RenderSectionAsync("Hero", required: false)
+
+    <main role="main" id="main" class="container flex-grow-1 @(ViewData["MainClass"] ?? "py-4 py-lg-5")" tabindex="-1">
         <partial name="_Alerts" />
         @RenderBody()
     </main>
 
     <footer class="site-footer mt-5">
-        <div class="container py-4">
+        <div class="container py-5">
             <div class="row g-4">
                 <div class="col-md-5">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <span class="brand-mark" aria-hidden="true"><i class="bi bi-house-heart-fill"></i></span>
-                        <strong class="text-white fs-5">Fuji Homestay</strong>
+                        <strong class="fs-5">Fuji Homestay</strong>
                     </div>
                     <p class="footer-muted mb-0">@L["Công ty Fuji – Hệ thống đặt phòng homestay"]</p>
                 </div>
                 <div class="col-sm-6 col-md-4">
-                    <h2 class="h6 text-white">@L["Liên hệ"]</h2>
+                    <h2 class="h6">@L["Liên hệ"]</h2>
                     <ul class="list-unstyled footer-muted mb-0">
                         <li><i class="bi bi-telephone me-2" aria-hidden="true"></i>@L["Hotline"]: <a href="tel:19000000">1900 0000</a></li>
                         <li><i class="bi bi-envelope me-2" aria-hidden="true"></i><a href="mailto:hotro@fuji.vn">hotro@fuji.vn</a></li>
                         <li><i class="bi bi-geo-alt me-2" aria-hidden="true"></i>@L["Hà Nội, Việt Nam"]</li>
                     </ul>
                 </div>
-                @if (User.Identity?.IsAuthenticated != true)
+                @if (!signedIn)
                 {
                     <div class="col-sm-6 col-md-3">
-                        <h2 class="h6 text-white">@L["Tài khoản"]</h2>
+                        <h2 class="h6">@L["Tài khoản"]</h2>
                         <a class="btn btn-light-glass mb-2" asp-area="" asp-controller="Account" asp-action="Login">
                             <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i> @L["Đăng nhập"]
                         </a>
@@ -159,7 +125,7 @@
                     </div>
                 }
             </div>
-            <hr class="border-light opacity-25 my-3" />
+            <hr class="my-4" style="border-color:rgba(255,255,255,.15)" />
             <small class="footer-muted">&copy; @DateTime.Now.Year Fuji Homestay</small>
         </div>
     </footer>

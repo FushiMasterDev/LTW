@@ -1,0 +1,31 @@
+@{
+    ViewData["Title"] = L["Kế toán"];
+    var counts = (AccountingCounts)ViewData["Counts"]!;
+    var cards = new (string Controller, string Label, string Hint, string Icon, string Tone, string Value)[]
+    {
+        ("Receipts", L["Bill chờ duyệt"], L["Khách tải ảnh bill vì giao dịch không tự khớp được."], "bi-receipt", "tone-amber", counts.PendingReceipts.ToString()),
+        ("Transactions", L["Giao dịch cần xử lý"], L["Chuyển thiếu, đến muộn hoặc không đọc được mã đơn."], "bi-bank", "tone-rose", counts.OpenTransactions.ToString()),
+        ("Refunds", L["Chờ hoàn tiền"], L["Tổng {0:N0}đ cần chuyển trả khách.", counts.PendingRefundAmount], "bi-arrow-counterclockwise", "tone-sky", counts.PendingRefunds.ToString()),
+    };
+}
+<section class="page-banner banner-accounting mb-4">
+    <h1 class="h3">@L["Kế toán"]</h1>
+    <p>@L["Phần lớn tiền cọc được tự khớp qua QR MB. Ở đây chỉ còn các trường hợp cần người xử lý."]</p>
+</section>
+<partial name="_AccountingTabs" />
+
+<div class="row g-3">
+    @foreach (var card in cards)
+    {
+        <div class="col-md-4">
+            <a class="card-soft stat-card stat-link @card.Tone h-100" asp-controller="@card.Controller" asp-action="Index">
+                <span class="icon-chip" aria-hidden="true"><i class="bi @card.Icon"></i></span>
+                <div>
+                    <div class="stat-value">@card.Value</div>
+                    <div class="stat-label fw-semibold">@card.Label</div>
+                    <div class="small text-muted">@card.Hint</div>
+                </div>
+            </a>
+        </div>
+    }
+</div>

@@ -2,25 +2,25 @@
 @{
     ViewData["Title"] = L["Tìm homestay"];
     var q = Model.Query;
-    string[] tones = ["tone-sky", "tone-violet", "tone-emerald", "tone-orange", "tone-pink", "tone-teal", "tone-indigo", "tone-amber"];
     var today = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
+    var hasFilter = q.AreaId is not null || q.HasDates || q.MaxPrice is not null || !string.IsNullOrWhiteSpace(q.Q) || q.Guests != 2;
 }
 
 <div class="page-head">
-    <div class="d-flex align-items-center gap-3">
-        <span class="icon-chip icon-chip-lg tone-indigo" aria-hidden="true"><i class="bi bi-search-heart"></i></span>
-        <div>
-            <h1>@L["Tìm homestay"]</h1>
-            <p class="text-muted mb-0">@L["Chọn ngày để chỉ xem homestay còn phòng trống."]</p>
-        </div>
+    <div>
+        <h1>@L["Tìm homestay"]</h1>
+        <p class="text-muted mb-0">@L["Chọn ngày để chỉ xem homestay còn phòng trống."]</p>
     </div>
 </div>
 
-<form method="get" class="card-soft filter-bar mb-4" role="search" aria-label="@L["Bộ lọc tìm kiếm"]">
+<form method="get" class="card-soft filter-bar" role="search" aria-label="@L["Bộ lọc tìm kiếm"]" data-date-range>
     <div class="row g-3 align-items-end">
         <div class="col-md-6 col-lg-3">
             <label class="form-label" for="Q">@L["Tên homestay"]</label>
-            <input class="form-control" id="Q" name="Q" value="@q.Q" placeholder="@L["Ví dụ: Tây Hồ"]" />
+            <div class="input-group">
+                <span class="input-group-text" aria-hidden="true"><i class="bi bi-search"></i></span>
+                <input class="form-control" id="Q" name="Q" value="@q.Q" placeholder="@L["Ví dụ: Tây Hồ"]" />
+            </div>
         </div>
         <div class="col-md-6 col-lg-2">
             <label class="form-label" for="AreaId">@L["Khu vực"]</label>
@@ -28,7 +28,7 @@
                 <option value="">@L["Tất cả"]</option>
                 @foreach (var group in Model.Areas.GroupBy(a => a.Group))
                 {
-                    <optgroup label="@group.Key.DisplayName()">
+                    <optgroup label="@L[group.Key.DisplayName()]">
                         @foreach (var a in group)
                         {
                             <option value="@a.Id" selected="@(q.AreaId == a.Id)">@a.Name</option>
@@ -47,7 +47,7 @@
         </div>
         <div class="col-6 col-lg-1">
             <label class="form-label" for="Guests">@L["Số khách"]</label>
-            <input class="form-control" type="number" id="Guests" name="Guests" min="1" max="20" value="@q.Guests" />
+            <input class="form-control" type="number" id="Guests" name="Guests" min="1" max="20" value="@q.Guests" inputmode="numeric" />
         </div>
         <div class="col-6 col-lg-2">
             <label class="form-label" for="MaxPrice">@L["Giá tối đa / đêm"]</label>
@@ -62,51 +62,68 @@
     </div>
     <div class="d-flex flex-wrap gap-2 mt-3">
         <button type="submit" class="btn btn-brand"><i class="bi bi-search" aria-hidden="true"></i> @L["Tìm"]</button>
-        <a class="btn btn-outline-secondary" asp-action="Index">@L["Xóa bộ lọc"]</a>
+        @if (hasFilter)
+        {
+            <a class="btn btn-outline-secondary" asp-action="Index">@L["Xóa bộ lọc"]</a>
+        }
     </div>
 </form>
 
 @if (Model.Results.TotalCount == 0)
 {
-    <div class="empty-state">
+    <div class="card-soft empty-state">
         <span class="icon-chip icon-chip-lg tone-slate" aria-hidden="true"><i class="bi bi-house-x"></i></span>
-        <p class="mb-0">@L["Không có homestay phù hợp. Hãy thử đổi ngày hoặc khu vực."]</p>
+        <p class="fw-semibold text-body mb-1">@L["Không có homestay phù hợp."]</p>
+        <p class="mb-3">@L["Hãy thử đổi ngày, bớt số khách hoặc chọn khu vực khác."]</p>
+        <a class="btn btn-outline-secondary" asp-action="Index">@L["Xóa bộ lọc"]</a>
     </div>
 }
 else
 {
-    <div class="row g-3">
-        @for (var i = 0; i < Model.Results.Count; i++)
+    <div class="search-summary" role="status">
+        <span>
+            @if (q.HasDates)
+            {
+                @L["{0} homestay còn phòng từ {1} đến {2}", Model.Results.TotalCount, q.CheckIn!.Value.ToString("dd/MM"), q.CheckOut!.Value.ToString("dd/MM/yyyy")]
+            }
+            else
+            {
+                @L["{0} homestay phù hợp. Chọn ngày để xem phòng trống.", Model.Results.TotalCount]
+            }
+        </span>
+    </div>
+
+    <div class="stay-grid">
+        @foreach (var h in Model.Results)
         {
-            var h = Model.Results[i];
-            <div class="col-md-6 col-lg-4">
-                <a class="card-soft stay-card h-100" asp-action="Details" asp-route-id="@h.Id"
-                   asp-route-checkIn="@q.CheckIn?.ToString("yyyy-MM-dd")" asp-route-checkOut="@q.CheckOut?.ToString("yyyy-MM-dd")" asp-route-guests="@q.Guests">
+            <a class="stay-card" asp-action="Details" asp-route-id="@h.Id"
+               asp-route-checkIn="@q.CheckIn?.ToString("yyyy-MM-dd")" asp-route-checkOut="@q.CheckOut?.ToString("yyyy-MM-dd")" asp-route-guests="@q.Guests">
+                <div class="stay-media">
+                    <span class="stay-fallback" aria-hidden="true">
+                        <i class="bi bi-house-heart"></i>
+                        <small>@L["Chưa có ảnh"]</small>
+                    </span>
                     @if (h.CoverUrl is not null)
                     {
-                        <img class="stay-cover" src="@h.CoverUrl" alt="" loading="lazy" />
+                        <img src="@h.CoverUrl.Thumbnail()" alt="" loading="lazy" width="640" height="427" />
                     }
-                    else
-                    {
-                        <div class="stay-cover stay-cover-empty @tones[h.Id % tones.Length]" aria-hidden="true"><i class="bi bi-house-heart"></i></div>
-                    }
-                    <div class="p-3">
-                        <div class="d-flex justify-content-between align-items-start gap-2">
-                            <h2 class="h5 mb-1">@h.Name</h2>
-                            <span class="badge-tone tone-sky">@L["≤ {0} khách", h.MaxGuests]</span>
-                        </div>
-                        <p class="text-muted small mb-2"><i class="bi bi-geo-alt" aria-hidden="true"></i> @h.AreaName</p>
-                        @if (h.Amenities.Count > 0)
-                        {
-                            <p class="small text-muted mb-2">@string.Join(" · ", h.Amenities)</p>
-                        }
-                        @if (h.FromPrice is decimal price)
-                        {
-                            <p class="mb-0"><span class="text-muted small">@L["Từ"]</span> <strong class="price">@price.ToString("N0")đ</strong><span class="text-muted small"> / @L["đêm"]</span></p>
-                        }
+                </div>
+                <div class="stay-body">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <h2 class="stay-title">@h.Name</h2>
+                        <span class="badge-tone tone-slate flex-shrink-0">@L["≤ {0} khách", h.MaxGuests]</span>
                     </div>
-                </a>
-            </div>
+                    <p class="stay-meta"><i class="bi bi-geo-alt" aria-hidden="true"></i> @h.AreaName</p>
+                    @if (h.Amenities.Count > 0)
+                    {
+                        <p class="stay-meta small">@string.Join(", ", h.Amenities)</p>
+                    }
+                    @if (h.FromPrice is decimal price)
+                    {
+                        <p class="stay-price"><span class="text-muted small">@L["Từ"]</span> <span class="price">@price.ToString("N0")đ</span><span class="text-muted small"> / @L["đêm"]</span></p>
+                    }
+                </div>
+            </a>
         }
     </div>
     <partial name="_Pager" model="Model.Results" />

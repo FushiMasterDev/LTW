@@ -4,17 +4,22 @@ using HomestayBooking.Web.Data;
 using HomestayBooking.Web.Models;
 using HomestayBooking.Web.Models.Entities;
 using HomestayBooking.Web.Models.ViewModels;
+using HomestayBooking.Web.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace HomestayBooking.Web.Controllers;
 
 public class HomeController : Controller
 {
-    private readonly ApplicationDbContext _db;
+    private const int FeaturedCount = 6;
 
-    public HomeController(ApplicationDbContext db)
+    private readonly ApplicationDbContext _db;
+    private readonly TimeProvider _clock;
+
+    public HomeController(ApplicationDbContext db, TimeProvider clock)
     {
         _db = db;
+        _clock = clock;
     }
 
     public async Task<IActionResult> Index()
@@ -28,12 +33,51 @@ public class HomeController : Controller
                 .OrderBy(a => a.Name)
                 .Select(a => new AreaSummary(a.Id, a.Name, a.Homestays.Count(h => h.Status == HomestayStatus.Active)))
                 .ToListAsync(),
+            Featured = await FeaturedAsync(),
         };
         return View(model);
     }
 
-    /// <summary>Trang lỗi cho 403/404/... (UseStatusCodePagesWithReExecute).</summary>
-    [HttpGet("Home/StatusCode/{code:int}")]
+    /// <summary>Homestay đang nhận đặt, điểm đánh giá cao trước; cùng điều kiện "đặt được" với trang tìm kiếm.</summary>
+    private async Task<List<FeaturedHomestay>> FeaturedAsync()
+    {
+        var today = VietnamTime.Today(_clock);
+        var rows = await _db.Homestays
+            .Where(h => h.Status == HomestayStatus.Active
+                        && h.Contracts.Any(c => c.Status == ContractStatus.Active && c.StartDate <= today && c.EndDate >= today)
+                        && h.RoomTypes.Any(t => t.IsActive))
+            .Select(h => new
+            {
+                h.Id,
+                h.Name,
+                AreaName = h.Area.Name,
+                Cover = h.Images.Where(i => i.IsCover).Select(i => i.Url).FirstOrDefault(),
+                Rating = _db.Reviews.Where(r => r.HomestayId == h.Id && !r.IsHidden).Average(r => (double?)r.Rating),
+                ReviewCount = _db.Reviews.Count(r => r.HomestayId == h.Id && !r.IsHidden),
+                RoomTypeIds = h.RoomTypes.Where(t => t.IsActive).Select(t => t.Id).ToList(),
+            })
+            .OrderByDescending(h => h.Rating ?? 0)
+            .ThenByDescending(h => h.ReviewCount)
+            .ThenBy(h => h.Name)
+            .Take(FeaturedCount)
+            .ToListAsync();
+
+        var roomTypeIds = rows.SelectMany(r => r.RoomTypeIds).ToList();
+        var prices = PricingService.CurrentPrices(
+            await _db.RoomTypePrices.AsNoTracking().Where(p => roomTypeIds.Contains(p.RoomTypeId)).ToListAsync(), today);
+        return rows
+            .Select(r => new FeaturedHomestay(r.Id, r.Name, r.AreaName, r.Cover,
+                r.RoomTypeIds.Select(id => prices.TryGetValue((id, DayType.Weekday), out var p) ? p : (decimal?)null).Min(),
+                r.Rating, r.ReviewCount))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Trang lỗi cho 403/404/... (UseStatusCodePagesWithReExecute). Re-execute giữ nguyên method gốc nên phải nhận
+    /// mọi method (POST lỗi sẽ thành 405 nếu chỉ nhận GET); chỉ hiển thị, không đổi dữ liệu nên bỏ qua antiforgery.
+    /// </summary>
+    [Route("Home/StatusCode/{code:int}")]
+    [IgnoreAntiforgeryToken]
     [ApiExplorerSettings(IgnoreApi = true)]
     public IActionResult StatusCodePage(int code)
     {

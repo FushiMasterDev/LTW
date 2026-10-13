@@ -1,24 +1,55 @@
 @model Dictionary<BookingStatus, int>
 @{
     ViewData["Title"] = L["Tổng quan nhân viên"];
+    var groups = new (string Title, string Hint, string Icon, BookingStatus[] Statuses)[]
+    {
+        (L["Đang chờ xử lý"], L["Đơn đang giữ phòng, chờ duyệt bill hoặc chờ homestay xác nhận."], "bi-hourglass-split",
+            [BookingStatus.AwaitingPayment, BookingStatus.PaymentSubmitted, BookingStatus.Deposited]),
+        (L["Sắp đến và đang ở"], L["Đơn đã xác nhận và khách đang lưu trú."], "bi-door-open",
+            [BookingStatus.Confirmed, BookingStatus.CheckedIn]),
+        (L["Đã kết thúc"], L["Hoàn thành, hết hạn, bị từ chối, đã hủy hoặc khách không đến."], "bi-archive",
+            [BookingStatus.Completed, BookingStatus.Expired, BookingStatus.Rejected, BookingStatus.Cancelled, BookingStatus.NoShow]),
+    };
+    var waitingConfirm = Model.GetValueOrDefault(BookingStatus.Deposited);
 }
 <section class="page-banner banner-staff mb-4">
     <h1 class="h3">@L["Tổng quan nhân viên"]</h1>
     <p>@L["Hệ thống đang có {0} homestay hoạt động.", ViewBag.ActiveHomestayCount]</p>
 </section>
 
-<h2 class="section-title"><i class="bi bi-kanban text-brand" aria-hidden="true"></i> @L["Đơn đặt phòng theo trạng thái"]</h2>
+@if (waitingConfirm > 0)
+{
+    <div class="alert tone-violet" role="status">
+        <i class="bi bi-wallet2" aria-hidden="true"></i>
+        <div>@L["{0} đơn đã nhận cọc đang chờ homestay xác nhận.", waitingConfirm]</div>
+    </div>
+}
+
+<h2 class="section-title mt-0"><i class="bi bi-kanban" aria-hidden="true"></i> @L["Đơn đặt phòng theo trạng thái"]</h2>
 <div class="row g-3">
-    @foreach (var (status, count) in Model)
+    @foreach (var g in groups)
     {
-        <div class="col-6 col-md-4 col-xl-3">
-            <div class="card-soft stat-card @status.ToneClass()">
-                <span class="icon-chip" aria-hidden="true"><i class="bi @status.Icon()"></i></span>
-                <div>
-                    <div class="stat-value">@count</div>
-                    <div class="stat-label">@L[status.DisplayName()]</div>
+        var total = g.Statuses.Sum(s => Model.GetValueOrDefault(s));
+        <div class="col-lg-4">
+            <section class="card-soft status-group" aria-labelledby="group-@g.Statuses[0]">
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                    <div>
+                        <h2 id="group-@g.Statuses[0]">@g.Title</h2>
+                        <p class="small text-muted mb-0">@g.Hint</p>
+                    </div>
+                    <span class="icon-chip" aria-hidden="true"><i class="bi @g.Icon"></i></span>
                 </div>
-            </div>
+                <div class="status-total mt-3">@total</div>
+                <ul class="status-list">
+                    @foreach (var status in g.Statuses)
+                    {
+                        <li>
+                            <span class="badge-tone @status.ToneClass()">@L[status.DisplayName()]</span>
+                            <span class="count">@Model.GetValueOrDefault(status)</span>
+                        </li>
+                    }
+                </ul>
+            </section>
         </div>
     }
 </div>

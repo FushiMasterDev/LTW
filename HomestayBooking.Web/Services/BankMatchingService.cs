@@ -168,9 +168,12 @@ public partial class BankMatchingService
     /// Khách đã tải bill (ManualReceipt, Submitted) → duyệt luôn khoản đó và gắn giao dịch;
     /// chưa có → tạo khoản BankAutoMatch. Hệ thống duyệt nên ReviewedByEmployeeId = null.
     /// </summary>
-    private void ApprovePayment(Booking booking, BankTransaction tx)
+    private void ApprovePayment(Booking booking, BankTransaction tx) =>
+        AttachApprovedDeposit(booking, tx, _clock.GetUtcNow().UtcDateTime, reviewedByEmployeeId: null);
+
+    /// <summary>Dùng chung cho tự khớp (hệ thống duyệt) và kế toán khớp tay (ghi người duyệt).</summary>
+    internal static void AttachApprovedDeposit(Booking booking, BankTransaction tx, DateTime now, int? reviewedByEmployeeId)
     {
-        var now = _clock.GetUtcNow().UtcDateTime;
         var payment = booking.Payments.SingleOrDefault(p => p.Type == PaymentType.Deposit && p.Status == PaymentStatus.Submitted);
         if (payment is null)
         {
@@ -188,6 +191,7 @@ public partial class BankMatchingService
         payment.TransferContent = tx.TransferContent;
         payment.BankRef = tx.BankReference;
         payment.Status = PaymentStatus.Approved;
+        payment.ReviewedByEmployeeId = reviewedByEmployeeId;
         payment.ReviewedAt = now;
     }
 

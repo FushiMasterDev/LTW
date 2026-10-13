@@ -1196,4 +1196,532 @@
   <data name="Đơn quá nhỏ để dùng voucher." xml:space="preserve">
     <value>This booking is too small to use a voucher.</value>
   </data>
+  <data name="Bill chờ duyệt" xml:space="preserve">
+    <value>Receipts to review</value>
+  </data>
+  <data name="Bỏ qua" xml:space="preserve">
+    <value>Ignore</value>
+  </data>
+  <data name="Bỏ qua giao dịch này?" xml:space="preserve">
+    <value>Ignore this transaction?</value>
+  </data>
+  <data name="Chuyển thiếu" xml:space="preserve">
+    <value>Underpaid</value>
+  </data>
+  <data name="Chuyển thiếu, đến muộn hoặc không đọc được mã đơn." xml:space="preserve">
+    <value>Underpaid, late, or no readable booking code.</value>
+  </data>
+  <data name="Chuyển trả đúng {0:N0}đ về tài khoản đã gửi, rồi ghi mã giao dịch chuyển trả." xml:space="preserve">
+    <value>Send exactly {0:N0} VND back to the sending account, then record the transfer reference.</value>
+  </data>
+  <data name="Chỉ khớp được đơn còn chờ thanh toán và số tiền đủ cọc. Đơn chuyển ngay sang Đã đặt cọc." xml:space="preserve">
+    <value>Only bookings still awaiting payment with a sufficient amount can be matched. The booking becomes Deposited immediately.</value>
+  </data>
+  <data name="Chỉ kế toán hoặc quản lý được xử lý giao dịch." xml:space="preserve">
+    <value>Only accountants or managers can process transactions.</value>
+  </data>
+  <data name="Chờ hoàn" xml:space="preserve">
+    <value>Pending refund</value>
+  </data>
+  <data name="Chờ hoàn tiền" xml:space="preserve">
+    <value>Refunds due</value>
+  </data>
+  <data name="Cần hoàn" xml:space="preserve">
+    <value>To refund</value>
+  </data>
+  <data name="Cần xử lý" xml:space="preserve">
+    <value>Needs action</value>
+  </data>
+  <data name="Cọc nhận từ: {0}" xml:space="preserve">
+    <value>Deposit received from: {0}</value>
+  </data>
+  <data name="Duyệt" xml:space="preserve">
+    <value>Approve</value>
+  </data>
+  <data name="Duyệt bill {0:N0}đ cho đơn {1}?" xml:space="preserve">
+    <value>Approve the {0:N0} VND receipt for booking {1}?</value>
+  </data>
+  <data name="Ghi chú" xml:space="preserve">
+    <value>Note</value>
+  </data>
+  <data name="Ghi chú (không bắt buộc)" xml:space="preserve">
+    <value>Note (optional)</value>
+  </data>
+  <data name="Ghi nhận" xml:space="preserve">
+    <value>Record</value>
+  </data>
+  <data name="Ghi nhận đã hoàn" xml:space="preserve">
+    <value>Record refund</value>
+  </data>
+  <data name="Giao dịch cần xử lý" xml:space="preserve">
+    <value>Transactions to handle</value>
+  </data>
+  <data name="Giao dịch hoặc đơn vừa được người khác xử lý, vui lòng tải lại trang." xml:space="preserve">
+    <value>This transaction or booking was just handled by someone else. Please reload the page.</value>
+  </data>
+  <data name="Giao dịch ngân hàng" xml:space="preserve">
+    <value>Bank transactions</value>
+  </data>
+  <data name="Giao dịch này đã được xử lý." xml:space="preserve">
+    <value>This transaction has already been handled.</value>
+  </data>
+  <data name="Gợi ý theo số tiền và thời gian" xml:space="preserve">
+    <value>Suggestions by amount and time</value>
+  </data>
+  <data name="Gửi lúc" xml:space="preserve">
+    <value>Submitted</value>
+  </data>
+  <data name="Hoàn tiền" xml:space="preserve">
+    <value>Refunds</value>
+  </data>
+  <data name="Hủy lúc {0}" xml:space="preserve">
+    <value>Cancelled at {0}</value>
+  </data>
+  <data name="Khách" xml:space="preserve">
+    <value>Guest</value>
+  </data>
+  <data name="Khách tải ảnh bill vì giao dịch không tự khớp được." xml:space="preserve">
+    <value>Guests uploaded a receipt because the transfer could not be matched automatically.</value>
+  </data>
+  <data name="Khách đã chuyển" xml:space="preserve">
+    <value>Guest paid</value>
+  </data>
+  <data name="Không liên quan đặt phòng" xml:space="preserve">
+    <value>Not related to bookings</value>
+  </data>
+  <data name="Không rõ đơn" xml:space="preserve">
+    <value>Unknown booking</value>
+  </data>
+  <data name="Không tìm thấy giao dịch." xml:space="preserve">
+    <value>Transaction not found.</value>
+  </data>
+  <data name="Không đọc được mã đơn: tìm đơn theo số tiền và thời gian để khớp tay, hoặc hoàn lại." xml:space="preserve">
+    <value>No booking code found: find the booking by amount and time to match it manually, or refund.</value>
+  </data>
+  <data name="Khớp tay" xml:space="preserve">
+    <value>Manually matched</value>
+  </data>
+  <data name="Khớp và duyệt cọc" xml:space="preserve">
+    <value>Match and approve deposit</value>
+  </data>
+  <data name="Khớp với đơn" xml:space="preserve">
+    <value>Match to a booking</value>
+  </data>
+  <data name="Kế toán" xml:space="preserve">
+    <value>Accounting</value>
+  </data>
+  <data name="Liên hệ khách chuyển đủ rồi khớp, hoặc hoàn lại khoản đã chuyển." xml:space="preserve">
+    <value>Ask the guest to pay the full amount and match it, or refund what was sent.</value>
+  </data>
+  <data name="Lý do bỏ qua" xml:space="preserve">
+    <value>Reason for ignoring</value>
+  </data>
+  <data name="Lý do từ chối" xml:space="preserve">
+    <value>Rejection reason</value>
+  </data>
+  <data name="Lý do, ví dụ: tiền thu khác của Fuji" xml:space="preserve">
+    <value>Reason, e.g. other Fuji income</value>
+  </data>
+  <data name="Lọc theo trạng thái" xml:space="preserve">
+    <value>Filter by status</value>
+  </data>
+  <data name="Mã giao dịch" xml:space="preserve">
+    <value>Transaction ref</value>
+  </data>
+  <data name="Mã giao dịch chuyển trả" xml:space="preserve">
+    <value>Refund transfer reference</value>
+  </data>
+  <data name="Mã hoàn" xml:space="preserve">
+    <value>Refund ref</value>
+  </data>
+  <data name="Mọi giao dịch" xml:space="preserve">
+    <value>All transactions</value>
+  </data>
+  <data name="Người duyệt" xml:space="preserve">
+    <value>Reviewed by</value>
+  </data>
+  <data name="Nội dung" xml:space="preserve">
+    <value>Content</value>
+  </data>
+  <data name="Phần lớn tiền cọc được tự khớp qua QR MB. Ở đây chỉ còn các trường hợp cần người xử lý." xml:space="preserve">
+    <value>Most deposits are matched automatically via the MB QR code. Only cases that need a person are listed here.</value>
+  </data>
+  <data name="Số tiền chưa đủ cọc, hãy hoàn tiền hoặc đợi khách chuyển đủ." xml:space="preserve">
+    <value>The amount does not cover the deposit. Refund it or wait for the guest to pay in full.</value>
+  </data>
+  <data name="Thời gian" xml:space="preserve">
+    <value>Time</value>
+  </data>
+  <data name="Tiền vào tài khoản MB của Fuji. Mặc định chỉ hiện các khoản cần xử lý tay." xml:space="preserve">
+    <value>Money received in Fuji's MB account. By default only items needing manual action are shown.</value>
+  </data>
+  <data name="Tìm theo mã đơn, tên hoặc SĐT khách" xml:space="preserve">
+    <value>Search by booking code, guest name or phone</value>
+  </data>
+  <data name="Tìm theo nội dung, mã đơn, mã giao dịch" xml:space="preserve">
+    <value>Search by content, booking code or transaction ref</value>
+  </data>
+  <data name="Tổng {0:N0}đ cần chuyển trả khách." xml:space="preserve">
+    <value>{0:N0} VND in total to refund to guests.</value>
+  </data>
+  <data name="Từ chối bill đơn {0}?" xml:space="preserve">
+    <value>Reject the receipt for booking {0}?</value>
+  </data>
+  <data name="Tự khớp" xml:space="preserve">
+    <value>Auto-matched</value>
+  </data>
+  <data name="Vui lòng ghi lý do bỏ qua giao dịch." xml:space="preserve">
+    <value>Please enter a reason for ignoring the transaction.</value>
+  </data>
+  <data name="Vui lòng nhập mã giao dịch chuyển hoàn." xml:space="preserve">
+    <value>Please enter the refund transfer reference.</value>
+  </data>
+  <data name="Xem ảnh bill đơn {0}" xml:space="preserve">
+    <value>View receipt for booking {0}</value>
+  </data>
+  <data name="Xác nhận đã chuyển hoàn {0:N0}đ cho đơn {1}?" xml:space="preserve">
+    <value>Confirm {0:N0} VND has been refunded for booking {1}?</value>
+  </data>
+  <data name="Xác nhận đã chuyển trả {0:N0}đ?" xml:space="preserve">
+    <value>Confirm {0:N0} VND has been sent back?</value>
+  </data>
+  <data name="Xử lý" xml:space="preserve">
+    <value>Handle</value>
+  </data>
+  <data name="Xử lý giao dịch" xml:space="preserve">
+    <value>Handle transaction</value>
+  </data>
+  <data name="chờ {0:0} phút giờ làm việc" xml:space="preserve">
+    <value>waiting {0:0} office minutes</value>
+  </data>
+  <data name="cần {0:N0}đ" xml:space="preserve">
+    <value>needs {0:N0} VND</value>
+  </data>
+  <data name="{0} lần trước — từ chối lần này thì đơn hết hạn" xml:space="preserve">
+    <value>rejected {0} time(s) before — rejecting again expires the booking</value>
+  </data>
+  <data name="Đang duyệt..." xml:space="preserve">
+    <value>Approving...</value>
+  </data>
+  <data name="Đang khớp..." xml:space="preserve">
+    <value>Matching...</value>
+  </data>
+  <data name="Đã chuyển trả khách" xml:space="preserve">
+    <value>Sent back to the guest</value>
+  </data>
+  <data name="Đã duyệt bill, đơn chuyển sang Đã đặt cọc." xml:space="preserve">
+    <value>Receipt approved; the booking is now Deposited.</value>
+  </data>
+  <data name="Đã ghi nhận chuyển trả giao dịch." xml:space="preserve">
+    <value>Transaction refund recorded.</value>
+  </data>
+  <data name="Đã ghi nhận hoàn {0:N0}đ và báo cho khách." xml:space="preserve">
+    <value>Recorded a {0:N0} VND refund and notified the guest.</value>
+  </data>
+  <data name="Đã hoàn" xml:space="preserve">
+    <value>Refunded</value>
+  </data>
+  <data name="Đã khớp giao dịch với đơn {0}, đơn chuyển sang Đã đặt cọc." xml:space="preserve">
+    <value>Transaction matched to booking {0}; the booking is now Deposited.</value>
+  </data>
+  <data name="Đã từ chối" xml:space="preserve">
+    <value>Rejected</value>
+  </data>
+  <data name="Đã từ chối bill và báo cho khách." xml:space="preserve">
+    <value>Receipt rejected and the guest notified.</value>
+  </data>
+  <data name="Đã đánh dấu bỏ qua giao dịch." xml:space="preserve">
+    <value>Transaction marked as ignored.</value>
+  </data>
+  <data name="Đơn" xml:space="preserve">
+    <value>Booking</value>
+  </data>
+  <data name="Đơn hủy hoặc bị homestay từ chối đã chốt số tiền hoàn. Chuyển khoản cho khách rồi ghi lại mã giao dịch." xml:space="preserve">
+    <value>Cancelled or homestay-rejected bookings with a settled refund amount. Transfer the money to the guest, then record the reference.</value>
+  </data>
+  <data name="Đơn này không còn chờ thanh toán, hãy hoàn tiền cho khách." xml:space="preserve">
+    <value>This booking is no longer awaiting payment. Refund the guest instead.</value>
+  </data>
+  <data name="Đơn này không có khoản hoàn nào đang chờ." xml:space="preserve">
+    <value>This booking has no pending refund.</value>
+  </data>
+  <data name="Đơn vừa thay đổi trạng thái, vui lòng tải lại trang." xml:space="preserve">
+    <value>The booking status just changed. Please reload the page.</value>
+  </data>
+  <data name="Đơn đã hết hạn hoặc bị hủy: hoàn tiền cho khách, hoặc nhờ nhân viên tư vấn tạo đơn mới nếu còn phòng." xml:space="preserve">
+    <value>The booking expired or was cancelled: refund the guest, or ask a consultant to create a new booking if rooms are still free.</value>
+  </data>
+  <data name="Đơn đọc được" xml:space="preserve">
+    <value>Booking found</value>
+  </data>
+  <data name="Đến muộn" xml:space="preserve">
+    <value>Late payment</value>
+  </data>
+  <data name="Đối chiếu ảnh bill với sao kê MB rồi duyệt hoặc từ chối. Từ chối lần {0} thì đơn hết hạn." xml:space="preserve">
+    <value>Check each receipt against the MB statement, then approve or reject. The booking expires on rejection number {0}.</value>
+  </data>
+  <data name="Ảnh bill đơn {0}" xml:space="preserve">
+    <value>Receipt for booking {0}</value>
+  </data>
+  <data name="Ảnh mờ, không đọc được" xml:space="preserve">
+    <value>Blurry, unreadable image</value>
+  </data>
+  <data name="Sai số tiền" xml:space="preserve">
+    <value>Wrong amount</value>
+  </data>
+  <data name="Không thấy giao dịch trong sao kê" xml:space="preserve">
+    <value>Transaction not on the statement</value>
+  </data>
+  <data name="Nội dung không có mã đơn" xml:space="preserve">
+    <value>Content has no booking code</value>
+  </data>
+  <data name="VD: {0}" xml:space="preserve">
+    <value>e.g. {0}</value>
+  </data>
+  <data name="Xem trang khách của {0}" xml:space="preserve">
+    <value>View the guest page of {0}</value>
+  </data>
+  <data name="Xem trang khách" xml:space="preserve">
+    <value>View guest page</value>
+  </data>
+  <data name="Đang chờ xử lý" xml:space="preserve">
+    <value>Waiting for action</value>
+  </data>
+  <data name="Đơn đang giữ phòng, chờ duyệt bill hoặc chờ homestay xác nhận." xml:space="preserve">
+    <value>Bookings holding a room, awaiting receipt review or homestay confirmation.</value>
+  </data>
+  <data name="Sắp đến và đang ở" xml:space="preserve">
+    <value>Upcoming and in-house</value>
+  </data>
+  <data name="Đơn đã xác nhận và khách đang lưu trú." xml:space="preserve">
+    <value>Confirmed bookings and guests currently staying.</value>
+  </data>
+  <data name="Đã kết thúc" xml:space="preserve">
+    <value>Closed</value>
+  </data>
+  <data name="Hoàn thành, hết hạn, bị từ chối, đã hủy hoặc khách không đến." xml:space="preserve">
+    <value>Completed, expired, rejected, cancelled or no-show.</value>
+  </data>
+  <data name="{0} đơn đã nhận cọc đang chờ homestay xác nhận." xml:space="preserve">
+    <value>{0} deposited booking(s) are waiting for homestay confirmation.</value>
+  </data>
+  <data name="Giữ phòng" xml:space="preserve">
+    <value>Room held</value>
+  </data>
+  <data name="Đã cọc" xml:space="preserve">
+    <value>Deposit paid</value>
+  </data>
+  <data name="Tiến trình đơn" xml:space="preserve">
+    <value>Booking progress</value>
+  </data>
+  <data name="Có tài khoản?" xml:space="preserve">
+    <value>Have an account?</value>
+  </data>
+  <data name="Đăng nhập để xem mọi đơn của bạn" xml:space="preserve">
+    <value>Sign in to see all your bookings</value>
+  </data>
+  <data name="Ảnh" xml:space="preserve">
+    <value>Photo</value>
+  </data>
+  <data name="Tất cả khu vực" xml:space="preserve">
+    <value>All areas</value>
+  </data>
+  <data name="Tìm phòng trống" xml:space="preserve">
+    <value>Find available rooms</value>
+  </data>
+  <data name="Đang có {0} homestay với {1} phòng ở {2} khu vực của Hà Nội. Không chọn ngày thì hiện mọi homestay." xml:space="preserve">
+    <value>{0} homestays with {1} rooms across {2} areas of Hanoi. Leave the dates empty to see every homestay.</value>
+  </data>
+  <data name="Cam kết khi đặt qua Fuji" xml:space="preserve">
+    <value>What Fuji guarantees</value>
+  </data>
+  <data name="Được khách đánh giá cao" xml:space="preserve">
+    <value>Highly rated by guests</value>
+  </data>
+  <data name="Xếp theo điểm đánh giá của khách đã ở. Giá là giá ngày thường thấp nhất." xml:space="preserve">
+    <value>Sorted by ratings from past guests. Prices are the lowest weekday rate.</value>
+  </data>
+  <data name="Xem tất cả homestay" xml:space="preserve">
+    <value>See all homestays</value>
+  </data>
+  <data name="{0} đánh giá" xml:space="preserve">
+    <value>{0} review(s)</value>
+  </data>
+  <data name="Điểm đánh giá" xml:space="preserve">
+    <value>Rating</value>
+  </data>
+  <data name="Phố cổ, hồ Tây hay đồi núi ngoại thành: chọn khu vực để xem homestay ở đó." xml:space="preserve">
+    <value>Old Quarter, West Lake or the hills outside the city: pick an area to see its homestays.</value>
+  </data>
+  <data name="Ảnh {0} của {1}" xml:space="preserve">
+    <value>Photo {0} of {1}</value>
+  </data>
+  <data name="Xem ảnh {0} trên {1}" xml:space="preserve">
+    <value>View photo {0} of {1}</value>
+  </data>
+  <data name="+{0} ảnh" xml:space="preserve">
+    <value>+{0} photos</value>
+  </data>
+  <data name="Ảnh trước" xml:space="preserve">
+    <value>Previous photo</value>
+  </data>
+  <data name="Ảnh sau" xml:space="preserve">
+    <value>Next photo</value>
+  </data>
+  <data name="Homestay chưa cập nhật ảnh." xml:space="preserve">
+    <value>This homestay has no photos yet.</value>
+  </data>
+  <data name="Thông tin phòng, giá và chính sách bên dưới vẫn đầy đủ. Cần xem thêm, hãy gọi 1900 0000." xml:space="preserve">
+    <value>Room details, prices and policies below are complete. For more, call 1900 0000.</value>
+  </data>
+  <data name="Không có homestay phù hợp." xml:space="preserve">
+    <value>No matching homestays.</value>
+  </data>
+  <data name="Hãy thử đổi ngày, bớt số khách hoặc chọn khu vực khác." xml:space="preserve">
+    <value>Try other dates, fewer guests or a different area.</value>
+  </data>
+  <data name="{0} homestay còn phòng từ {1} đến {2}" xml:space="preserve">
+    <value>{0} homestay(s) with rooms available from {1} to {2}</value>
+  </data>
+  <data name="{0} homestay phù hợp. Chọn ngày để xem phòng trống." xml:space="preserve">
+    <value>{0} matching homestay(s). Pick dates to see availability.</value>
+  </data>
+  <data name="Chưa có ảnh" xml:space="preserve">
+    <value>No photo yet</value>
+  </data>
+  <data name="Menu quản lý" xml:space="preserve">
+    <value>Management menu</value>
+  </data>
+  <data name="Đóng menu" xml:space="preserve">
+    <value>Close menu</value>
+  </data>
+  <data name="{0} việc đang chờ" xml:space="preserve">
+    <value>{0} pending</value>
+  </data>
+  <data name="Về trang khách" xml:space="preserve">
+    <value>Back to guest site</value>
+  </data>
+  <data name="Thu gọn hoặc mở rộng menu" xml:space="preserve">
+    <value>Collapse or expand menu</value>
+  </data>
+  <data name="Điều hướng chính" xml:space="preserve">
+    <value>Main navigation</value>
+  </data>
+  <data name="Trang quản lý" xml:space="preserve">
+    <value>Management</value>
+  </data>
+  <data name="Bật chế độ tối" xml:space="preserve">
+    <value>Switch to dark mode</value>
+  </data>
+  <data name="Bật chế độ sáng" xml:space="preserve">
+    <value>Switch to light mode</value>
+  </data>
+  <data name="Đơn đặt phòng" xml:space="preserve">
+    <value>Bookings</value>
+  </data>
+  <data name="Đơn đã đặt cọc của homestay bạn. Xác nhận trong 30 phút sau khi khách đặt cọc." xml:space="preserve">
+    <value>Deposited bookings for your homestays. Confirm within 30 minutes after the guest pays the deposit.</value>
+  </data>
+  <data name="Tất cả trạng thái" xml:space="preserve">
+    <value>All statuses</value>
+  </data>
+  <data name="Hạn xác nhận {0}" xml:space="preserve">
+    <value>Confirm by {0}</value>
+  </data>
+  <data name="{0} khách" xml:space="preserve">
+    <value>{0} guests</value>
+  </data>
+  <data name="Xem đơn {0}" xml:space="preserve">
+    <value>View booking {0}</value>
+  </data>
+  <data name="Xem" xml:space="preserve">
+    <value>View</value>
+  </data>
+  <data name="Về danh sách đơn" xml:space="preserve">
+    <value>Back to bookings</value>
+  </data>
+  <data name="Tiền cọc" xml:space="preserve">
+    <value>Deposit</value>
+  </data>
+  <data name="Hạn xác nhận" xml:space="preserve">
+    <value>Confirm by</value>
+  </data>
+  <data name="Lịch sử" xml:space="preserve">
+    <value>History</value>
+  </data>
+  <data name="Giữ phòng {0}" xml:space="preserve">
+    <value>Keep room {0}</value>
+  </data>
+  <data name="Đổi sang phòng {0}" xml:space="preserve">
+    <value>Move to room {0}</value>
+  </data>
+  <data name="Xác nhận đơn" xml:space="preserve">
+    <value>Confirm booking</value>
+  </data>
+  <data name="Từ chối đơn {0}? Fuji sẽ hoàn 100% tiền cọc cho khách." xml:space="preserve">
+    <value>Reject booking {0}? Fuji will refund 100% of the deposit to the guest.</value>
+  </data>
+  <data name="Từ chối đơn" xml:space="preserve">
+    <value>Reject booking</value>
+  </data>
+  <data name="Khách đã nhận phòng" xml:space="preserve">
+    <value>Guest checked in</value>
+  </data>
+  <data name="Đánh dấu khách không đến đơn {0}? Khách sẽ không được hoàn cọc." xml:space="preserve">
+    <value>Mark booking {0} as no-show? The deposit will not be refunded.</value>
+  </data>
+  <data name="Khách không đến" xml:space="preserve">
+    <value>No-show</value>
+  </data>
+  <data name="Hoàn thành đơn {0}?" xml:space="preserve">
+    <value>Complete booking {0}?</value>
+  </data>
+  <data name="Khách đã trả phòng" xml:space="preserve">
+    <value>Guest checked out</value>
+  </data>
+  <data name="Đơn này không còn thao tác nào." xml:space="preserve">
+    <value>No further actions for this booking.</value>
+  </data>
+  <data name="Đã xác nhận đơn {0}." xml:space="preserve">
+    <value>Booking {0} confirmed.</value>
+  </data>
+  <data name="Vui lòng nhập lý do từ chối (tối đa 500 ký tự)." xml:space="preserve">
+    <value>Please enter a rejection reason (up to 500 characters).</value>
+  </data>
+  <data name="Đã từ chối đơn {0}. Fuji sẽ hoàn 100% tiền cọc cho khách." xml:space="preserve">
+    <value>Booking {0} rejected. Fuji will refund 100% of the deposit to the guest.</value>
+  </data>
+  <data name="Đã ghi nhận khách nhận phòng đơn {0}." xml:space="preserve">
+    <value>Check-in recorded for booking {0}.</value>
+  </data>
+  <data name="Đã hoàn thành đơn {0}." xml:space="preserve">
+    <value>Booking {0} completed.</value>
+  </data>
+  <data name="Đã đánh dấu khách không đến đơn {0}." xml:space="preserve">
+    <value>Booking {0} marked as no-show.</value>
+  </data>
+  <data name="Đơn vừa được cập nhật bởi thao tác khác, vui lòng xem lại." xml:space="preserve">
+    <value>This booking was just updated by another action. Please review it.</value>
+  </data>
+  <data name="Chưa đến ngày nhận phòng." xml:space="preserve">
+    <value>The check-in date has not arrived yet.</value>
+  </data>
+  <data name="Chỉ đổi phòng được khi xác nhận đơn đã đặt cọc." xml:space="preserve">
+    <value>The room can only be changed when confirming a deposited booking.</value>
+  </data>
+  <data name="Phòng được chọn không trống hoặc không cùng loại phòng." xml:space="preserve">
+    <value>The selected room is not available or not of the same room type.</value>
+  </data>
+  <data name="Phòng được chọn vừa có người đặt, vui lòng chọn phòng khác." xml:space="preserve">
+    <value>The selected room was just booked. Please choose another room.</value>
+  </data>
+  <data name="Nhận phòng mở từ ngày {0}." xml:space="preserve">
+    <value>Check-in is available from {0}.</value>
+  </data>
+  <data name="Đánh dấu khách không đến mở từ ngày {0}." xml:space="preserve">
+    <value>No-show can be marked from {0}.</value>
+  </data>
+  <data name="Chỉ đánh dấu khách không đến từ ngày sau ngày nhận phòng." xml:space="preserve">
+    <value>A booking can only be marked as no-show from the day after the check-in date.</value>
+  </data>
 </root>

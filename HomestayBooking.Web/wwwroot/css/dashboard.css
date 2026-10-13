@@ -1,0 +1,446 @@
+/* =========================================================================
+   Dashboard nội bộ (Quản trị, Kế toán, Nhân viên, Chủ homestay)
+   Sidebar trái: offcanvas-lg của Bootstrap (≥ 992px nằm cố định, nhỏ hơn thành ngăn kéo).
+   Thu gọn trên desktop: class "sidebar-collapsed" trên <html>, lưu trong localStorage.
+   ========================================================================= */
+.app-body {
+  background: var(--fx-bg);
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+/* ---------- Sidebar ---------- */
+.app-sidebar {
+  --bs-offcanvas-width: var(--fx-sidebar-w);
+  --bs-offcanvas-bg: var(--fx-surface);
+  --bs-offcanvas-color: var(--fx-ink);
+  background: var(--fx-surface);
+  border-right: 1px solid var(--fx-border);
+}
+
+@media (min-width: 992px) {
+  .app-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 1030;
+    width: var(--fx-sidebar-w);
+    display: flex;
+    flex-direction: column;
+    transition: width 0.2s var(--fx-ease);
+  }
+
+  .app-main {
+    margin-left: var(--fx-sidebar-w);
+    transition: margin-left 0.2s var(--fx-ease);
+  }
+
+  .sidebar-collapsed .app-sidebar {
+    width: var(--fx-sidebar-w-collapsed);
+  }
+
+  .sidebar-collapsed .app-main {
+    margin-left: var(--fx-sidebar-w-collapsed);
+  }
+
+  .sidebar-collapsed .sidebar-label,
+  .sidebar-collapsed .sidebar-group-title,
+  .sidebar-collapsed .brand-name,
+  .sidebar-collapsed .sidebar-count {
+    display: none;
+  }
+
+  .sidebar-collapsed .sidebar-link {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  .sidebar-collapsed .sidebar-group + .sidebar-group {
+    border-top: 1px solid var(--fx-border);
+    padding-top: 0.75rem;
+  }
+
+  .sidebar-collapsed .app-sidebar-brand {
+    justify-content: center;
+    padding-inline: 0;
+  }
+}
+
+.app-sidebar-head {
+  border-bottom: 1px solid var(--fx-border);
+  flex-shrink: 0;
+}
+
+.app-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  height: var(--fx-topbar-h);
+  padding: 0 1.25rem;
+  color: var(--fx-ink);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.app-sidebar-brand:hover {
+  color: var(--fx-ink);
+}
+
+.app-sidebar .brand-mark {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--fx-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fx-primary);
+  color: var(--fx-on-primary);
+  flex-shrink: 0;
+}
+
+.app-sidebar .brand-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+
+.app-sidebar .brand-name span {
+  color: var(--fx-primary);
+}
+
+.app-sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 0.75rem;
+}
+
+.sidebar-group + .sidebar-group {
+  margin-top: 1.25rem;
+}
+
+.sidebar-group-title {
+  padding: 0 0.75rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--fx-muted);
+}
+
+.sidebar-group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.sidebar-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--fx-radius-sm);
+  color: var(--fx-muted);
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.15s var(--fx-ease), color 0.15s var(--fx-ease);
+}
+
+.sidebar-link > .bi {
+  font-size: 1.15rem;
+  width: 1.25rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.sidebar-link:hover,
+.sidebar-link:focus-visible {
+  background: var(--fx-surface-2);
+  color: var(--fx-ink);
+}
+
+.sidebar-link.active {
+  background: var(--fx-primary-soft);
+  color: var(--fx-on-primary-soft);
+  font-weight: 600;
+}
+
+.sidebar-link.active::before {
+  content: "";
+  position: absolute;
+  left: -0.75rem;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--fx-primary);
+}
+
+.sidebar-count {
+  margin-left: auto;
+  min-width: 1.5rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  background: #b42318;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.5rem;
+  text-align: center;
+}
+
+.app-sidebar-foot {
+  padding: 0.75rem;
+  border-top: 1px solid var(--fx-border);
+  flex-shrink: 0;
+}
+
+/* ---------- Topbar ---------- */
+.app-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: var(--fx-topbar-h);
+  padding: 0 1rem;
+  background: color-mix(in srgb, var(--fx-bg) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--fx-border);
+}
+
+@media (min-width: 768px) {
+  .app-topbar {
+    padding: 0 1.5rem;
+  }
+}
+
+.app-topbar .breadcrumb {
+  margin: 0;
+  font-size: 0.9375rem;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.app-topbar .breadcrumb-item {
+  white-space: nowrap;
+}
+
+.app-topbar .breadcrumb-item.active {
+  color: var(--fx-ink);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.min-w-0 {
+  min-width: 0;
+}
+
+.topbar-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-ghost {
+  --bs-btn-color: var(--fx-muted);
+  --bs-btn-bg: transparent;
+  --bs-btn-border-color: transparent;
+  --bs-btn-hover-color: var(--fx-ink);
+  --bs-btn-hover-bg: var(--fx-surface-2);
+  --bs-btn-hover-border-color: transparent;
+  --bs-btn-active-color: var(--fx-ink);
+  --bs-btn-active-bg: var(--fx-surface-3);
+  --bs-btn-active-border-color: transparent;
+  width: 2.75rem;
+  padding: 0;
+  font-size: 1.2rem;
+}
+
+/* ---------- Nội dung ---------- */
+.app-content {
+  padding: 1.5rem 1rem 3rem;
+  max-width: 90rem;
+}
+
+@media (min-width: 768px) {
+  .app-content {
+    padding: 2rem 1.5rem 3rem;
+  }
+}
+
+@media (min-width: 1400px) {
+  .app-content {
+    padding-inline: 2.5rem;
+  }
+}
+
+.app-content h1 {
+  font-size: 1.5rem;
+}
+
+/* Đầu trang tổng quan: trước là dải gradient, nay là tiêu đề yên tĩnh trên nền trang */
+.page-banner {
+  padding: 0 0 1.25rem;
+  margin-bottom: 1.5rem !important;
+  border-bottom: 1px solid var(--fx-border);
+  background: none;
+  color: var(--fx-ink);
+}
+
+.page-banner h1 {
+  margin: 0;
+  color: var(--fx-ink);
+  font-size: 1.625rem;
+}
+
+.page-banner p {
+  margin: 0.35rem 0 0;
+  color: var(--fx-muted);
+  max-width: 48rem;
+}
+
+/* Các biến thể cũ giữ tên, không còn mang màu riêng */
+.banner-admin, .banner-owner, .banner-staff, .banner-accounting { --banner: none; }
+
+.app-content .page-head h1 {
+  font-size: 1.5rem;
+}
+
+.app-content .page-head .icon-chip-lg {
+  width: 3rem;
+  height: 3rem;
+  font-size: 1.35rem;
+}
+
+/* Icon trang/thẻ không mang nghĩa trạng thái: dùng chung màu sage, không tô mỗi module một màu.
+   Trạng thái vẫn có màu riêng qua .badge-tone. */
+.page-head .icon-chip,
+.tile-link .icon-chip,
+.stat-card .icon-chip,
+.status-group .icon-chip {
+  --tone-bg: var(--fx-primary-soft);
+  --tone-fg: var(--fx-on-primary-soft);
+}
+
+.card-accent-top {
+  border-top-color: var(--fx-primary);
+}
+
+/* ---------- Thẻ số liệu ---------- */
+/* Xếp dọc: icon, số, nhãn – đọc được cả khi 6 thẻ chung một hàng */
+.stat-card {
+  height: 100%;
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.stat-card .icon-chip {
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1.1rem;
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--fx-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  color: var(--fx-muted);
+  font-size: 0.9rem;
+}
+
+/* Thẻ liên kết (danh mục) */
+.tile-link {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1rem 1.15rem;
+  min-height: 4.5rem;
+  text-decoration: none;
+  color: var(--fx-ink);
+  transition: border-color 0.18s var(--fx-ease), background-color 0.18s var(--fx-ease);
+}
+
+.tile-link:hover,
+.tile-link:focus-visible {
+  color: var(--fx-ink);
+  border-color: var(--fx-primary);
+  background: color-mix(in srgb, var(--fx-primary-soft) 50%, var(--fx-surface));
+}
+
+.tile-link .tile-arrow {
+  margin-left: auto;
+  color: var(--fx-muted);
+}
+
+/* Nhóm trạng thái đơn (Nhân viên) */
+.status-group {
+  padding: 1.25rem;
+  height: 100%;
+}
+
+.status-group h2 {
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.status-list {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+}
+
+.status-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--fx-border);
+}
+
+.status-list .count {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.status-total {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Điện thoại ---------- */
+@media (max-width: 575.98px) {
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+  }
+
+  .table-modern thead th,
+  .table-modern tbody td {
+    padding: 0.6rem 0.6rem;
+  }
+
+  .page-banner h1 {
+    font-size: 1.4rem;
+  }
+}

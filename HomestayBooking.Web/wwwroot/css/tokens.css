@@ -1,0 +1,127 @@
+/* =========================================================================
+   Fuji Homestay – design tokens (sáng / tối)
+   Nền ivory, xanh rêu làm màu chính, chữ charcoal. Màu trạng thái dịu, đủ tương
+   phản ≥ 4.5:1 cho chữ trên nền tương ứng ở cả hai chế độ.
+   Chế độ tối dùng data-bs-theme="dark" của Bootstrap 5.3 trên thẻ <html>.
+   ========================================================================= */
+:root,
+[data-bs-theme="light"] {
+  color-scheme: light;
+
+  --fx-bg: #f8f6f1;             /* ivory */
+  --fx-surface: #ffffff;
+  --fx-surface-2: #f2efe8;      /* nền chìm: đầu bảng, ô nhập phụ */
+  --fx-surface-3: #e9e5dc;
+  --fx-border: #e4dfd5;
+  --fx-border-strong: #cfc8ba;
+  --fx-ink: #1e2320;            /* charcoal, trên nền ivory 15:1 */
+  --fx-muted: #59615c;          /* trên nền trắng 6.3:1 */
+  --fx-primary: #2f5d50;        /* xanh rêu, chữ trắng 7.4:1 */
+  --fx-primary-hover: #244a40;
+  --fx-on-primary: #ffffff;
+  --fx-primary-soft: #e3ece5;   /* sage nhạt */
+  --fx-on-primary-soft: #24473d;
+  --fx-focus: #b7791f;          /* viền focus ấm, nổi trên cả xanh lẫn ivory */
+  --fx-overlay: rgba(18, 24, 20, 0.55);
+  --fx-shadow: 0 1px 2px rgba(30, 35, 32, 0.05), 0 2px 8px rgba(30, 35, 32, 0.04);
+  --fx-shadow-raised: 0 12px 32px rgba(30, 35, 32, 0.12);
+
+  --fx-success: #2e7d4f;
+  --fx-warning: #a15c00;
+  --fx-danger: #b42318;
+  --fx-info: #2f6690;
+}
+
+[data-bs-theme="dark"] {
+  color-scheme: dark;
+
+  --fx-bg: #121614;
+  --fx-surface: #1a1f1c;
+  --fx-surface-2: #222824;
+  --fx-surface-3: #2a312c;
+  --fx-border: #2e3631;
+  --fx-border-strong: #3f4943;
+  --fx-ink: #e7ebe8;
+  --fx-muted: #a2aba5;
+  --fx-primary: #8dbfa8;
+  --fx-primary-hover: #a7d1bd;
+  --fx-on-primary: #10241c;
+  --fx-primary-soft: #213129;
+  --fx-on-primary-soft: #b9dccb;
+  --fx-focus: #e0b45c;
+  --fx-overlay: rgba(6, 9, 7, 0.62);
+  --fx-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --fx-shadow-raised: 0 12px 32px rgba(0, 0, 0, 0.45);
+
+  --fx-success: #7fc79a;
+  --fx-warning: #e2a85a;
+  --fx-danger: #f0928a;
+  --fx-info: #8fb9da;
+}
+
+/* Hằng số không đổi theo chế độ */
+:root {
+  --fx-font-sans: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fx-font-serif: "Lora", Georgia, "Times New Roman", serif;
+  --fx-radius-lg: 1rem;      /* khối lớn: banner, ảnh bìa */
+  --fx-radius: 0.75rem;      /* thẻ, bảng */
+  --fx-radius-sm: 0.5rem;    /* nút, ô nhập */
+  --fx-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --fx-sidebar-w: 16rem;
+  --fx-sidebar-w-collapsed: 4.5rem;
+  --fx-topbar-h: 4rem;
+
+  /* Tên cũ vẫn được các view và CSS kế toán dùng */
+  --fx-card: var(--fx-surface);
+  --fx-accent: var(--fx-primary);
+  --fx-accent-hover: var(--fx-primary-hover);
+}
+
+/* Ánh xạ sang biến Bootstrap để form, dropdown, modal, bảng tự đổi theo chế độ */
+:root,
+[data-bs-theme="light"],
+[data-bs-theme="dark"] {
+  --bs-body-font-family: var(--fx-font-sans);
+  --bs-body-bg: var(--fx-bg);
+  --bs-body-color: var(--fx-ink);
+  --bs-emphasis-color: var(--fx-ink);
+  --bs-secondary-color: var(--fx-muted);
+  --bs-secondary-bg: var(--fx-surface-2);
+  --bs-tertiary-bg: var(--fx-surface-2);
+  --bs-border-color: var(--fx-border);
+  --bs-border-color-translucent: var(--fx-border);
+  --bs-link-color: var(--fx-primary);
+  --bs-link-hover-color: var(--fx-primary-hover);
+  --bs-heading-color: var(--fx-ink);
+  --bs-focus-ring-color: color-mix(in srgb, var(--fx-focus) 45%, transparent);
+}
+
+[data-bs-theme="light"], :root { --bs-link-color-rgb: 47, 93, 80; --bs-link-hover-color-rgb: 36, 74, 64; }
+[data-bs-theme="dark"] { --bs-link-color-rgb: 141, 191, 168; --bs-link-hover-color-rgb: 167, 209, 189; }
+
+/* -------------------------------------------------------------------------
+   Tone: màu ngữ nghĩa cho trạng thái đơn, giao dịch, voucher, hồ sơ...
+   --tone-bg nền nhạt, --tone-fg chữ/biểu tượng trên nền nhạt, --tone-solid điểm/viền nhấn.
+   Tên class giữ nguyên vì Extensions/*StatusExtensions.cs trả về chúng.
+   ------------------------------------------------------------------------- */
+.tone-sky     { --tone-bg: #e4eef4; --tone-fg: #24506b; --tone-solid: #2f6690; }
+.tone-indigo  { --tone-bg: #e8e9f3; --tone-fg: #3b4174; --tone-solid: #4a5190; }
+.tone-violet  { --tone-bg: #ece7f2; --tone-fg: #533e70; --tone-solid: #6a4f8c; }
+.tone-pink    { --tone-bg: #f4e6ec; --tone-fg: #7a3552; --tone-solid: #9a4468; }
+.tone-rose    { --tone-bg: #f7e4e2; --tone-fg: #8e2a20; --tone-solid: #b42318; }
+.tone-orange  { --tone-bg: #f6e8da; --tone-fg: #7e4210; --tone-solid: #9a5212; }
+.tone-amber   { --tone-bg: #f5edd3; --tone-fg: #6e5208; --tone-solid: #8f6a0a; }
+.tone-emerald { --tone-bg: #e1eee5; --tone-fg: #1f5a36; --tone-solid: #2e7d4f; }
+.tone-teal    { --tone-bg: #ddedea; --tone-fg: #1c5650; --tone-solid: #2a7068; }
+.tone-slate   { --tone-bg: #ecebe6; --tone-fg: #474d49; --tone-solid: #5e6661; }
+
+[data-bs-theme="dark"] .tone-sky     { --tone-bg: #1c2b35; --tone-fg: #a9cbe0; --tone-solid: #5b93bb; }
+[data-bs-theme="dark"] .tone-indigo  { --tone-bg: #23253a; --tone-fg: #b9bde6; --tone-solid: #7a80c4; }
+[data-bs-theme="dark"] .tone-violet  { --tone-bg: #2a2336; --tone-fg: #cdb9e6; --tone-solid: #9479b8; }
+[data-bs-theme="dark"] .tone-pink    { --tone-bg: #33222a; --tone-fg: #e8b3c9; --tone-solid: #c27295; }
+[data-bs-theme="dark"] .tone-rose    { --tone-bg: #36201d; --tone-fg: #f3aca4; --tone-solid: #e0675b; }
+[data-bs-theme="dark"] .tone-orange  { --tone-bg: #33261a; --tone-fg: #efbf8d; --tone-solid: #cf8644; }
+[data-bs-theme="dark"] .tone-amber   { --tone-bg: #312a17; --tone-fg: #e6cf86; --tone-solid: #c3a038; }
+[data-bs-theme="dark"] .tone-emerald { --tone-bg: #1c2e23; --tone-fg: #a5d9b6; --tone-solid: #5fae7f; }
+[data-bs-theme="dark"] .tone-teal    { --tone-bg: #1a2e2b; --tone-fg: #9fd5cc; --tone-solid: #55a398; }
+[data-bs-theme="dark"] .tone-slate   { --tone-bg: #262b28; --tone-fg: #c3cac5; --tone-solid: #858e88; }

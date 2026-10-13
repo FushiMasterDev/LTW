@@ -219,6 +219,44 @@ public class BookingService
         await _db.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Homestay xác nhận đơn đã cọc (D12). Được đổi sang phòng trống khác cùng loại (Q8): chuyển RoomNights
+    /// và đổi trạng thái trong cùng một SaveChanges, ghi "Đổi phòng" vào lịch sử.
+    /// </summary>
+    public async Task ConfirmAsync(Booking booking, int? newRoomId, Actor actor)
+    {
+        string? note = null;
+        if (newRoomId is int roomId && roomId != booking.RoomId)
+        {
+            if (booking.Status != BookingStatus.Deposited)
+            {
+                throw new BookingException("Chỉ đổi phòng được khi xác nhận đơn đã đặt cọc.");
+            }
+            if (!(await FreeRoomIdsAsync(booking.RoomTypeId, booking.CheckIn, booking.CheckOut)).Contains(roomId))
+            {
+                throw new BookingException("Phòng được chọn không trống hoặc không cùng loại phòng.");
+            }
+            var codes = await _db.Rooms.Where(r => r.Id == roomId || r.Id == booking.RoomId).ToDictionaryAsync(r => r.Id, r => r.RoomCode);
+            var nights = await _db.RoomNights.Where(n => n.BookingId == booking.Id).ToListAsync();
+            _db.RoomNights.RemoveRange(nights);
+            _db.RoomNights.AddRange(nights.Select(n => new RoomNight { RoomId = roomId, Date = n.Date, BookingId = booking.Id }));
+            note = $"Đổi phòng {codes[booking.RoomId]} → {codes[roomId]}";
+            booking.RoomId = roomId;
+        }
+
+        await ApplyStatusAsync(booking, BookingStatus.Confirmed, actor, note);
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (ex is not DbUpdateConcurrencyException && note is not null)
+        {
+            // Phòng mới vừa bị đơn khác giữ giữa lúc kiểm tra và lúc ghi (khóa chính RoomNights)
+            _db.ChangeTracker.Clear();
+            throw new BookingException("Phòng được chọn vừa có người đặt, vui lòng chọn phòng khác.");
+        }
+    }
+
     /// <summary>Như ChangeStatusAsync nhưng không lưu — để gộp chung một SaveChanges với thao tác khác (ví dụ tạo Payment).</summary>
     public async Task ApplyStatusAsync(Booking booking, BookingStatus to, Actor actor, string? note = null)
     {
@@ -226,6 +264,15 @@ public class BookingService
         if (!CanTransition(from, to))
         {
             throw new BookingException($"Không thể chuyển đơn từ \"{from.DisplayName()}\" sang \"{to.DisplayName()}\".");
+        }
+        if (to == BookingStatus.CheckedIn && VietnamTime.Today(_clock) < booking.CheckIn)
+        {
+            throw new BookingException("Chưa đến ngày nhận phòng.");
+        }
+        // Khách có thể đến muộn trong ngày nhận phòng: chỉ coi là không đến từ ngày hôm sau
+        if (to == BookingStatus.NoShow && VietnamTime.Today(_clock) <= booking.CheckIn)
+        {
+            throw new BookingException("Chỉ đánh dấu khách không đến từ ngày sau ngày nhận phòng.");
         }
 
         var now = UtcNow;
