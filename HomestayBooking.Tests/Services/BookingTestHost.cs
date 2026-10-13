@@ -127,6 +127,12 @@ public sealed class BookingTestHost : IDisposable
         return new BankMatchingService(db, Bookings(db), Microsoft.Extensions.Options.Options.Create(Bank), Clock);
     }
 
+    public AccountingService Accounting(ApplicationDbContext? db = null)
+    {
+        db ??= Db;
+        return new AccountingService(db, Bookings(db), new NotificationService(db), Clock);
+    }
+
     public CreateBookingRequest Request(DateOnly checkIn, DateOnly checkOut, int guests = 2) =>
         new(Customer.Id, RoomType.Id, checkIn, checkOut, guests, "Nguyễn Văn Minh", "+84987000001", null, SourceChannel.Web,
             new Actor(ActorType.Customer));

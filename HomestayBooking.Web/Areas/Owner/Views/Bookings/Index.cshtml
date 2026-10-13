@@ -1,0 +1,79 @@
+@using HomestayBooking.Web.Areas.Owner.Controllers
+@using HomestayBooking.Web.Identity
+@using HomestayBooking.Web.Services
+@model PaginatedList<OwnerBookingRow>
+@{
+    ViewData["Title"] = L["Đơn đặt phòng"];
+    var status = ViewData["Status"] as BookingStatus?;
+    // Owner chỉ thấy đơn từ khi đã cọc (database v1 mục 9)
+    BookingStatus[] statuses = [BookingStatus.Deposited, BookingStatus.Confirmed, BookingStatus.CheckedIn, BookingStatus.Completed,
+        BookingStatus.Rejected, BookingStatus.Cancelled, BookingStatus.NoShow];
+}
+<partial name="_PageHead" model="@(new PageHeadModel(L["Đơn đặt phòng"], "bi-journal-check", "tone-violet", L["Đơn đã đặt cọc của homestay bạn. Xác nhận trong 30 phút sau khi khách đặt cọc."], ShowCreate: false))" />
+
+<form method="get" class="card-soft filter-bar row g-2 mx-0" role="search">
+    <div class="col-sm-4 col-md-3">
+        <label for="status" class="visually-hidden">@L["Trạng thái"]</label>
+        <select id="status" name="status" class="form-select">
+            <option value="">@L["Tất cả trạng thái"]</option>
+            @foreach (var s in statuses)
+            {
+                <option value="@s" selected="@(status == s)">@L[s.DisplayName()]</option>
+            }
+        </select>
+    </div>
+    <div class="col-sm-8 col-md-6">
+        <label for="q" class="visually-hidden">@L["Tìm theo mã đơn, tên hoặc SĐT khách"]</label>
+        <div class="input-group">
+            <span class="input-group-text" aria-hidden="true"><i class="bi bi-search"></i></span>
+            <input type="search" id="q" name="q" value="@ViewData["Query"]" class="form-control" placeholder="@L["Tìm theo mã đơn, tên hoặc SĐT khách"]" />
+        </div>
+    </div>
+    <div class="col-md-3 d-grid">
+        <button type="submit" class="btn btn-brand"><i class="bi bi-funnel" aria-hidden="true"></i> @L["Lọc"]</button>
+    </div>
+</form>
+
+<div class="card-soft overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-modern align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">@L["Đơn"]</th>
+                    <th scope="col">@L["Khách"]</th>
+                    <th scope="col">@L["Phòng"]</th>
+                    <th scope="col">@L["Ngày ở"]</th>
+                    <th scope="col" class="text-end">@L["Tổng tiền"]</th>
+                    <th scope="col" class="text-end"><span class="visually-hidden">@L["Thao tác"]</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model)
+                {
+                    <tr>
+                        <td class="text-nowrap"><span class="booking-code fw-semibold">@r.Code</span>
+                            <div><span class="badge-tone @r.Status.ToneClass()">@L[r.Status.DisplayName()]</span></div>
+                            @if (r.Status == BookingStatus.Deposited && r.ConfirmDeadlineAt is { } deadline)
+                            {
+                                <div class="small text-muted">@L["Hạn xác nhận {0}", VietnamTime.ToLocal(deadline).ToString("HH:mm dd/MM")]</div>
+                            }
+                        </td>
+                        <td>@r.ContactName<div class="small text-muted">@PhoneNumberNormalizer.ToNational(r.ContactPhone) · @L["{0} khách", r.Guests]</div></td>
+                        <td>@r.RoomTypeName<div class="small text-muted">@r.HomestayName · @r.RoomCode</div></td>
+                        <td class="text-nowrap">@r.CheckIn.ToString("dd/MM") – @r.CheckOut.ToString("dd/MM/yyyy")</td>
+                        <td class="text-end text-nowrap">@r.TotalAmount.ToString("N0")đ</td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-secondary text-nowrap" asp-action="Details" asp-route-id="@r.Id"
+                               aria-label="@L["Xem đơn {0}", r.Code]">@L["Xem"]</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (Model.Count == 0)
+    {
+        <partial name="_EmptyState" />
+    }
+</div>
+<partial name="_Pager" model="Model" />

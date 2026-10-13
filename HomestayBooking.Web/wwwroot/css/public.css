@@ -1,0 +1,1193 @@
+/* =========================================================================
+   Website khách hàng: header, banner, tìm kiếm, thẻ homestay, chi tiết, đặt phòng,
+   thanh toán, tài khoản, trang lỗi. Tiêu đề dùng Lora, nội dung dùng Be Vietnam Pro.
+   ========================================================================= */
+.site-public h1, .site-public .h1,
+.site-public h2, .site-public .h2,
+.site-public .display-title {
+  font-family: var(--fx-font-serif);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.site-public h1, .site-public .h1 { font-size: clamp(1.75rem, 1.4rem + 1.4vw, 2.375rem); }
+.site-public h2, .site-public .h2 { font-size: clamp(1.375rem, 1.2rem + 0.7vw, 1.75rem); }
+.site-public h1.h3, .site-public .h3 { font-size: 1.5rem; }
+.site-public h1.h4, .site-public .h4 { font-size: 1.25rem; }
+.site-public h2.h5, .site-public .h5 { font-size: 1.125rem; }
+.site-public h2.h6, .site-public .h6 { font-size: 1rem; }
+
+/* Tiêu đề nhỏ trong thẻ (h2.h5, h2.h6) dùng sans cho gọn */
+.site-public h2.h5, .site-public h2.h6, .site-public h3 {
+  font-family: var(--fx-font-sans);
+  font-weight: 650;
+}
+
+/* ---------- Header ---------- */
+.site-header {
+  background: color-mix(in srgb, var(--fx-bg) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--fx-border);
+}
+
+.site-nav {
+  min-height: 4.25rem;
+}
+
+.navbar-brand {
+  color: var(--fx-ink);
+}
+
+.navbar-brand:hover {
+  color: var(--fx-ink);
+}
+
+.brand-mark {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--fx-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fx-primary);
+  color: var(--fx-on-primary);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.brand-name {
+  font-family: var(--fx-font-serif);
+  font-weight: 600;
+  font-size: 1.25rem;
+  color: var(--fx-ink);
+  letter-spacing: -0.01em;
+}
+
+.brand-name span {
+  color: var(--fx-primary);
+}
+
+.site-nav .navbar-toggler {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  color: var(--fx-ink);
+}
+
+.site-nav .nav-link {
+  position: relative;
+  font-weight: 500;
+  color: var(--fx-muted);
+  padding: 0.5rem 0.85rem !important;
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  white-space: nowrap;
+  transition: color 0.18s var(--fx-ease);
+}
+
+.site-nav .nav-link:hover,
+.site-nav .nav-link:focus-visible {
+  color: var(--fx-ink);
+}
+
+.site-nav .nav-link.active {
+  color: var(--fx-ink);
+  font-weight: 600;
+}
+
+/* Mục đang xem: một gạch dưới xanh rêu, không đổi màu nền */
+@media (min-width: 1200px) {
+  .site-nav .nav-link.active::after {
+    content: "";
+    position: absolute;
+    left: 0.85rem;
+    right: 0.85rem;
+    bottom: 0.2rem;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--fx-primary);
+  }
+}
+
+@media (max-width: 1199.98px) {
+  .site-nav .nav-link.active {
+    background: var(--fx-primary-soft);
+    color: var(--fx-on-primary-soft);
+    border-radius: var(--fx-radius-sm);
+  }
+}
+
+.site-nav .btn {
+  white-space: nowrap;
+}
+
+/* ---------- Footer ---------- */
+.site-footer {
+  --footer-bg: #1d2b25;
+  --footer-ink: #e4ebe6;
+  --footer-muted: #a9b9b0;
+  background: var(--footer-bg);
+  color: var(--footer-ink);
+}
+
+[data-bs-theme="dark"] .site-footer {
+  --footer-bg: #0d110f;
+  --footer-muted: #8f9c94;
+  border-top: 1px solid var(--fx-border);
+}
+
+.site-footer h2 {
+  font-family: var(--fx-font-sans);
+  color: var(--footer-ink);
+}
+
+.site-footer a {
+  color: var(--footer-ink);
+}
+
+.site-footer .footer-muted {
+  color: var(--footer-muted);
+}
+
+.site-footer .brand-mark {
+  background: var(--footer-ink);
+  color: var(--footer-bg);
+}
+
+.site-footer li + li {
+  margin-top: 0.35rem;
+}
+
+/* ---------- Banner trang chủ ---------- */
+.hero-photo {
+  position: relative;
+  isolation: isolate;
+  min-height: clamp(30rem, 74vh, 42rem);
+  display: flex;
+  align-items: flex-end;
+  color: #fff;
+  background: #24332c; /* hiện khi ảnh chưa tải */
+}
+
+.hero-photo > img {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 40%;
+}
+
+.hero-photo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(to top, rgba(14, 20, 17, 0.82) 0%, rgba(14, 20, 17, 0.45) 42%, rgba(14, 20, 17, 0.12) 75%),
+    linear-gradient(to right, rgba(14, 20, 17, 0.45) 0%, rgba(14, 20, 17, 0) 60%);
+}
+
+.hero-copy {
+  padding-block: 6rem 7.5rem;
+  max-width: 40rem;
+}
+
+.hero-photo h1 {
+  color: #fff;
+  font-size: clamp(2.25rem, 1.5rem + 3.2vw, 3.75rem);
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  margin-bottom: 1rem;
+  max-width: 16ch;
+}
+
+.hero-photo .lead {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: clamp(1.05rem, 1rem + 0.3vw, 1.2rem);
+  max-width: 34rem;
+  margin-bottom: 0;
+}
+
+.hero-credit {
+  position: absolute;
+  right: 1rem;
+  top: 0.75rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.hero-credit a {
+  color: inherit;
+}
+
+/* Ô tìm kiếm đè lên mép dưới banner */
+.hero-search {
+  position: relative;
+  z-index: 2;
+  margin-top: -4.5rem;
+  padding: 1.25rem;
+  border-radius: var(--fx-radius-lg);
+  box-shadow: var(--fx-shadow-raised);
+}
+
+@media (min-width: 992px) {
+  .hero-search {
+    padding: 1.25rem 1.5rem;
+  }
+}
+
+.hero-search .form-label {
+  font-size: 0.875rem;
+}
+
+.hero-search .form-control,
+.hero-search .form-select {
+  min-height: 3rem;
+}
+
+.hero-search .btn {
+  min-height: 3rem;
+}
+
+.hero-search-note {
+  margin: 0.85rem 0 0;
+  color: var(--fx-muted);
+  font-size: 0.9rem;
+}
+
+/* ---------- Các khối trang chủ ---------- */
+.home-section {
+  margin-top: 4rem;
+}
+
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.section-head h2 {
+  margin: 0;
+}
+
+.section-head p {
+  margin: 0.35rem 0 0;
+  color: var(--fx-muted);
+  max-width: 40rem;
+}
+
+/* Cam kết: ba ý ngắn, không đóng khung thẻ */
+.promise-list {
+  display: grid;
+  gap: 1.5rem;
+  margin: 3rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 768px) {
+  .promise-list {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+}
+
+.promise-list li {
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+}
+
+.promise-list .bi {
+  color: var(--fx-primary);
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.promise-list strong {
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.promise-list p {
+  margin: 0;
+  color: var(--fx-muted);
+  font-size: 0.95rem;
+}
+
+/* Khu vực: danh sách link, chia nội thành / ngoại thành */
+.area-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
+  gap: 0.75rem;
+}
+
+/* Desktop: 4 cột cố định để 7–8 khu vực không bị lẻ một ô ở hàng cuối */
+@media (min-width: 992px) {
+  .area-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.area-tile,
+a.area-tile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 3.75rem;
+  padding: 0.85rem 1.1rem;
+  border: 1px solid var(--fx-border);
+  border-radius: var(--fx-radius);
+  background: var(--fx-surface);
+  color: var(--fx-ink);
+  text-decoration: none;
+  transition: border-color 0.18s var(--fx-ease), background-color 0.18s var(--fx-ease);
+}
+
+a.area-tile:hover,
+a.area-tile:focus-visible {
+  border-color: var(--fx-primary);
+  background: var(--fx-primary-soft);
+  color: var(--fx-ink);
+}
+
+.area-tile strong {
+  display: block;
+  font-weight: 600;
+}
+
+.area-tile small {
+  color: var(--fx-muted);
+}
+
+.area-tile .bi {
+  color: var(--fx-muted);
+}
+
+/* Ba bước đặt phòng: là một trình tự thật nên có số */
+.steps {
+  display: grid;
+  gap: 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+@media (min-width: 768px) {
+  .steps {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+  }
+
+  .steps li + li {
+    border-left: 1px solid var(--fx-border);
+  }
+
+  .steps li {
+    padding-inline: 1.5rem;
+  }
+
+  .steps li:first-child {
+    padding-left: 0;
+  }
+}
+
+.step-number {
+  font-family: var(--fx-font-serif);
+  font-size: 2.25rem;
+  line-height: 1;
+  color: var(--fx-primary);
+  margin-bottom: 0.75rem;
+}
+
+.steps h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.35rem;
+}
+
+.steps p {
+  margin: 0;
+  color: var(--fx-muted);
+}
+
+/* ---------- Thẻ homestay ---------- */
+.stay-grid {
+  display: grid;
+  gap: 2rem 1.5rem;
+  /* 3 cột trên desktop: khớp 9 thẻ/trang tìm kiếm và 6 thẻ nổi bật */
+  grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr));
+}
+
+.stay-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.stay-card:hover {
+  color: inherit;
+}
+
+.stay-card:hover .stay-title,
+.stay-card:focus-visible .stay-title {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+.stay-card:focus-visible {
+  outline-offset: 4px;
+  border-radius: var(--fx-radius-lg);
+}
+
+/* Khung ảnh: ảnh nằm trên, ảnh thay thế nằm dưới. Ảnh lỗi thì JS ẩn ảnh đi. */
+.stay-media {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  border-radius: var(--fx-radius-lg);
+  overflow: hidden;
+  background: var(--fx-primary-soft);
+}
+
+.stay-media > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.stay-media.is-broken > img {
+  display: none;
+}
+
+.stay-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  color: var(--fx-on-primary-soft);
+  background:
+    radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--fx-surface) 55%, transparent) 0, transparent 55%),
+    var(--fx-primary-soft);
+  text-align: center;
+  padding: 1rem;
+}
+
+.stay-fallback .bi {
+  font-size: 2.25rem;
+  opacity: 0.85;
+}
+
+.stay-fallback small {
+  font-size: 0.8125rem;
+  color: var(--fx-on-primary-soft);
+}
+
+/* "Chưa có ảnh" chỉ hiện khi homestay không có ảnh hoặc ảnh lỗi (.is-broken do site.js gắn),
+   không hiện lúc ảnh đang tải. Trình duyệt chưa hỗ trợ :has() thì giữ cách hiển thị cũ. */
+.stay-media:has(> img) .stay-fallback small {
+  display: none;
+}
+
+.stay-media.is-broken .stay-fallback small {
+  display: inline;
+}
+
+.stay-body {
+  padding-top: 0.85rem;
+}
+
+/* Thêm .site-public để thắng quy tắc tiêu đề serif ".site-public h2" (trang tìm kiếm dùng h2) */
+.stay-title,
+.site-public .stay-title {
+  font-family: var(--fx-font-sans);
+  font-size: 1.05rem;
+  font-weight: 650;
+  margin: 0;
+}
+
+.stay-meta {
+  color: var(--fx-muted);
+  font-size: 0.9rem;
+  margin: 0.15rem 0 0;
+}
+
+.stay-price {
+  margin: 0.5rem 0 0;
+}
+
+.stay-price .price {
+  font-size: 1.05rem;
+}
+
+.stay-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.stay-rating .bi {
+  color: #b7791f;
+}
+
+[data-bs-theme="dark"] .stay-rating .bi {
+  color: #e0b45c;
+}
+
+/* Tên cũ, vẫn còn ở vài chỗ */
+.stay-cover {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+
+.stay-cover-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fx-primary-soft);
+  color: var(--fx-on-primary-soft);
+  font-size: 2.5rem;
+}
+
+/* ---------- Bộ lọc trang tìm kiếm ---------- */
+.search-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1.25rem;
+  color: var(--fx-muted);
+}
+
+.search-summary strong {
+  color: var(--fx-ink);
+}
+
+/* ---------- Gallery chi tiết homestay ---------- */
+.stay-gallery {
+  display: grid;
+  gap: 0.5rem;
+  border-radius: var(--fx-radius-lg);
+  overflow: hidden;
+}
+
+.stay-gallery .gallery-item {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: var(--fx-primary-soft);
+  overflow: hidden;
+  min-height: 0;
+}
+
+.stay-gallery .gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: opacity 0.2s var(--fx-ease);
+}
+
+.stay-gallery .gallery-item:hover img {
+  opacity: 0.9;
+}
+
+.stay-gallery .gallery-item.is-broken img {
+  visibility: hidden;
+}
+
+.gallery-more {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--fx-radius-sm);
+  background: var(--fx-surface);
+  color: var(--fx-ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: var(--fx-shadow);
+}
+
+/* Điện thoại: dải ảnh vuốt ngang */
+@media (max-width: 767.98px) {
+  .stay-gallery {
+    grid-auto-flow: column;
+    grid-auto-columns: 86%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    border-radius: var(--fx-radius);
+    margin-inline: -0.25rem;
+    padding-inline: 0.25rem;
+  }
+
+  .stay-gallery .gallery-item {
+    aspect-ratio: 3 / 2;
+    scroll-snap-align: start;
+    border-radius: var(--fx-radius);
+  }
+}
+
+@media (min-width: 768px) {
+  .stay-gallery {
+    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    height: clamp(20rem, 42vw, 30rem);
+  }
+
+  .stay-gallery .gallery-item:first-child {
+    grid-row: span 2;
+  }
+
+  .stay-gallery[data-count="1"] { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+  .stay-gallery[data-count="2"] { grid-template-columns: 2fr 1fr; grid-template-rows: 1fr; }
+  .stay-gallery[data-count="2"] .gallery-item:first-child { grid-row: auto; }
+  .stay-gallery[data-count="3"] { grid-template-columns: 2fr 1fr; }
+  .stay-gallery[data-count="4"] { grid-template-columns: 2fr 1fr 1fr; }
+  .stay-gallery[data-count="4"] .gallery-item:last-child { grid-column: span 2; }
+}
+
+.gallery-empty {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  border-radius: var(--fx-radius-lg);
+  border: 1px dashed var(--fx-border-strong);
+  background: var(--fx-primary-soft);
+  color: var(--fx-on-primary-soft);
+}
+
+.gallery-empty .bi {
+  font-size: 2.5rem;
+}
+
+.gallery-empty p {
+  margin: 0;
+}
+
+/* Xem ảnh lớn */
+.lightbox .modal-content {
+  background: #0f1311;
+  color: #fff;
+  border: 0;
+}
+
+.lightbox .modal-body {
+  position: relative;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.lightbox img {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+}
+
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1e2320;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.lightbox-nav.prev { left: 0.75rem; }
+.lightbox-nav.next { right: 0.75rem; }
+
+.lightbox .modal-header {
+  border: 0;
+}
+
+.lightbox .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* ---------- Chi tiết homestay ---------- */
+.stay-heading p {
+  color: var(--fx-muted);
+}
+
+.stay-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--fx-muted);
+}
+
+.stay-facts .bi {
+  margin-right: 0.3rem;
+}
+
+.room-offer {
+  padding: 1.25rem;
+}
+
+.room-offer h3 {
+  font-size: 1.15rem;
+}
+
+.room-offer.is-muted {
+  background: var(--fx-surface-2);
+}
+
+.room-offer.is-muted h3,
+.room-offer.is-muted .price-table {
+  opacity: 0.75;
+}
+
+.room-quote {
+  border-top: 1px solid var(--fx-border);
+  padding-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .room-quote {
+    border-top: 0;
+    border-left: 1px solid var(--fx-border);
+    padding: 0 0 0 1.25rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-end;
+    text-align: right;
+  }
+}
+
+.price-table {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+}
+
+.price-table > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.price-table dt {
+  font-weight: 500;
+  color: var(--fx-muted);
+}
+
+.price-table dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.amenity-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.75rem 1.25rem;
+}
+
+.amenity-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.amenity-list .bi {
+  color: var(--fx-primary);
+  font-size: 1.15rem;
+}
+
+.policy-rules li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.35rem 0;
+}
+
+.policy-rules .badge-tone {
+  min-width: 4.2rem;
+  justify-content: center;
+}
+
+.booking-panel {
+  padding: 1.25rem;
+}
+
+@media (min-width: 992px) {
+  .booking-panel.sticky-lg-top {
+    top: 5.5rem;
+  }
+}
+
+/* ---------- Đặt phòng & tóm tắt đơn ---------- */
+.form-section {
+  padding: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .form-section {
+    padding: 1.5rem;
+  }
+}
+
+.form-section h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.1rem;
+}
+
+.form-section h2 .bi {
+  color: var(--fx-primary);
+}
+
+.night-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.2rem 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-total {
+  border-top: 1px solid var(--fx-border);
+  padding-top: 0.6rem;
+  margin-top: 0.4rem;
+  font-weight: 700;
+}
+
+.summary-due {
+  margin-top: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--fx-radius-sm);
+  background: var(--fx-primary-soft);
+  color: var(--fx-on-primary-soft);
+  font-weight: 700;
+}
+
+.summary-thumb {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  border-radius: var(--fx-radius);
+  margin-bottom: 1rem;
+}
+
+.order-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+/* Tiến trình đơn: chỉ để đọc, không phải nút bấm */
+.order-progress {
+  display: flex;
+  gap: 0.25rem;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+
+.order-progress li {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8125rem;
+  color: var(--fx-muted);
+}
+
+.order-progress li::before {
+  content: "";
+  display: block;
+  height: 4px;
+  border-radius: 4px;
+  margin-bottom: 0.45rem;
+  background: var(--fx-surface-3);
+}
+
+.order-progress li.is-done::before {
+  background: var(--fx-primary);
+}
+
+.order-progress li.is-current {
+  color: var(--fx-ink);
+  font-weight: 600;
+}
+
+.order-progress li.is-current::before {
+  background: linear-gradient(to right, var(--fx-primary) 50%, var(--fx-surface-3) 50%);
+}
+
+@media (max-width: 575.98px) {
+  .order-progress li span {
+    display: none;
+  }
+
+  .order-progress li.is-current span {
+    display: inline;
+  }
+}
+
+/* ---------- Thanh toán ---------- */
+.pay-card {
+  border-top: 3px solid var(--fx-primary);
+}
+
+.countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  background: #f5edd3;
+  color: #6e5208;
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown strong {
+  font-size: 1.05rem;
+}
+
+.countdown.is-urgent {
+  background: #f7e4e2;
+  color: #8e2a20;
+}
+
+[data-bs-theme="dark"] .countdown {
+  background: #312a17;
+  color: #e6cf86;
+}
+
+[data-bs-theme="dark"] .countdown.is-urgent {
+  background: #36201d;
+  color: #f3aca4;
+}
+
+/* QR luôn trên nền trắng để app ngân hàng quét được ở chế độ tối */
+.qr-frame {
+  display: inline-block;
+  padding: 0.75rem;
+  border-radius: var(--fx-radius);
+  background: #fff;
+  border: 1px solid var(--fx-border);
+}
+
+.qr-image {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: var(--fx-radius-sm);
+  background: #fff;
+}
+
+.transfer-info dt {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--fx-muted);
+}
+
+.transfer-info dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.transfer-info .btn-sm {
+  min-height: 2rem;
+  padding: 0.1rem 0.65rem;
+  font-size: 0.8125rem;
+}
+
+.pay-steps {
+  margin: 1.25rem 0 0;
+  padding-left: 1.25rem;
+  color: var(--fx-muted);
+}
+
+.pay-steps li + li {
+  margin-top: 0.25rem;
+}
+
+.receipt-box {
+  border-top: 1px solid var(--fx-border);
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+}
+
+.receipt-box summary {
+  font-weight: 600;
+  color: var(--fx-primary);
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+}
+
+.dev-box {
+  padding: 0.65rem 0.85rem;
+  border: 1px dashed #a15c00;
+  border-radius: var(--fx-radius-sm);
+  background: #fbf5e6;
+  color: #5c3d06;
+}
+
+[data-bs-theme="dark"] .dev-box {
+  background: #2a2214;
+  color: #e6cf86;
+}
+
+/* ---------- Tài khoản ---------- */
+.auth-card {
+  overflow: hidden;
+}
+
+.auth-side {
+  position: relative;
+  isolation: isolate;
+  color: #fff;
+  padding: 2.5rem;
+  background: #24332c url("/images/demo/veranda-garden.webp") center / cover no-repeat;
+  min-height: 100%;
+}
+
+.auth-side::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(to top, rgba(14, 20, 17, 0.88) 0%, rgba(14, 20, 17, 0.55) 55%, rgba(14, 20, 17, 0.35) 100%);
+}
+
+.auth-side > div {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.auth-side h2 {
+  color: #fff;
+  font-size: 1.75rem;
+}
+
+.auth-side ul {
+  list-style: none;
+  padding: 0;
+  margin: 1.25rem 0 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.auth-side li {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.auth-side li .bi {
+  color: #b9dccb;
+  font-size: 1.1rem;
+}
+
+.auth-side .brand-mark {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.auth-form {
+  padding: 1.75rem;
+}
+
+@media (min-width: 992px) {
+  .auth-form {
+    padding: 3rem;
+  }
+}
+
+.narrow-card {
+  padding: 1.75rem;
+}
+
+@media (min-width: 768px) {
+  .narrow-card {
+    padding: 2.25rem;
+  }
+}
+
+/* ---------- Trang lỗi ---------- */
+.status-page {
+  text-align: center;
+  padding: 4rem 1rem;
+  max-width: 34rem;
+  margin: 0 auto;
+}
+
+.status-code {
+  font-family: var(--fx-font-serif);
+  font-size: clamp(4.5rem, 14vw, 7.5rem);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--fx-primary);
+}
+
+/* ---------- Điện thoại ---------- */
+@media (max-width: 575.98px) {
+  .hero-copy {
+    padding-block: 4.5rem 6.5rem;
+  }
+
+  .page-head h1 {
+    font-size: 1.5rem;
+  }
+
+  .home-section {
+    margin-top: 3rem;
+  }
+}

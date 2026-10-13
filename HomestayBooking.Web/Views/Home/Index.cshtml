@@ -1,82 +1,168 @@
 @model HomeIndexViewModel
 @{
     ViewData["Title"] = L["Trang chủ"];
-    string[] areaTones = ["tone-sky", "tone-emerald", "tone-violet", "tone-orange", "tone-pink", "tone-teal", "tone-amber", "tone-indigo"];
-    var features = new (string Icon, string Tone, string Title, string Text)[]
+    ViewData["MainClass"] = "pt-0 pb-4";
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    var promises = new (string Icon, string Title, string Text)[]
     {
-        ("bi-calendar2-check", "tone-sky", L["Không lo trùng phòng"], L["Mỗi đêm của mỗi phòng chỉ được giữ cho một đơn đã xác nhận."]),
-        ("bi-cash-coin", "tone-emerald", L["Cọc 30%, hoàn cọc rõ ràng"], L["Hủy trước 7 ngày hoàn 100% cọc, trước 3–6 ngày hoàn 50%."]),
-        ("bi-headset", "tone-orange", L["Nhân viên tư vấn hỗ trợ"], L["Gọi hotline để nhân viên tìm phòng trống và đặt thay bạn."]),
+        ("bi-calendar2-check", L["Không lo trùng phòng"], L["Mỗi đêm của mỗi phòng chỉ được giữ cho một đơn đã xác nhận."]),
+        ("bi-cash-coin", L["Cọc 30%, hoàn cọc rõ ràng"], L["Hủy trước 7 ngày hoàn 100% cọc, trước 3–6 ngày hoàn 50%."]),
+        ("bi-headset", L["Nhân viên tư vấn hỗ trợ"], L["Gọi hotline để nhân viên tìm phòng trống và đặt thay bạn."]),
     };
-    var steps = new (string Tone, string Title, string Text)[]
+    var steps = new (string Title, string Text)[]
     {
-        ("tone-sky", L["Chọn phòng và ngày"], L["Xem phòng trống và báo giá theo từng đêm."]),
-        ("tone-violet", L["Đặt và giữ phòng"], L["Đăng ký bằng số điện thoại, phòng được giữ 15 phút cho bạn."]),
-        ("tone-pink", L["Quét QR đặt cọc 30%"], L["Tiền về là đơn tự cập nhật, homestay xác nhận trong khoảng 30 phút."]),
+        (L["Chọn phòng và ngày"], L["Xem phòng trống và báo giá theo từng đêm."]),
+        (L["Đặt và giữ phòng"], L["Đăng ký bằng số điện thoại, phòng được giữ 15 phút cho bạn."]),
+        (L["Quét QR đặt cọc 30%"], L["Tiền về là đơn tự cập nhật, homestay xác nhận trong khoảng 30 phút."]),
     };
 }
 
-<section class="hero mb-4" aria-labelledby="heroTitle">
-    <span class="hero-blob b1" aria-hidden="true"></span>
-    <span class="hero-blob b2" aria-hidden="true"></span>
-    <span class="hero-blob b3" aria-hidden="true"></span>
-    <div class="position-relative">
-        <span class="hero-badge mb-3"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i> @L["Hà Nội, Việt Nam"]</span>
-        <h1 id="heroTitle" class="mb-3">@L["Đặt homestay tại Hà Nội, nhanh và rõ ràng"]</h1>
-        <p class="lead mb-4">@L["Lịch phòng cập nhật liên tục, báo giá minh bạch theo từng đêm, đặt phòng chỉ cần số điện thoại."]</p>
-        <div class="d-flex flex-wrap gap-2 mb-4">
-            <a class="btn btn-accent btn-lg" asp-controller="Homestays" asp-action="Index"><i class="bi bi-search-heart" aria-hidden="true"></i> @L["Tìm homestay"]</a>
-            <a class="btn btn-light-glass btn-lg" href="tel:19000000"><i class="bi bi-telephone-fill" aria-hidden="true"></i> @L["Gọi tư vấn"] 1900 0000</a>
-        </div>
-        <div class="d-flex flex-wrap gap-4">
-            <div class="hero-stat"><strong>@Model.HomestayCount</strong><span>@L["Homestay"]</span></div>
-            <div class="hero-stat"><strong>@Model.RoomCount</strong><span>@L["Phòng"]</span></div>
-            <div class="hero-stat"><strong>@Model.Areas.Count</strong><span>@L["Khu vực"]</span></div>
-        </div>
-    </div>
-</section>
+@section Head {
+    <link rel="preload" as="image" href="~/images/demo/hero-wooden-cabin.webp"
+          imagesrcset="/images/demo/hero-wooden-cabin-sm.webp 1080w, /images/demo/hero-wooden-cabin.webp 1920w" imagesizes="100vw" />
+}
 
-<div class="row g-3">
-    @foreach (var f in features)
-    {
-        <div class="col-md-4">
-            <div class="card-soft card-accent-top feature-card @f.Tone">
-                <span class="icon-chip" aria-hidden="true"><i class="bi @f.Icon"></i></span>
-                <h2 class="h5 mt-3 mb-1">@f.Title</h2>
-                <p class="text-muted mb-0">@f.Text</p>
+@section Hero {
+    <section class="hero-photo" aria-labelledby="heroTitle">
+        <img src="~/images/demo/hero-wooden-cabin.webp"
+             srcset="/images/demo/hero-wooden-cabin-sm.webp 1080w, /images/demo/hero-wooden-cabin.webp 1920w" sizes="100vw"
+             alt="" width="1920" height="1282" fetchpriority="high" />
+        <div class="container">
+            <div class="hero-copy">
+                <h1 id="heroTitle">@L["Đặt homestay tại Hà Nội, nhanh và rõ ràng"]</h1>
+                <p class="lead">@L["Lịch phòng cập nhật liên tục, báo giá minh bạch theo từng đêm, đặt phòng chỉ cần số điện thoại."]</p>
             </div>
         </div>
-    }
-</div>
+        <small class="hero-credit">
+            @L["Ảnh"]: <a href="https://commons.wikimedia.org/w/index.php?curid=193969735" target="_blank" rel="noopener">Shixart1985</a>,
+            <a href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="noopener license">CC BY 2.0</a>
+        </small>
+    </section>
+}
 
-<h2 class="section-title" id="areas"><i class="bi bi-map text-brand" aria-hidden="true"></i> @L["Khám phá khu vực"]</h2>
-<div class="row g-3">
-    @for (var i = 0; i < Model.Areas.Count; i++)
-    {
-        var a = Model.Areas[i];
-        <div class="col-6 col-md-4 col-lg-3">
-            <a class="area-tile @areaTones[i % areaTones.Length]" asp-controller="Homestays" asp-action="Index" asp-route-areaId="@a.Id">
-                <span class="icon-chip" aria-hidden="true"><i class="bi bi-pin-map-fill"></i></span>
-                <div>
-                    <strong>@a.Name</strong>
-                    <small>@L["{0} homestay", a.HomestayCount]</small>
-                </div>
-            </a>
+<form class="card-soft hero-search" method="get" data-date-range asp-controller="Homestays" asp-action="Index" role="search" aria-label="@L["Tìm homestay"]">
+    <div class="row g-3 align-items-end">
+        <div class="col-12 col-lg-4">
+            <label class="form-label" for="AreaId">@L["Khu vực"]</label>
+            <select class="form-select" id="AreaId" name="AreaId">
+                <option value="">@L["Tất cả khu vực"]</option>
+                @foreach (var a in Model.Areas)
+                {
+                    <option value="@a.Id">@a.Name</option>
+                }
+            </select>
         </div>
-    }
-</div>
+        <div class="col-6 col-lg-2">
+            <label class="form-label" for="CheckIn">@L["Nhận phòng"]</label>
+            <input class="form-control" type="date" id="CheckIn" name="CheckIn" min="@today.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-6 col-lg-2">
+            <label class="form-label" for="CheckOut">@L["Trả phòng"]</label>
+            <input class="form-control" type="date" id="CheckOut" name="CheckOut" min="@today.AddDays(1).ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-5 col-lg-1">
+            <label class="form-label" for="Guests">@L["Số khách"]</label>
+            <input class="form-control" type="number" id="Guests" name="Guests" min="1" max="20" value="2" inputmode="numeric" />
+        </div>
+        <div class="col-7 col-lg-3 d-grid">
+            <button type="submit" class="btn btn-brand"><i class="bi bi-search" aria-hidden="true"></i> @L["Tìm phòng trống"]</button>
+        </div>
+    </div>
+    <p class="hero-search-note">
+        @L["Đang có {0} homestay với {1} phòng ở {2} khu vực của Hà Nội. Không chọn ngày thì hiện mọi homestay.", Model.HomestayCount, Model.RoomCount, Model.Areas.Count]
+    </p>
+</form>
 
-<h2 class="section-title"><i class="bi bi-signpost-2 text-brand" aria-hidden="true"></i> @L["Đặt phòng trong 3 bước"]</h2>
-<ol class="row g-3 list-unstyled mb-0">
-    @for (var i = 0; i < steps.Length; i++)
+<ul class="promise-list" aria-label="@L["Cam kết khi đặt qua Fuji"]">
+    @foreach (var p in promises)
     {
-        var s = steps[i];
-        <li class="col-md-4">
-            <div class="card-soft step @s.Tone">
-                <div class="step-number" aria-hidden="true">@(i + 1)</div>
-                <h3 class="h5">@s.Title</h3>
-                <p class="text-muted mb-0">@s.Text</p>
+        <li>
+            <i class="bi @p.Icon" aria-hidden="true"></i>
+            <div>
+                <strong>@p.Title</strong>
+                <p>@p.Text</p>
             </div>
         </li>
     }
-</ol>
+</ul>
+
+@if (Model.Featured.Count > 0)
+{
+    <section class="home-section" aria-labelledby="featuredTitle">
+        <div class="section-head">
+            <div>
+                <h2 id="featuredTitle">@L["Được khách đánh giá cao"]</h2>
+                <p>@L["Xếp theo điểm đánh giá của khách đã ở. Giá là giá ngày thường thấp nhất."]</p>
+            </div>
+            <a class="btn btn-outline-secondary" asp-controller="Homestays" asp-action="Index">@L["Xem tất cả homestay"]</a>
+        </div>
+        <div class="stay-grid">
+            @foreach (var h in Model.Featured)
+            {
+                <a class="stay-card" asp-controller="Homestays" asp-action="Details" asp-route-id="@h.Id">
+                    <div class="stay-media">
+                        <span class="stay-fallback" aria-hidden="true"><i class="bi bi-house-heart"></i></span>
+                        @if (h.CoverUrl is not null)
+                        {
+                            <img src="@h.CoverUrl.Thumbnail()" alt="" loading="lazy" width="640" height="427" />
+                        }
+                    </div>
+                    <div class="stay-body">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <h3 class="stay-title">@h.Name</h3>
+                            @if (h.Rating is double rating)
+                            {
+                                <span class="stay-rating" title="@L["{0} đánh giá", h.ReviewCount]">
+                                    <i class="bi bi-star-fill" aria-hidden="true"></i>
+                                    <span><span class="visually-hidden">@L["Điểm đánh giá"]: </span>@rating.ToString("0.0")</span>
+                                </span>
+                            }
+                        </div>
+                        <p class="stay-meta"><i class="bi bi-geo-alt" aria-hidden="true"></i> @h.AreaName</p>
+                        @if (h.FromPrice is decimal price)
+                        {
+                            <p class="stay-price"><span class="text-muted small">@L["Từ"]</span> <span class="price">@price.ToString("N0")đ</span><span class="text-muted small"> / @L["đêm"]</span></p>
+                        }
+                    </div>
+                </a>
+            }
+        </div>
+    </section>
+}
+
+<section class="home-section" id="areas" aria-labelledby="areasTitle">
+    <div class="section-head">
+        <div>
+            <h2 id="areasTitle">@L["Khám phá khu vực"]</h2>
+            <p>@L["Phố cổ, hồ Tây hay đồi núi ngoại thành: chọn khu vực để xem homestay ở đó."]</p>
+        </div>
+    </div>
+    <div class="area-grid">
+        @foreach (var a in Model.Areas)
+        {
+            <a class="area-tile" asp-controller="Homestays" asp-action="Index" asp-route-areaId="@a.Id">
+                <span>
+                    <strong>@a.Name</strong>
+                    <small>@L["{0} homestay", a.HomestayCount]</small>
+                </span>
+                <i class="bi bi-arrow-right" aria-hidden="true"></i>
+            </a>
+        }
+    </div>
+</section>
+
+<section class="home-section" aria-labelledby="stepsTitle">
+    <div class="section-head">
+        <h2 id="stepsTitle">@L["Đặt phòng trong 3 bước"]</h2>
+    </div>
+    <ol class="steps">
+        @for (var i = 0; i < steps.Length; i++)
+        {
+            <li>
+                <div class="step-number" aria-hidden="true">@(i + 1)</div>
+                <h3>@steps[i].Title</h3>
+                <p>@steps[i].Text</p>
+            </li>
+        }
+    </ol>
+</section>

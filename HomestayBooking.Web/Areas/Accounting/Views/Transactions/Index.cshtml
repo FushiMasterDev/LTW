@@ -1,0 +1,104 @@
+@model PaginatedList<BankTransactionRow>
+@{
+    ViewData["Title"] = L["Giao dịch ngân hàng"];
+    var selected = ViewData["Status"] as BankMatchStatus?;
+    var all = (bool)ViewData["All"]!;
+}
+<partial name="_PageHead" model="@(new PageHeadModel(L["Giao dịch ngân hàng"], "bi-bank", "tone-rose", L["Tiền vào tài khoản MB của Fuji. Mặc định chỉ hiện các khoản cần xử lý tay."], ShowCreate: false))" />
+<partial name="_AccountingTabs" />
+
+<form method="get" class="card-soft filter-bar row g-2 mx-0" role="search">
+    <div class="col-sm-4 col-md-3">
+        <label for="status" class="visually-hidden">@L["Trạng thái"]</label>
+        <select id="status" name="status" class="form-select">
+            <option value="">@L["Cần xử lý"]</option>
+            @foreach (var s in Enum.GetValues<BankMatchStatus>())
+            {
+                <option value="@s" selected="@(s == selected)">@L[s.DisplayName()]</option>
+            }
+        </select>
+    </div>
+    <div class="col-sm-8 col-md-5">
+        <label for="q" class="visually-hidden">@L["Tìm theo nội dung, mã đơn, mã giao dịch"]</label>
+        <div class="input-group">
+            <span class="input-group-text" aria-hidden="true"><i class="bi bi-search"></i></span>
+            <input type="search" id="q" name="q" value="@ViewData["Query"]" class="form-control" placeholder="@L["Tìm theo nội dung, mã đơn, mã giao dịch"]" />
+        </div>
+    </div>
+    <div class="col-6 col-md-2 d-flex align-items-center">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="all" name="all" value="true" checked="@all" />
+            <label class="form-check-label" for="all">@L["Mọi giao dịch"]</label>
+        </div>
+    </div>
+    <div class="col-6 col-md-2 d-grid">
+        <button type="submit" class="btn btn-brand"><i class="bi bi-funnel" aria-hidden="true"></i> @L["Lọc"]</button>
+    </div>
+</form>
+
+<div class="card-soft overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-modern align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">@L["Thời gian"]</th>
+                    <th scope="col" class="text-end">@L["Số tiền"]</th>
+                    <th scope="col">@L["Nội dung chuyển khoản"]</th>
+                    <th scope="col">@L["Đơn"]</th>
+                    <th scope="col">@L["Trạng thái"]</th>
+                    <th scope="col" class="text-end">@L["Thao tác"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in Model)
+                {
+                    var open = AccountingService.OpenStatuses.Contains(t.MatchStatus);
+                    <tr>
+                        <td class="text-nowrap">@VietnamTime.ToLocal(t.TransactionTime).ToString("HH:mm dd/MM/yyyy")
+                            <div class="small text-muted text-truncate tx-ref" title="@t.ProviderTransactionId">@t.Provider · @t.ProviderTransactionId</div></td>
+                        <td class="text-end text-nowrap fw-semibold">@t.Amount.ToString("N0")đ</td>
+                        <td class="small text-break">@(t.TransferContent ?? "—")
+                            @if (t.Note is not null)
+                            {
+                                <div class="text-muted">@t.Note</div>
+                            }
+                        </td>
+                        <td class="text-nowrap">
+                            @if (t.BookingCode is not null)
+                            {
+                                <span class="booking-code">@t.BookingCode</span>
+                                <div class="small text-muted">@L[t.BookingStatus!.Value.DisplayName()] · @L["cần {0:N0}đ", t.BookingAmountDue ?? 0]</div>
+                            }
+                            else
+                            {
+                                <span class="text-muted">—</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="badge-tone @t.MatchStatus.ToneClass()">@L[t.MatchStatus.DisplayName()]</span>
+                            @if (t.ProcessedBy is not null)
+                            {
+                                <div class="small text-muted text-nowrap">@t.ProcessedBy · @(t.ProcessedAt is { } at ? VietnamTime.ToLocal(at).ToString("dd/MM") : "")</div>
+                            }
+                            @if (t.RefundBankRef is not null)
+                            {
+                                <div class="small text-muted">@L["Mã hoàn"]: @t.RefundBankRef</div>
+                            }
+                        </td>
+                        <td class="text-end">
+                            @if (open)
+                            {
+                                <a class="btn btn-sm btn-brand text-nowrap" asp-action="Process" asp-route-id="@t.Id">@L["Xử lý"]</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (Model.Count == 0)
+    {
+        <partial name="_EmptyState" />
+    }
+</div>
+<partial name="_Pager" model="Model" />

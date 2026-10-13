@@ -1,0 +1,27 @@
+@* Phần <head> chung của _Layout và _DashboardLayout. Script theme chạy trước CSS để không nháy màu sai. *@
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="light dark" />
+<meta name="theme-color" content="#f8f6f1" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#121614" media="(prefers-color-scheme: dark)" />
+<title>@ViewData["Title"] - Fuji Homestay</title>
+<script>
+    (function () {
+        var root = document.documentElement, theme = null;
+        try { theme = localStorage.getItem('fx-theme'); } catch (e) { }
+        if (theme !== 'light' && theme !== 'dark') {
+            theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        root.setAttribute('data-bs-theme', theme);
+        try { if (localStorage.getItem('fx-sidebar') === 'collapsed') root.classList.add('sidebar-collapsed'); } catch (e) { }
+        // [motion] fx-intro: intro trang chủ chạy một lần mỗi phiên (motion.css)
+        try { if (/^\/(home(\/index)?)?\/?$/i.test(location.pathname) && !sessionStorage.getItem('fx-intro')) { root.classList.add('fx-intro'); sessionStorage.setItem('fx-intro', '1'); } } catch (e) { }
+    })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Lora:wght@500;600&display=swap" />
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+<link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />

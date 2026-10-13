@@ -1,0 +1,128 @@
+@using HomestayBooking.Web.Areas.Owner.Controllers
+@using HomestayBooking.Web.Identity
+@using HomestayBooking.Web.Services
+@model OwnerBookingDetailsViewModel
+@{
+    var b = Model.Booking;
+    ViewData["Title"] = L["Đơn {0}", b.Code];
+}
+<partial name="_PageHead" model="@(new PageHeadModel(L["Đơn {0}", b.Code], b.Status.Icon(), b.Status.ToneClass(), b.Homestay.Name, ShowCreate: false))" />
+
+<p><a asp-action="Index"><i class="bi bi-arrow-left" aria-hidden="true"></i> @L["Về danh sách đơn"]</a></p>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card-soft p-3 mb-3">
+            <dl class="row mb-0">
+                <dt class="col-sm-4">@L["Trạng thái"]</dt>
+                <dd class="col-sm-8"><span class="badge-tone @b.Status.ToneClass()">@L[b.Status.DisplayName()]</span></dd>
+                <dt class="col-sm-4">@L["Khách"]</dt>
+                <dd class="col-sm-8">@b.ContactName · @PhoneNumberNormalizer.ToNational(b.ContactPhone) · @L["{0} khách", b.Guests]</dd>
+                <dt class="col-sm-4">@L["Phòng"]</dt>
+                <dd class="col-sm-8">@b.RoomType.Name · @b.Room.RoomCode</dd>
+                <dt class="col-sm-4">@L["Ngày ở"]</dt>
+                <dd class="col-sm-8">@b.CheckIn.ToString("dd/MM/yyyy") – @b.CheckOut.ToString("dd/MM/yyyy")</dd>
+                <dt class="col-sm-4">@L["Tổng tiền"]</dt>
+                <dd class="col-sm-8">@b.TotalAmount.ToString("N0")đ</dd>
+                <dt class="col-sm-4">@L["Tiền cọc"]</dt>
+                <dd class="col-sm-8">@b.DepositAmount.ToString("N0")đ</dd>
+                @if (b.Status == BookingStatus.Deposited && b.ConfirmDeadlineAt is { } deadline)
+                {
+                    <dt class="col-sm-4">@L["Hạn xác nhận"]</dt>
+                    <dd class="col-sm-8">@VietnamTime.ToLocal(deadline).ToString("HH:mm dd/MM/yyyy")</dd>
+                }
+                @if (!string.IsNullOrWhiteSpace(b.SpecialRequests))
+                {
+                    <dt class="col-sm-4">@L["Yêu cầu đặc biệt"]</dt>
+                    <dd class="col-sm-8">@b.SpecialRequests</dd>
+                }
+                @if (b.CancelReason is not null)
+                {
+                    <dt class="col-sm-4">@L["Lý do"]</dt>
+                    <dd class="col-sm-8">@b.CancelReason</dd>
+                }
+            </dl>
+        </div>
+
+        <h2 class="section-title h5">@L["Lịch sử"]</h2>
+        <div class="card-soft p-3">
+            <ul class="list-unstyled mb-0">
+                @foreach (var h in b.Histories.OrderBy(h => h.ChangedAt))
+                {
+                    <li class="mb-1">
+                        <span class="text-muted small">@VietnamTime.ToLocal(h.ChangedAt).ToString("HH:mm dd/MM")</span>
+                        @L[h.ToStatus.DisplayName()]
+                        @if (h.Note is not null)
+                        {
+                            <span class="text-muted">— @h.Note</span>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card-soft p-3">
+            <h2 class="h5">@L["Thao tác"]</h2>
+            @switch (b.Status)
+            {
+                case BookingStatus.Deposited:
+                    <form asp-action="Confirm" asp-route-id="@b.Id" method="post" class="mb-3">
+                        @if (Model.FreeRooms.Count > 0)
+                        {
+                            <label for="roomId" class="form-label">@L["Phòng"]</label>
+                            <select id="roomId" name="roomId" class="form-select mb-2">
+                                <option value="">@L["Giữ phòng {0}", b.Room.RoomCode]</option>
+                                @foreach (var r in Model.FreeRooms)
+                                {
+                                    <option value="@r.Id">@L["Đổi sang phòng {0}", r.RoomCode]</option>
+                                }
+                            </select>
+                        }
+                        <button type="submit" class="btn btn-brand w-100"><i class="bi bi-check2-circle" aria-hidden="true"></i> @L["Xác nhận đơn"]</button>
+                    </form>
+                    <form asp-action="Reject" asp-route-id="@b.Id" method="post"
+                          data-confirm="@L["Từ chối đơn {0}? Fuji sẽ hoàn 100% tiền cọc cho khách.", b.Code]">
+                        <label for="reason" class="form-label">@L["Lý do từ chối"]</label>
+                        <textarea id="reason" name="reason" class="form-control mb-2" rows="2" required maxlength="500"></textarea>
+                        <button type="submit" class="btn btn-outline-danger w-100"><i class="bi bi-x-circle" aria-hidden="true"></i> @L["Từ chối đơn"]</button>
+                    </form>
+                    break;
+                case BookingStatus.Confirmed:
+                    @* Cùng điều kiện ngày với BookingService: nhận phòng từ ngày CheckIn, không đến từ ngày hôm sau *@
+                    @if (Model.Today >= b.CheckIn)
+                    {
+                        <form asp-action="CheckIn" asp-route-id="@b.Id" method="post" class="mb-2">
+                            <button type="submit" class="btn btn-brand w-100"><i class="bi bi-door-open" aria-hidden="true"></i> @L["Khách đã nhận phòng"]</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-2">@L["Nhận phòng mở từ ngày {0}.", b.CheckIn.ToString("dd/MM/yyyy")]</p>
+                    }
+                    @if (Model.Today > b.CheckIn)
+                    {
+                        <form asp-action="NoShow" asp-route-id="@b.Id" method="post"
+                              data-confirm="@L["Đánh dấu khách không đến đơn {0}? Khách sẽ không được hoàn cọc.", b.Code]">
+                            <button type="submit" class="btn btn-outline-danger w-100"><i class="bi bi-person-x" aria-hidden="true"></i> @L["Khách không đến"]</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">@L["Đánh dấu khách không đến mở từ ngày {0}.", b.CheckIn.AddDays(1).ToString("dd/MM/yyyy")]</p>
+                    }
+                    break;
+                case BookingStatus.CheckedIn:
+                    <form asp-action="Complete" asp-route-id="@b.Id" method="post"
+                          data-confirm="@L["Hoàn thành đơn {0}?", b.Code]">
+                        <button type="submit" class="btn btn-brand w-100"><i class="bi bi-trophy" aria-hidden="true"></i> @L["Khách đã trả phòng"]</button>
+                    </form>
+                    break;
+                default:
+                    <p class="text-muted mb-0">@L["Đơn này không còn thao tác nào."]</p>
+                    break;
+            }
+        </div>
+    </div>
+</div>

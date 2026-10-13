@@ -22,6 +22,11 @@ public static class ClaimsPrincipalExtensions
     public static bool IsActiveEmployee(this ClaimsPrincipal user) => user.EmployeePosition() is not null;
 
     /// <summary>Quản lý hoặc quản trị hệ thống (policy Management).</summary>
+    /// <summary>Kế toán, Quản lý, Quản trị hệ thống — được vào màn hình kế toán (AppPolicies.Accounting).</summary>
+    public static bool IsAccounting(this ClaimsPrincipal user) =>
+        user.EmployeePosition() is Models.Entities.EmployeePosition.Accountant or Models.Entities.EmployeePosition.Manager
+            or Models.Entities.EmployeePosition.Administrator;
+
     public static bool IsManagement(this ClaimsPrincipal user) =>
         user.EmployeePosition() is Models.Entities.EmployeePosition.Manager or Models.Entities.EmployeePosition.Administrator;
 

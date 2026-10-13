@@ -45,6 +45,10 @@ builder.Services.AddAuthorizationBuilder()
         .RequireRole(AppRoles.Employee)
         .RequireClaim(AppClaimTypes.EmployeePosition,
             nameof(EmployeePosition.Manager), nameof(EmployeePosition.Administrator)))
+    .AddPolicy(AppPolicies.Accounting, p => p
+        .RequireRole(AppRoles.Employee)
+        .RequireClaim(AppClaimTypes.EmployeePosition,
+            nameof(EmployeePosition.Accountant), nameof(EmployeePosition.Manager), nameof(EmployeePosition.Administrator)))
     .AddPolicy(AppPolicies.ApprovedOwner, p => p
         .RequireRole(AppRoles.Owner)
         .RequireClaim(AppClaimTypes.OwnerApproved, "true"));
@@ -58,6 +62,7 @@ builder.Services.Configure<BankAccountOptions>(builder.Configuration.GetSection(
 builder.Services.Configure<VoucherOptions>(builder.Configuration.GetSection(VoucherOptions.Section));
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<PricingService>();
+builder.Services.AddScoped<AccountingService>();
 builder.Services.AddScoped<BookingCodeGenerator>();
 builder.Services.AddScoped<RefundService>();
 builder.Services.AddScoped<NotificationService>();

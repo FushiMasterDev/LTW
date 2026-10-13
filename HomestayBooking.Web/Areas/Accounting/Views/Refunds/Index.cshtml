@@ -1,0 +1,87 @@
+@model PaginatedList<RefundRow>
+@{
+    ViewData["Title"] = L["Hoàn tiền"];
+    var done = (bool)ViewData["Done"]!;
+}
+<partial name="_PageHead" model="@(new PageHeadModel(L["Hoàn tiền"], "bi-arrow-counterclockwise", "tone-sky", L["Đơn hủy hoặc bị homestay từ chối đã chốt số tiền hoàn. Chuyển khoản cho khách rồi ghi lại mã giao dịch."], ShowCreate: false))" />
+<partial name="_AccountingTabs" />
+
+<form method="get" class="card-soft filter-bar row g-2 mx-0" role="search">
+    <div class="col-sm-4 col-md-3">
+        <label for="done" class="visually-hidden">@L["Trạng thái"]</label>
+        <select id="done" name="done" class="form-select">
+            <option value="false" selected="@(!done)">@L["Chờ hoàn"]</option>
+            <option value="true" selected="@done">@L["Đã hoàn"]</option>
+        </select>
+    </div>
+    <div class="col-sm-8 col-md-6">
+        <label for="q" class="visually-hidden">@L["Tìm theo mã đơn, tên hoặc SĐT khách"]</label>
+        <div class="input-group">
+            <span class="input-group-text" aria-hidden="true"><i class="bi bi-search"></i></span>
+            <input type="search" id="q" name="q" value="@ViewData["Query"]" class="form-control" placeholder="@L["Tìm theo mã đơn, tên hoặc SĐT khách"]" />
+        </div>
+    </div>
+    <div class="col-md-3 d-grid">
+        <button type="submit" class="btn btn-brand"><i class="bi bi-funnel" aria-hidden="true"></i> @L["Lọc"]</button>
+    </div>
+</form>
+
+<div class="card-soft overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-modern align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">@L["Đơn"]</th>
+                    <th scope="col">@L["Khách"]</th>
+                    <th scope="col" class="text-end">@L["Khách đã chuyển"]</th>
+                    <th scope="col" class="text-end">@L["Cần hoàn"]</th>
+                    <th scope="col">@L["Lý do"]</th>
+                    <th scope="col" class="text-end">@(done ? L["Đã hoàn"] : L["Ghi nhận"])</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model)
+                {
+                    <tr>
+                        <td class="text-nowrap"><span class="booking-code fw-semibold">@r.BookingCode</span>
+                            <div><span class="badge-tone @r.Status.ToneClass()">@L[r.Status.DisplayName()]</span></div></td>
+                        <td>@r.ContactName<div class="small text-muted">@PhoneNumberNormalizer.ToNational(r.ContactPhone) · @r.HomestayName</div></td>
+                        <td class="text-end text-nowrap">@r.AmountPaid.ToString("N0")đ</td>
+                        <td class="text-end text-nowrap fw-semibold">@r.RefundAmount.ToString("N0")đ</td>
+                        <td class="small">@(r.CancelReason ?? "—")
+                            @if (r.CancelledAt is { } at)
+                            {
+                                <div class="text-muted">@L["Hủy lúc {0}", VietnamTime.ToLocal(at).ToString("HH:mm dd/MM")]</div>
+                            }
+                            @if (!done && r.DepositTransferContent is not null)
+                            {
+                                <div class="text-muted">@L["Cọc nhận từ: {0}", r.DepositTransferContent]</div>
+                            }
+                        </td>
+                        <td class="text-end">
+                            @if (done)
+                            {
+                                <div class="small text-nowrap">@r.RefundBankRef</div>
+                                <div class="small text-muted text-nowrap">@r.RefundedBy · @(r.RefundedAt is { } rt ? VietnamTime.ToLocal(rt).ToString("dd/MM") : "")</div>
+                            }
+                            else
+                            {
+                                <form asp-action="Record" asp-route-id="@r.BookingId" method="post" class="d-flex gap-2 justify-content-end"
+                                      data-confirm="@L["Xác nhận đã chuyển hoàn {0:N0}đ cho đơn {1}?", r.RefundAmount, r.BookingCode]">
+                                    <label for="ref-@r.BookingId" class="visually-hidden">@L["Mã giao dịch chuyển trả"]</label>
+                                    <input id="ref-@r.BookingId" name="bankRef" class="form-control form-control-sm refund-ref" required maxlength="100" placeholder="@L["Mã giao dịch"]" />
+                                    <button type="submit" class="btn btn-sm btn-brand text-nowrap">@L["Đã hoàn"]</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (Model.Count == 0)
+    {
+        <partial name="_EmptyState" />
+    }
+</div>
+<partial name="_Pager" model="Model" />

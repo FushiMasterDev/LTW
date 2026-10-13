@@ -1,0 +1,17 @@
+@using Microsoft.AspNetCore.Diagnostics
+@using Microsoft.AspNetCore.Localization
+@{
+    var culture = Context.Features.Get<IRequestCultureFeature>()?.RequestCulture.UICulture.Name ?? "vi-VN";
+    // Trên trang 403/404 (UseStatusCodePagesWithReExecute), Request.Path đã bị đổi thành /Home/StatusCode/...
+    var reExecute = Context.Features.Get<IStatusCodeReExecuteFeature>();
+    var currentUrl = reExecute is null
+        ? Context.Request.Path + Context.Request.QueryString
+        : reExecute.OriginalPathBase + reExecute.OriginalPath + reExecute.OriginalQueryString;
+}
+<form asp-area="" asp-controller="Language" asp-action="Set" method="post" class="btn-group lang-switch" role="group" aria-label="@L["Ngôn ngữ"]">
+    <input type="hidden" name="returnUrl" value="@currentUrl" />
+    <button type="submit" name="culture" value="vi-VN" lang="vi" aria-pressed="@(culture == "vi-VN" ? "true" : "false")"
+            class="btn @(culture == "vi-VN" ? "btn-brand" : "btn-outline-secondary")" title="Tiếng Việt">VI</button>
+    <button type="submit" name="culture" value="en-US" lang="en" aria-pressed="@(culture == "en-US" ? "true" : "false")"
+            class="btn @(culture == "en-US" ? "btn-brand" : "btn-outline-secondary")" title="English">EN</button>
+</form>
