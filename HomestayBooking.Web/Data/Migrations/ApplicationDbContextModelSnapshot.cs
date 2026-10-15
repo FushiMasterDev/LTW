@@ -732,6 +732,8 @@ namespace HomestayBooking.Web.Data.Migrations
 
                     b.ToTable("BookingNights", t =>
                         {
+                            t.HasCheckConstraint("CK_BookingNights_DayType", "[DayType] IN ('Weekday', 'Weekend', 'Holiday')");
+
                             t.HasCheckConstraint("CK_BookingNights_Price", "[Price] > 0");
                         });
                 });
@@ -814,7 +816,10 @@ namespace HomestayBooking.Web.Data.Migrations
                         .HasDatabaseName("IX_CancellationPolicies_Active")
                         .HasFilter("[IsActive] = 1");
 
-                    b.ToTable("CancellationPolicies");
+                    b.ToTable("CancellationPolicies", t =>
+                        {
+                            t.HasCheckConstraint("CK_CancellationPolicies_Scope", "[Scope] IN ('All', 'Holiday')");
+                        });
                 });
 
             modelBuilder.Entity("HomestayBooking.Web.Models.Entities.CancellationRule", b =>
@@ -904,6 +909,8 @@ namespace HomestayBooking.Web.Data.Migrations
                             t.HasCheckConstraint("CK_Contracts_CommissionRate", "[CommissionRate] > 0 AND [CommissionRate] < 1");
 
                             t.HasCheckConstraint("CK_Contracts_Dates", "[EndDate] > [StartDate]");
+
+                            t.HasCheckConstraint("CK_Contracts_Status", "[Status] IN ('Active', 'Expired', 'Terminated')");
                         });
                 });
 
@@ -1100,7 +1107,10 @@ namespace HomestayBooking.Web.Data.Migrations
 
                     b.HasIndex("AreaId", "Status");
 
-                    b.ToTable("Homestays");
+                    b.ToTable("Homestays", t =>
+                        {
+                            t.HasCheckConstraint("CK_Homestays_Status", "[Status] IN ('Draft', 'PendingReview', 'Active', 'Suspended', 'Ended')");
+                        });
                 });
 
             modelBuilder.Entity("HomestayBooking.Web.Models.Entities.HomestayAmenity", b =>
@@ -1337,7 +1347,12 @@ namespace HomestayBooking.Web.Data.Migrations
 
                     b.HasIndex("ReviewedByEmployeeId");
 
-                    b.ToTable("OwnerRegistrations");
+                    b.ToTable("OwnerRegistrations", t =>
+                        {
+                            t.HasCheckConstraint("CK_OwnerRegistrations_Decision", "([Status] NOT IN ('NeedsRevision', 'Approved', 'Rejected') OR ([ReviewedByEmployeeId] IS NOT NULL AND [ReviewedAt] IS NOT NULL)) AND ([Status] NOT IN ('NeedsRevision', 'Rejected') OR ([ReviewNote] IS NOT NULL AND [ReviewNote] <> ''))");
+
+                            t.HasCheckConstraint("CK_OwnerRegistrations_Status", "[Status] IN ('Draft', 'WaitingOwnerActivation', 'PendingReview', 'UnderReview', 'NeedsRevision', 'Approved', 'Rejected')");
+                        });
                 });
 
             modelBuilder.Entity("HomestayBooking.Web.Models.Entities.Payment", b =>
@@ -1439,7 +1454,13 @@ namespace HomestayBooking.Web.Data.Migrations
 
                             t.HasCheckConstraint("CK_Payments_ChangeRequest", "([Type] = 'AdditionalDeposit' AND [ChangeRequestId] IS NOT NULL) OR ([Type] <> 'AdditionalDeposit' AND [ChangeRequestId] IS NULL)");
 
+                            t.HasCheckConstraint("CK_Payments_Method", "[Method] IN ('BankAutoMatch', 'ManualReceipt', 'ManualTransfer')");
+
                             t.HasCheckConstraint("CK_Payments_Receipt", "[Method] <> 'ManualReceipt' OR ([ReceiptImageUrl] IS NOT NULL AND [ReceiptImageUrl] <> '')");
+
+                            t.HasCheckConstraint("CK_Payments_Status", "[Status] IN ('Submitted', 'Approved', 'Rejected')");
+
+                            t.HasCheckConstraint("CK_Payments_Type", "[Type] IN ('Deposit', 'Refund', 'Compensation', 'AdditionalDeposit')");
                         });
                 });
 
@@ -1526,6 +1547,8 @@ namespace HomestayBooking.Web.Data.Migrations
                     b.ToTable("Reviews", t =>
                         {
                             t.HasCheckConstraint("CK_Reviews_Rating", "[Rating] BETWEEN 1 AND 5");
+
+                            t.HasCheckConstraint("CK_Reviews_Reply", "([OwnerReply] IS NULL AND [RepliedAt] IS NULL) OR ([OwnerReply] IS NOT NULL AND [OwnerReply] <> '' AND [RepliedAt] IS NOT NULL)");
                         });
                 });
 
@@ -1598,6 +1621,8 @@ namespace HomestayBooking.Web.Data.Migrations
                     b.ToTable("RoomBlocks", t =>
                         {
                             t.HasCheckConstraint("CK_RoomBlocks_Dates", "[EndDate] > [StartDate]");
+
+                            t.HasCheckConstraint("CK_RoomBlocks_Reason", "[Reason] IN ('OtherChannel', 'Maintenance')");
                         });
                 });
 
@@ -1737,6 +1762,8 @@ namespace HomestayBooking.Web.Data.Migrations
 
                     b.ToTable("RoomTypePrices", t =>
                         {
+                            t.HasCheckConstraint("CK_RoomTypePrices_DayType", "[DayType] IN ('Weekday', 'Weekend', 'Holiday')");
+
                             t.HasCheckConstraint("CK_RoomTypePrices_Price", "[Price] > 0");
                         });
                 });
@@ -1820,6 +1847,10 @@ namespace HomestayBooking.Web.Data.Migrations
                             t.HasCheckConstraint("CK_Settlements_Period", "[PeriodNo] IN (1, 2) AND [Month] BETWEEN 1 AND 12");
 
                             t.HasCheckConstraint("CK_Settlements_Sent", "[Status] = 'Draft' OR [SentAt] IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_Settlements_Status", "[Status] IN ('Draft', 'Sent', 'Confirmed', 'Paid')");
+
+                            t.HasCheckConstraint("CK_Settlements_Year", "[Year] BETWEEN 2020 AND 2100");
                         });
                 });
 
@@ -1886,6 +1917,8 @@ namespace HomestayBooking.Web.Data.Migrations
                             t.HasCheckConstraint("CK_SettlementItems_Amounts", "[RoomAmount] >= 0 AND [DepositAmount] >= 0 AND [RefundAmount] >= 0 AND [DiscountAmount] >= 0 AND [RetainedAmount] > 0 AND [RetainedAmount] <= [DepositAmount] AND [CommissionAmount] >= 0 AND [CommissionAmount] <= [RetainedAmount] AND [PayoutAmount] = [RetainedAmount] - [CommissionAmount]");
 
                             t.HasCheckConstraint("CK_SettlementItems_CommissionRate", "[CommissionRate] > 0 AND [CommissionRate] < 1");
+
+                            t.HasCheckConstraint("CK_SettlementItems_ItemType", "[ItemType] IN ('Completed', 'CancelledRetained', 'NoShow')");
                         });
                 });
 
@@ -1931,6 +1964,8 @@ namespace HomestayBooking.Web.Data.Migrations
 
                     b.ToTable("VerificationDocuments", t =>
                         {
+                            t.HasCheckConstraint("CK_VerificationDocuments_DocumentType", "[DocumentType] IN ('BusinessLicense', 'FireSafety', 'PropertyPhoto', 'Other')");
+
                             t.HasCheckConstraint("CK_VerificationDocuments_Owner", "([OwnerRegistrationId] IS NOT NULL AND [HomestayId] IS NULL) OR ([OwnerRegistrationId] IS NULL AND [HomestayId] IS NOT NULL)");
                         });
                 });

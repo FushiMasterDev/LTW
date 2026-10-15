@@ -163,6 +163,16 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         builder.Entity<OwnerRegistration>(e =>
         {
             e.Property(x => x.ReviewNote).HasMaxLength(1000);
+            e.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_OwnerRegistrations_Status", $"[Status] IN ({SqlList<OwnerRegistrationStatus>()})");
+                // Cần bổ sung cũng là một quyết định; gửi lại hồ sơ không buộc xóa dấu duyệt trước đó.
+                t.HasCheckConstraint("CK_OwnerRegistrations_Decision",
+                    $"([Status] NOT IN ({SqlList(OwnerRegistrationStatus.NeedsRevision, OwnerRegistrationStatus.Approved, OwnerRegistrationStatus.Rejected)})"
+                    + " OR ([ReviewedByEmployeeId] IS NOT NULL AND [ReviewedAt] IS NOT NULL))"
+                    + $" AND ([Status] NOT IN ({SqlList(OwnerRegistrationStatus.NeedsRevision, OwnerRegistrationStatus.Rejected)})"
+                    + " OR ([ReviewNote] IS NOT NULL AND [ReviewNote] <> ''))");
+            });
             // Chỉ một hồ sơ đang xử lý cho mỗi Owner (v5 mục 4.7); hồ sơ đã duyệt/từ chối giữ làm lịch sử
             var open = string.Join(", ", OwnerRegistration.OpenStatuses.Select(s => $"'{s}'"));
             e.HasIndex(x => x.OwnerId).IsUnique().HasFilter($"[Status] IN ({open})")
@@ -194,8 +204,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         {
             e.Property(x => x.FileUrl).HasMaxLength(300).IsRequired();
             e.Property(x => x.OriginalFileName).HasMaxLength(255);
-            e.ToTable(t => t.HasCheckConstraint("CK_VerificationDocuments_Owner",
-                "([OwnerRegistrationId] IS NOT NULL AND [HomestayId] IS NULL) OR ([OwnerRegistrationId] IS NULL AND [HomestayId] IS NOT NULL)"));
+            e.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_VerificationDocuments_Owner",
+                    "([OwnerRegistrationId] IS NOT NULL AND [HomestayId] IS NULL) OR ([OwnerRegistrationId] IS NULL AND [HomestayId] IS NOT NULL)");
+                t.HasCheckConstraint("CK_VerificationDocuments_DocumentType", $"[DocumentType] IN ({SqlList<DocumentType>()})");
+            });
             e.HasOne(x => x.OwnerRegistration).WithMany(r => r.Documents).HasForeignKey(x => x.OwnerRegistrationId);
             e.HasOne(x => x.Homestay).WithMany().HasForeignKey(x => x.HomestayId);
         });
@@ -211,6 +225,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
 
         builder.Entity<Homestay>(e =>
         {
+            e.ToTable(t => t.HasCheckConstraint("CK_Homestays_Status", $"[Status] IN ({SqlList<HomestayStatus>()})"));
             e.Property(x => x.Name).HasMaxLength(200).IsRequired();
             e.Property(x => x.Address).HasMaxLength(300).IsRequired();
             e.Property(x => x.Latitude).HasPrecision(9, 6);
@@ -233,6 +248,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
                 .HasDatabaseName("IX_Contracts_HomestayId_Active");
             e.ToTable(t =>
             {
+                t.HasCheckConstraint("CK_Contracts_Status", $"[Status] IN ({SqlList<ContractStatus>()})");
                 t.HasCheckConstraint("CK_Contracts_Dates", "[EndDate] > [StartDate]");
                 t.HasCheckConstraint("CK_Contracts_CommissionRate", "[CommissionRate] > 0 AND [CommissionRate] < 1");
             });
@@ -294,7 +310,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         builder.Entity<RoomTypePrice>(e =>
         {
             e.HasIndex(x => new { x.RoomTypeId, x.DayType, x.EffectiveFrom }).IsUnique();
-            e.ToTable(t => t.HasCheckConstraint("CK_RoomTypePrices_Price", "[Price] > 0"));
+            e.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_RoomTypePrices_Price", "[Price] > 0");
+                t.HasCheckConstraint("CK_RoomTypePrices_DayType", $"[DayType] IN ({SqlList<DayType>()})");
+            });
             e.HasOne(x => x.RoomType).WithMany(t => t.Prices).HasForeignKey(x => x.RoomTypeId);
         });
 
@@ -306,6 +326,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
 
         builder.Entity<CancellationPolicy>(e =>
         {
+            e.ToTable(t => t.HasCheckConstraint("CK_CancellationPolicies_Scope", $"[Scope] IN ({SqlList<PolicyScope>()})"));
             e.Property(x => x.Name).HasMaxLength(100).IsRequired();
             // Một chính sách đang dùng cho mỗi (homestay, phạm vi). SQL Server coi các NULL là trùng nhau
             // nên cũng chỉ có một chính sách chung (HomestayId NULL) đang dùng cho mỗi phạm vi.
@@ -329,7 +350,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         builder.Entity<RoomBlock>(e =>
         {
             e.Property(x => x.Note).HasMaxLength(255);
-            e.ToTable(t => t.HasCheckConstraint("CK_RoomBlocks_Dates", "[EndDate] > [StartDate]"));
+            e.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_RoomBlocks_Dates", "[EndDate] > [StartDate]");
+                t.HasCheckConstraint("CK_RoomBlocks_Reason", $"[Reason] IN ({SqlList<RoomBlockReason>()})");
+            });
             e.HasOne(x => x.Room).WithMany(r => r.Blocks).HasForeignKey(x => x.RoomId);
             e.HasOne(x => x.CreatedByAccount).WithMany().HasForeignKey(x => x.CreatedByAccountId);
         });
@@ -429,7 +454,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         builder.Entity<BookingNight>(e =>
         {
             e.HasKey(x => new { x.BookingId, x.Date });
-            e.ToTable(t => t.HasCheckConstraint("CK_BookingNights_Price", "[Price] > 0"));
+            e.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_BookingNights_Price", "[Price] > 0");
+                t.HasCheckConstraint("CK_BookingNights_DayType", $"[DayType] IN ({SqlList<DayType>()})");
+            });
             e.HasOne(x => x.Booking).WithMany(b => b.Nights).HasForeignKey(x => x.BookingId);
         });
 
@@ -547,6 +576,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
                 .HasFilter($"[Type] = '{PaymentType.Refund}'");
             e.ToTable(t =>
             {
+                t.HasCheckConstraint("CK_Payments_Type", $"[Type] IN ({SqlList<PaymentType>()})");
+                t.HasCheckConstraint("CK_Payments_Method", $"[Method] IN ({SqlList<PaymentMethod>()})");
+                t.HasCheckConstraint("CK_Payments_Status", $"[Status] IN ({SqlList<PaymentStatus>()})");
                 t.HasCheckConstraint("CK_Payments_ChangeRequest",
                     $"([Type] = '{PaymentType.AdditionalDeposit}' AND [ChangeRequestId] IS NOT NULL)"
                     + $" OR ([Type] <> '{PaymentType.AdditionalDeposit}' AND [ChangeRequestId] IS NULL)");
@@ -591,6 +623,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
             e.Property(x => x.PaidBankRef).HasMaxLength(100);
             e.ToTable(t =>
             {
+                t.HasCheckConstraint("CK_Settlements_Status", $"[Status] IN ({SqlList<SettlementStatus>()})");
+                t.HasCheckConstraint("CK_Settlements_Year", "[Year] BETWEEN 2020 AND 2100");
                 t.HasCheckConstraint("CK_Settlements_Period", "[PeriodNo] IN (1, 2) AND [Month] BETWEEN 1 AND 12");
                 t.HasCheckConstraint("CK_Settlements_Amounts",
                     "[TotalRoomAmount] >= 0 AND [TotalRetained] >= 0 AND [TotalCommission] >= 0 AND [TotalCommission] <= [TotalRetained]"
@@ -608,6 +642,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
             e.Property(x => x.CommissionRate).HasPrecision(5, 4);
             e.ToTable(t =>
             {
+                t.HasCheckConstraint("CK_SettlementItems_ItemType", $"[ItemType] IN ({SqlList<SettlementItemType>()})");
                 t.HasCheckConstraint("CK_SettlementItems_Amounts",
                     "[RoomAmount] >= 0 AND [DepositAmount] >= 0 AND [RefundAmount] >= 0 AND [DiscountAmount] >= 0"
                     + " AND [RetainedAmount] > 0 AND [RetainedAmount] <= [DepositAmount]"
@@ -629,7 +664,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
             e.HasIndex(x => x.HomestayId);
             e.Property(x => x.Comment).HasMaxLength(1000);
             e.Property(x => x.OwnerReply).HasMaxLength(1000);
-            e.ToTable(t => t.HasCheckConstraint("CK_Reviews_Rating", "[Rating] BETWEEN 1 AND 5"));
+            e.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_Reviews_Rating", "[Rating] BETWEEN 1 AND 5");
+                t.HasCheckConstraint("CK_Reviews_Reply",
+                    "([OwnerReply] IS NULL AND [RepliedAt] IS NULL) OR ([OwnerReply] IS NOT NULL AND [OwnerReply] <> '' AND [RepliedAt] IS NOT NULL)");
+            });
             e.HasOne(x => x.Booking).WithOne(b => b.Review).HasForeignKey<Review>(x => x.BookingId);
             e.HasOne(x => x.Homestay).WithMany().HasForeignKey(x => x.HomestayId);
         });

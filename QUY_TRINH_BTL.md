@@ -1,9 +1,9 @@
 # TỔNG QUAN QUY TRÌNH THỰC HIỆN BÀI TẬP LỚN LẬP TRÌNH WEB
 
 **Đề tài:** Hệ thống đặt phòng homestay cho công ty trung gian (Công ty Fuji)
-**Công nghệ:** ASP.NET Core MVC (.NET 8) · Entity Framework Core 8 · ASP.NET Core Identity · SQL Server · Bootstrap 5 · jQuery
+**Công nghệ:** ASP.NET Core MVC (.NET 10) · Entity Framework Core 10 · ASP.NET Core Identity · SQL Server · Bootstrap 5 · jQuery
 **Nhóm:** Phạm Ngọc Phú (trưởng nhóm) · Lã Quốc Thái · Nguyễn Quang Nghĩa · Trần Kỳ Vĩ
-**Đầu vào:** Báo cáo *Phân tích thiết kế yêu cầu* (`phantichyeucaubanchinh.docx`): khảo sát, quy tắc nghiệp vụ BR-01…BR-11, yêu cầu FR-01…FR-24
+**Đầu vào:** Báo cáo *Phân tích thiết kế yêu cầu* (`phantichyeucaubanchinh.docx`): khảo sát, quy tắc nghiệp vụ BR-01…BR-13, yêu cầu FR-01…FR-27
 
 ---
 
@@ -38,7 +38,7 @@
 **Hệ thống được coi là hoàn thành khi:**
 
 - Đủ tất cả mục trong checklist ở [mục 4](#4-đối-chiếu-yêu-cầu-của-hướng-dẫn-btl).
-- Chạy được trọn luồng: khách đặt phòng → chủ homestay xác nhận → admin xác nhận cọc → nhận phòng → hoàn thành → khách đánh giá.
+- Chạy được trọn luồng: khách đặt phòng/giữ đêm → nộp cọc (QR tự khớp hoặc kế toán duyệt bill) → chủ homestay xác nhận → nhận phòng → hoàn thành → khách đánh giá.
 - Không thể tạo hai đơn trùng phòng trùng ngày (kể cả khi gửi đồng thời).
 - Có script `.sql` dựng lại được CSDL kèm dữ liệu mẫu trên máy khác.
 
@@ -68,22 +68,58 @@
 
 ### 3.1. Lớp người dùng
 
-| Lớp người dùng | Đăng nhập? | Chức năng chính | FR gốc |
-|---|---|---|---|
-| **Khách hàng** | Không bắt buộc | Tìm kiếm, lọc homestay; xem chi tiết, lịch trống, báo giá; đặt phòng bằng SĐT; tra cứu đơn bằng mã + SĐT; gửi yêu cầu hủy; đánh giá sau khi trả phòng | FR-01…06 |
-| **Chủ homestay** | Có (`Owner`) | Quản lý homestay, phòng, ảnh, giá 3 mức, mô tả, chính sách; khóa ngày (khách từ kênh khác, bảo trì); xác nhận/từ chối đơn; xem lịch nhận/trả phòng và báo cáo của mình | FR-13…16 |
-| **Nhân viên tư vấn** | Có (`Staff`) | Tạo đơn thay khách; tra cứu phòng trống toàn hệ thống; quản lý đơn (tìm, đổi trạng thái, giao lại); nhận cảnh báo đơn quá 30 phút chưa xác nhận; xem thống kê đơn của mình | FR-07…12 |
-| **Quản trị viên** | Có (`Admin`, gộp vai trò quản lý và kế toán) | Quản lý tài khoản, danh mục, ngày lễ; quản lý đối tác và tỷ lệ hoa hồng; xác nhận cọc, hoàn cọc; báo cáo doanh thu, hoa hồng, đối soát theo kỳ | FR-17…21 |
-
-### 3.2. Trong phạm vi và ngoài phạm vi
-
-| Trong phạm vi | Đơn giản hóa | Ngoài phạm vi |
+| Nhóm | Định danh/quyền | Phạm vi |
 |---|---|---|
-| Lịch phòng tập trung, chống trùng phòng | Mỗi đơn đặt **1 phòng** | Cổng thanh toán trực tuyến |
-| Vòng đời đơn 8 trạng thái + lịch sử | Thông báo **trong hệ thống** (chuông) + email (tùy chọn) thay cho Zalo/SMS | Đồng bộ với OTA (Booking, Agoda) |
-| Giá theo đêm 3 mức | Cập nhật "gần thời gian thực" bằng AJAX polling 15–30s | Ứng dụng di động cài đặt |
-| Cọc 30%, hoàn cọc theo chính sách chung | Chính sách riêng của homestay chỉ **hiển thị** (văn bản), tính hoàn cọc theo chính sách chung | Voucher bồi thường, chuyển tiền thực tế |
-| Báo cáo doanh thu, hoa hồng, đối soát theo kỳ | Đối soát là **báo cáo**, admin đánh dấu "đã chuyển tiền" | Môi trường chạy thử riêng (FR-24) |
+| Khách | Guest hoặc role Customer | Tìm/đặt/tra cứu đơn; khách đăng nhập gửi yêu cầu đổi; vẫn tự hủy ngay |
+| Chủ homestay | Role Owner; quyền quản lý kiểm hồ sơ đã Approved | Chỉ dữ liệu homestay của mình; xác nhận đơn, quản lý cơ sở/lịch, xem đối soát |
+| Tư vấn | Role Employee, Position Consultant | Tạo đơn/gửi yêu cầu đổi hoặc hủy thay khách, giao lại và xử lý đơn |
+| Kế toán | Role Employee, Position Accountant | Bill/giao dịch/hoàn tiền, cọc bổ sung, đối soát |
+| Quản lý | Role Employee, Position Manager | Duyệt nghiệp vụ đổi/hủy, đối tác/hợp đồng, voucher, báo cáo |
+| Quản trị | Role Employee, Position Administrator | Tài khoản và danh mục; không có quyền Manager/Accountant ở hai policy đổi/hủy chuyên biệt |
+
+Không dùng role Guest/Staff/Admin để thay cho ba role Customer/Owner/Employee trong code. Chức vụ và trạng thái làm việc của Employee quyết định quyền chi tiết. Policy ChangeRequestApprove chỉ Manager, ChangeRequestFinance chỉ Accountant.
+
+### 3.2. Phạm vi đã chốt
+
+- Đặt theo **đêm**, mỗi đơn một phòng, khoảng `[CheckIn, CheckOut)`; giữ phòng ngay lúc đặt, 15 phút để nộp tiền.
+- Chủ xác nhận sau khi có cọc, hạn 30 phút; QR tự khớp 24/7, bill là dự phòng. Quá hạn chủ xác nhận chỉ cảnh báo nhân viên.
+- Chính sách hủy riêng được ưu tiên; có voucher, giao dịch ngân hàng giả lập và luồng cọc bổ sung.
+- Thông báo trong ứng dụng đã có; tích hợp gửi Zalo/SMS cần cấu hình và backend riêng. Không có cổng thanh toán hoặc đồng bộ OTA trong phạm vi hiện tại.
+- Đối soát hai kỳ theo CheckOut; chủ xác nhận số liệu tùy chọn, kế toán đánh dấu chuyển tiền. Demo chỉ seed tài khoản/dữ liệu mẫu ở Development.
+
+### 3.3. Đối chiếu đủ FR-01…FR-27
+
+Bảng sau truy vết đề bài gốc; kế hoạch backend phải đối chiếu cùng các quyết định mới ở mục 7 và tài liệu database, không coi toàn bộ FR là đã triển khai xong.
+
+| Mã | Yêu cầu đề bài | Tác nhân |
+|---|---|---|
+| FR-01 | Tìm kiếm homestay theo khu vực, ngày nhận/trả, khoảng giá, loại phòng, số người, tiện nghi; sắp xếp theo giá và điểm đánh giá | Khách hàng |
+| FR-02 | Xem chi tiết homestay/phòng: hình ảnh, tiện nghi, giá theo ngày, chính sách hủy, đánh giá, lịch phòng trống; hiển thị tổng tiền cuối cùng và số tiền cọc trước khi gửi yêu cầu (BR-01, BR-08) | Khách hàng |
+| FR-03 | Gửi yêu cầu đặt phòng trực tuyến bằng số điện thoại, không bắt buộc tạo tài khoản | Khách hàng |
+| FR-04 | Tra cứu đơn bằng mã đơn + SĐT; xem trạng thái đơn và trạng thái cọc; nhận thông báo qua Zalo/SMS | Khách hàng |
+| FR-05 | Gửi yêu cầu đổi/hủy đơn, xem trước số tiền được hoàn | Khách hàng |
+| FR-06 | Đánh giá homestay sau khi trả phòng (BR-09); chủ homestay được trả lời đánh giá | Khách hàng, Chủ homestay |
+| FR-07 | Tạo đơn thay khách (đơn nhận qua điện thoại/Zalo) | Nhân viên |
+| FR-08 | Tra cứu phòng trống của tất cả homestay, cập nhật gần thời gian thực (≤ 5 giây – NFR-02) | Nhân viên |
+| FR-09 | Quản lý đơn: tìm theo mã/tên/SĐT, cập nhật trạng thái, xem lịch sử, giao đơn cho nhân viên khác | Nhân viên |
+| FR-10 | Xử lý đổi/hủy đơn; đề xuất phòng/homestay thay thế khi trùng phòng (BR-11) | Nhân viên |
+| FR-11 | Nhận cảnh báo khi homestay quá 30 phút chưa xác nhận đơn | Nhân viên |
+| FR-12 | Quản lý thông tin khách hàng | Nhân viên |
+| FR-13 | Quản lý thông tin homestay, phòng, hình ảnh, tiện nghi, giá 3 mức, chính sách hủy riêng | Chủ homestay |
+| FR-14 | Cập nhật lịch phòng (trống/đã đặt/bảo trì); khóa ngày cho khách từ kênh khác | Chủ homestay |
+| FR-15 | Nhận thông báo; xác nhận/từ chối yêu cầu đặt, đổi, hủy | Chủ homestay |
+| FR-16 | Xem danh sách đơn, lịch nhận – trả phòng, bảng đối soát của mình | Chủ homestay |
+| FR-17 | Ghi nhận và xác nhận tiền cọc, hoàn cọc gắn với từng đơn | Kế toán |
+| FR-18 | Tự động lập bảng đối soát theo kỳ (BR-03), xác nhận đã chuyển tiền | Kế toán |
+| FR-19 | Quản lý homestay đối tác, hợp đồng, tỷ lệ hoa hồng | Quản lý |
+| FR-20 | Báo cáo số đơn, doanh thu, hoa hồng, tỷ lệ hủy, hiệu suất nhân viên, điểm đánh giá homestay (nhân viên chỉ xem thống kê đơn của mình – X6) | Quản lý |
+| FR-21 | Quản lý tài khoản, phân quyền, danh mục (khu vực, loại phòng, tiện nghi) | Quản trị viên |
+| FR-22 | Tự động khóa lịch phòng khi homestay xác nhận đơn; tự động mở lại khi đơn đã xác nhận bị hủy (BR-05). Quy tắc giữ chỗ tạm thời cho các yêu cầu đang chờ xác nhận chưa được chốt (mục 1.10.6) | Hệ thống |
+| FR-23 | Tự động gửi khách lời nhắc trước ngày nhận phòng kèm định vị bản đồ, hướng dẫn nhận phòng, số điện thoại homestay; nhắc chủ homestay lịch đón khách (KS khách câu 6: 49,6% và 28,3%); thông tin liên hệ của homestay chỉ gửi sau khi đơn được xác nhận (BR-13) | Hệ thống |
+| FR-24 | Cung cấp môi trường chạy thử với dữ liệu mẫu để hướng dẫn nhân viên, chủ homestay và kiểm thử trước khi vận hành | Quản trị viên |
+| FR-25 | Gửi đăng ký trở thành đối tác trực tuyến (thông tin cơ sở, số phòng, khu vực, liên hệ, ảnh giấy phép kinh doanh lưu trú, PCCC, ảnh thực tế); theo dõi trạng thái hồ sơ | Chủ homestay chưa hợp tác |
+| FR-26 | Thẩm định hồ sơ đăng ký, cập nhật trạng thái hồ sơ (chờ thẩm định / cần bổ sung / từ chối / đã ký hợp đồng), kích hoạt tài khoản homestay (BR-12) | Nhân viên, Quản lý |
+| FR-27 | Duyệt nội dung homestay (ảnh, mô tả, giá) trước khi hiển thị cho khách; cảnh báo hồ sơ quá 3 ngày làm việc chưa xử lý (BR-12) | Nhân viên, Hệ thống |
 
 ---
 
@@ -91,7 +127,7 @@
 
 | # | Yêu cầu | Hiện thực trong hệ thống | Phụ trách |
 |---|---|---|---|
-| 3.1 | ≥ 2 lớp người dùng, quyền khác nhau | 4 role: Guest, Owner, Staff, Admin (ASP.NET Core Identity + `IdentityRole`); `[Authorize(Roles=…)]` trên Controller/Area + lọc dữ liệu theo chủ sở hữu | Phú |
+| 3.1 | ≥ 2 lớp người dùng, quyền khác nhau | Role Customer/Owner/Employee; Employee.Position Consultant/Accountant/Manager/Administrator, policy và lọc sở hữu ở service/controller | Phú |
 | 3.2 | Template + framework front-end | Bootstrap 5, jQuery, Bootstrap Icons, Flatpickr (chọn ngày), Chart.js | Nghĩa |
 | 3.3 | **Paging** | Trang tìm kiếm homestay; danh sách đơn, homestay, tài khoản. Lớp tự viết `PaginatedList<T>` (`Skip/Take` + tổng số trang) + partial `_Pager` dùng chung (hoặc gói `X.PagedList.Mvc.Core`) | Nghĩa, Vĩ |
 | 3.3 | **Filtering** | Lọc homestay theo khu vực, ngày, giá, số người, tiện nghi; sắp xếp theo giá/điểm; lọc đơn theo trạng thái, ngày, mã, SĐT. Bộ lọc là ViewModel nhận qua query string (`[FromQuery]`), giữ nguyên khi chuyển trang | Nghĩa, Vĩ |
@@ -116,9 +152,9 @@
 
 | Thành phần | Lựa chọn |
 |---|---|
-| Framework | **ASP.NET Core MVC** trên **.NET 8 (LTS)**: mô hình Model – View – Controller, Razor Views |
+| Framework | **ASP.NET Core MVC** trên **.NET 10**: mô hình Model – View – Controller, Razor Views |
 | REST API | Web API của ASP.NET Core (`[ApiController]`), cùng project với MVC |
-| ORM / CSDL | **Entity Framework Core 8** (Code First + Migrations) / **SQL Server** |
+| ORM / CSDL | **Entity Framework Core 10** (Code First + Migrations) / **SQL Server** |
 | Xác thực | **ASP.NET Core Identity** + Roles; `AccountController` tự viết theo MVC (đăng nhập, đăng xuất, đổi mật khẩu) dùng `SignInManager`, `UserManager` |
 | Front-end | Razor Views + Tag Helpers, Bootstrap 5, jQuery, jQuery Validation Unobtrusive, Flatpickr, Chart.js |
 | Phân trang | `PaginatedList<T>` tự viết (hoặc `X.PagedList.Mvc.Core`) |
@@ -146,7 +182,7 @@ dotnet tool install --global dotnet-ef
 **SQL Server trên macOS** (máy Windows dùng LocalDB hoặc SQL Server Express):
 
 ```bash
-docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=Fuji@12345" -p 1433:1433 \
+docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=<mat-khau-manh>" -p 1433:1433 \
   --name sql-homestay -d mcr.microsoft.com/mssql/server:2022-latest
 ```
 
@@ -154,7 +190,7 @@ docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=Fuji@12345" -p 1433:1433 \
 
 ```
 HomestayBooking.sln
-├── HomestayBooking.Web/                 # ASP.NET Core MVC (.NET 8)
+├── HomestayBooking.Web/                 # ASP.NET Core MVC (.NET 10)
 │   ├── Areas/
 │   │   ├── Admin/                       # Controllers + Views, [Area("Admin")] [Authorize(Roles="Admin")]
 │   │   ├── Owner/                       # Chủ homestay
@@ -268,86 +304,84 @@ Trình duyệt ──(form)──► Controller (MVC)            ──┐
 | HTTPS | `UseHttpsRedirection()`, `UseHsts()` |
 | Lộ lỗi | `UseExceptionHandler("/Home/Error")` ở môi trường Production, không hiện stack trace; `UseStatusCodePagesWithReExecute` cho 404/403 |
 | Bí mật cấu hình | Chuỗi kết nối thật để trong `dotnet user-secrets` hoặc `appsettings.Development.json` (không đưa lên repo) |
-| Truy vết | Bảng `BookingHistories` ghi ai đổi trạng thái, lúc nào |
+| Truy vết | `BookingStatusHistories` ghi người/thời điểm đổi trạng thái; `AuditLogs` ghi thay đổi dữ liệu nghiệp vụ |
 
 ---
 
 ## 6. Thiết kế cơ sở dữ liệu (tổng quan)
 
-### 6.1. Danh sách bảng
+Nguồn chuẩn: `ApplicationDbContext`, entity và migrations; chi tiết cột ở `fuji_homestay_database_v1.md`. Mô hình code/database thử có **9 migration, 45 bảng gồm __EFMigrationsHistory, 382 cột, 76 FK, 60 CHECK, 93 index ngoài PK** sau EnumAndReviewChecks. **v5 mới áp ChangeRequestWorkflow: 8 migration/44 CHECK; chưa áp migration thứ 9.**
 
-| Bảng | Cột chính | Ghi chú |
+### 6.1. Danh sách bảng hiện tại
+
+| Nhóm | Bảng | Vai trò/ràng buộc chính |
 |---|---|---|
-| `AspNetUsers` (ApplicationUser) | FullName, PhoneNumber, Email | Bảng ASP.NET Core Identity (kèm `AspNetRoles`, `AspNetUserRoles`…); role: Admin, Staff, Owner |
-| `Areas` | Id, Name | Hoàn Kiếm, Ba Đình, Tây Hồ, Sóc Sơn, Ba Vì… |
-| `RoomTypes` | Id, Name | Phòng đôi, phòng gia đình, nguyên căn… |
-| `Amenities` | Id, Name, Icon | Wifi, bể bơi, BBQ, thú cưng… |
-| `Holidays` | Date (PK), Name | Ngày áp giá lễ Tết |
-| `Homestays` | Id, OwnerId, AreaId, Name, Address, DescriptionHtml, PolicyHtml, CommissionRate, IsActive | CommissionRate 0.10–0.15 (BR-02) |
-| `HomestayAmenities` | HomestayId, AmenityId | Bảng nối N-N |
-| `HomestayImages` | Id, HomestayId, Url, IsCover | |
-| `Rooms` | Id, HomestayId, RoomTypeId, Name, MaxGuests, PriceWeekday, PriceWeekend, PriceHoliday, IsActive | Giá 3 mức (BR-08) |
-| `RoomImages` | Id, RoomId, Url | |
-| `Bookings` | Id, **Code (unique)**, RoomId, CustomerName, CustomerPhone, CustomerEmail, CheckIn, CheckOut, Guests, TotalAmount, DepositAmount, Status, Source (Online/Staff), StaffId, Note, CreatedAt, ConfirmedAt, DepositDeadline | |
-| `RoomNights` | Id, RoomId, Date, BookingId (null), BlockReason (null) | **Unique (RoomId, Date)**: cốt lõi chống trùng phòng (BR-05) |
-| `BookingHistories` | Id, BookingId, FromStatus, ToStatus, ChangedByUserId, ChangedAt, Note | Lịch sử thay đổi |
-| `Payments` | Id, BookingId, Type (Deposit/Refund), Amount, BankRef, ConfirmedByUserId, ConfirmedAt | BR-01, BR-10 |
-| `Settlements` | Id, HomestayId, PeriodStart, PeriodEnd, TotalDeposit, TotalCommission, PayoutAmount, PaidAt | Đối soát theo kỳ (BR-03) |
-| `Reviews` | Id, **BookingId (unique)**, Rating (1–5), Comment, CreatedAt | Mỗi đơn 1 đánh giá (BR-09) |
-| `Notifications` | Id, UserId, Message, Url, IsRead, CreatedAt | Thay cho Zalo/SMS |
+| Identity (7) | AspNetUsers, AspNetRoles, AspNetUserRoles, AspNetUserClaims, AspNetUserLogins, AspNetUserTokens, AspNetRoleClaims | Một Account/Person, nhiều vai trò; role có người/thời điểm cấp |
+| Hồ sơ (7) | PersonProfiles, Customers, CustomerProfiles, Owners, OwnerRegistrations, Employees, AccountActivityLogs | SĐT unique, Customer không bắt buộc Account; một hồ sơ Owner mở; mã nhân viên unique |
+| Pháp lý (1) | VerificationDocuments | Đúng một chủ sở hữu; pháp lý mới gắn từng Homestay, giữ lịch sử cũ |
+| Đối tác/danh mục (6) | Areas, Homestays, Contracts, Amenities, HomestayAmenities, HomestayImages | Homestay.Status; hợp đồng có hoa hồng/ngày hiệu lực, một Active; một ảnh bìa |
+| Phòng/giá/chính sách (7) | RoomCategories, RoomTypes, Rooms, RoomTypePrices, Holidays, CancellationPolicies, CancellationRules | Giá theo RoomType, DayType, EffectiveFrom; chính sách riêng ưu tiên chung |
+| Lịch (2) | RoomBlocks, RoomNights | Khoảng khóa; PK (RoomId, Date), đúng một chủ giữ đêm |
+| Đơn (5) | Bookings, BookingNights, BookingCodeCounters, BookingStatusHistories, BookingChangeRequests | Code unique; snapshot giá từng đêm; yêu cầu đổi/hủy hai bước |
+| Tiền/voucher (3) | Payments, BankTransactions, Vouchers | Cọc đầu/cọc bổ sung/hoàn/bù; webhook idempotent, voucher có số dư |
+| Đối soát (2) | Settlements, SettlementItems | UNIQUE kỳ/homestay; mỗi Booking một Item; snapshot tiền và phí đổi |
+| Đánh giá/thông báo/audit (4) | Reviews, Notifications, MessageLogs, AuditLogs | Một đánh giá/đơn; log gửi ngoài và log nghiệp vụ riêng |
+| Metadata (1) | __EFMigrationsHistory | Lịch sử migration; không phải dữ liệu nghiệp vụ |
 
-### 6.2. Cơ chế chống trùng phòng
+EnumAndReviewChecks chỉ thêm 13 whitelist và 3 CHECK Reply/Year/Decision, không thêm bảng/cột/index. OwnerRegistration NeedsRevision/Approved/Rejected phải có người và thời điểm duyệt; NeedsRevision/Rejected phải có lý do. Năm đối soát 2020–2100; OwnerReply/RepliedAt cùng có hoặc cùng không có.
 
-Mỗi đêm bị chiếm của một phòng là **một dòng** trong `RoomNights`:
+### 6.2. Cơ chế chống trùng phòng theo đêm
 
-- Đơn được **xác nhận** → thêm các dòng (RoomId, Date, BookingId) cho từng đêm từ `CheckIn` đến `CheckOut - 1`.
-- Chủ homestay **khóa ngày** → thêm dòng có `BlockReason` (khách kênh khác / bảo trì), `BookingId = null`.
-- Đơn **bị hủy / không đến** → xóa các dòng của đơn đó, phòng được mở lại.
-- Hai thao tác đồng thời cùng chiếm một đêm → thao tác sau vi phạm **unique index** và bị CSDL từ chối. Service bắt `DbUpdateException` có `InnerException` là `SqlException` với `Number` = 2601/2627 và báo "Phòng vừa được đặt".
-- Khai báo trong EF Core: `modelBuilder.Entity<RoomNight>().HasIndex(x => new { x.RoomId, x.Date }).IsUnique();` trong `OnModelCreating` (hoặc attribute `[Index(nameof(RoomId), nameof(Date), IsUnique = true)]` trên lớp `RoomNight`). Kiểu `Date` dùng `DateOnly` (EF Core 8 ánh xạ sang cột `date`).
-
-→ Đảm bảo **0 đơn trùng phòng** ở mức CSDL, không phụ thuộc code ứng dụng (NFR-01).
+- Từ lúc tạo AwaitingPayment: trong một transaction chọn phòng đang bán, thêm RoomNights cho từng đêm `[CheckIn, CheckOut)`; PK `(RoomId, Date)` chặn đặt đồng thời.
+- Mỗi RoomNight thuộc đúng một Booking, RoomBlock hoặc BookingChangeRequest. Khóa ngày và giữ phòng mới khi đổi dùng chung PK này.
+- Đổi lịch dùng lại đêm giao nhau; chuyển đêm giữ của yêu cầu về Booking khi Applied, nhả phần cũ không dùng trong cùng transaction.
+- Expired/Cancelled/Rejected/NoShow nhả đêm của đơn; Completed giữ đêm lịch sử theo code hiện tại. Không lấy số dòng lịch quá khứ làm số phòng đang bán.
+- CheckIn 16/10, CheckOut 18/10 nghĩa là hai đêm 16 và 17; đơn khác được nhận ngày 18. Ngày trả phòng không tính thêm giá hoặc chiếm lịch.
+- Service kiểm đủ số đêm, đúng Room/RoomType/Homestay và tổng BookingNights.Price bằng TotalAmount. CHECK/FK riêng lẻ không thay thế kiểm tra liên bảng này.
 
 ---
 
 ## 7. Quy tắc nghiệp vụ áp dụng trong code
 
-### 7.1. Vòng đời đơn đặt phòng
+### 7.1. Vòng đời đơn và yêu cầu đổi/hủy
 
-```
-                 ┌──────────► TuChoi (chủ HS từ chối)
-                 │
-ChoXacNhan ──────┼──► DaXacNhan ──► DaDatCoc ──► DaNhanPhong ──► HoanThanh
-                 │        │             │
-                 │        ▼             ├──► DaHuy (khách hủy → tính hoàn cọc)
-                 └──► DaHuy  (quá hạn cọc)        └──► KhongDen
+```text
+AwaitingPayment → PaymentSubmitted → Deposited → Confirmed → CheckedIn → Completed
+       └──────── QR tự khớp ────────────┘
 ```
 
-| Chuyển trạng thái | Người thực hiện | Điều kiện / tác động |
+- AwaitingPayment giữ phòng 15 phút; gửi bill đúng hạn thì giữ trong lúc chờ kế toán. Cọc QR đầu tự khớp hoặc kế toán duyệt bill rồi mới Deposited.
+- Chủ xác nhận Deposited → Confirmed trong 30 phút; không có chuyển Confirmed → Deposited chung cho mọi caller.
+- Khách vẫn tự hủy ngay bằng BookingsController.Cancel. Nhân viên được gửi Cancel request thay khách; khách gửi Cancel request bị chặn.
+- Yêu cầu đổi: Pending → Manager duyệt → Applied khi không cần tiền thêm; có thêm tiền thì AwaitingPayment → nộp QR/bill CR{id} → Accountant xác nhận → Applied. Có Rejected và Expired.
+- Hạn PaymentDeadlineAt là hạn khách nộp, không phải hạn kế toán; đã nộp hợp lệ đúng hạn thì được duyệt sau hạn. Manager/Accountant không được là người gửi; Accountant không được là Manager đã duyệt.
+- Applied sửa đơn tại chỗ, giữ mã, thay giá/đêm phòng trong một transaction. Đơn Confirmed về Deposited, ConfirmedAt NULL và chủ xác nhận lại. Phí đổi cộng dồn vào ChangeFeeAmount.
+- Booking, Request.Status là concurrency token. Chỉ một yêu cầu Pending/AwaitingPayment mỗi Booking; một khoản AdditionalDeposit chưa bị từ chối mỗi Request.
+- Ba Pending cũ thiếu người gửi/tiền chỉ được Manager từ chối có lý do thật, không duyệt hoặc tự bù dữ liệu.
+
+### 7.2. Đối chiếu BR-01…BR-13
+
+| Mã | Quy tắc đang áp dụng | Database/backend |
 |---|---|---|
-| (mới) → ChoXacNhan | Khách, Staff | Phòng còn trống tại thời điểm gửi; sinh mã đơn |
-| ChoXacNhan → DaXacNhan | Owner | Thêm `RoomNights`; tự **từ chối** các đơn chờ khác trùng ngày; đặt `DepositDeadline = now + 24h` |
-| ChoXacNhan → TuChoi | Owner | Thông báo cho khách và nhân viên |
-| DaXacNhan → DaDatCoc | Admin | Ghi `Payments` loại Deposit, đúng mã đơn và số tiền (BR-10) |
-| DaXacNhan → DaHuy | Hệ thống | Quá `DepositDeadline` chưa có cọc → xóa `RoomNights` |
-| DaDatCoc → DaNhanPhong → HoanThanh | Owner / Staff | Đến ngày nhận/trả phòng |
-| DaDatCoc → DaHuy | Khách, Staff | Tính hoàn cọc (BR-04), ghi `Payments` loại Refund, xóa `RoomNights` |
-| DaDatCoc → KhongDen | Owner / Staff | Không hoàn cọc |
+| BR-01 | Cọc mặc định 30%, làm tròn nghìn; phần còn lại trả homestay | PricingService; DepositRate snapshot và CHECK (0,1] |
+| BR-02 | Hoa hồng theo hợp đồng, snapshot lúc đặt | Contracts.CommissionRate → Bookings → SettlementItems, CHECK (0,1) |
+| BR-03 | Hai kỳ ngày 1–15 / 16–cuối tháng, xếp theo CheckOut | SettlementCalculator; cọc giữ lại trừ hoa hồng, cộng phí đổi theo tỷ lệ trên phần phí |
+| BR-04 | >=7 ngày hoàn 100%, >=3 ngày hoàn 50%, dưới 3 ngày 0%; ưu tiên chính sách riêng | RefundService.QuoteCancellationAsync; CancellationPolicyId lưu trên đơn |
+| BR-05 | Không trùng phòng/đêm, kể cả khóa ngày và chờ cọc | PK RoomNights; service ghi mọi đêm trong transaction |
+| BR-06 | Chủ xác nhận trong 30 phút từ khi có cọc; quá hạn cảnh báo, không tự hủy | ConfirmDeadlineAt/ConfirmAlertSentAt, BookingTimeoutJob |
+| BR-07 | FJ + yyMMdd + thứ tự duy nhất | BookingCodeGenerator.NextAsync, counter và UNIQUE Code |
+| BR-08 | Giá từng đêm: lễ ưu tiên, cuối tuần thứ Sáu/thứ Bảy, còn lại ngày thường | PricingService.QuoteAsync; phiên bản EffectiveFrom gần nhất <= đêm đó, BookingNights snapshot |
+| BR-09 | Đơn Completed mới được đánh giá một lần; chủ trả lời | UNIQUE Review.BookingId, CHECK 1–5 và Reply; service kiểm người/đơn |
+| BR-10 | Mã đơn + đúng số tiền; QR tự đối chiếu 24/7, bill dự phòng | BankMatchingService, ReceiptReviewService; khoản bổ sung có CR{id}, không coi là cọc đầu |
+| BR-11 | Fuji xử lý thay thế/bù; không tìm được thì hoàn cọc và voucher | ReplacedByBookingId, Payment.Compensation/Refund, Vouchers; backend sự cố cần hoàn thiện |
+| BR-12 | Duyệt chủ và từng Homestay riêng; giấy phép/PCCC gắn cơ sở, có hợp đồng và duyệt nội dung | OwnerRegistration, VerificationDocuments, Homestay.Status, Contracts; SLA 3 ngày làm việc từ SubmittedAt đủ hồ sơ |
+| BR-13 | Ẩn liên hệ/địa chỉ chính xác trước Confirmed | Backend lọc dữ liệu trả về; nhắc trước nhận phòng chỉ gửi đúng điều kiện |
 
-Mọi chuyển trạng thái đều đi qua `BookingService.ChangeStatus(...)`. Hàm này kiểm tra chuyển trạng thái có hợp lệ không, ghi `BookingHistories` và tạo `Notifications`.
+### 7.3. Các quyết định bổ sung ngày 16/10/2026
 
-### 7.2. Công thức
+Áp dụng D15–D24 ở mục 1 tài liệu database: chủ xác nhận đối soát tùy chọn (Sent hoặc Confirmed → Paid), actor ghi AuditLog; không thêm cột actor/liên kết hồ sơ hoặc mốc đủ hồ sơ. SubmittedAt là mốc đủ hồ sơ. Giá/phòng/ảnh/mô tả sửa trực tiếp có audit; địa chỉ/pháp lý đưa cơ sở về PendingReview. Hợp đồng phải Active và EndDate >= CheckOut, chưa có hợp đồng tương lai. Tắt phòng chỉ chặn bán mới. Doanh số theo CreatedByEmployeeId, xử lý theo AssignedEmployeeId. Chủ từ chối lịch mới sau đổi không tự hoàn phí; Manager có thể cấp voucher.
 
-| Mã | Quy tắc | Hiện thực |
-|---|---|---|
-| BR-08 | Giá mỗi đêm: ngày lễ (có trong `Holidays`) → `PriceHoliday`; đêm thứ Sáu, thứ Bảy → `PriceWeekend`; còn lại → `PriceWeekday` | `PricingService.CalculateTotal(room, checkIn, checkOut)` |
-| BR-01 | Cọc = 30% tổng tiền (làm tròn đến 1.000đ) | `PricingService.CalculateDeposit(total)` |
-| BR-02 | Hoa hồng = tổng tiền × `CommissionRate` của homestay | `SettlementService` |
-| BR-03 | Số tiền chuyển cho homestay = Σ cọc − Σ hoa hồng của các đơn **HoanThanh** trong kỳ (1–15, 16–cuối tháng) | `SettlementService.Generate(homestayId, period)` |
-| BR-04 | Hoàn cọc: hủy trước ngày nhận ≥ 7 ngày → 100%; 3–6 ngày → 50%; < 3 ngày → 0% | `RefundService.CalculateRefund(booking, cancelDate)` |
-| BR-06 | Đơn ChoXacNhan quá 30 phút → tạo cảnh báo cho nhân viên | `ConfirmTimeoutJob : BackgroundService` – `PeriodicTimer` 1 phút, tạo scope bằng `IServiceScopeFactory` để dùng `DbContext` |
-| BR-07 | Mã đơn: `FJ` + `yyMMdd` + `-` + số thứ tự 3 chữ số trong ngày, ví dụ `FJ261015-003` | `BookingCodeGenerator`, có unique index trên `Code` |
-| BR-09 | Chỉ đánh giá khi đơn HoanThanh, mỗi đơn 1 lần | Kiểm tra trạng thái + unique `BookingId` trên `Reviews` |
+AuditLog ghi trực tiếp trong service và transaction nghiệp vụ; không làm interceptor. Đây là yêu cầu cho backend tiếp theo, không khẳng định mọi thao tác đã có API/service. Không thêm CHECK Settlements.ConfirmedAt; Paid không bắt buộc chủ đã xác nhận.
 
 ---
 
@@ -415,14 +449,14 @@ Khu vực Quản trị (/Admin)
 
 | GĐ | Tên | Công việc | Đầu ra | Mục báo cáo |
 |---|---|---|---|---|
-| **0** | Khởi động | Chốt đề tài; cài .NET 8 SDK, Visual Studio 2022 / VS Code + C# Dev Kit / Rider, SQL Server (LocalDB trên Windows, Docker trên macOS), `dotnet-ef`; tạo repo GitHub, bảng Kanban; thống nhất quy ước ([mục 12](#12-quy-ước-làm-việc-nhóm)) | Repo + backlog | — |
+| **0** | Khởi động | Chốt đề tài; cài .NET 10 SDK, Visual Studio 2022 / VS Code + C# Dev Kit / Rider, SQL Server (LocalDB trên Windows, Docker trên macOS), `dotnet-ef`; tạo repo GitHub, bảng Kanban; thống nhất quy ước ([mục 12](#12-quy-ước-làm-việc-nhóm)) | Repo + backlog | — |
 | **1** | Phân tích | Tóm tắt file PTTKYC: mô tả hệ thống, nghiệp vụ, biểu mẫu khảo sát; xác định chức năng 4 lớp người dùng; vẽ **use-case** tổng quát + phân rã | Use-case (draw.io) | 5.1, 5.2 |
 | **2** | Thiết kế | **ERD**, mô tả bảng và ràng buộc; **sitemap**; **wireframe** các màn hình chính (tìm kiếm, chi tiết, đặt phòng, lịch phòng, quản lý đơn, dashboard) | ERD, sitemap, wireframe | 5.2 |
-| **3** | Nền tảng | Tạo solution bằng `dotnet new mvc` + `dotnet new xunit`; cấu hình `Program.cs`; entity, `ApplicationDbContext`, `dotnet ef migrations add Init` / `dotnet ef database update`, seed trong `SeedData` (35 homestay mẫu, tài khoản mỗi role); Identity + 4 role; `_Layout` Bootstrap responsive; cấu hình i18n + cookie ngôn ngữ; partial phân trang dùng chung; CRUD danh mục (Admin) | Chạy được, đăng nhập theo role | 5.3 |
+| **3** | Nền tảng | Tạo solution bằng `dotnet new mvc` + `dotnet new xunit`; cấu hình `Program.cs`; entity, `ApplicationDbContext`, `dotnet ef migrations add Init` / `dotnet ef database update`, seed trong `SeedData` (35 homestay mẫu, tài khoản mỗi role); Identity + Customer/Owner/Employee và chức vụ; `_Layout` Bootstrap responsive; cấu hình i18n + cookie ngôn ngữ; partial phân trang dùng chung; CRUD danh mục (Admin) | Chạy được, đăng nhập theo role | 5.3 |
 | **4** | Chủ homestay | CRUD homestay, phòng; upload nhiều ảnh; editor mô tả/chính sách; giá 3 mức; trang lịch phòng khóa/mở ngày bằng AJAX | Module Owner | 5.3 |
 | **5** | Khách: tìm kiếm | Trang tìm kiếm (filter + paging + sort, lưu bộ lọc vào cookie); chi tiết homestay/phòng; API availability + quote; lịch trống và báo giá AJAX | Module tìm kiếm | 5.3 |
 | **6** | Đặt phòng | Đặt phòng 3 bước (session); `BookingService` + `RoomNights`; sinh mã đơn; tra cứu đơn; Owner xác nhận/từ chối; lịch sử đơn; thông báo trong hệ thống | Luồng đặt phòng end-to-end | 5.3 |
-| **7** | Nhân viên + Admin | Staff: tạo đơn thay khách, quản lý đơn, giao lại, cảnh báo 30 phút (job); Admin: xác nhận cọc, hủy và hoàn cọc, tự hủy đơn quá hạn cọc (job), đánh giá, đối soát, dashboard Chart.js | Đủ chức năng | 5.3 |
+| **7** | Nhân viên + Admin | Staff: tạo đơn thay khách, quản lý đơn, giao lại, cảnh báo 30 phút (job); Accounting: bill/hoàn tiền/đối soát; Manager: duyệt nghiệp vụ; job hết hạn, đánh giá, dashboard | Đủ chức năng | 5.3 |
 | **8** | Kiểm thử | Unit test xUnit (`dotnet test`); chạy bảng test case; test responsive (điện thoại/máy tính), test bảo mật cơ bản, test i18n; sửa lỗi | Bảng test case + kết quả | 5.4 |
 | **9** | Đóng gói | Xuất script `.sql`: schema bằng `dotnet ef migrations script --idempotent -o database/HomestayBooking.sql`, dữ liệu mẫu bằng *Generate Scripts → Schema and data* của SSMS/Azure Data Studio; viết `README` hướng dẫn cài đặt và cấu hình; hoàn thiện báo cáo (kết luận, phân công, TLTK, bài học, hướng phát triển); làm slide, tập thuyết trình | File `.zip` nộp | 5.5, 5.6 |
 
@@ -482,18 +516,18 @@ fix/<mô-tả-lỗi>
 |---|---|
 | `PricingService` | 2 đêm ngày thường; đêm thứ Sáu tính giá cuối tuần; đêm trùng ngày lễ tính giá lễ; cọc = 30% làm tròn |
 | `RefundService` | Hủy trước 10 ngày → 100%; trước 5 ngày → 50%; trước 1 ngày → 0%; biên đúng 7 ngày và đúng 3 ngày |
-| `BookingService` | Chuyển trạng thái hợp lệ / không hợp lệ (HoanThanh → DaHuy phải lỗi); xác nhận đơn thứ hai trùng ngày → lỗi trùng phòng; xác nhận một đơn tự từ chối đơn chờ trùng ngày |
+| `BookingService` | Completed → Cancelled phải lỗi; hai người cùng đặt phòng cuối thì chỉ một đơn giữ được đêm; chủ xác nhận đơn đã cọc, không tự từ chối các đơn khác |
 | `BookingCodeGenerator` | Đúng định dạng; số thứ tự tăng dần trong ngày, quay về 001 khi sang ngày mới |
-| `SettlementService` | Chỉ tính đơn HoanThanh trong kỳ; áp dụng đúng tỷ lệ hoa hồng của homestay |
+| `SettlementCalculator` / backend đối soát | Đơn kết thúc có tiền giữ lại/phí đổi vào kỳ theo CheckOut; hoa hồng snapshot, phí đổi chia theo tỷ lệ trên phí; chủ xác nhận tùy chọn |
 
 ### 13.2. Test case thủ công (mẫu cho mục 5.4)
 
 | Mã | Mục tiêu | Dữ liệu vào / ràng buộc | Đầu ra dự kiến | Đầu ra thực tế | Kết quả | Ghi chú sửa lỗi |
 |---|---|---|---|---|---|---|
-| TC01 | Đặt phòng hợp lệ | Phòng trống 20–22/11, 2 khách, SĐT 0912345678 | Tạo đơn ChoXacNhan, hiện mã `FJ…` | | | |
+| TC01 | Đặt phòng hợp lệ | Phòng trống 20–22/11, 2 khách, SĐT hợp lệ | Tạo AwaitingPayment, giữ hai đêm và hiện mã `FJ…`/QR cọc | | | |
 | TC02 | Chặn ngày trả trước ngày nhận | CheckIn 22/11, CheckOut 20/11 | Báo lỗi validation, không gửi form | | | |
 | TC03 | Chặn SĐT sai định dạng | SĐT `12345` | Thông báo "Số điện thoại không hợp lệ" | | | |
-| TC04 | Chống trùng phòng | 2 đơn chờ cùng phòng, cùng ngày; Owner xác nhận cả hai | Đơn thứ hai bị từ chối tự động / không xác nhận được | | | |
+| TC04 | Chống trùng phòng | Hai khách cùng đặt phòng cuối, cùng khoảng đêm | Một đơn giữ phòng thành công; người còn lại được báo hết phòng | | | |
 | TC05 | Phân quyền | Owner A truy cập URL đơn của Owner B | 403 / không tìm thấy | | | |
 | TC06 | Tra cứu đơn | Đúng mã, sai SĐT | Không hiển thị thông tin đơn | | | |
 | TC07 | Upload ảnh | File `.exe` đổi đuôi `.jpg`, file 10 MB | Từ chối, báo lỗi | | | |
@@ -501,7 +535,7 @@ fix/<mô-tả-lỗi>
 | TC09 | Phân trang + lọc | Lọc Tây Hồ, giá ≤ 1 triệu, trang 2 | Đúng kết quả, giữ bộ lọc khi chuyển trang | | | |
 | TC10 | Đổi ngôn ngữ | Chọn English, tải lại trang | Giao diện tiếng Anh, cookie được lưu | | | |
 | TC11 | Responsive | Màn hình 375px | Không cuộn ngang, menu thu gọn | | | |
-| TC12 | Hủy và hoàn cọc | Đơn DaDatCoc, hủy trước 5 ngày | Hoàn 50% cọc, phòng được mở lại | | | |
+| TC12 | Hủy và hoàn cọc | Đơn Deposited, hủy trước 5 ngày, chính sách chung | Chốt hoàn 50% tiền cọc thực chuyển, nhả phòng; kế toán ghi chuyển hoàn riêng | | | |
 
 Danh sách đầy đủ do Vĩ tổng hợp, khoảng 30–40 test case, mỗi module ít nhất 5.
 
@@ -528,7 +562,7 @@ Danh sách đầy đủ do Vĩ tổng hợp, khoảng 30–40 test case, mỗi m
 - [ ] Báo cáo `.docx`/`.pdf` đúng bố cục và định dạng
 - [ ] Toàn bộ mã nguồn (đã xóa `bin/`, `obj/`, `.vs/`; chạy được bằng `dotnet restore` + `dotnet run`)
 - [ ] `database/HomestayBooking.sql`: script tạo CSDL + dữ liệu mẫu, đã chạy thử trên máy sạch
-- [ ] `README.md`: yêu cầu môi trường (.NET 8 SDK, SQL Server), cách chạy script SQL hoặc `dotnet ef database update`, chỗ sửa chuỗi kết nối, tài khoản mẫu cho từng role
+- [ ] `README.md`: yêu cầu môi trường (.NET 10 SDK, SQL Server), cách chạy script SQL hoặc `dotnet ef database update`, chỗ sửa chuỗi kết nối, tài khoản mẫu cho từng role
 - [ ] File nén duy nhất đặt tên theo quy tắc: `QLHomestay_Nhom<số>_<Lớp>.zip`
 - [ ] Slide thuyết trình + kịch bản demo (luồng đặt phòng end-to-end + các mục kỹ thuật)
 

@@ -96,24 +96,24 @@ Khi triển khai, đặt `Database__AutoMigrate=false`, áp schema bằng quy tr
 sqlcmd -S localhost,1433 -U sa -C -d HomestayBooking -i verify.sql
 ```
 
-Kết quả đúng: mọi dòng ở bảng đầu là `OK`, có 8 migration (cuối là `20261015092139_ChangeRequestWorkflow`), mọi ràng buộc ở bảng cuối là `OK`.
+Kết quả đúng: mọi dòng ở bảng đầu là `OK`, có 9 migration (cuối là `20261015200521_EnumAndReviewChecks`), mọi ràng buộc ở bảng cuối là `OK`.
 
 | Hạng mục | Kỳ vọng |
 |---|---|
 | Bảng (gồm `__EFMigrationsHistory`) | 45 |
 | Cột | 382 |
-| Khóa chính / khóa ngoại / CHECK | 45 / 76 / 44 |
+| Khóa chính / khóa ngoại / CHECK | 45 / 76 / 60 |
 | Default (`DEFAULT` ở database) | 4 (`Bookings.DiscountAmount`, `Bookings.ChangeFeeAmount`, `SettlementItems.DiscountAmount`, `HomestayImages.SortOrder`) |
 | Khóa ngoại `ON DELETE CASCADE` | 13 (các bảng con thuần túy; còn lại NO ACTION) |
 | Index (không tính khóa chính) / có điều kiện | 93 / 12 |
 
 ### Thử ràng buộc (tùy chọn, trước khi seed)
 
-`tests/constraints.sql` chỉ chạy trên `HomestayBooking_ConstraintTest` (database rỗng). Hai file `tests/hardening_seeded.sql`, `tests/status_consistency_seeded.sql` và `tests/change_request_seeded.sql` chạy trên `HomestayBooking_DeployTest` (database đã seed).
+`tests/constraints.sql` chỉ chạy trên `HomestayBooking_ConstraintTest` (database rỗng). Ba file `tests/hardening_seeded.sql`, `tests/status_consistency_seeded.sql` và `tests/change_request_seeded.sql` chạy trên `HomestayBooking_DeployTest` (database đã seed).
 
-`tests/constraints.sql` thử 35 ca trên SQL Server thật:
-- 26 ca dữ liệu sai phải bị chặn đúng tên ràng buộc (trùng phòng cùng đêm, mỗi đơn một khoản cọc/hoàn, CHECK tiền đơn/voucher/đối soát, hợp đồng hiệu lực, ảnh bìa, FK NO ACTION);
-- 9 ca hợp lệ phải chạy được (kể cả xóa khóa ngày thì các đêm khóa tự xóa).
+`tests/constraints.sql` thử 87 ca trên SQL Server thật:
+- 54 ca dữ liệu sai phải bị chặn đúng tên ràng buộc (trùng phòng cùng đêm, mỗi đơn một khoản cọc/hoàn, CHECK tiền đơn/voucher/đối soát, hợp đồng hiệu lực, ảnh bìa, FK NO ACTION; 13 whitelist enum, trả lời đánh giá, năm đối soát và quyết định hồ sơ);
+- 33 ca hợp lệ phải chạy được (kể cả xóa khóa ngày thì các đêm khóa tự xóa).
 
 ```bash
 cd database
@@ -122,7 +122,7 @@ sqlcmd -S localhost,1433 -U sa -C -d HomestayBooking_ConstraintTest -i tests/con
 
 - Chỉ chạy trên database tên `HomestayBooking_ConstraintTest`, đã dựng bằng `deploy.sql` và **chưa có dòng dữ liệu nào** (trước khi seed). Sai một trong các điều kiện đó thì script dừng trước khi ghi. Muốn dùng tên khác thì sửa dòng kiểm tra `DB_NAME()` ở đầu file.
 - Mọi dữ liệu thử nằm trong một transaction và luôn bị ROLLBACK, kể cả khi một ca trượt hoặc có lỗi. Dòng cuối in `open_tran = 0`, `rows_left = 0`.
-- Kết quả đúng: `Kết quả: 35 đạt, 0 trượt`, mã thoát 0. Có ca trượt hoặc lỗi thì mã thoát khác 0.
+- Kết quả đúng: `Kết quả: 87 đạt, 0 trượt`, mã thoát 0. Có ca trượt hoặc lỗi thì mã thoát khác 0.
 - ROLLBACK không trả lại bộ đếm IDENTITY, nên dữ liệu seed sau đó sẽ có Id không bắt đầu từ 1. Không ảnh hưởng ứng dụng.
 
 ### Thử ràng buộc của `DatabaseHardening` (database đã seed)
@@ -236,3 +236,14 @@ Khi cập nhật database thật, giữ `Database:AutoMigrate=false`: ứng dụ
 - Đã restore thử sang database mới **`HomestayBooking_v5_RestoreCheck3`**, dùng MDF/LDF riêng, không `REPLACE`. `DBCC CHECKDB WITH NO_INFOMSGS` không báo lỗi; bản restore có 7 migration, cuối `StatusConsistency`, và số dòng/checksum 45 bảng khớp v5 trước triển khai. Giữ nguyên database restore này.
 - Đối chiếu trước/sau deploy bằng `COUNT_BIG(*)` và `CHECKSUM_AGG(BINARY_CHECKSUM(...))` theo danh sách **368 cột cũ**: 44 bảng nghiệp vụ giữ số dòng; 43 bảng giữ checksum. `BookingChangeRequests` chỉ đổi `Status` của **Id 3: Approved → Applied**, các trường khác giữ nguyên; ba Pending **Id 1/4/5** giữ nguyên. `Bookings.ChangeFeeAmount` toàn `0`, 13 cột mới còn lại toàn `NULL`.
 - `__EFMigrationsHistory` được đối chiếu riêng: giữ 7 dòng cũ và thêm đúng dòng `ChangeRequestWorkflow`, thành 8 dòng. Kết quả snapshot này được ghi nhận **trước khi người dùng bật lại app**, không dùng để khẳng định dữ liệu sau khi app seed/job đã chạy.
+
+### `EnumAndReviewChecks` — migration thứ 9, chỉ triển khai trên database thử
+
+Migration `20261015200521_EnumAndReviewChecks` chỉ thêm **16 CHECK**: 13 whitelist từ enum, `CK_Reviews_Reply`, `CK_Settlements_Year` (2020–2100), `CK_OwnerRegistrations_Decision`. Schema sau migration có **60 CHECK**; giữ nguyên 45 bảng, 382 cột, 76 FK và 93 index ngoài PK. Không UPDATE dữ liệu trong migration; Down chỉ gỡ đúng 16 CHECK.
+
+- Đã SELECT thống kê từng giá trị của 13 cột trên v5 và DeployTest trước khi viết CHECK: không có giá trị ngoài enum; dữ liệu hiện có cũng thỏa ba CHECK còn lại. Không có whitelist tương đương phải bỏ qua.
+- `NeedsRevision`, `Approved`, `Rejected` cần `ReviewedByEmployeeId` và `ReviewedAt`; `NeedsRevision`/`Rejected` cần `ReviewNote` có nội dung. Các trạng thái còn lại không buộc xóa dấu duyệt cũ khi gửi lại hồ sơ.
+- `OwnerReply` và `RepliedAt` cùng NULL, hoặc cùng có giá trị với nội dung trả lời khác rỗng. Chuỗi trắng có khác biệt giữa collation SQL Server và SQLite; service vẫn kiểm tra chuỗi trắng.
+- Triển khai/thử bằng `deploy.sql` và `verify.sql` **chỉ trên ConstraintTest và DeployTest**. `constraints.sql` giữ đủ 35 ca cũ, thêm 52 ca, tổng 87; các script seeded giữ 28/42/65 ca.
+- **CHƯA áp `EnumAndReviewChecks` lên v5**. v5 đang ở 8 migration/44 CHECK sau đợt triển khai `ChangeRequestWorkflow` ngày 16/10/2026; cần quy trình duyệt, backup và kiểm tra riêng trước lần triển khai tiếp theo.
+- Quyết định backend đã chốt: chủ xác nhận đối soát tùy chọn, Paid đi từ Sent hoặc Confirmed; ghi actor vào AuditLog trực tiếp ở service. Không thêm cột actor/liên kết hồ sơ, không thêm CHECK `Settlements.ConfirmedAt`; xem 10 quyết định ngày 16/10 trong tài liệu database.

@@ -2290,3 +2290,144 @@ END;
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015200521_EnumAndReviewChecks'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [VerificationDocuments] ADD CONSTRAINT [CK_VerificationDocuments_DocumentType] CHECK ([DocumentType] IN (''BusinessLicense'', ''FireSafety'', ''PropertyPhoto'', ''Other''))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015200521_EnumAndReviewChecks'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [Settlements] ADD CONSTRAINT [CK_Settlements_Status] CHECK ([Status] IN (''Draft'', ''Sent'', ''Confirmed'', ''Paid''))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015200521_EnumAndReviewChecks'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [Settlements] ADD CONSTRAINT [CK_Settlements_Year] CHECK ([Year] BETWEEN 2020 AND 2100)');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015200521_EnumAndReviewChecks'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [SettlementItems] ADD CONSTRAINT [CK_SettlementItems_ItemType] CHECK ([ItemType] IN (''Completed'', ''CancelledRetained'', ''NoShow''))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015200521_EnumAndReviewChecks'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [RoomTypePrices] ADD CONSTRAINT [CK_RoomTypePrices_DayType] CHECK ([DayType] IN (''Weekday'', ''Weekend'', ''Holiday''))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015200521_EnumAndReviewChecks'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [RoomBlocks] ADD CONSTRAINT [CK_RoomBlocks_Reason] CHECK ([Reason] IN (''OtherChannel'', ''Maintenance''))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015200521_EnumAndReviewChecks'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [Reviews] ADD CONSTRAINT [CK_Reviews_Reply] CHECK (([OwnerReply] IS NULL AND [RepliedAt] IS NULL) OR ([OwnerReply] IS NOT NULL AND [OwnerReply] <> '''' AND [RepliedAt] IS NOT NULL))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015200521_EnumAndReviewChecks'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [Payments] ADD CONSTRAINT [CK_Payments_Method] CHECK ([Method] IN (''BankAutoMatch'', ''ManualReceipt'', ''ManualTransfer''))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015200521_EnumAndReviewChecks'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [Payments] ADD CONSTRAINT [CK_Payments_Status] CHECK ([Status] IN (''Submitted'', ''Approved'', ''Rejected''))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015200521_EnumAndReviewChecks'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [Payments] ADD CONSTRAINT [CK_Payments_Type] CHECK ([Type] IN (''Deposit'', ''Refund'', ''Compensation'', ''AdditionalDeposit''))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015200521_EnumAndReviewChecks'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [OwnerRegistrations] ADD CONSTRAINT [CK_OwnerRegistrations_Decision] CHECK (([Status] NOT IN (''NeedsRevision'', ''Approved'', ''Rejected'') OR ([ReviewedByEmployeeId] IS NOT NULL AND [ReviewedAt] IS NOT NULL)) AND ([Status] NOT IN (''NeedsRevision'', ''Rejected'') OR ([ReviewNote] IS NOT NULL AND [ReviewNote] <> '''')))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015200521_EnumAndReviewChecks'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [OwnerRegistrations] ADD CONSTRAINT [CK_OwnerRegistrations_Status] CHECK ([Status] IN (''Draft'', ''WaitingOwnerActivation'', ''PendingReview'', ''UnderReview'', ''NeedsRevision'', ''Approved'', ''Rejected''))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015200521_EnumAndReviewChecks'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [Homestays] ADD CONSTRAINT [CK_Homestays_Status] CHECK ([Status] IN (''Draft'', ''PendingReview'', ''Active'', ''Suspended'', ''Ended''))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015200521_EnumAndReviewChecks'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [Contracts] ADD CONSTRAINT [CK_Contracts_Status] CHECK ([Status] IN (''Active'', ''Expired'', ''Terminated''))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015200521_EnumAndReviewChecks'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [CancellationPolicies] ADD CONSTRAINT [CK_CancellationPolicies_Scope] CHECK ([Scope] IN (''All'', ''Holiday''))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015200521_EnumAndReviewChecks'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [BookingNights] ADD CONSTRAINT [CK_BookingNights_DayType] CHECK ([DayType] IN (''Weekday'', ''Weekend'', ''Holiday''))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015200521_EnumAndReviewChecks'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261015200521_EnumAndReviewChecks', N'10.0.12');
+END;
+
+COMMIT;
+GO
+
