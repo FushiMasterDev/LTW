@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using HomestayBooking.Web.Models.Entities;
 
 namespace HomestayBooking.Web.Services;
@@ -66,6 +67,7 @@ public class BookingOptions
     public int ConfirmMinutes { get; set; } = 30;
 
     /// <summary>Tỷ lệ cọc (BR-01).</summary>
+    [Range(typeof(decimal), "0.0001", "1", ParseLimitsInInvariantCulture = true)]
     public decimal DepositRate { get; set; } = 0.30m;
 
     /// <summary>Số đơn chờ thanh toán tối đa của một khách (chống giữ phòng ảo).</summary>

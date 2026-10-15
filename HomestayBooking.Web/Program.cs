@@ -23,6 +23,9 @@ var cookieSecurePolicy = builder.Environment.IsDevelopment()
 builder.Services.AddDbContext<ApplicationDbContext>(o =>
     o.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
+builder.Services.AddOptions<DatabaseOptions>()
+    .Bind(builder.Configuration.GetSection(DatabaseOptions.Section));
+
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(o =>
     {
         o.Password.RequiredLength = 8;
@@ -57,7 +60,10 @@ builder.Services.AddScoped<AccountLookupService>();
 builder.Services.AddScoped<AccountActivityLogger>();
 
 // Nghiệp vụ đặt phòng và thanh toán (fuji_homestay_database_v1 mục 6, 7)
-builder.Services.Configure<BookingOptions>(builder.Configuration.GetSection(BookingOptions.Section));
+builder.Services.AddOptions<BookingOptions>()
+    .Bind(builder.Configuration.GetSection(BookingOptions.Section))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 builder.Services.Configure<BankAccountOptions>(builder.Configuration.GetSection(BankAccountOptions.Section));
 builder.Services.Configure<VoucherOptions>(builder.Configuration.GetSection(VoucherOptions.Section));
 builder.Services.AddSingleton(TimeProvider.System);

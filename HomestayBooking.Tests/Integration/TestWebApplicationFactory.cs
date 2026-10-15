@@ -2,10 +2,12 @@ using System.Net;
 using System.Text.RegularExpressions;
 using HomestayBooking.Web.BackgroundJobs;
 using HomestayBooking.Web.Data;
+using HomestayBooking.Tests.Data;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -14,12 +16,13 @@ namespace HomestayBooking.Tests.Integration;
 
 /// <summary>
 /// Chạy app thật (Program.cs: middleware, policy, antiforgery, Identity) nhưng thay SQL Server bằng CSDL InMemory riêng
-/// cho mỗi factory — không chạm CSDL phát triển. SeedData.InitializeAsync gặp CSDL không quan hệ thì EnsureCreated rồi seed
-/// đầy đủ (giống SeedDataTests). Môi trường "Testing" để cookie dùng SecurePolicy.Always như môi trường thật.
+/// cho mỗi factory — không chạm CSDL phát triển. Dữ liệu demo do fixture Development chuẩn bị riêng;
+/// ứng dụng vẫn dùng môi trường "Testing" để cookie có SecurePolicy.Always như môi trường thật.
 /// </summary>
 public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly string _databaseName = "it-" + Guid.NewGuid();
+    private readonly InMemoryDatabaseRoot _databaseRoot = new();
 
     public TestWebApplicationFactory()
     {
@@ -30,12 +33,19 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Chỉ provider của fixture được seed demo; ứng dụng Testing chỉ seed dữ liệu nền.
+        using (var seedServices = SeedTestServices.Build(services =>
+            services.AddDbContext<ApplicationDbContext>(o => o.UseInMemoryDatabase(_databaseName, _databaseRoot))))
+        {
+            SeedData.InitializeAsync(seedServices).GetAwaiter().GetResult();
+        }
+
         builder.UseEnvironment("Testing");
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
             services.RemoveAll<IDbContextOptionsConfiguration<ApplicationDbContext>>();
-            services.AddDbContext<ApplicationDbContext>(o => o.UseInMemoryDatabase(_databaseName));
+            services.AddDbContext<ApplicationDbContext>(o => o.UseInMemoryDatabase(_databaseName, _databaseRoot));
 
             // Job mỗi phút đổi trạng thái đơn trong nền → làm test không ổn định
             var job = services.Single(d => d.ServiceType == typeof(IHostedService) && d.ImplementationType == typeof(BookingTimeoutJob));

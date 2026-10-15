@@ -77,6 +77,18 @@ SSMS: mở `deploy.sql`, bật *SQLCMD Mode*, sửa dòng `:r schema.sql` thành
 
 Cách khác, không dùng file SQL: `dotnet ef database update --project HomestayBooking.Web --connection "<chuỗi kết nối>"` áp cùng các migration đó.
 
+### Tự áp migration khi khởi động
+
+`Database:AutoMigrate` quyết định cách ứng dụng kiểm tra schema trước khi seed:
+
+- Cấu hình chung (`appsettings.json`): `false`. Ứng dụng chỉ đọc danh sách migration chưa áp dụng. Nếu còn migration, ứng dụng ghi log lỗi với tên từng migration và dừng khởi động; hãy triển khai bằng `deploy.sql` trước rồi khởi động lại.
+- Development (`appsettings.Development.json`): cũng `false`. Profile `http` chạy Development nhưng có thể trỏ tới database đang dùng, nên không tự áp migration theo môi trường.
+- Database mới cần dựng bằng `deploy.sql` ở mục 3 hoặc `dotnet ef database update --project HomestayBooking.Web` với cấu hình kết nối đã kiểm tra đúng đích.
+- Nếu chủ động cho phép ứng dụng áp migration, chỉ bật cho phiên chạy đó, ví dụ `Database__AutoMigrate=true ASPNETCORE_ENVIRONMENT=Development dotnet run --project HomestayBooking.Web`. Không đổi mặc định để những lần chạy sau vẫn tắt tự migrate.
+- Cờ này chỉ áp dụng với database quan hệ. Nhánh InMemory dùng trong test vẫn gọi `EnsureCreatedAsync`.
+
+Khi triển khai, đặt `Database__AutoMigrate=false`, áp schema bằng quy trình bên dưới rồi khởi động ứng dụng. Cờ này chỉ chặn tự migration; việc seed dữ liệu được quyết định riêng theo môi trường.
+
 ## 4. Xác minh
 
 ```bash
@@ -138,12 +150,22 @@ sqlcmd -S localhost,1433 -U sa -C -d HomestayBooking_DeployTest -i tests/status_
 
 ## 5. Dữ liệu mẫu (seed)
 
-`schema.sql` **chỉ có schema, không có dữ liệu**. Dữ liệu mẫu (khu vực, homestay, phòng, giá, tài khoản demo, đơn đặt phòng ở mọi trạng thái, đánh giá…) do ứng dụng tạo ở lần chạy đầu (`SeedData.InitializeAsync`):
+`schema.sql` **chỉ có schema, không có dữ liệu**. Sau khi kiểm tra schema, `SeedData.InitializeAsync` chia dữ liệu theo `IWebHostEnvironment`:
 
-- Mỗi lần khởi động, ứng dụng **tự chạy migration rồi seed** vào database trong chuỗi kết nối `ConnectionStrings:Default`. Với database đã dựng bằng `deploy.sql`, bước migration không làm gì.
-- Seed chạy lặp an toàn: bảng nào đã có dữ liệu thì bỏ qua.
+| Phạm vi | Dữ liệu được seed |
+|---|---|
+| Mọi môi trường | Role; khu vực; danh mục loại phòng; tiện nghi; ngày lễ; chính sách hủy chung BR-04 |
+| Chỉ Development | Nhân viên, chủ homestay, khách và tài khoản mẫu; homestay/phòng/giá/hợp đồng mẫu; đơn, thanh toán, đối soát, khóa ngày, giấy tờ, yêu cầu đổi/hủy, đánh giá, voucher và ảnh demo |
+
+Production, Staging, Testing hoặc thiếu thông tin môi trường đều không tạo dữ liệu demo. Việc đổi môi trường không xóa tài khoản hoặc dữ liệu đã có.
+
+- Mỗi lần khởi động, ứng dụng kiểm tra schema theo `Database:AutoMigrate` rồi seed vào database trong chuỗi kết nối `ConnectionStrings:Default`. Khi cờ tắt mà còn migration chưa áp dụng, ứng dụng dừng trước khi seed. Với database đã dựng bằng `deploy.sql`, không còn migration chờ chạy.
+- Seed chạy lại không nhân đôi dữ liệu: từng nhánh kiểm tra bản ghi hoặc bảng trước khi thêm.
 - Ngày của đơn mẫu tính theo **ngày chạy seed**, nên luôn có đơn sắp tới, đang ở và đã qua. Vì thế repo không kèm file dữ liệu SQL tĩnh (sẽ cũ sau vài tuần).
-- Tài khoản demo và mật khẩu mặc định: xem `HomestayBooking.Web/Data/SeedData.cs` (`DefaultPassword`). Chỉ dùng để demo.
+- Tài khoản demo và mật khẩu mặc định: xem `HomestayBooking.Web/Data/SeedData.cs` (`DefaultPassword`). Chỉ tạo ở Development.
+- `Database:AutoMigrate=false` chỉ chặn tự migration; dữ liệu nền vẫn seed và Development vẫn seed demo. Không dùng cờ này như công tắc tắt toàn bộ seed.
+
+**Việc cần làm sau:** thiết kế quy trình cấp tài khoản quản trị đầu tiên ở Production bằng thông tin bí mật riêng/cấu hình cấp phát an toàn. Không dùng `DefaultPassword` hoặc tự tạo tài khoản quản trị demo ở Production. Thay đổi này chưa cung cấp quy trình cấp tài khoản quản trị thật.
 
 Chạy ứng dụng trỏ vào database vừa dựng. **Luôn đặt chuỗi kết nối bằng biến môi trường** (ưu tiên cao hơn `appsettings.json` và user-secrets), để không vô tình migrate/seed vào database khác:
 
@@ -183,4 +205,4 @@ Thứ tự an toàn (ví dụ áp `DatabaseHardening` lên database đang dùng)
 3. **Backup** database thật (`BACKUP DATABASE … WITH COPY_ONLY, CHECKSUM` rồi `RESTORE VERIFYONLY`).
 4. **Áp bằng `deploy.sql`** với `-d` và `-v TargetDb` là tên database thật, rồi chạy `verify.sql`.
 
-Lưu ý: ứng dụng tự gọi `MigrateAsync` mỗi lần khởi động. Một bản ứng dụng **đã build có migration mới** mà khởi động với chuỗi kết nối tới database thật sẽ tự áp migration đó, bỏ qua các bước trên. Chỉ build/khởi động lại ứng dụng trỏ vào database thật sau khi đã quyết định áp migration.
+Khi cập nhật database thật, giữ `Database:AutoMigrate=false`: ứng dụng sẽ dừng nếu schema còn thiếu migration. Nếu bật cờ này, ứng dụng có migration mới sẽ tự áp chúng khi khởi động; chỉ bật sau khi đã quyết định áp migration và hoàn tất quy trình thử nghiệm, kiểm tra dữ liệu, backup.

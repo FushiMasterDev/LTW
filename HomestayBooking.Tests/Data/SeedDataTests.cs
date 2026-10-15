@@ -11,18 +11,52 @@ namespace HomestayBooking.Tests.Data;
 
 public class SeedDataTests
 {
-    private static ServiceProvider BuildServices()
+    private static ServiceProvider BuildServices(string? environmentName = "Development")
     {
-        var services = new ServiceCollection();
         var dbName = Guid.NewGuid().ToString();
-        services.AddLogging();
-        services.AddDataProtection();
-        services.AddDbContext<ApplicationDbContext>(o => o.UseInMemoryDatabase(dbName));
-        services.AddIdentity<ApplicationUser, IdentityRole>()
-            .AddEntityFrameworkStores<ApplicationDbContext>()
-            .AddDefaultTokenProviders();
-        services.AddScoped<AccountLookupService>();
-        return services.BuildServiceProvider();
+        return SeedTestServices.Build(
+            services => services.AddDbContext<ApplicationDbContext>(o => o.UseInMemoryDatabase(dbName)),
+            environmentName);
+    }
+
+    [Theory]
+    [InlineData("Production")]
+    [InlineData("Staging")]
+    [InlineData("Testing")]
+    [InlineData(null)]
+    public async Task InitializeAsync_OutsideDevelopment_SeedsOnlyFoundation(string? environmentName)
+    {
+        await using var services = BuildServices(environmentName);
+
+        await SeedData.InitializeAsync(services);
+        await SeedData.InitializeAsync(services);
+
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.Equal(AppRoles.All.Length, await db.Roles.CountAsync());
+        Assert.Equal(7, await db.Areas.CountAsync());
+        Assert.Equal(5, await db.RoomCategories.CountAsync());
+        Assert.Equal(10, await db.Amenities.CountAsync());
+        Assert.NotEmpty(await db.Holidays.ToListAsync());
+        var policy = await db.CancellationPolicies.Include(p => p.Rules)
+            .SingleAsync(p => p.HomestayId == null);
+        Assert.Equal(3, policy.Rules.Count);
+
+        Assert.False(await db.Users.AnyAsync());
+        Assert.False(await db.PersonProfiles.AnyAsync());
+        Assert.False(await db.Employees.AnyAsync());
+        Assert.False(await db.Owners.AnyAsync());
+        Assert.False(await db.Customers.AnyAsync());
+        Assert.False(await db.Homestays.AnyAsync());
+        Assert.False(await db.Rooms.AnyAsync());
+        Assert.False(await db.Bookings.AnyAsync());
+        Assert.False(await db.Payments.AnyAsync());
+        Assert.False(await db.BankTransactions.AnyAsync());
+        Assert.False(await db.Settlements.AnyAsync());
+        Assert.False(await db.RoomBlocks.AnyAsync());
+        Assert.False(await db.VerificationDocuments.AnyAsync());
+        Assert.False(await db.BookingChangeRequests.AnyAsync());
+        Assert.False(await db.HomestayImages.AnyAsync());
     }
 
     // 5 nhân viên + 6 chủ homestay + 1 khách có tài khoản; owner đầu tiên kiêm khách hàng nên không thêm Account

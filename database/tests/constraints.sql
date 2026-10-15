@@ -40,14 +40,14 @@ BEGIN TRY
     INSERT Employees (PersonId, EmployeeCode, Position, EmploymentStatus, CreatedAt, UpdatedAt) VALUES (@pEmp, N'TEST01', N'Manager', N'Active', @now, @now); SET @emp = SCOPE_IDENTITY();
     INSERT AspNetUsers (Id, PersonId, Status, CreatedAt, UpdatedAt, EmailConfirmed, PhoneNumberConfirmed, TwoFactorEnabled, LockoutEnabled, AccessFailedCount)
         VALUES (@acct, @pUser, N'Active', @now, @now, 0, 0, 0, 0, 0);
-    INSERT Areas (Name, Province, AreaGroup) VALUES (N'Test', N'Test', N'North'); SET @area = SCOPE_IDENTITY();
+    INSERT Areas (Name, Province, AreaGroup) VALUES (N'Test', N'Test', N'InnerCity'); SET @area = SCOPE_IDENTITY();
     INSERT Homestays (OwnerId, AreaId, Name, Address, CheckinTime, CheckoutTime, Status, CreatedAt, UpdatedAt)
         VALUES (@owner, @area, N'Test HS', N'Test', '14:00', '12:00', N'Active', @now, @now); SET @hs = SCOPE_IDENTITY();
     INSERT RoomCategories (Name) VALUES (N'Test'); SET @cat = SCOPE_IDENTITY();
     INSERT RoomTypes (HomestayId, CategoryId, Name, MaxGuests, IsActive, CreatedAt, UpdatedAt) VALUES (@hs, @cat, N'Test RT', 2, 1, @now, @now); SET @rt = SCOPE_IDENTITY();
     INSERT Rooms (RoomTypeId, RoomCode, IsActive) VALUES (@rt, N'R1', 1); SET @room = SCOPE_IDENTITY();
     INSERT Rooms (RoomTypeId, RoomCode, IsActive) VALUES (@rt, N'R2', 1); SET @room2 = SCOPE_IDENTITY();
-    INSERT CancellationPolicies (HomestayId, Scope, Name, IsActive, CreatedAt) VALUES (NULL, N'Global', N'Test', 1, @now); SET @pol = SCOPE_IDENTITY();
+    INSERT CancellationPolicies (HomestayId, Scope, Name, IsActive, CreatedAt) VALUES (NULL, N'All', N'Test', 1, @now); SET @pol = SCOPE_IDENTITY();
     INSERT Bookings (Code, CustomerId, ContactName, ContactPhone, SourceChannel, HomestayId, RoomTypeId, RoomId, CheckIn, CheckOut, Guests, Status,
                      HoldExpiresAt, TotalAmount, DepositRate, DepositAmount, CommissionRate, CancellationPolicyId, CreatedAt, UpdatedAt)
         VALUES (N'TEST-0001', @cust, N'Test', N'+84900000002', N'Web', @hs, @rt, @room, '2027-01-01', '2027-01-03', 2, N'Deposited',
@@ -59,7 +59,7 @@ BEGIN TRY
     INSERT RoomNights (RoomId, Date, BookingId) VALUES (@room, '2027-01-01', @b1);
     INSERT RoomBlocks (RoomId, StartDate, EndDate, Reason, CreatedByAccountId, CreatedAt) VALUES (@room2, '2027-02-01', '2027-02-03', N'Maintenance', @acct, @now); SET @blk = SCOPE_IDENTITY();
     INSERT RoomNights (RoomId, Date, RoomBlockId) VALUES (@room2, '2027-02-01', @blk);
-    INSERT Payments (BookingId, Type, Method, Amount, Status, SubmittedAt) VALUES (@b1, N'Deposit', N'BankTransfer', 600000, N'Pending', @now);
+    INSERT Payments (BookingId, Type, Method, Amount, Status, SubmittedAt) VALUES (@b1, N'Deposit', N'BankAutoMatch', 600000, N'Submitted', @now);
     INSERT Vouchers (Code, CustomerId, Amount, Balance, ExpiresOn, Status, Reason, IssuedByEmployeeId, IssuedAt)
         VALUES (N'TESTV1', @cust, 100000, 100000, '2027-12-31', N'Active', N'Test', @emp, @now); SET @v = SCOPE_IDENTITY();
     INSERT Contracts (HomestayId, ContractNo, StartDate, EndDate, CommissionRate, Status, CreatedAt, UpdatedAt)
@@ -81,11 +81,11 @@ BEGIN TRY
      (N'Đêm thuộc cả đơn và khóa', N'INSERT RoomNights (RoomId, Date, BookingId, RoomBlockId) VALUES (@room, ''2027-05-02'', @b1, @blk)', N'CK_RoomNights_Owner'),
      (N'Khóa ngày thêm đêm (hợp lệ)', N'INSERT RoomNights (RoomId, Date, RoomBlockId) VALUES (@room2, ''2027-02-02'', @blk)', N''),
      (N'Ngày khóa kết thúc trước bắt đầu', N'INSERT RoomBlocks (RoomId, StartDate, EndDate, Reason, CreatedByAccountId, CreatedAt) VALUES (@room, ''2027-06-02'', ''2027-06-01'', N''Maintenance'', @acct, SYSUTCDATETIME())', N'CK_RoomBlocks_Dates'),
-     (N'Khoản cọc đang mở thứ hai', N'INSERT Payments (BookingId, Type, Method, Amount, Status, SubmittedAt) VALUES (@b1, N''Deposit'', N''BankTransfer'', 600000, N''Pending'', SYSUTCDATETIME())', N'IX_Payments_OneDepositPerBooking'),
-     (N'Thêm bill cọc bị từ chối (hợp lệ)', N'INSERT Payments (BookingId, Type, Method, Amount, Status, SubmittedAt) VALUES (@b1, N''Deposit'', N''BankTransfer'', 600000, N''Rejected'', SYSUTCDATETIME())', N''),
-     (N'Hoàn cọc lần 1 (hợp lệ)', N'INSERT Payments (BookingId, Type, Method, Amount, Status, SubmittedAt) VALUES (@b1, N''Refund'', N''BankTransfer'', 100000, N''Approved'', SYSUTCDATETIME())', N''),
-     (N'Hoàn cọc lần 2', N'INSERT Payments (BookingId, Type, Method, Amount, Status, SubmittedAt) VALUES (@b1, N''Refund'', N''BankTransfer'', 100000, N''Approved'', SYSUTCDATETIME())', N'IX_Payments_OneRefundPerBooking'),
-     (N'Thanh toán số tiền 0', N'INSERT Payments (BookingId, Type, Method, Amount, Status, SubmittedAt) VALUES (@b2, N''Deposit'', N''BankTransfer'', 0, N''Pending'', SYSUTCDATETIME())', N'CK_Payments_Amount'),
+     (N'Khoản cọc đang mở thứ hai', N'INSERT Payments (BookingId, Type, Method, Amount, Status, SubmittedAt) VALUES (@b1, N''Deposit'', N''BankAutoMatch'', 600000, N''Submitted'', SYSUTCDATETIME())', N'IX_Payments_OneDepositPerBooking'),
+     (N'Thêm bill cọc bị từ chối (hợp lệ)', N'INSERT Payments (BookingId, Type, Method, Amount, Status, SubmittedAt) VALUES (@b1, N''Deposit'', N''BankAutoMatch'', 600000, N''Rejected'', SYSUTCDATETIME())', N''),
+     (N'Hoàn cọc lần 1 (hợp lệ)', N'INSERT Payments (BookingId, Type, Method, Amount, Status, SubmittedAt) VALUES (@b1, N''Refund'', N''ManualTransfer'', 100000, N''Approved'', SYSUTCDATETIME())', N''),
+     (N'Hoàn cọc lần 2', N'INSERT Payments (BookingId, Type, Method, Amount, Status, SubmittedAt) VALUES (@b1, N''Refund'', N''ManualTransfer'', 100000, N''Approved'', SYSUTCDATETIME())', N'IX_Payments_OneRefundPerBooking'),
+     (N'Thanh toán số tiền 0', N'INSERT Payments (BookingId, Type, Method, Amount, Status, SubmittedAt) VALUES (@b2, N''Deposit'', N''BankAutoMatch'', 0, N''Submitted'', SYSUTCDATETIME())', N'CK_Payments_Amount'),
      (N'Trùng mã đơn', N'UPDATE Bookings SET Code = N''TEST-0001'' WHERE Id = @b2', N'IX_Bookings_Code'),
      (N'Trả phòng không sau nhận phòng', N'UPDATE Bookings SET CheckOut = CheckIn WHERE Id = @b2', N'CK_Bookings_Dates'),
      (N'Số khách 0', N'UPDATE Bookings SET Guests = 0 WHERE Id = @b2', N'CK_Bookings_Guests'),
