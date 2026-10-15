@@ -7,6 +7,7 @@
 > 1.4 — 2026-10-11 (thêm **voucher** — Q4, D14, migration `Vouchers`)  
 > 1.3 — 2026-10-11 (giữ phòng 15 phút khi đặt; cọc qua QR **MB Bank** tự đối soát, ảnh bill làm dự phòng; **đã áp vào code**, migration `Init`)
 > **Trạng thái:** Đã chốt các quyết định ở mục 1; dùng làm cơ sở viết ERD và sửa code (EF Core Code First).
+> **Bổ sung thiết kế 15/10/2026:** Nghiệp vụ đổi/hủy đã chốt 14/10, bổ sung chia phí đổi và phương án rút gọn 15/10; Prompt 4C chốt toàn bộ thiết kế ở mục 5.E, Q11 và `docs/change-request-design.md`, sẵn sàng Prompt 5. Chưa tạo hay áp migration cho phần này.
 > **Nguồn:**
 > - `fuij_homestay_login_design_v5.md` → toàn bộ module **Tài khoản** (đã triển khai trong code).
 > - `fuij_homestay_database_draft.md` v0.2 → phần lớn module **Nghiệp vụ** (hợp đồng, giá, chính sách hủy, đơn, đối soát).
@@ -519,7 +520,22 @@ Hiển thị chi tiết giá cho khách trước khi gửi yêu cầu (FR-02).
 
 Đổi ngày/đổi loại phòng được duyệt → service cập nhật đơn và `RoomNights` trong một transaction.
 
-Các quy tắc sau **chưa** có CHECK (chờ chốt nghiệp vụ, hiện chưa có service/màn hình xử lý yêu cầu): có cho đổi **cả ngày lẫn loại phòng** trong một yêu cầu không (CHECK hiện cố ý **không cấm** trường thừa); `DecidedByAccountId` có bắt buộc khi đã quyết không (phụ thuộc việc hệ thống có tự đóng yêu cầu); ai có quyền duyệt (FR-10: nhân viên). Loại phòng mới thuộc cùng homestay, đủ sức chứa, còn phòng, ngày không ở quá khứ: kiểm tra ở service (liên bảng, CHECK không làm được).
+**Nghiệp vụ đã chốt 14/10/2026, bổ sung 15/10:**
+
+- Cho phép đổi cả ngày lẫn loại phòng trong cùng một yêu cầu, khi còn phòng.
+- Phí đổi ngày bằng phần cọc bị mất theo BR-04, lấy `RefundService.QuoteCancellationAsync` tại lúc gửi yêu cầu; cọc còn lại dùng cho **chính đơn sau khi sửa**, giữ nguyên mã. Không tính lại phí theo ngày duyệt.
+- **Phí đổi ngày chia theo CommissionRate của đơn trên phần phí (chốt 15/10)**: cộng dồn `Bookings.ChangeFeeAmount`; `feeCommission = min(Round(Fsum × CommissionRate, 0, AwayFromZero), Fsum)`, chủ nhận `Fsum − feeCommission`. Đơn vẫn được ở và phần đặt phòng đã tính hoa hồng của cả đơn; không áp thêm công thức hủy `min(Round(TotalAmount × CommissionRate), cọc giữ lại)` lên phí để tránh tính hoa hồng cả đơn hai lần.
+- Tiền cọc phải thêm = `max(0, RoundToThousand(DepositRate × tổng mới) − cọc chuyển sang)`; cọc sau sửa = cọc chuyển + đóng thêm. Xuống hạng không hoàn tiền mặt; nếu tổng mới nhỏ hơn cọc chuyển thì service **chặn**, không tạo bảng số dư cọc. **Chưa cho đổi đơn có DiscountAmount > 0**; báo “Đơn dùng voucher, vui lòng liên hệ nhân viên”. Hủy thật vẫn theo quy tắc hiện có; hỗ trợ đổi có voucher để sau nếu cần.
+- Quản lý (`Manager`) duyệt nghiệp vụ; khi cần tiền thêm, kế toán (`Accountant`) xác nhận tiền trước khi áp dụng. Người gửi không được tự duyệt. Mỗi bước lưu người/thời điểm/ghi chú; từ chối bắt buộc có lý do.
+- Loại phòng mới cùng homestay, đủ sức chứa, còn phòng, ngày hợp lệ: kiểm tra tại service. Giữ phòng mới trong lúc chờ tiền và áp dụng thay đổi/tiền/phòng/lịch sử trong một transaction; thông báo cho chủ homestay.
+- Đơn Confirmed sau đổi ngày/phòng về Deposited, `ConfirmedAt = NULL`, chủ xác nhận lại theo BR-06; cặp trạng thái/mốc này thỏa CHECK hiện tại. Cần bổ sung thao tác service có bảo vệ vì transition code hiện chưa cho chuyển lùi này.
+- `PaymentDeadlineAt` là hạn **khách nộp tiền/gửi bill**, không phải hạn kế toán. Nộp hợp lệ đúng hạn thì giữ phòng tới khi Accountant xử lý, dù `FinanceConfirmedAt` sau deadline. Hủy thật dùng `RefundAmount` chốt lúc gửi.
+
+**Schema hiện tại và thiết kế rút gọn phải phân biệt:** bảng/CHECK ở trên vẫn là bản đang có trong code/database (chưa có service/màn hình xử lý yêu cầu). Bản rút gọn tại [Thiết kế đổi/hủy](docs/change-request-design.md) sửa Booking tại chỗ; một migration `ChangeRequestWorkflow`; `ChangeDatesAndRoomType` và RequestType nvarchar(32); `Applied` thay `Approved`, thêm `AwaitingPayment`/`Expired`; các cột tiền nullable, người gửi và quyết định kế toán; `PaymentType.AdditionalDeposit` với FK ChangeRequestId và unique riêng; RoomNights có chủ sở hữu yêu cầu. Dùng Status concurrency token và AuditLog sẵn có, không tạo bảng mới hoặc sổ chuyển cọc, không sửa index Deposit ban đầu hay làm FK ghép. Dự kiến 14 cột mới, 12 CHECK trong phạm vi (5 sửa, 7 thêm), chưa tạo migration.
+
+Ở `AwaitingPayment` chưa xác nhận kế toán; `Applied` có tiền thêm mới bắt buộc đủ xác nhận. Giới hạn cấu hình mặc định 3 ngày/2 lần đổi Applied trên chính Booking, ngày mới trong 90 ngày đã chốt cho bản rút gọn; options kiểm bằng Range + ValidateOnStart. Chỉ lưu NewTotalAmount, tính lại giá trước duyệt/áp dụng, khác giá thì từ chối có lý do. Migration đổi Approved → Applied nhưng giữ actor Owner của lịch sử đóng, không giả gán Manager. Pending thiếu RequestedByAccountId hoặc thiếu cột tiền là “yêu cầu cũ, cần gửi lại”: không sửa trong migration, hiện trên màn quản lý, Manager chỉ được từ chối với lý do thật, không được duyệt; vẫn chiếm unique yêu cầu mở tới lúc từ chối. Không có IsLegacy hoặc migration hai pha.
+
+Các biểu thức CHECK mới dùng chuỗi thường và `IS NOT NULL AND <> ''`, không dùng hàm chuỗi riêng, dùng được trong model SQL Server/SQLite. Khác biệt đã biết: chuỗi chỉ có khoảng trắng bị SQL Server chặn, SQLite cho qua; service vẫn kiểm chuỗi trắng. Giữ Status concurrency token cho duyệt; job hết hạn dùng một UPDATE có điều kiện AwaitingPayment, quá hạn và NOT EXISTS khoản nộp hợp lệ, chỉ nhả phòng/ghi AuditLog khi cập nhật thành công trong cùng transaction. Đường nộp tiền kiểm trạng thái có điều kiện trong transaction để tuần tự với job, không dùng lock hint. **Đã chốt toàn bộ, sẵn sàng Prompt 5.**
 
 ---
 
@@ -822,7 +838,7 @@ Ví dụ: tổng 2.000.000đ, cọc 600.000đ, hoa hồng 12%.
 | Chống giữ phòng ảo | — | Tối đa 3 đơn `AwaitingPayment` / khách |
 | Đối soát 2 kỳ / tháng (BR-03) | UNIQUE `Settlements (HomestayId, Year, Month, PeriodNo)`, UNIQUE `SettlementItems.BookingId`, CHECK `Payout = Retained − Commission` ở cả hai bảng | Lập bảng theo công thức 7.3 (`SettlementCalculator`) |
 | Đối soát đã gửi / đã trả có mốc thời gian | CHECK `CK_Settlements_Sent` (khác `Draft` ⇒ có `SentAt`), `CK_Settlements_Paid` (`Paid` ⇒ có `PaidAt`) | Màn đối soát gán mốc khi chuyển trạng thái. `Confirmed` ⇒ `ConfirmedAt` **chưa** có CHECK |
-| Yêu cầu đổi/hủy hợp lệ | CHECK `CK_BookingChangeRequests_Type`, `_Status`, `_RequestedBy`, `_Fields`, `_Decision` | Đổi kết hợp ngày + loại phòng, người quyết bắt buộc, quyền duyệt: **chưa** chốt (mục 5.E); loại phòng cùng homestay, sức chứa, phòng trống: service |
+| Yêu cầu đổi/hủy hợp lệ | CHECK hiện có Type/Status/RequestedBy/Fields/Decision; bản rút gọn thêm kiểm tiền/finance/actor/notes/deadline, liên kết AdditionalDeposit, chủ RoomNight và ChangeFeeAmount; chưa áp migration | **Chốt 14/10 và 15/10**: sửa tại chỗ, đổi kết hợp, Manager → Accountant khi có tiền thêm; không tự duyệt; hạn khách nộp; phí đổi ngày chia theo CommissionRate của đơn trên phần phí (chốt 15/10). Service kiểm phòng, giá, 3 ngày/2 lần/90 ngày, chặn đổi khi DiscountAmount > 0; Pending cũ chỉ cho Manager từ chối; chia phí/đối soát và transaction (mục 5.E) |
 | Không hoàn quá tiền khách đã chuyển (BR-04) | CHECK `Bookings.RefundAmount ≤ DepositAmount − DiscountAmount` | |
 | Đánh giá một lần sau khi hoàn thành (BR-09) | UNIQUE `Reviews.BookingId`, CHECK 1–5 | Kiểm tra `Status = Completed` |
 | Homestay phải được duyệt mới hiện (BR-12) | `Homestays.Status`, `VerificationDocuments` | Lọc `Status = Active` |
@@ -906,3 +922,4 @@ Vì chưa triển khai thật: sửa entity xong thì **tạo lại migration `I
 | Q8 | Chủ homestay có được đổi sang phòng khác cùng loại khi xác nhận (phòng hệ thống gán đang có vấn đề) không? — **đã chốt (11/10)**: Cho phép, đổi trong một transaction; ghi lịch sử | `Bookings.RoomId`, `RoomNights` | — |
 | Q9 | Fuji dùng dịch vụ nào (SePay / Casso / khác) khi triển khai thật? Phí dịch vụ? Ngân hàng: **MB Bank** (đã chốt) | Chỉ cấu hình, không đổi DB | BTL dùng giả lập `Simulator`; số tài khoản MB để trong `appsettings` |
 | Q10 | Khách chuyển **dư** tiền cọc: hoàn ngay hay trừ vào số tiền trả tại homestay? — **đã chốt (11/10)**: Ghi chú lại, hoàn khi khách yêu cầu | `BankTransactions.Note`, `Payments` | — |
+| Q11 | ~~Đổi kết hợp; phí/cọc; duyệt và lưu người duyệt~~ — **đã chốt 14/10, bổ sung 15/10**: sửa tại chỗ giữ mã; phí BR-04 chốt lúc gửi, phí đổi ngày chia theo CommissionRate của đơn trên phần phí (chốt 15/10); cộng phí riêng, chuyển cọc còn lại/thu thêm; chặn tổng mới dưới cọc chuyển, không hoàn tiền mặt; Manager → Accountant khi có tiền thêm, không tự duyệt, lưu người/thời điểm/ghi chú/lý do | Request, Booking.ChangeFeeAmount, Payment.AdditionalDeposit, RoomNights, AuditLog; không thêm bảng | [Bản rút gọn](docs/change-request-design.md): một migration, Status token, hạn khách nộp và giữ phòng chờ kế toán, 3 ngày/2 lần/90 ngày. Chặn đổi khi DiscountAmount > 0, hủy vẫn theo quy tắc cũ; Pending thiếu người gửi/tiền giữ nguyên và chỉ cho Manager từ chối có lý do, vẫn chiếm unique mở tới khi từ chối. Đã chốt toàn bộ, sẵn sàng Prompt 5; chưa triển khai |
