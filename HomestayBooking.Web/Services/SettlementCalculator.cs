@@ -19,8 +19,8 @@ public static class SettlementCalculator
         new(checkOut.Year, checkOut.Month, checkOut.Day <= 15 ? 1 : 2);
 
     /// <summary>
-    /// Dòng đối soát của một đơn, hoặc null nếu đơn không vào đối soát: chưa từng có cọc,
-    /// homestay từ chối / hết hạn, hoặc hủy được hoàn 100%.
+    /// Dòng đối soát khi đơn kết thúc; hoàn hết cọc vẫn tính phần phí đổi đã giữ trước đó.
+    /// Đơn đang ở hoặc chờ xác nhận chưa được đưa vào đối soát.
     /// </summary>
     public static SettlementItem? ItemFor(Booking booking)
     {
@@ -28,7 +28,8 @@ public static class SettlementCalculator
         {
             BookingStatus.Completed => SettlementItemType.Completed,
             BookingStatus.NoShow => SettlementItemType.NoShow,
-            BookingStatus.Cancelled when booking.DepositedAt is not null => SettlementItemType.CancelledRetained,
+            BookingStatus.Cancelled when booking.DepositedAt is not null || booking.ChangeFeeAmount > 0 => SettlementItemType.CancelledRetained,
+            BookingStatus.Rejected or BookingStatus.Expired when booking.ChangeFeeAmount > 0 => SettlementItemType.CancelledRetained,
             _ => (SettlementItemType?)null,
         };
         if (itemType is null)
@@ -36,17 +37,20 @@ public static class SettlementCalculator
             return null;
         }
 
+        var feeOnly = booking.Status is BookingStatus.Rejected or BookingStatus.Expired;
         var refund = booking.RefundAmount ?? 0;
         // Tỷ lệ hoàn đã áp (quy tắc hủy là số nguyên phần trăm); tiền hoàn đã làm tròn nghìn nên lấy lại % gần nhất
         var percent = booking.AmountDue > 0 ? Math.Round(100m * refund / booking.AmountDue) : 0;
-        var retained = booking.DepositAmount - PricingService.RoundToThousand(booking.DepositAmount * percent / 100m);
-        if (retained <= 0)
-        {
-            return null;
-        }
+        var retained = feeOnly ? 0 : booking.DepositAmount - PricingService.RoundToThousand(booking.DepositAmount * percent / 100m);
         var commission = Math.Min(Math.Round(booking.TotalAmount * booking.CommissionRate, 0, MidpointRounding.AwayFromZero), retained);
+        // Phí đổi chỉ chia theo tỷ lệ trên phần phí; không tính hoa hồng cả đơn lần nữa.
+        var fee = booking.ChangeFeeAmount;
+        var feeCommission = Math.Min(Math.Round(fee * booking.CommissionRate, 0, MidpointRounding.AwayFromZero), fee);
+        retained += fee;
+        commission += feeCommission;
+        if (retained <= 0) return null;
         // Voucher: phần đã trả lại vào số dư khi hủy (VoucherService.RestoreAsync) không tính là Fuji chịu
-        var discount = booking.DiscountAmount - PricingService.RoundToThousand(booking.DiscountAmount * percent / 100m);
+        var discount = feeOnly ? 0 : booking.DiscountAmount - PricingService.RoundToThousand(booking.DiscountAmount * percent / 100m);
 
         return new SettlementItem
         {
@@ -54,7 +58,7 @@ public static class SettlementCalculator
             Booking = booking,
             ItemType = itemType.Value,
             RoomAmount = booking.TotalAmount,
-            DepositAmount = booking.DepositAmount,
+            DepositAmount = booking.DepositAmount + fee,
             RefundAmount = refund,
             RetainedAmount = retained,
             CommissionRate = booking.CommissionRate,

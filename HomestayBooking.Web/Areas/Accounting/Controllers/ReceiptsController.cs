@@ -33,8 +33,7 @@ public class ReceiptsController : AccountingController
     public async Task<IActionResult> Index(PaymentStatus? status, int? page)
     {
         var shown = status ?? PaymentStatus.Submitted;
-        var query = Db.Payments.AsNoTracking()
-            .Where(p => p.Method == PaymentMethod.ManualReceipt && p.Status == shown);
+        var query = _accounting.InitialDepositReceipts(shown).AsNoTracking();
         query = shown == PaymentStatus.Submitted
             ? query.OrderBy(p => p.SubmittedAt)
             : query.OrderByDescending(p => p.ReviewedAt);
@@ -42,7 +41,7 @@ public class ReceiptsController : AccountingController
             p.Id, p.Booking.Code, p.Booking.Status, p.Booking.ContactName, p.Booking.ContactPhone, p.Booking.Homestay.Name,
             p.Amount, p.Booking.DepositAmount - p.Booking.DiscountAmount, p.TransferContent, p.Status, p.SubmittedAt,
             p.Booking.HoldExpiresAt,
-            p.Booking.Payments.Count(o => o.Id != p.Id && o.Method == PaymentMethod.ManualReceipt && o.Status == PaymentStatus.Rejected),
+            p.Booking.Payments.Count(o => o.Id != p.Id && o.Type == PaymentType.Deposit && o.Method == PaymentMethod.ManualReceipt && o.Status == PaymentStatus.Rejected),
             p.ReviewedByEmployee == null ? null : p.ReviewedByEmployee.Person.FullName ?? p.ReviewedByEmployee.EmployeeCode,
             p.ReviewedAt, p.RejectReason));
 

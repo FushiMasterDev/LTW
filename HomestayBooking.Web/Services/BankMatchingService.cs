@@ -119,6 +119,8 @@ public partial class BankMatchingService
 
     private async Task MatchAsync(BankTransaction tx)
     {
+        // Mã yêu cầu phải được nhận diện trước mã đơn, không rơi xuống luồng cọc đầu.
+        if (await MatchChangeRequestAsync(tx)) return;
         if (tx.AccountNumber != _account.AccountNumber)
         {
             tx.MatchStatus = BankMatchStatus.Ignored;
@@ -163,6 +165,53 @@ public partial class BankMatchingService
                 break;
         }
     }
+
+    private async Task<bool> MatchChangeRequestAsync(BankTransaction tx)
+    {
+        if (!ChangeRequestMarker().IsMatch(tx.TransferContent ?? "")) return false;
+        tx.MatchStatus = BankMatchStatus.Unmatched;
+        var matches = ChangeRequestCode().Matches(tx.TransferContent ?? "");
+        if (matches.Count != 1 || !int.TryParse(matches[0].Groups[1].Value, out var id))
+        {
+            tx.Note = "Mã yêu cầu CR không hợp lệ; cần đối chiếu.";
+            return true;
+        }
+        void Unmatched(string reason) => tx.Note = $"CR{id}: {reason}";
+        var request = await _db.BookingChangeRequests.Include(r => r.Booking).Include(r => r.Payments)
+            .SingleOrDefaultAsync(r => r.Id == id);
+        if (request is null) { Unmatched("Không tìm thấy yêu cầu."); return true; }
+        if (ExtractBookingCode(tx.TransferContent) != request.Booking.Code)
+        { Unmatched("Mã đơn không khớp yêu cầu."); return true; }
+        tx.MatchedBooking = request.Booking;
+        if (tx.AccountNumber != _account.AccountNumber)
+        { Unmatched("Không phải tài khoản nhận cọc."); return true; }
+        if (tx.Amount != request.AdditionalDeposit)
+        { Unmatched("Số tiền không khớp cọc bổ sung."); return true; }
+        if (!await ChangeRequestPayments.GuardSubmissionAsync(_db, id, tx.TransactionTime))
+        { Unmatched("Yêu cầu đã đóng hoặc giao dịch ngoài hạn nộp tiền."); return true; }
+        var payment = request.Payments.SingleOrDefault(p => p.Type == PaymentType.AdditionalDeposit && p.Status != PaymentStatus.Rejected);
+        if (payment is not null && (payment.Status != PaymentStatus.Submitted || payment.BankTransactionId is not null
+            || payment.Method != PaymentMethod.ManualReceipt || payment.Amount != tx.Amount))
+        { Unmatched("Yêu cầu đã có khoản nộp; cần đối chiếu khoản tiền này."); return true; }
+        if (payment is null)
+        {
+            payment = new Payment { BookingId = request.BookingId, ChangeRequestId = id,
+                Type = PaymentType.AdditionalDeposit, Method = PaymentMethod.BankAutoMatch,
+                Amount = tx.Amount, SubmittedAt = _clock.GetUtcNow().UtcDateTime };
+            request.Payments.Add(payment);
+        }
+        payment.BankTransaction = tx; payment.TransferContent = tx.TransferContent is { } content ? content[..Math.Min(255, content.Length)] : null;
+        payment.BankRef = tx.BankReference; payment.Status = PaymentStatus.Submitted;
+        tx.MatchStatus = BankMatchStatus.Matched;
+        tx.Note = $"CR{id}: Đã nhận cọc bổ sung, chờ kế toán xác nhận.";
+        return true;
+    }
+
+    [GeneratedRegex(@"(?<![A-Z0-9])CR\d+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex ChangeRequestMarker();
+
+    [GeneratedRegex(@"(?<![A-Z0-9])CR(\d+)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex ChangeRequestCode();
 
     /// <summary>
     /// Khách đã tải bill (ManualReceipt, Submitted) → duyệt luôn khoản đó và gắn giao dịch;

@@ -154,4 +154,30 @@ public sealed class BankMatchingServiceTests : IDisposable
             "https://img.vietqr.io/image/MB-0901999999-compact2.png?amount=510000&addInfo=FJ261110-001&accountName=CONG%20TY%20FUJI",
             url);
     }
+    [Fact]
+    public async Task IncidentalCrLettersDoNotTurnAnInitialDepositIntoAChangeRequest()
+    {
+        var booking = await NewBookingAsync();
+        var result = await _host.Matching().ProcessAsync(Tx("INITIAL-TEXT", booking.AmountDue, $"MICROSOFT {booking.Code}"));
+        Assert.Equal(BankMatchStatus.Matched, result.Status);
+        Assert.Equal(PaymentType.Deposit, (await _host.Db.Payments.SingleAsync()).Type);
+    }
+
+    [Theory]
+    [InlineData("FJ261020-001 Cruz Nguyen")]
+    [InlineData("CREDIT FJ261020-001")]
+    public async Task CrWordsWithoutDigitsStillMatchInitialDeposit(string content)
+    {
+        var booking = await NewBookingAsync();
+        booking.Code = "FJ261020-001";
+        await _host.Db.SaveChangesAsync();
+        var result = await _host.Matching().ProcessAsync(Tx("CR-WORD", booking.AmountDue, content));
+        Assert.Equal(BankMatchStatus.Matched, result.Status);
+        Assert.Equal(booking.Code, result.BookingCode);
+        var payment = await _host.Db.Payments.SingleAsync();
+        Assert.Equal(PaymentType.Deposit, payment.Type); Assert.Equal(PaymentStatus.Approved, payment.Status);
+        Assert.Null(payment.ChangeRequestId);
+        Assert.Equal(BookingStatus.Deposited, (await _host.Db.Bookings.AsNoTracking().SingleAsync()).Status);
+    }
+
 }

@@ -27,13 +27,14 @@ public class BookingTimeoutJob : BackgroundService
                 using var scope = _scopeFactory.CreateScope();
                 var bookings = scope.ServiceProvider.GetRequiredService<BookingService>();
                 var expired = await bookings.ExpireOverdueHoldsAsync();
+                var expiredRequests = await scope.ServiceProvider.GetRequiredService<BookingChangeRequestService>().ExpireUnpaidAsync();
                 var alerted = await bookings.AlertOverdueConfirmationsAsync();
                 var slowReceipts = await scope.ServiceProvider.GetRequiredService<ReceiptReviewService>().AlertSlowReviewsAsync();
                 await scope.ServiceProvider.GetRequiredService<VoucherService>().ExpireAsync();
-                if (expired + alerted + slowReceipts > 0)
+                if (expired + expiredRequests + alerted + slowReceipts > 0)
                 {
-                    _logger.LogInformation("Hết hạn {Expired} đơn, cảnh báo {Alerted} đơn quá hạn xác nhận, {Receipts} bill chậm duyệt.",
-                        expired, alerted, slowReceipts);
+                    _logger.LogInformation("Hết hạn {Expired} đơn và {Requests} yêu cầu đổi, cảnh báo {Alerted} đơn quá hạn xác nhận, {Receipts} bill chậm duyệt.",
+                        expired, expiredRequests, alerted, slowReceipts);
                 }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
