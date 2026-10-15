@@ -9,6 +9,7 @@ using HomestayBooking.Web.Models;
 using HomestayBooking.Web.Models.Entities;
 using HomestayBooking.Web.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
@@ -56,7 +57,9 @@ public sealed class OwnerBookingTests : IDisposable
         {
             User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(AppClaimTypes.PersonId, personId.ToString())], "test")),
         };
-        return new OwnerBookingsController(_host.Db, _host.Bookings(), localizer.Object, _host.Clock)
+        return new OwnerBookingsController(_host.Db, _host.Bookings(), localizer.Object, _host.Clock,
+            new ChangeRequestUiService(_host.Db, _host.Changes(), new EphemeralDataProtectionProvider(), _host.Clock,
+                Microsoft.Extensions.Options.Options.Create(_host.Options)))
         {
             ControllerContext = new ControllerContext { HttpContext = http },
             TempData = new TempDataDictionary(http, Mock.Of<ITempDataProvider>()),

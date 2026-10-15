@@ -44,8 +44,14 @@ public static class VietnamTime
 /// <summary>Lỗi nghiệp vụ có thông báo hiển thị được cho người dùng (là khóa trong SharedResource).</summary>
 public class BookingException : Exception
 {
-    public BookingException(string message) : base(message)
+    public string ResourceKey { get; }
+    public object[] Arguments { get; }
+
+    public BookingException(string message, params object[] arguments)
+        : base(arguments.Length == 0 ? message : string.Format(System.Globalization.CultureInfo.InvariantCulture, message, arguments))
     {
+        ResourceKey = message;
+        Arguments = arguments;
     }
 }
 

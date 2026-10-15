@@ -1,0 +1,9 @@
+@using HomestayBooking.Web.Services
+@model BookingChangeQuote
+<dl class="row mb-3">
+    <dt class="col-sm-6">@L["Tổng tiền mới"]</dt><dd class="col-sm-6" data-quote-total="@Model.NewTotalAmount">@Model.NewTotalAmount.ToString("N0")đ</dd>
+    <dt class="col-sm-6">@L["Phí đổi"]</dt><dd class="col-sm-6">@Model.ChangeFee.ToString("N0")đ</dd>
+    <dt class="col-sm-6">@L["Cọc chuyển sang"]</dt><dd class="col-sm-6">@Model.DepositCarriedOver.ToString("N0")đ</dd>
+    <dt class="col-sm-6">@L["Tiền phải nộp thêm"]</dt><dd class="col-sm-6">@Model.AdditionalDeposit.ToString("N0")đ</dd>
+    @if (Model.RefundAmount is { } refund) { <dt class="col-sm-6">@L["Tiền hoàn khi hủy"]</dt><dd class="col-sm-6">@refund.ToString("N0")đ</dd> }
+</dl>

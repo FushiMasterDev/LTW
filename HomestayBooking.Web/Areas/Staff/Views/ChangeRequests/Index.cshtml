@@ -1,0 +1,10 @@
+@model PaginatedList<Booking>
+@{ ViewData["Title"] = L["Gửi yêu cầu thay khách"]; }
+<partial name="_PageHead" model="@(new PageHeadModel(L["Gửi yêu cầu thay khách"], "bi-arrow-repeat", "tone-sky", L["Tìm đơn theo mã hoặc số điện thoại để đổi/hủy thay khách."], ShowCreate: false))" />
+<form method="get" class="d-flex gap-2 mb-3"><label for="q" class="visually-hidden">@L["Mã đơn hoặc số điện thoại"]</label><input class="form-control" id="q" name="q" value="@ViewData["Query"]" placeholder="@L["Mã đơn hoặc số điện thoại"]" /><button class="btn btn-brand">@L["Tìm kiếm"]</button></form>
+@if (Model.Count == 0) { <div class="card-soft p-3"><partial name="_EmptyState" /></div> }
+@foreach (var b in Model)
+{
+    <article class="card-soft p-3 mb-3"><strong>@b.Code · @b.Homestay.Name</strong><p>@b.ContactName · @b.ContactPhone · @b.RoomType.Name · @b.CheckIn.ToString("dd/MM/yyyy") – @b.CheckOut.ToString("dd/MM/yyyy")</p><a asp-action="Create" asp-route-id="@b.Id" class="btn btn-outline-primary">@L["Đổi / hủy thay khách"]</a></article>
+}
+<partial name="_Pager" model="Model" />

@@ -1,0 +1,39 @@
+@using HomestayBooking.Web.Services
+@model BookingDetailsViewModel
+@{
+    var changes = Model.ChangeRequests;
+    var b = Model.Booking;
+}
+<section class="mb-4" aria-labelledby="changeTitle">
+    <h2 class="h5" id="changeTitle">@L["Yêu cầu đổi"]</h2>
+    @if (b.DiscountAmount > 0 && b.Status is BookingStatus.Deposited or BookingStatus.Confirmed)
+    { <p class="alert tone-amber">@L["Đơn dùng voucher, vui lòng liên hệ nhân viên"]</p> }
+    @if (changes?.CanChange == true)
+    { <a class="btn btn-outline-primary mb-3" asp-action="Change" asp-route-id="@b.Code">@L["Đổi ngày / loại phòng"]</a> }
+    @if (changes is not null)
+    {
+        <partial name="_ChangeHistory" model="changes.History" />
+        @if (changes.QrUrl is { } qr && changes.PaymentRequestId is { } requestId)
+        {
+            var content = $"CR{requestId} {b.Code}";
+            var request = changes.History.Single(h => h.Request.Id == requestId).Request;
+            <div class="card-soft p-3" data-additional-payment="@requestId">
+                <h3 class="h6">@L["Nộp cọc bổ sung"] · CR@(requestId)</h3>
+                <p>@L["Số tiền"]: <strong>@request.AdditionalDeposit?.ToString("N0")đ</strong> · @L["Nội dung chuyển khoản"]: <strong>@content</strong></p>
+                <p>@L["Ngân hàng"]: @Model.Bank.BankCode · @Model.Bank.AccountNumber · @Model.Bank.AccountName</p>
+                <p>@L["Hạn nộp"]: @VietnamTime.ToLocal(changes.PaymentDeadline!.Value).ToString("HH:mm dd/MM/yyyy")
+                    · <strong data-change-countdown data-expires="@DateTime.SpecifyKind(changes.PaymentDeadline.Value, DateTimeKind.Utc).ToString("o")">--:--</strong></p>
+                <img src="@qr" alt="@L["Mã QR cọc bổ sung"]" width="270" height="320" class="qr-image" />
+                <p class="small text-muted">@L["Giữ đúng mã CR và số tiền. Kế toán sẽ xác nhận khoản nộp; đơn chưa đổi ngay."]</p>
+                <form asp-action="UploadChangeReceipt" asp-route-id="@b.Code" method="post" enctype="multipart/form-data">
+                    <input name="requestId" value="@requestId" type="hidden" />
+                    <label for="changeReceipt" class="form-label">@L["Ảnh bill (JPG, PNG, WEBP, tối đa 5MB)"]</label>
+                    <input type="file" name="receipt" id="changeReceipt" class="form-control mb-2" accept="image/jpeg,image/png,image/webp" required />
+                    <label for="changeContent" class="form-label">@L["Nội dung chuyển khoản"]</label>
+                    <input name="transferContent" id="changeContent" class="form-control mb-2" value="@content" maxlength="200" />
+                    <button class="btn btn-brand" type="submit">@L["Gửi ảnh bill"]</button>
+                </form>
+            </div>
+        }
+    }
+</section>

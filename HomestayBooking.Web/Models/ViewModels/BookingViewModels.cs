@@ -62,6 +62,7 @@ public class BookingLookupViewModel
 
 public class BookingDetailsViewModel
 {
+    public CustomerChangeRequests? ChangeRequests { get; init; }
     public Booking Booking { get; init; } = null!;
     public string? QrImageUrl { get; init; }
     public BankAccountOptions Bank { get; init; } = new();

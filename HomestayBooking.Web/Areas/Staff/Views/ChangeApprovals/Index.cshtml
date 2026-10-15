@@ -1,0 +1,22 @@
+@using HomestayBooking.Web.Services
+@model PaginatedList<ChangeRequestHistoryRow>
+@{ ViewData["Title"] = L["Duyệt yêu cầu đổi/hủy"]; }
+<partial name="_PageHead" model="@(new PageHeadModel(L["Duyệt yêu cầu đổi/hủy"], "bi-calendar-check", "tone-amber", L["Quản lý duyệt nghiệp vụ; khoản nộp thêm do kế toán xác nhận."], ShowCreate: false))" />
+@if (Model.Count == 0) { <div class="card-soft p-3"><partial name="_EmptyState" /></div> }
+@foreach (var row in Model)
+{
+    var r = row.Request;
+    <section class="card-soft p-3 mb-3" data-approval="@r.Id">
+        <h2 class="h6">@r.Booking.Code · @r.Booking.Homestay.Name</h2>
+        <p class="small">@L["Người gửi"]: @(r.RequestedByAccount?.Person.FullName ?? r.RequestedByAccount?.UserName ?? "—")</p>
+        <partial name="_ChangeHistory" model="@(new List<ChangeRequestHistoryRow> { row })" />
+        @if (row.IsLegacy) { <p class="alert tone-amber">@L["Yêu cầu cũ, cần gửi lại"]</p> }
+        else
+        {
+            <partial name="_ChangeQuote" model="@(new BookingChangeQuote(r.NewTotalAmount!.Value, r.ChangeFee!.Value, r.DepositCarriedOver!.Value, 0, r.AdditionalDeposit!.Value, r.RefundAmount, null))" />
+            <form asp-action="Approve" asp-route-id="@r.Id" method="post" class="d-flex gap-2 mb-2"><label class="visually-hidden" for="approve-@r.Id">@L["Ghi chú duyệt"]</label><input id="approve-@r.Id" name="Note" class="form-control" required maxlength="500" placeholder="@L["Ghi chú duyệt"]" /><button class="btn btn-success" type="submit">@L["Duyệt"]</button></form>
+        }
+        <form asp-action="Reject" asp-route-id="@r.Id" method="post" class="d-flex gap-2"><label class="visually-hidden" for="reject-@r.Id">@L["Lý do từ chối"]</label><input id="reject-@r.Id" name="Note" class="form-control" required maxlength="500" placeholder="@L["Lý do từ chối"]" /><button class="btn btn-outline-danger" type="submit">@L["Từ chối"]</button></form>
+    </section>
+}
+<partial name="_Pager" model="Model" />

@@ -24,13 +24,15 @@ public class BookingsController : Controller
     private readonly BookingService _bookings;
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly TimeProvider _clock;
+    private readonly ChangeRequestUiService _changeUi;
 
-    public BookingsController(ApplicationDbContext db, BookingService bookings, IStringLocalizer<SharedResource> localizer, TimeProvider clock)
+    public BookingsController(ApplicationDbContext db, BookingService bookings, IStringLocalizer<SharedResource> localizer, TimeProvider clock, ChangeRequestUiService changeUi)
     {
         _db = db;
         _bookings = bookings;
         _localizer = localizer;
         _clock = clock;
+        _changeUi = changeUi;
     }
 
     private IQueryable<Booking> OwnBookings()
@@ -95,7 +97,8 @@ public class BookingsController : Controller
             .OrderBy(r => r.RoomCode)
             .Select(r => new OwnerRoomOption(r.Id, r.RoomCode))
             .ToListAsync();
-        return View(new OwnerBookingDetailsViewModel(booking, freeRooms, VietnamTime.Today(_clock)));
+        var history = await _changeUi.HistoryAsync([booking.Id]);
+        return View(new OwnerBookingDetailsViewModel(booking, freeRooms, VietnamTime.Today(_clock)) { ChangeHistory = history });
     }
 
     [HttpPost]
@@ -160,4 +163,7 @@ public record OwnerBookingRow(
 
 public record OwnerRoomOption(int Id, string RoomCode);
 
-public record OwnerBookingDetailsViewModel(Booking Booking, List<OwnerRoomOption> FreeRooms, DateOnly Today);
+public record OwnerBookingDetailsViewModel(Booking Booking, List<OwnerRoomOption> FreeRooms, DateOnly Today)
+{
+    public List<HomestayBooking.Web.Models.ViewModels.ChangeRequestHistoryRow> ChangeHistory { get; init; } = [];
+}

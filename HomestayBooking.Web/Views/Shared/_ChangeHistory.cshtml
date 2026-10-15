@@ -1,0 +1,20 @@
+@using HomestayBooking.Web.Services
+@model IReadOnlyList<ChangeRequestHistoryRow>
+@foreach (var row in Model)
+{
+    var r = row.Request;
+    <article class="card-soft p-3 mb-3" data-change-request="@r.Id" data-status="@r.Status">
+        <div class="d-flex justify-content-between gap-2 mb-2"><strong>CR@(r.Id) · @L[r.RequestType.DisplayName()]</strong><span class="badge-tone tone-sky">@L[r.Status.DisplayName()]</span></div>
+        <p class="small mb-1">@L["Gửi lúc"]: @VietnamTime.ToLocal(r.CreatedAt).ToString("HH:mm dd/MM/yyyy")</p>
+        <p class="mb-1">@L["Lịch cũ"]: @if (row.OldCheckIn is { } ci && row.OldCheckOut is { } co) { <span>@ci.ToString("dd/MM/yyyy") – @co.ToString("dd/MM/yyyy") · @row.OldRoomType</span> } else { <span>@L["Không có dữ liệu lịch cũ"]</span> }</p>
+        @if (r.RequestType != ChangeRequestType.Cancel)
+        {
+            <p class="mb-1">@L["Lịch mới"]: @((r.NewCheckIn ?? row.OldCheckIn)?.ToString("dd/MM/yyyy") ?? "—") – @((r.NewCheckOut ?? row.OldCheckOut)?.ToString("dd/MM/yyyy") ?? "—") · @(row.NewRoomType ?? "—")</p>
+        }
+        @if (r.Status == ChangeRequestStatus.Pending) { <p class="small mb-0">@L["Yêu cầu đang chờ quản lý duyệt nghiệp vụ."]</p> }
+        @if (r.Status == ChangeRequestStatus.AwaitingPayment) { <p class="small mb-0">@L[r.Payments.Any(p => p.Status is PaymentStatus.Submitted or PaymentStatus.Approved) ? "Đã nộp cọc bổ sung, chờ kế toán xác nhận." : "Đang chờ khách nộp cọc bổ sung."]</p> }
+        @if (r.Status == ChangeRequestStatus.Applied) { <p class="small mb-0">@L["Yêu cầu đã được áp dụng trên đơn này."]</p> }
+        @if (r.Status == ChangeRequestStatus.Expired) { <p class="small mb-0">@L["Đã hết hạn nộp thêm tiền; lịch đặt ban đầu được giữ nguyên."]</p> }
+        @if (r.Status == ChangeRequestStatus.Rejected) { <p class="small text-danger mb-0">@L["Lý do từ chối"]: @L[r.RejectionReason ?? r.DecisionNote ?? "—"]</p> }
+    </article>
+}

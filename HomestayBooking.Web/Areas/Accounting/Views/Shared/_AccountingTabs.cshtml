@@ -1,3 +1,4 @@
+@using HomestayBooking.Web.Identity
 @* Thanh tab chung của khu Kế toán, kèm số việc đang chờ (AccountingController.LoadCountsAsync) *@
 @{
     var counts = ViewData["Counts"] as AccountingCounts;
@@ -5,13 +6,14 @@
     var tabs = new (string Controller, string Label, string Icon, int? Count)[]
     {
         ("Dashboard", L["Tổng quan"], "bi-speedometer2", null),
+        ("AdditionalDeposits", L["Cọc bổ sung"], "bi-wallet2", counts?.PendingAdditionalDeposits),
         ("Receipts", L["Bill chờ duyệt"], "bi-receipt", counts?.PendingReceipts),
         ("Transactions", L["Giao dịch cần xử lý"], "bi-bank", counts?.OpenTransactions),
         ("Refunds", L["Chờ hoàn tiền"], "bi-arrow-counterclockwise", counts?.PendingRefunds),
     };
 }
 <nav class="accounting-tabs mb-4" aria-label="@L["Kế toán"]">
-    @foreach (var tab in tabs)
+    @foreach (var tab in tabs.Where(t => t.Controller != "AdditionalDeposits" || (User.IsInRole(AppRoles.Employee) && User.EmployeePosition() == EmployeePosition.Accountant)))
     {
         var active = tab.Controller == controller;
         <a class="accounting-tab @(active ? "active" : "")" asp-area="Accounting" asp-controller="@tab.Controller" asp-action="Index"

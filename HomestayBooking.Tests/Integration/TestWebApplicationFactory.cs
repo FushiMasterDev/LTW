@@ -1,4 +1,6 @@
 using System.Net;
+using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
 using HomestayBooking.Web.BackgroundJobs;
 using HomestayBooking.Web.Data;
@@ -11,6 +13,8 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using HomestayBooking.Web.Services;
+using Microsoft.Extensions.FileProviders;
 
 namespace HomestayBooking.Tests.Integration;
 
@@ -23,6 +27,7 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly string _databaseName = "it-" + Guid.NewGuid();
     private readonly InMemoryDatabaseRoot _databaseRoot = new();
+    public ConcurrentQueue<Exception> Errors { get; } = new();
 
     public TestWebApplicationFactory()
     {
@@ -41,11 +46,16 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
         }
 
         builder.UseEnvironment("Testing");
+        builder.ConfigureLogging(logging => logging.AddProvider(new ErrorCapture(Errors)));
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
             services.RemoveAll<IDbContextOptionsConfiguration<ApplicationDbContext>>();
             services.AddDbContext<ApplicationDbContext>(o => o.UseInMemoryDatabase(_databaseName, _databaseRoot));
+
+            // Ảnh bill của test nằm trong thư mục tạm, không ghi vào biên lai của app người dùng.
+            services.RemoveAll<ReceiptFileStore>();
+            services.AddSingleton(sp => new ReceiptFileStore(new ReceiptEnvironment(sp.GetRequiredService<IWebHostEnvironment>())));
 
             // Job mỗi phút đổi trạng thái đơn trong nền → làm test không ổn định
             var job = services.Single(d => d.ServiceType == typeof(IHostedService) && d.ImplementationType == typeof(BookingTimeoutJob));
@@ -88,4 +98,27 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
     public Task<HttpClient> SignInByPhoneAsync(string phone) => SignInAsync("/Account/Login", "PhoneNumber", phone);
 
     public Task<HttpClient> SignInEmployeeAsync(string code) => SignInAsync("/Account/EmployeeLogin", "EmployeeCode", code);
+    private sealed class ReceiptEnvironment(IWebHostEnvironment source) : IWebHostEnvironment
+    {
+        public string EnvironmentName { get; set; } = source.EnvironmentName;
+        public string ApplicationName { get; set; } = source.ApplicationName;
+        public string ContentRootPath { get; set; } = Path.Combine(Path.GetTempPath(), "LTW-receipt-test-" + Guid.NewGuid().ToString("N"));
+        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
+        public string WebRootPath { get; set; } = source.WebRootPath;
+        public IFileProvider WebRootFileProvider { get; set; } = source.WebRootFileProvider;
+    }
+
+    private sealed class ErrorCapture(ConcurrentQueue<Exception> errors) : ILoggerProvider
+    {
+        public ILogger CreateLogger(string categoryName) => new CaptureLogger(errors);
+        public void Dispose() { }
+        private sealed class CaptureLogger(ConcurrentQueue<Exception> errors) : ILogger
+        {
+            public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+            public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Error;
+            public void Log<TState>(LogLevel level, EventId id, TState state, Exception? error, Func<TState, Exception?, string> formatter)
+            { if (level >= LogLevel.Error && error is not null) errors.Enqueue(error); }
+        }
+    }
+
 }

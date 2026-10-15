@@ -36,6 +36,7 @@ public abstract class AccountingController : Controller
             await accounting.InitialDepositReceipts().CountAsync(),
             await Db.BankTransactions.CountAsync(t => AccountingService.OpenStatuses.Contains(t.MatchStatus)),
             await refunds.CountAsync(),
-            await refunds.SumAsync(b => b.RefundAmount ?? 0));
+            await refunds.SumAsync(b => b.RefundAmount ?? 0),
+            await accounting.PendingAdditionalDeposits().CountAsync());
     }
 }
