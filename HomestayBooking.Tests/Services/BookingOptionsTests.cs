@@ -29,3 +29,28 @@ public sealed class BookingOptionsTests
         }
     }
 }
+
+public sealed class BookingChangeOptionsTests
+{
+    [Theory]
+    [InlineData(nameof(BookingOptions.ChangeMinDaysBefore), 1, 90)]
+    [InlineData(nameof(BookingOptions.MaxChangesPerBooking), 1, 10)]
+    [InlineData(nameof(BookingOptions.ChangeWindowDays), 1, 365)]
+    public void ChangeLimitsValidateInvariantBoundaries(string property, int min, int max)
+    {
+        var previous = CultureInfo.CurrentCulture;
+        try
+        {
+            foreach (var culture in new[] { "vi-VN", "en-US" })
+            foreach (var value in new[] { min - 1, min, max, max + 1 })
+            {
+                CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(culture);
+                var options = new BookingOptions();
+                typeof(BookingOptions).GetProperty(property)!.SetValue(options, value);
+                var result = new DataAnnotationValidateOptions<BookingOptions>(Options.DefaultName).Validate(Options.DefaultName, options);
+                Assert.Equal(value >= min && value <= max, result.Succeeded);
+            }
+        }
+        finally { CultureInfo.CurrentCulture = previous; }
+    }
+}

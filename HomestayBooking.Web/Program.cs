@@ -56,6 +56,12 @@ builder.Services.AddAuthorizationBuilder()
         .RequireRole(AppRoles.Owner)
         .RequireClaim(AppClaimTypes.OwnerApproved, "true"));
 
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy(AppPolicies.ChangeRequestApprove, p => p.RequireRole(AppRoles.Employee)
+        .RequireClaim(AppClaimTypes.EmployeePosition, nameof(EmployeePosition.Manager)))
+    .AddPolicy(AppPolicies.ChangeRequestFinance, p => p.RequireRole(AppRoles.Employee)
+        .RequireClaim(AppClaimTypes.EmployeePosition, nameof(EmployeePosition.Accountant)));
+
 builder.Services.AddScoped<AccountLookupService>();
 builder.Services.AddScoped<AccountActivityLogger>();
 
@@ -74,6 +80,7 @@ builder.Services.AddScoped<RefundService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<VoucherService>();
 builder.Services.AddScoped<BookingService>();
+builder.Services.AddScoped<BookingChangeRequestService>();
 builder.Services.AddScoped<BankMatchingService>();
 builder.Services.AddScoped<ReceiptReviewService>();
 builder.Services.AddScoped<VietQrService>();

@@ -70,6 +70,18 @@ public class BookingOptions
     [Range(typeof(decimal), "0.0001", "1", ParseLimitsInInvariantCulture = true)]
     public decimal DepositRate { get; set; } = 0.30m;
 
+    /// <summary>Số ngày tối thiểu trước ngày nhận phòng cũ để được đổi.</summary>
+    [Range(typeof(int), "1", "90", ParseLimitsInInvariantCulture = true)]
+    public int ChangeMinDaysBefore { get; set; } = 3;
+
+    /// <summary>Số yêu cầu đổi đã áp dụng tối đa trên chính đơn.</summary>
+    [Range(typeof(int), "1", "10", ParseLimitsInInvariantCulture = true)]
+    public int MaxChangesPerBooking { get; set; } = 2;
+
+    /// <summary>Ngày nhận/trả phòng mới phải nằm trong số ngày này kể từ lúc gửi.</summary>
+    [Range(typeof(int), "1", "365", ParseLimitsInInvariantCulture = true)]
+    public int ChangeWindowDays { get; set; } = 90;
+
     /// <summary>Số đơn chờ thanh toán tối đa của một khách (chống giữ phòng ảo).</summary>
     public int MaxAwaitingPerCustomer { get; set; } = 3;
 

@@ -4,6 +4,7 @@ using HomestayBooking.Web.Models.Entities;
 using HomestayBooking.Web.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Options;
 
 namespace HomestayBooking.Tests.Services;
@@ -40,9 +41,9 @@ public sealed class BookingTestHost : IDisposable
     public CancellationPolicy GeneralPolicy { get; }
     public CancellationPolicy HomestayHolidayPolicy { get; }
 
-    public BookingTestHost()
+    public BookingTestHost(string? connectionString = null)
     {
-        _connection = new SqliteConnection("DataSource=:memory:");
+        _connection = new SqliteConnection(connectionString ?? "DataSource=:memory:");
         _connection.Open();
         Db = NewContext();
         Db.Database.EnsureCreated();
@@ -97,8 +98,19 @@ public sealed class BookingTestHost : IDisposable
     }
 
     /// <summary>Context mới trên cùng CSDL — mô phỏng một request khác.</summary>
-    public ApplicationDbContext NewContext() =>
-        new SqliteTestDbContext(new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlite(_connection).Options);
+    public ApplicationDbContext NewContext(params IInterceptor[] interceptors) =>
+        new SqliteTestDbContext(new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlite(_connection).AddInterceptors(interceptors).Options);
+
+    /// <summary>Kết nối độc lập, chỉ dùng khi host được dựng với SQLite file tạm để thử cạnh tranh.</summary>
+    public ApplicationDbContext NewIndependentContext() =>
+        new SqliteTestDbContext(new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlite(_connection.ConnectionString).Options);
+
+    public BookingChangeRequestService Changes(ApplicationDbContext? db = null)
+    {
+        db ??= Db;
+        return new(db, Pricing(db), Refunds(db), Bookings(db), new NotificationService(db), Clock,
+            Microsoft.Extensions.Options.Options.Create(Options));
+    }
 
     public PricingService Pricing(ApplicationDbContext? db = null) => new(db ?? Db, Microsoft.Extensions.Options.Options.Create(Options));
 
