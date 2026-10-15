@@ -29,7 +29,8 @@ public enum PaymentType
 {
     Deposit,      // Cọc
     Refund,       // Hoàn cọc
-    Compensation  // Fuji bù chênh lệch khi trùng phòng (BR-11)
+    Compensation, // Fuji bù chênh lệch khi trùng phòng (BR-11)
+    AdditionalDeposit // Cọc bổ sung của một yêu cầu đổi
 }
 
 public enum PaymentMethod
@@ -119,14 +120,17 @@ public enum ChangeRequestType
 {
     ChangeDates,
     ChangeRoomType,
+    ChangeDatesAndRoomType,
     Cancel
 }
 
 public enum ChangeRequestStatus
 {
     Pending,
-    Approved,
-    Rejected
+    AwaitingPayment,
+    Applied,
+    Rejected,
+    Expired
 }
 
 public enum SettlementStatus

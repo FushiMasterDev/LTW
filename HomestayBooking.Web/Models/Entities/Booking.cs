@@ -71,6 +71,8 @@ public class Booking
 
     public decimal DepositRate { get; set; } = 0.30m;
     public decimal DepositAmount { get; set; }
+    /// <summary>Phí đổi ngày cộng dồn của những yêu cầu đã áp dụng.</summary>
+    public decimal ChangeFeeAmount { get; set; }
     public decimal CommissionRate { get; set; }
     public int CancellationPolicyId { get; set; }
 

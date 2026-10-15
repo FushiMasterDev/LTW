@@ -1919,3 +1919,374 @@ END;
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [RoomNights] ADD [BookingChangeRequestId] int NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [Payments] ADD [ChangeRequestId] int NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [Bookings] ADD [ChangeFeeAmount] decimal(18,0) NOT NULL DEFAULT 0.0;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [BookingChangeRequests] ADD [AdditionalDeposit] decimal(18,0) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [BookingChangeRequests] ADD [ChangeFee] decimal(18,0) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [BookingChangeRequests] ADD [DepositCarriedOver] decimal(18,0) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [BookingChangeRequests] ADD [FinanceConfirmedAt] datetime2 NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [BookingChangeRequests] ADD [FinanceConfirmedByAccountId] nvarchar(450) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [BookingChangeRequests] ADD [FinanceNote] nvarchar(500) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [BookingChangeRequests] ADD [NewRoomId] int NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [BookingChangeRequests] ADD [NewTotalAmount] decimal(18,0) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [BookingChangeRequests] ADD [PaymentDeadlineAt] datetime2 NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [BookingChangeRequests] ADD [RejectionReason] nvarchar(500) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [BookingChangeRequests] ADD [RequestedByAccountId] nvarchar(450) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    DECLARE @var1 nvarchar(max);
+    SELECT @var1 = QUOTENAME([d].[name])
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[BookingChangeRequests]') AND [c].[name] = N'RequestType');
+    IF @var1 IS NOT NULL EXEC(N'ALTER TABLE [BookingChangeRequests] DROP CONSTRAINT ' + @var1 + ';');
+    ALTER TABLE [BookingChangeRequests] ALTER COLUMN [RequestType] nvarchar(32) NOT NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [BookingChangeRequests] ADD CONSTRAINT [FK_BookingChangeRequests_AspNetUsers_FinanceConfirmedByAccountId] FOREIGN KEY ([FinanceConfirmedByAccountId]) REFERENCES [AspNetUsers] ([Id]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [BookingChangeRequests] ADD CONSTRAINT [FK_BookingChangeRequests_AspNetUsers_RequestedByAccountId] FOREIGN KEY ([RequestedByAccountId]) REFERENCES [AspNetUsers] ([Id]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [BookingChangeRequests] ADD CONSTRAINT [FK_BookingChangeRequests_Rooms_NewRoomId] FOREIGN KEY ([NewRoomId]) REFERENCES [Rooms] ([Id]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [Payments] ADD CONSTRAINT [FK_Payments_BookingChangeRequests_ChangeRequestId] FOREIGN KEY ([ChangeRequestId]) REFERENCES [BookingChangeRequests] ([Id]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [RoomNights] ADD CONSTRAINT [FK_RoomNights_BookingChangeRequests_BookingChangeRequestId] FOREIGN KEY ([BookingChangeRequestId]) REFERENCES [BookingChangeRequests] ([Id]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [RoomNights] DROP CONSTRAINT [CK_RoomNights_Owner];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [BookingChangeRequests] DROP CONSTRAINT [CK_BookingChangeRequests_Decision];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [BookingChangeRequests] DROP CONSTRAINT [CK_BookingChangeRequests_Fields];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [BookingChangeRequests] DROP CONSTRAINT [CK_BookingChangeRequests_Status];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    ALTER TABLE [BookingChangeRequests] DROP CONSTRAINT [CK_BookingChangeRequests_Type];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    UPDATE [BookingChangeRequests] SET [Status] = 'Applied' WHERE [Status] = 'Approved';
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [BookingChangeRequests] ADD CONSTRAINT [CK_BookingChangeRequests_Type] CHECK ([RequestType] IN (''ChangeDates'', ''ChangeRoomType'', ''ChangeDatesAndRoomType'', ''Cancel''))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [BookingChangeRequests] ADD CONSTRAINT [CK_BookingChangeRequests_Status] CHECK ([Status] IN (''Pending'', ''AwaitingPayment'', ''Applied'', ''Rejected'', ''Expired''))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [BookingChangeRequests] ADD CONSTRAINT [CK_BookingChangeRequests_Fields] CHECK (([RequestType] = ''Cancel'' AND [NewCheckIn] IS NULL AND [NewCheckOut] IS NULL AND [NewRoomTypeId] IS NULL) OR ([RequestType] = ''ChangeDates'' AND [NewCheckIn] IS NOT NULL AND [NewCheckOut] IS NOT NULL AND [NewCheckOut] > [NewCheckIn] AND [NewRoomTypeId] IS NULL) OR ([RequestType] = ''ChangeRoomType'' AND [NewRoomTypeId] IS NOT NULL AND [NewCheckIn] IS NULL AND [NewCheckOut] IS NULL) OR ([RequestType] = ''ChangeDatesAndRoomType'' AND [NewRoomTypeId] IS NOT NULL AND [NewCheckIn] IS NOT NULL AND [NewCheckOut] IS NOT NULL AND [NewCheckOut] > [NewCheckIn]))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [BookingChangeRequests] ADD CONSTRAINT [CK_BookingChangeRequests_Decision] CHECK (([Status] = ''Pending'' AND [DecidedByAccountId] IS NULL AND [DecidedAt] IS NULL) OR ([Status] <> ''Pending'' AND [DecidedByAccountId] IS NOT NULL AND [DecidedAt] IS NOT NULL))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [RoomNights] ADD CONSTRAINT [CK_RoomNights_Owner] CHECK (([BookingId] IS NOT NULL AND [RoomBlockId] IS NULL AND [BookingChangeRequestId] IS NULL) OR ([BookingId] IS NULL AND [RoomBlockId] IS NOT NULL AND [BookingChangeRequestId] IS NULL) OR ([BookingId] IS NULL AND [RoomBlockId] IS NULL AND [BookingChangeRequestId] IS NOT NULL))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [Payments] ADD CONSTRAINT [CK_Payments_ChangeRequest] CHECK (([Type] = ''AdditionalDeposit'' AND [ChangeRequestId] IS NOT NULL) OR ([Type] <> ''AdditionalDeposit'' AND [ChangeRequestId] IS NULL))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [Bookings] ADD CONSTRAINT [CK_Bookings_ChangeFeeAmount] CHECK ([ChangeFeeAmount] >= 0)');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [BookingChangeRequests] ADD CONSTRAINT [CK_BookingChangeRequests_ActorSeparation] CHECK (([RequestedByAccountId] IS NULL OR [DecidedByAccountId] IS NULL OR [RequestedByAccountId] <> [DecidedByAccountId]) AND ([RequestedByAccountId] IS NULL OR [FinanceConfirmedByAccountId] IS NULL OR [RequestedByAccountId] <> [FinanceConfirmedByAccountId]) AND ([DecidedByAccountId] IS NULL OR [FinanceConfirmedByAccountId] IS NULL OR [DecidedByAccountId] <> [FinanceConfirmedByAccountId]))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [BookingChangeRequests] ADD CONSTRAINT [CK_BookingChangeRequests_Amounts] CHECK (([ChangeFee] IS NULL OR [ChangeFee] >= 0) AND ([DepositCarriedOver] IS NULL OR [DepositCarriedOver] >= 0) AND ([AdditionalDeposit] IS NULL OR [AdditionalDeposit] >= 0) AND ([NewTotalAmount] IS NULL OR [NewTotalAmount] >= 0) AND ([RefundAmount] IS NULL OR [RefundAmount] >= 0))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [BookingChangeRequests] ADD CONSTRAINT [CK_BookingChangeRequests_Finance] CHECK (([Status] = ''Applied'' AND [AdditionalDeposit] IS NOT NULL AND [AdditionalDeposit] > 0 AND [FinanceConfirmedByAccountId] IS NOT NULL AND [FinanceConfirmedAt] IS NOT NULL AND [FinanceConfirmedAt] >= [DecidedAt] AND [FinanceNote] IS NOT NULL AND [FinanceNote] <> '''') OR (([Status] <> ''Applied'' OR [AdditionalDeposit] IS NULL OR [AdditionalDeposit] = 0) AND [FinanceConfirmedByAccountId] IS NULL AND [FinanceConfirmedAt] IS NULL AND [FinanceNote] IS NULL))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [BookingChangeRequests] ADD CONSTRAINT [CK_BookingChangeRequests_Notes] CHECK (([Status] = ''Pending'' OR ([DecisionNote] IS NOT NULL AND [DecisionNote] <> '''')) AND ([Status] <> ''Rejected'' OR ([RejectionReason] IS NOT NULL AND [RejectionReason] <> '''') OR ([RejectionReason] IS NULL AND [DecisionNote] IS NOT NULL AND [DecisionNote] <> '''')))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [BookingChangeRequests] ADD CONSTRAINT [CK_BookingChangeRequests_PaymentDeadline] CHECK (([Status] = ''Pending'' AND [PaymentDeadlineAt] IS NULL) OR ([Status] IN (''AwaitingPayment'', ''Expired'') AND [AdditionalDeposit] IS NOT NULL AND [AdditionalDeposit] > 0 AND [PaymentDeadlineAt] IS NOT NULL AND [PaymentDeadlineAt] > [DecidedAt]) OR ([Status] = ''Applied'' AND (([AdditionalDeposit] IS NULL AND [PaymentDeadlineAt] IS NULL) OR ([AdditionalDeposit] = 0 AND [PaymentDeadlineAt] IS NULL) OR ([AdditionalDeposit] > 0 AND [PaymentDeadlineAt] IS NOT NULL AND [PaymentDeadlineAt] > [DecidedAt]))) OR ([Status] = ''Rejected'' AND ([PaymentDeadlineAt] IS NULL OR ([AdditionalDeposit] IS NOT NULL AND [AdditionalDeposit] > 0 AND [PaymentDeadlineAt] > [DecidedAt]))))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    CREATE INDEX [IX_RoomNights_BookingChangeRequestId] ON [RoomNights] ([BookingChangeRequestId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    EXEC(N'CREATE UNIQUE INDEX [IX_Payments_OneAdditionalDepositPerChangeRequest] ON [Payments] ([ChangeRequestId]) WHERE [Type] = ''AdditionalDeposit'' AND [Status] <> ''Rejected''');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    CREATE INDEX [IX_BookingChangeRequests_FinanceConfirmedByAccountId] ON [BookingChangeRequests] ([FinanceConfirmedByAccountId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    CREATE INDEX [IX_BookingChangeRequests_NewRoomId] ON [BookingChangeRequests] ([NewRoomId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    EXEC(N'CREATE UNIQUE INDEX [IX_BookingChangeRequests_OneActivePerBooking] ON [BookingChangeRequests] ([BookingId]) WHERE [Status] IN (''Pending'', ''AwaitingPayment'')');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    CREATE INDEX [IX_BookingChangeRequests_RequestedByAccountId] ON [BookingChangeRequests] ([RequestedByAccountId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261015092139_ChangeRequestWorkflow'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261015092139_ChangeRequestWorkflow', N'10.0.12');
+END;
+
+COMMIT;
+GO
+

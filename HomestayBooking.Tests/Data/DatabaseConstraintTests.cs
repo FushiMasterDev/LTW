@@ -12,7 +12,7 @@ namespace HomestayBooking.Tests.Data;
 /// Kiểm tra các ràng buộc ở mức CSDL (khóa chính, unique index, filtered index, check constraint)
 /// theo fuji_homestay_database_v1.md, bằng SQLite in-memory vì EF Core InMemory không thực thi ràng buộc.
 /// </summary>
-public sealed class DatabaseConstraintTests : IDisposable
+public sealed partial class DatabaseConstraintTests : IDisposable
 {
     private readonly SqliteConnection _connection;
     private readonly ApplicationDbContext _db;
@@ -404,28 +404,27 @@ public sealed class DatabaseConstraintTests : IDisposable
         BookingId = bookingId,
         RequestType = type,
         RequestedByType = by,
-        NewCheckIn = type == ChangeRequestType.ChangeDates ? new DateOnly(2026, 12, 1) : null,
-        NewCheckOut = type == ChangeRequestType.ChangeDates ? new DateOnly(2026, 12, 3) : null,
+        NewCheckIn = type is ChangeRequestType.ChangeDates or ChangeRequestType.ChangeDatesAndRoomType ? new DateOnly(2026, 12, 1) : null,
+        NewCheckOut = type is ChangeRequestType.ChangeDates or ChangeRequestType.ChangeDatesAndRoomType ? new DateOnly(2026, 12, 3) : null,
     };
 
     [Theory]
     [InlineData("ChangeDates", true)]
     [InlineData("ChangeRoomType", true)]
+    [InlineData("ChangeDatesAndRoomType", true)]
     [InlineData("Cancel", true)]
     [InlineData("Unknown", false)]
     public async Task ChangeRequest_TypeIsKnown(string requestType, bool allowed)
     {
         var type = allowed ? Enum.Parse<ChangeRequestType>(requestType) : ChangeRequestType.Cancel;
         var request = Request(await SavedBookingIdAsync(), type);
-        request.NewRoomTypeId = type == ChangeRequestType.ChangeRoomType ? _roomType.Id : null;
+        request.NewRoomTypeId = type is ChangeRequestType.ChangeRoomType or ChangeRequestType.ChangeDatesAndRoomType ? _roomType.Id : null;
         await AssertAcceptedAsync(request);
 
         if (!allowed)
         {
             _db.ChangeTracker.Clear();
-            var ex = await Assert.ThrowsAsync<SqliteException>(() => _db.Database.ExecuteSqlInterpolatedAsync(
-                $"UPDATE [BookingChangeRequests] SET [RequestType] = {requestType} WHERE [Id] = {request.Id}"));
-            Assert.Contains("CK_BookingChangeRequests_Type", ex.Message);
+            await AssertEnumCheckAsync("CK_BookingChangeRequests_Type", "RequestType", type.ToString(), requestType);
             Assert.Equal(type, await _db.BookingChangeRequests.AsNoTracking()
                 .Where(r => r.Id == request.Id).Select(r => r.RequestType).SingleAsync());
         }
@@ -433,25 +432,26 @@ public sealed class DatabaseConstraintTests : IDisposable
 
     [Theory]
     [InlineData("Pending", true)]
-    [InlineData("Approved", true)]
+    [InlineData("Applied", true)]
+    [InlineData("AwaitingPayment", true)]
+    [InlineData("Expired", true)]
     [InlineData("Rejected", true)]
     [InlineData("Unknown", false)]
     public async Task ChangeRequest_StatusIsKnown(string statusValue, bool allowed)
     {
-        var status = allowed ? Enum.Parse<ChangeRequestStatus>(statusValue) : ChangeRequestStatus.Approved;
+        var status = allowed ? Enum.Parse<ChangeRequestStatus>(statusValue) : ChangeRequestStatus.Applied;
         var request = Request(await SavedBookingIdAsync(), ChangeRequestType.Cancel);
         request.Status = status;
-        // Có DecidedAt cho dòng Approved/Rejected: UPDATE Unknown chỉ vi phạm CHECK Status, không vi phạm Decision.
+        // Dòng hợp lệ kiểm trên schema đầy đủ; ca Unknown tách CHECK để tránh lỗi Deadline đồng thời.
         request.DecidedAt = status == ChangeRequestStatus.Pending
             ? null : new DateTime(2026, 11, 20, 3, 0, 0, DateTimeKind.Utc);
+        await PopulateDecisionAsync(request);
         await AssertAcceptedAsync(request);
 
         if (!allowed)
         {
             _db.ChangeTracker.Clear();
-            var ex = await Assert.ThrowsAsync<SqliteException>(() => _db.Database.ExecuteSqlInterpolatedAsync(
-                $"UPDATE [BookingChangeRequests] SET [Status] = {statusValue} WHERE [Id] = {request.Id}"));
-            Assert.Contains("CK_BookingChangeRequests_Status", ex.Message);
+            await AssertEnumCheckAsync("CK_BookingChangeRequests_Status", "Status", status.ToString(), statusValue);
             Assert.Equal(status, await _db.BookingChangeRequests.AsNoTracking()
                 .Where(r => r.Id == request.Id).Select(r => r.Status).SingleAsync());
         }
@@ -491,9 +491,12 @@ public sealed class DatabaseConstraintTests : IDisposable
     [InlineData(ChangeRequestType.ChangeDates, "2026-12-03", "2026-12-01", false, false)]
     [InlineData(ChangeRequestType.ChangeRoomType, null, null, true, true)]
     [InlineData(ChangeRequestType.ChangeRoomType, null, null, false, false)]
-    // Chưa chốt đổi kết hợp: trường thừa đang được cho phép có chủ đích
-    [InlineData(ChangeRequestType.ChangeDates, "2026-12-01", "2026-12-03", true, true)]
-    [InlineData(ChangeRequestType.ChangeRoomType, "2026-12-01", "2026-12-03", true, true)]
+    // Đổi kết hợp phải dùng loại yêu cầu riêng, không ghi trường thừa vào loại đơn.
+    [InlineData(ChangeRequestType.ChangeDates, "2026-12-01", "2026-12-03", true, false)]
+    [InlineData(ChangeRequestType.ChangeRoomType, "2026-12-01", "2026-12-03", true, false)]
+    [InlineData(ChangeRequestType.ChangeDatesAndRoomType, "2026-12-01", "2026-12-02", true, true)]
+    [InlineData(ChangeRequestType.ChangeDatesAndRoomType, "2026-12-01", "2026-12-02", false, false)]
+    [InlineData(ChangeRequestType.ChangeDatesAndRoomType, "2026-12-01", null, true, false)]
     public async Task ChangeRequest_FieldsMatchType(ChangeRequestType type, string? newIn, string? newOut, bool newRoomType, bool allowed)
     {
         var request = Request(await SavedBookingIdAsync(), type);
@@ -511,18 +514,18 @@ public sealed class DatabaseConstraintTests : IDisposable
         }
     }
 
-    // CK_BookingChangeRequests_Decision: chờ duyệt thì chưa có quyết định; đã quyết thì có thời điểm, người quyết chưa bắt buộc
+    // CK_BookingChangeRequests_Decision: chờ duyệt thì chưa có quyết định; đã quyết thì bắt buộc người và thời điểm
     [Theory]
     [InlineData(ChangeRequestStatus.Pending, false, false, true)]
     [InlineData(ChangeRequestStatus.Pending, true, false, false)]
     [InlineData(ChangeRequestStatus.Pending, false, true, false)]
     [InlineData(ChangeRequestStatus.Pending, true, true, false)]
-    [InlineData(ChangeRequestStatus.Approved, true, true, true)]
-    [InlineData(ChangeRequestStatus.Approved, true, false, true)]
-    [InlineData(ChangeRequestStatus.Approved, false, false, false)]
-    [InlineData(ChangeRequestStatus.Approved, false, true, false)]
+    [InlineData(ChangeRequestStatus.Applied, true, true, true)]
+    [InlineData(ChangeRequestStatus.Applied, true, false, false)]
+    [InlineData(ChangeRequestStatus.Applied, false, false, false)]
+    [InlineData(ChangeRequestStatus.Applied, false, true, false)]
     [InlineData(ChangeRequestStatus.Rejected, true, true, true)]
-    [InlineData(ChangeRequestStatus.Rejected, true, false, true)]
+    [InlineData(ChangeRequestStatus.Rejected, true, false, false)]
     [InlineData(ChangeRequestStatus.Rejected, false, false, false)]
     [InlineData(ChangeRequestStatus.Rejected, false, true, false)]
     public async Task ChangeRequest_DecisionMatchesStatus(ChangeRequestStatus status, bool hasDecidedAt, bool hasDecider, bool allowed)
@@ -533,6 +536,7 @@ public sealed class DatabaseConstraintTests : IDisposable
         request.Status = status;
         request.DecidedAt = hasDecidedAt ? new DateTime(2026, 11, 5, 3, 0, 0, DateTimeKind.Utc) : null;
         request.DecidedByAccountId = hasDecider ? decider.Id : null;
+        request.DecisionNote = "Quyết định thử.";
 
         if (allowed)
         {
