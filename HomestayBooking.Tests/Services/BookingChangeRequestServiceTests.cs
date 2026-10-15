@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace HomestayBooking.Tests.Services;
 
-public sealed class BookingChangeRequestServiceTests
+public sealed partial class BookingChangeRequestServiceTests
 {
     private sealed class Scenario : IDisposable
     {

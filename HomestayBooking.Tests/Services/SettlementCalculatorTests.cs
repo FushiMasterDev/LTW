@@ -114,4 +114,30 @@ public class SettlementCalculatorTests
         Assert.Equal(720_000, settlement.PayoutAmount);
         Assert.Equal(SettlementStatus.Draft, settlement.Status);
     }
+    [Theory]
+    [InlineData(BookingStatus.Completed, 0, 300000, 900000, 276000, 624000)]
+    [InlineData(BookingStatus.Cancelled, 600000, 300000, 300000, 36000, 264000)]
+    [InlineData(BookingStatus.Completed, 0, 600000, 1200000, 312000, 888000)]
+    [InlineData(BookingStatus.Rejected, 600000, 300000, 300000, 36000, 264000)]
+    [InlineData(BookingStatus.Expired, 0, 300000, 300000, 36000, 264000)]
+    public void ChangeFeesAreSharedWithoutDoubleCommission(BookingStatus status, int refund, int fee,
+        int retained, int commission, int payout)
+    {
+        var booking = Sample(status, refund); booking.ChangeFeeAmount = fee;
+        var item = SettlementCalculator.ItemFor(booking)!;
+        Assert.Equal(retained, item.RetainedAmount); Assert.Equal(commission, item.CommissionAmount);
+        Assert.Equal(payout, item.PayoutAmount); Assert.Equal(600_000 + fee, item.DepositAmount);
+        Assert.Equal(2_000_000, item.RoomAmount); Assert.Equal(refund, item.RefundAmount);
+    }
+
+    [Fact]
+    public void ChangeFeeCommissionRoundsAwayFromZeroAndDoesNotSettleAnOpenBooking()
+    {
+        var booking = Sample(BookingStatus.Cancelled, 600_000); booking.ChangeFeeAmount = 25;
+        booking.CommissionRate = 0.10m;
+        var item = SettlementCalculator.ItemFor(booking)!;
+        Assert.Equal(3, item.CommissionAmount); Assert.Equal(22, item.PayoutAmount);
+        booking.Status = BookingStatus.Confirmed; Assert.Null(SettlementCalculator.ItemFor(booking));
+    }
+
 }

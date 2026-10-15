@@ -1,3 +1,6 @@
+using System.Security.Claims;
+using System.Text.Json;
+using HomestayBooking.Web.Models;
 using HomestayBooking.Web.Data;
 using HomestayBooking.Web.Models.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -63,6 +66,49 @@ public class ReceiptReviewService
         return payment;
     }
 
+    /// <summary>Khách sở hữu đơn gửi bill cọc bổ sung; không đổi trạng thái Booking.</summary>
+    public async Task<Payment> SubmitChangeRequestAsync(int requestId, string receiptPath, string? transferContent, ClaimsPrincipal principal)
+    {
+        if (string.IsNullOrWhiteSpace(receiptPath) || receiptPath.Length > 300)
+            throw new BookingException("Vui lòng gửi ảnh bill hợp lệ.");
+        var accountId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (principal.Identity?.IsAuthenticated != true || !principal.IsInRole(AppRoles.Customer) || accountId is null)
+            throw new BookingException("Chỉ khách sở hữu đơn được nộp bill.");
+        await using var transaction = _db.Database.IsRelational() ? await _db.Database.BeginTransactionAsync() : null;
+        try
+        {
+            var request = await _db.BookingChangeRequests.Include(r => r.Booking).SingleOrDefaultAsync(r => r.Id == requestId)
+                ?? throw new BookingException("Không tìm thấy yêu cầu.");
+            if (!await _db.Users.AnyAsync(u => u.Id == accountId && u.Status == AccountStatus.Active
+                && u.Person.Customer != null && u.Person.Customer.Id == request.Booking.CustomerId))
+                throw new BookingException("Chỉ khách sở hữu đơn được nộp bill.");
+            var now = UtcNow;
+            if (!await ChangeRequestPayments.GuardSubmissionAsync(_db, requestId, now))
+                throw new BookingException("Yêu cầu đã đóng hoặc hết hạn nộp cọc bổ sung.");
+            if (await _db.Payments.AnyAsync(p => p.ChangeRequestId == requestId && p.Type == PaymentType.AdditionalDeposit
+                && p.Status != PaymentStatus.Rejected)) throw new BookingException("Yêu cầu đã có khoản nộp đang chờ xử lý.");
+            var payment = new Payment { BookingId = request.BookingId, ChangeRequestId = requestId,
+                Type = PaymentType.AdditionalDeposit, Method = PaymentMethod.ManualReceipt, Status = PaymentStatus.Submitted,
+                Amount = request.AdditionalDeposit!.Value, ReceiptImageUrl = receiptPath,
+                TransferContent = string.IsNullOrWhiteSpace(transferContent) ? null : transferContent.Trim(),
+                SubmittedByAccountId = accountId, SubmittedAt = now };
+            _db.Payments.Add(payment);
+            _db.AuditLogs.Add(new AuditLog { AccountId = accountId, TableName = "BookingChangeRequests", RecordId = requestId.ToString(),
+                Action = AuditAction.Update, CreatedAt = now,
+                NewValues = JsonSerializer.Serialize(new { Step = "AdditionalReceiptSubmitted", RequestId = requestId, payment.Amount, SubmittedAt = now }) });
+            _notifications.Add(await ReviewerAccountIdsAsync(EmployeePosition.Accountant), $"CR{requestId} đơn {request.Booking.Code} có bill cọc bổ sung chờ xác nhận.");
+            await _db.SaveChangesAsync();
+            if (transaction is not null) await transaction.CommitAsync();
+            return payment;
+        }
+        catch
+        {
+            if (transaction is not null) await transaction.RollbackAsync();
+            _db.ChangeTracker.Clear();
+            throw;
+        }
+    }
+
     public async Task ApproveAsync(int paymentId, int employeeId)
     {
         var (payment, actor) = await LoadForReviewAsync(paymentId, employeeId);
@@ -91,7 +137,7 @@ public class ReceiptReviewService
 
         var booking = payment.Booking;
         var rejections = 1 + await _db.Payments.CountAsync(p =>
-            p.BookingId == booking.Id && p.Id != payment.Id && p.Method == PaymentMethod.ManualReceipt && p.Status == PaymentStatus.Rejected);
+            p.BookingId == booking.Id && p.Id != payment.Id && p.Type == PaymentType.Deposit && p.Method == PaymentMethod.ManualReceipt && p.Status == PaymentStatus.Rejected);
         var giveUp = rejections >= _options.MaxReceiptRejections;
         await _bookings.ApplyStatusAsync(booking, giveUp ? BookingStatus.Expired : BookingStatus.AwaitingPayment, actor,
             $"Từ chối bill lần {rejections}: {payment.RejectReason}");
@@ -116,7 +162,7 @@ public class ReceiptReviewService
 
         var payment = await _db.Payments.Include(p => p.Booking).SingleOrDefaultAsync(p => p.Id == paymentId)
             ?? throw new BookingException("Không tìm thấy khoản thanh toán.");
-        if (payment.Method != PaymentMethod.ManualReceipt || payment.Status != PaymentStatus.Submitted
+        if (payment.Type != PaymentType.Deposit || payment.Method != PaymentMethod.ManualReceipt || payment.Status != PaymentStatus.Submitted
             || payment.Booking.Status != BookingStatus.PaymentSubmitted)
         {
             throw new BookingException("Bill này đã được xử lý.");

@@ -33,7 +33,7 @@ public abstract class AccountingController : Controller
     {
         var refunds = accounting.PendingRefunds();
         ViewData["Counts"] = new AccountingCounts(
-            await Db.Payments.CountAsync(p => p.Method == PaymentMethod.ManualReceipt && p.Status == PaymentStatus.Submitted),
+            await accounting.InitialDepositReceipts().CountAsync(),
             await Db.BankTransactions.CountAsync(t => AccountingService.OpenStatuses.Contains(t.MatchStatus)),
             await refunds.CountAsync(),
             await refunds.SumAsync(b => b.RefundAmount ?? 0));

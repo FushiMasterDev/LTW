@@ -30,6 +30,15 @@ public class AccountingService
 
     private DateTime UtcNow => _clock.GetUtcNow().UtcDateTime;
 
+    /// <summary>Cọc bổ sung chờ Accountant, kể cả khi đã qua hạn khách nộp.</summary>
+    public IQueryable<Payment> PendingAdditionalDeposits() => _db.Payments.Where(p =>
+        p.Type == PaymentType.AdditionalDeposit && p.Status == PaymentStatus.Submitted
+        && p.ChangeRequest!.Status == ChangeRequestStatus.AwaitingPayment).OrderBy(p => p.SubmittedAt);
+
+    /// <summary>Bill cọc đầu, tách khỏi các khoản đổi đơn.</summary>
+    public IQueryable<Payment> InitialDepositReceipts(PaymentStatus status = PaymentStatus.Submitted) =>
+        _db.Payments.Where(p => p.Type == PaymentType.Deposit && p.Method == PaymentMethod.ManualReceipt && p.Status == status);
+
     /// <summary>Đơn đã chốt tiền hoàn nhưng Fuji chưa chuyển (chưa có khoản Refund).</summary>
     public IQueryable<Booking> PendingRefunds() =>
         _db.Bookings.Where(b => b.RefundAmount > 0 && !b.Payments.Any(p => p.Type == PaymentType.Refund));
@@ -54,6 +63,8 @@ public class AccountingService
             throw new BookingException("Số tiền chưa đủ cọc, hãy hoàn tiền hoặc đợi khách chuyển đủ.");
         }
 
+        if (await _db.Payments.AnyAsync(p => p.BankTransactionId == tx.Id))
+            throw new BookingException("Giao dịch đã gắn khoản thanh toán, hãy đối chiếu và hoàn theo giao dịch.");
         var now = UtcNow;
         tx.MatchedBooking = booking;
         tx.MatchStatus = BankMatchStatus.ManuallyMatched;

@@ -15,8 +15,8 @@ public record ChangeBookingRequest(int BookingId, ChangeRequestType RequestType,
 public record BookingChangeQuote(decimal NewTotalAmount, decimal ChangeFee, decimal DepositCarriedOver,
     decimal RequiredDeposit, decimal AdditionalDeposit, decimal? RefundAmount, int? RefundPercent);
 
-/// <summary>Gửi yêu cầu và Manager duyệt nghiệp vụ. Thu cọc bổ sung/kế toán thuộc bước 6B.</summary>
-public class BookingChangeRequestService
+/// <summary>Gửi yêu cầu, duyệt nghiệp vụ và xác nhận cọc bổ sung để đổi/hủy trên cùng đơn.</summary>
+public partial class BookingChangeRequestService
 {
     public const string Processed = "Yêu cầu đã được xử lý";
     public const string PriceChanged = "giá đã thay đổi, vui lòng gửi lại yêu cầu";
@@ -68,7 +68,7 @@ public class BookingChangeRequestService
         throw new BookingException(manager ? "Chỉ quản lý được duyệt yêu cầu." : "Bạn không có quyền gửi yêu cầu cho đơn này.");
     }
 
-    private async Task ValidateBookingAsync(Booking b, bool cancel)
+    private async Task ValidateBookingAsync(Booking b, bool cancel, bool checkNotice = true)
     {
         if (b.Status is not (BookingStatus.Deposited or BookingStatus.Confirmed) || b.CheckedInAt is not null)
             throw new BookingException("Chỉ đổi/hủy đơn đã cọc hoặc xác nhận, chưa nhận phòng.");
@@ -78,7 +78,7 @@ public class BookingChangeRequestService
             throw new BookingException("Đơn đã có khoản hoàn tiền, vui lòng liên hệ nhân viên.");
         if (cancel) return;
         if (b.DiscountAmount > 0) throw new BookingException(VoucherBlocked);
-        if (b.CheckIn.DayNumber - VietnamTime.Today(_clock).DayNumber < _options.ChangeMinDaysBefore)
+        if (checkNotice && b.CheckIn.DayNumber - VietnamTime.Today(_clock).DayNumber < _options.ChangeMinDaysBefore)
             throw new BookingException($"Chỉ đổi trước ngày nhận phòng ít nhất {_options.ChangeMinDaysBefore} ngày.");
         if (await _db.BookingChangeRequests.CountAsync(r => r.BookingId == b.Id
             && r.Status == ChangeRequestStatus.Applied && r.RequestType != ChangeRequestType.Cancel) >= _options.MaxChangesPerBooking)
@@ -168,7 +168,6 @@ public class BookingChangeRequestService
             CreatedAt = Now };
         _db.BookingChangeRequests.Add(request);
         await _db.SaveChangesAsync();
-        // Tỷ lệ hoàn voucher cũng chốt lúc gửi trong audit, không suy lại từ tiền đã làm tròn.
         Audit(request.Id, actor, null, JsonSerializer.Serialize(new { Step = "Submitted", quote.RefundPercent,
             Request = RequestState(request), Booking = BookingState(booking) }), AuditAction.Insert);
         return request;
@@ -199,7 +198,16 @@ public class BookingChangeRequestService
         return value.Trim();
     }
 
-    public Task<BookingChangeRequest> RejectAsync(int id, string reason, ClaimsPrincipal principal) => WriteAsync(async () =>
+    public async Task<BookingChangeRequest> RejectAsync(int id, string reason, ClaimsPrincipal principal)
+    {
+        var status = await _db.BookingChangeRequests.AsNoTracking().Where(r => r.Id == id)
+            .Select(r => (ChangeRequestStatus?)r.Status).SingleOrDefaultAsync();
+        return status == ChangeRequestStatus.AwaitingPayment
+            ? await RejectFinanceAsync(id, reason, principal)
+            : await RejectBusinessAsync(id, reason, principal);
+    }
+
+    private Task<BookingChangeRequest> RejectBusinessAsync(int id, string reason, ClaimsPrincipal principal) => WriteAsync(async () =>
     {
         var (request, booking, actor) = await DecisionAsync(id, principal);
         Reject(request, actor, Note(reason));
@@ -235,16 +243,9 @@ public class BookingChangeRequestService
         request.DecidedByAccountId = actor.AccountId; request.DecidedAt = Now; request.DecisionNote = note;
         if (target is null)
         {
-            var percent = 0;
-            if (booking.DiscountAmount > 0)
-            {
-                var audit = await _db.AuditLogs.AsNoTracking().Where(a => a.TableName == "BookingChangeRequests"
-                    && a.RecordId == request.Id.ToString() && a.Action == AuditAction.Insert).OrderBy(a => a.Id).FirstOrDefaultAsync();
-                if (audit?.NewValues is null) throw new BookingException(LegacyRequest);
-                using var json = JsonDocument.Parse(audit.NewValues);
-                if (!json.RootElement.TryGetProperty("RefundPercent", out var value) || !value.TryGetInt32(out percent))
-                    throw new BookingException(LegacyRequest);
-            }
+            // Suy tỷ lệ từ tiền hoàn đã chốt, cùng cách tính của SettlementCalculator.
+            var percent = booking.AmountDue > 0
+                ? (int)Math.Round(100m * request.RefundAmount!.Value / booking.AmountDue) : 0;
             await _bookings.ApplyChangeRequestCancellationAsync(booking, request.RefundAmount!.Value, percent, actor, note);
             request.Status = ChangeRequestStatus.Applied;
         }
@@ -259,44 +260,13 @@ public class BookingChangeRequestService
                 throw new BookingException("Tiền cọc của đơn đã thay đổi, vui lòng gửi lại yêu cầu.");
             var room = await AvailableRoomAsync(booking, target, request.Id);
             request.NewRoomId = room;
-            var held = await _db.RoomNights.Where(n => n.RoomId == room && n.Date >= target.CheckIn && n.Date < target.CheckOut).ToListAsync();
-            for (var date = target.CheckIn; date < target.CheckOut; date = date.AddDays(1))
-            {
-                var night = held.SingleOrDefault(n => n.Date == date);
-                if (night is null)
-                {
-                    night = new RoomNight { RoomId = room, Date = date, BookingChangeRequestId = request.Id };
-                    _db.RoomNights.Add(night);
-                }
-                if (request.AdditionalDeposit == 0)
-                {
-                    night.BookingChangeRequestId = null; night.BookingId = booking.Id;
-                }
-            }
             if (request.AdditionalDeposit > 0)
             {
+                await HoldNightsAsync(booking, request, target, room);
                 request.Status = ChangeRequestStatus.AwaitingPayment;
                 request.PaymentDeadlineAt = request.DecidedAt.Value.AddMinutes(_options.HoldMinutes);
             }
-            else
-            {
-                var oldNights = await _db.BookingNights.Where(n => n.BookingId == booking.Id).ToListAsync();
-                foreach (var n in oldNights.Where(n => n.Date < target.CheckIn || n.Date >= target.CheckOut)) _db.BookingNights.Remove(n);
-                foreach (var n in target.Price.Nights)
-                {
-                    var existing = oldNights.SingleOrDefault(x => x.Date == n.Date);
-                    if (existing is null) _db.BookingNights.Add(new BookingNight { BookingId = booking.Id, Date = n.Date, Price = n.Price, DayType = n.DayType });
-                    else { existing.Price = n.Price; existing.DayType = n.DayType; }
-                }
-                _db.RoomNights.RemoveRange(await _db.RoomNights.Where(n => n.BookingId == booking.Id
-                    && (n.RoomId != room || n.Date < target.CheckIn || n.Date >= target.CheckOut)).ToListAsync());
-                booking.CheckIn = target.CheckIn; booking.CheckOut = target.CheckOut;
-                booking.RoomTypeId = target.RoomTypeId; booking.RoomId = room; booking.TotalAmount = target.Price.Total;
-                booking.DepositAmount = request.DepositCarriedOver!.Value; booking.ChangeFeeAmount += request.ChangeFee!.Value;
-                booking.CancellationPolicyId = (await _refunds.SelectPolicyAsync(booking.HomestayId, target.Price.HasHoliday)).Id;
-                _bookings.ApplyChangeRequestReconfirmation(booking, actor, note);
-                request.Status = ChangeRequestStatus.Applied;
-            }
+            else await ApplyChangeAsync(booking, request, target, room, actor, note);
         }
         Audit(request.Id, actor, old, JsonSerializer.Serialize(new { Step = "ManagerApproved", Request = RequestState(request) }));
         if (request.Status == ChangeRequestStatus.Applied)
@@ -315,7 +285,8 @@ public class BookingChangeRequestService
     private static object RequestState(BookingChangeRequest r) => new { r.Id, r.BookingId, Type = r.RequestType.ToString(),
         Status = r.Status.ToString(), r.RequestedByAccountId, r.NewCheckIn, r.NewCheckOut, r.NewRoomTypeId, r.NewRoomId,
         r.NewTotalAmount, r.ChangeFee, r.DepositCarriedOver, r.AdditionalDeposit, r.RefundAmount,
-        r.DecidedByAccountId, r.DecidedAt, r.DecisionNote, r.RejectionReason, r.PaymentDeadlineAt };
+        r.DecidedByAccountId, r.DecidedAt, r.DecisionNote, r.RejectionReason, r.PaymentDeadlineAt,
+        r.FinanceConfirmedByAccountId, r.FinanceConfirmedAt, r.FinanceNote };
     private void Audit(int id, Actor actor, string? old, string current, AuditAction action = AuditAction.Update) =>
         _db.AuditLogs.Add(new AuditLog { AccountId = actor.AccountId, TableName = "BookingChangeRequests", RecordId = id.ToString(),
             Action = action, OldValues = old, NewValues = current, CreatedAt = Now });
