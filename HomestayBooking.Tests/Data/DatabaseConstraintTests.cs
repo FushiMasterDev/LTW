@@ -1,3 +1,4 @@
+using System.Globalization;
 using HomestayBooking.Web.Data;
 using HomestayBooking.Web.Models.Entities;
 using Microsoft.Data.Sqlite;
@@ -301,6 +302,46 @@ public sealed class DatabaseConstraintTests : IDisposable
         await _db.SaveChangesAsync();
     }
 
+    [Theory]
+    [InlineData("0", false)]
+    [InlineData("1.0001", false)]
+    [InlineData("0.0001", true)]
+    [InlineData("1", true)]
+    public async Task Booking_DepositRateWithinBounds(string rate, bool allowed)
+    {
+        var booking = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        booking.DepositRate = decimal.Parse(rate, CultureInfo.InvariantCulture);
+
+        if (allowed)
+        {
+            await AssertAcceptedAsync(booking);
+        }
+        else
+        {
+            await AssertRejectedByAsync(booking, "CK_Bookings_DepositRate");
+        }
+    }
+
+    [Theory]
+    [InlineData("0", false)]
+    [InlineData("1", false)]
+    [InlineData("0.0001", true)]
+    [InlineData("0.9999", true)]
+    public async Task Booking_CommissionRateWithinBounds(string rate, bool allowed)
+    {
+        var booking = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        booking.CommissionRate = decimal.Parse(rate, CultureInfo.InvariantCulture);
+
+        if (allowed)
+        {
+            await AssertAcceptedAsync(booking);
+        }
+        else
+        {
+            await AssertRejectedByAsync(booking, "CK_Bookings_CommissionRate");
+        }
+    }
+
     // CK_Bookings_ConfirmedAt: sau xác nhận phải có, trước xác nhận phải trống, đã hủy thì tùy
     [Theory]
     [InlineData(BookingStatus.Confirmed, true, true)]
@@ -366,6 +407,55 @@ public sealed class DatabaseConstraintTests : IDisposable
         NewCheckIn = type == ChangeRequestType.ChangeDates ? new DateOnly(2026, 12, 1) : null,
         NewCheckOut = type == ChangeRequestType.ChangeDates ? new DateOnly(2026, 12, 3) : null,
     };
+
+    [Theory]
+    [InlineData("ChangeDates", true)]
+    [InlineData("ChangeRoomType", true)]
+    [InlineData("Cancel", true)]
+    [InlineData("Unknown", false)]
+    public async Task ChangeRequest_TypeIsKnown(string requestType, bool allowed)
+    {
+        var type = allowed ? Enum.Parse<ChangeRequestType>(requestType) : ChangeRequestType.Cancel;
+        var request = Request(await SavedBookingIdAsync(), type);
+        request.NewRoomTypeId = type == ChangeRequestType.ChangeRoomType ? _roomType.Id : null;
+        await AssertAcceptedAsync(request);
+
+        if (!allowed)
+        {
+            _db.ChangeTracker.Clear();
+            var ex = await Assert.ThrowsAsync<SqliteException>(() => _db.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE [BookingChangeRequests] SET [RequestType] = {requestType} WHERE [Id] = {request.Id}"));
+            Assert.Contains("CK_BookingChangeRequests_Type", ex.Message);
+            Assert.Equal(type, await _db.BookingChangeRequests.AsNoTracking()
+                .Where(r => r.Id == request.Id).Select(r => r.RequestType).SingleAsync());
+        }
+    }
+
+    [Theory]
+    [InlineData("Pending", true)]
+    [InlineData("Approved", true)]
+    [InlineData("Rejected", true)]
+    [InlineData("Unknown", false)]
+    public async Task ChangeRequest_StatusIsKnown(string statusValue, bool allowed)
+    {
+        var status = allowed ? Enum.Parse<ChangeRequestStatus>(statusValue) : ChangeRequestStatus.Approved;
+        var request = Request(await SavedBookingIdAsync(), ChangeRequestType.Cancel);
+        request.Status = status;
+        // Có DecidedAt cho dòng Approved/Rejected: UPDATE Unknown chỉ vi phạm CHECK Status, không vi phạm Decision.
+        request.DecidedAt = status == ChangeRequestStatus.Pending
+            ? null : new DateTime(2026, 11, 20, 3, 0, 0, DateTimeKind.Utc);
+        await AssertAcceptedAsync(request);
+
+        if (!allowed)
+        {
+            _db.ChangeTracker.Clear();
+            var ex = await Assert.ThrowsAsync<SqliteException>(() => _db.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE [BookingChangeRequests] SET [Status] = {statusValue} WHERE [Id] = {request.Id}"));
+            Assert.Contains("CK_BookingChangeRequests_Status", ex.Message);
+            Assert.Equal(status, await _db.BookingChangeRequests.AsNoTracking()
+                .Where(r => r.Id == request.Id).Select(r => r.Status).SingleAsync());
+        }
+    }
 
     // CK_BookingChangeRequests_RequestedBy: FR-05 — khách gửi, hoặc nhân viên gửi thay
     [Theory]
@@ -585,6 +675,63 @@ public sealed class DatabaseConstraintTests : IDisposable
         _db.SettlementItems.Add(Item(settlement.Id, booking.Id));
 
         await _db.SaveChangesAsync();
+    }
+
+    [Theory]
+    [InlineData("0", false)]
+    [InlineData("1", false)]
+    [InlineData("0.0001", true)]
+    [InlineData("0.9999", true)]
+    public async Task SettlementItem_CommissionRateWithinBounds(string rate, bool allowed)
+    {
+        var booking = NewBooking("FJ261120-001", new(2026, 11, 20), new(2026, 11, 22));
+        var settlement = new Settlement { HomestayId = _homestay.Id, Year = 2026, Month = 11, PeriodNo = 2 };
+        _db.AddRange(booking, settlement);
+        await _db.SaveChangesAsync();
+        var item = Item(settlement.Id, booking.Id);
+        item.CommissionRate = decimal.Parse(rate, CultureInfo.InvariantCulture);
+        item.CommissionAmount = item.RetainedAmount * item.CommissionRate;
+        item.PayoutAmount = item.RetainedAmount - item.CommissionAmount;
+
+        if (allowed)
+        {
+            await AssertAcceptedAsync(item);
+        }
+        else
+        {
+            await AssertRejectedByAsync(item, "CK_SettlementItems_CommissionRate");
+        }
+    }
+
+    [Theory]
+    [InlineData(SettlementStatus.Draft, false, true)]
+    [InlineData(SettlementStatus.Draft, true, true)]
+    [InlineData(SettlementStatus.Sent, false, false)]
+    [InlineData(SettlementStatus.Sent, true, true)]
+    [InlineData(SettlementStatus.Confirmed, false, false)]
+    [InlineData(SettlementStatus.Confirmed, true, true)]
+    [InlineData(SettlementStatus.Paid, false, false)]
+    [InlineData(SettlementStatus.Paid, true, true)]
+    public async Task Settlement_SentAtMatchesStatus(SettlementStatus status, bool hasSentAt, bool allowed)
+    {
+        var now = new DateTime(2026, 11, 30, 3, 0, 0, DateTimeKind.Utc);
+        var settlement = new Settlement
+        {
+            HomestayId = _homestay.Id, Year = 2026, Month = 11, PeriodNo = 2,
+            Status = status,
+            SentAt = hasSentAt ? now : null,
+            // Tránh vi phạm CK_Settlements_Paid khi đang kiểm tra CK_Settlements_Sent.
+            PaidAt = status == SettlementStatus.Paid ? now : null,
+        };
+
+        if (allowed)
+        {
+            await AssertAcceptedAsync(settlement);
+        }
+        else
+        {
+            await AssertRejectedByAsync(settlement, "CK_Settlements_Sent");
+        }
     }
 
     public static TheoryData<string> BadItems => ["payout", "commission", "retained", "zero"];

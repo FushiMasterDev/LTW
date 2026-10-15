@@ -3,11 +3,13 @@ using HomestayBooking.Web.Models;
 using HomestayBooking.Web.Models.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace HomestayBooking.Web.Data;
 
 /// <summary>
-/// Dữ liệu mẫu: role, nhân viên, chủ homestay, khách hàng (mô hình tài khoản v5), danh mục, ngày lễ và 35 homestay.
+/// Dữ liệu nền: role, danh mục, ngày lễ và chính sách hủy chung ở mọi môi trường.
+/// Nhân viên, chủ, khách, homestay và dữ liệu nghiệp vụ mẫu chỉ tạo ở Development.
 /// Chạy lại nhiều lần không bị nhân đôi: mỗi phần chỉ thêm khi chưa có.
 /// </summary>
 public static partial class SeedData
@@ -169,7 +171,24 @@ public static partial class SeedData
 
         if (db.Database.IsRelational())
         {
-            await db.Database.MigrateAsync();
+            var options = scope.ServiceProvider.GetRequiredService<IOptions<DatabaseOptions>>().Value;
+            if (options.AutoMigrate)
+            {
+                await db.Database.MigrateAsync();
+            }
+            else
+            {
+                var pending = (await db.Database.GetPendingMigrationsAsync()).ToArray();
+                if (pending.Length > 0)
+                {
+                    var names = string.Join(", ", pending);
+                    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("HomestayBooking.Web.Data.SeedData");
+                    logger.LogError("Database:AutoMigrate đang tắt nhưng còn migration chưa áp dụng: {Migrations}", names);
+                    throw new InvalidOperationException(
+                        $"Database:AutoMigrate đang tắt nhưng còn migration chưa áp dụng: {names}. Hãy triển khai schema trước khi khởi động.");
+                }
+            }
         }
         else
         {
@@ -177,8 +196,16 @@ public static partial class SeedData
         }
 
         await SeedRolesAsync(roleManager);
-        await SeedPeopleAsync(db, userManager);
         await SeedCategoriesAsync(db);
+
+        // Dữ liệu nền dùng ở mọi môi trường; chỉ Development được tạo dữ liệu demo.
+        var environment = scope.ServiceProvider.GetService<IWebHostEnvironment>();
+        if (environment is null || !environment.IsDevelopment())
+        {
+            return;
+        }
+
+        await SeedPeopleAsync(db, userManager);
         await SeedHomestaysAsync(db);
         await SeedSampleBookingsAsync(db, scope.ServiceProvider);
         await SeedOperationsAsync(db, scope.ServiceProvider);
