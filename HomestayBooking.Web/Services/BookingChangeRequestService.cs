@@ -79,7 +79,7 @@ public partial class BookingChangeRequestService
         if (cancel) return;
         if (b.DiscountAmount > 0) throw new BookingException(VoucherBlocked);
         if (checkNotice && b.CheckIn.DayNumber - VietnamTime.Today(_clock).DayNumber < _options.ChangeMinDaysBefore)
-            throw new BookingException($"Chỉ đổi trước ngày nhận phòng ít nhất {_options.ChangeMinDaysBefore} ngày.");
+            throw new BookingException("Chỉ đổi trước ngày nhận phòng ít nhất {0} ngày.", _options.ChangeMinDaysBefore);
         if (await _db.BookingChangeRequests.CountAsync(r => r.BookingId == b.Id
             && r.Status == ChangeRequestStatus.Applied && r.RequestType != ChangeRequestType.Cancel) >= _options.MaxChangesPerBooking)
             throw new BookingException("Đơn đã đạt số lần đổi tối đa.");
@@ -152,10 +152,26 @@ public partial class BookingChangeRequestService
         return await QuoteAsync(booking, input);
     }
 
+    /// <summary>Điều kiện hiển thị nút đổi; khi gửi vẫn kiểm tra lại toàn bộ nghiệp vụ.</summary>
+    public async Task<bool> CanChangeAsync(int bookingId, ClaimsPrincipal principal)
+    {
+        try
+        {
+            var booking = await BookingAsync(bookingId);
+            await ActorAsync(principal, booking);
+            await ValidateBookingAsync(booking, false);
+            return !await _db.BookingChangeRequests.AnyAsync(r => r.BookingId == bookingId
+                && (r.Status == ChangeRequestStatus.Pending || r.Status == ChangeRequestStatus.AwaitingPayment));
+        }
+        catch (BookingException) { return false; }
+    }
+
     public Task<BookingChangeRequest> SubmitAsync(ChangeBookingRequest input, ClaimsPrincipal principal) => WriteAsync(async () =>
     {
         var booking = await BookingAsync(input.BookingId);
         var actor = await ActorAsync(principal, booking);
+        if (input.RequestType == ChangeRequestType.Cancel && actor.Type == ActorType.Customer)
+            throw new BookingException("Vui lòng dùng nút hủy đơn");
         var quote = await QuoteAsync(booking, input);
         // Ghi lại cùng Status để chặn cuộc đua với thao tác đổi trạng thái của đơn.
         _db.Entry(booking).Property(b => b.Status).IsModified = true;

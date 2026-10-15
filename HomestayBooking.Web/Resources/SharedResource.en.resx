@@ -1724,4 +1724,295 @@
   <data name="Chỉ đánh dấu khách không đến từ ngày sau ngày nhận phòng." xml:space="preserve">
     <value>A booking can only be marked as no-show from the day after the check-in date.</value>
   </data>
+  <data name="Báo giá chưa giữ phòng. Quản lý sẽ kiểm tra lại phòng và giá khi duyệt." xml:space="preserve">
+    <value>This quote does not reserve a room. The manager will check availability and pricing before approval.</value>
+  </data>
+  <data name="Báo giá yêu cầu" xml:space="preserve">
+    <value>Change request quote</value>
+  </data>
+  <data name="Báo giá đã thay đổi, vui lòng xem lại trước khi gửi." xml:space="preserve">
+    <value>The quote has changed. Please review it before submitting.</value>
+  </data>
+  <data name="Chưa có khoản cọc bổ sung hợp lệ nộp đúng hạn." xml:space="preserve">
+    <value>No valid additional deposit was submitted within the payment deadline.</value>
+  </data>
+  <data name="Chỉ khách sở hữu đơn được nộp bill." xml:space="preserve">
+    <value>Only the customer who owns the booking may submit a receipt.</value>
+  </data>
+  <data name="Chỉ kế toán đang làm việc được xác nhận cọc bổ sung." xml:space="preserve">
+    <value>Only an active accountant may confirm an additional deposit.</value>
+  </data>
+  <data name="Chỉ quản lý được duyệt yêu cầu." xml:space="preserve">
+    <value>Only a manager may approve a request.</value>
+  </data>
+  <data name="Chỉ đổi trước ngày nhận phòng ít nhất {0} ngày." xml:space="preserve">
+    <value>Changes must be requested at least {0} days before check-in.</value>
+  </data>
+  <data name="Chỉ đổi/hủy đơn đã cọc hoặc xác nhận, chưa nhận phòng." xml:space="preserve">
+    <value>Only deposited or confirmed bookings before check-in may be changed or cancelled.</value>
+  </data>
+  <data name="Chọn loại phòng" xml:space="preserve">
+    <value>Select a room type</value>
+  </data>
+  <data name="Cách nộp" xml:space="preserve">
+    <value>Payment method</value>
+  </data>
+  <data name="Cọc bổ sung" xml:space="preserve">
+    <value>Additional deposits</value>
+  </data>
+  <data name="Cọc chuyển sang" xml:space="preserve">
+    <value>Deposit carried over</value>
+  </data>
+  <data name="Duyệt yêu cầu đổi/hủy" xml:space="preserve">
+    <value>Review change/cancellation requests</value>
+  </data>
+  <data name="Ghi chú duyệt" xml:space="preserve">
+    <value>Manager approval note</value>
+  </data>
+  <data name="Ghi chú xác nhận tiền" xml:space="preserve">
+    <value>Payment confirmation note</value>
+  </data>
+  <data name="Giữ đúng mã CR và số tiền. Kế toán sẽ xác nhận khoản nộp; đơn chưa đổi ngay." xml:space="preserve">
+    <value>Use the exact CR reference and amount. An accountant must confirm payment before your booking changes.</value>
+  </data>
+  <data name="Gửi yêu cầu thay khách" xml:space="preserve">
+    <value>Submit a request for a customer</value>
+  </data>
+  <data name="Hạn nộp" xml:space="preserve">
+    <value>Payment deadline</value>
+  </data>
+  <data name="Khoản nộp thêm cho yêu cầu đổi, chờ kế toán xác nhận." xml:space="preserve">
+    <value>Additional deposits for change requests awaiting accountant confirmation.</value>
+  </data>
+  <data name="Không có dữ liệu lịch cũ" xml:space="preserve">
+    <value>Previous booking details are unavailable</value>
+  </data>
+  <data name="Không tìm thấy yêu cầu." xml:space="preserve">
+    <value>Request not found.</value>
+  </data>
+  <data name="Loại phòng mới" xml:space="preserve">
+    <value>New room type</value>
+  </data>
+  <data name="Loại phòng phải đang hoạt động và thuộc cùng homestay." xml:space="preserve">
+    <value>The room type must be active and belong to the same homestay.</value>
+  </data>
+  <data name="Loại yêu cầu" xml:space="preserve">
+    <value>Request type</value>
+  </data>
+  <data name="Lịch cũ" xml:space="preserve">
+    <value>Previous booking</value>
+  </data>
+  <data name="Lịch hiện tại" xml:space="preserve">
+    <value>Current booking</value>
+  </data>
+  <data name="Lịch mới" xml:space="preserve">
+    <value>Requested booking</value>
+  </data>
+  <data name="Mã QR cọc bổ sung" xml:space="preserve">
+    <value>QR code for the additional deposit</value>
+  </data>
+  <data name="Mã đơn hoặc số điện thoại" xml:space="preserve">
+    <value>Booking code or phone number</value>
+  </data>
+  <data name="Ngày mới không hợp lệ hoặc nằm ngoài thời hạn cho phép." xml:space="preserve">
+    <value>The requested dates are invalid or outside the permitted window.</value>
+  </data>
+  <data name="Ngày nhận phòng mới" xml:space="preserve">
+    <value>New check-in date</value>
+  </data>
+  <data name="Ngày trả phòng mới" xml:space="preserve">
+    <value>New check-out date</value>
+  </data>
+  <data name="Người gửi" xml:space="preserve">
+    <value>Requested by</value>
+  </data>
+  <data name="Người gửi hoặc người duyệt nghiệp vụ không được xác nhận tiền." xml:space="preserve">
+    <value>The requester and business approver cannot confirm payment.</value>
+  </data>
+  <data name="Người gửi không được tự duyệt yêu cầu." xml:space="preserve">
+    <value>You cannot approve your own request.</value>
+  </data>
+  <data name="Nội dung yêu cầu không khớp loại đổi/hủy." xml:space="preserve">
+    <value>The submitted fields do not match the request type.</value>
+  </data>
+  <data name="Nộp cọc bổ sung" xml:space="preserve">
+    <value>Pay the additional deposit</value>
+  </data>
+  <data name="Nộp lúc" xml:space="preserve">
+    <value>Paid/submitted at</value>
+  </data>
+  <data name="Nộp đúng hạn vẫn được xác nhận sau hạn. Đối chiếu tiền trước khi áp dụng đổi đơn." xml:space="preserve">
+    <value>Timely submissions may be confirmed after the deadline. Verify the payment before applying the change.</value>
+  </data>
+  <data name="Phí đổi" xml:space="preserve">
+    <value>Change fee</value>
+  </data>
+  <data name="Quản lý duyệt nghiệp vụ; khoản nộp thêm do kế toán xác nhận." xml:space="preserve">
+    <value>Managers approve changes; accountants confirm additional payments.</value>
+  </data>
+  <data name="Thông tin mới phải khác thông tin hiện tại của đơn." xml:space="preserve">
+    <value>The requested dates or room type must differ from the current booking.</value>
+  </data>
+  <data name="Tiền cọc của đơn đã thay đổi, vui lòng gửi lại yêu cầu." xml:space="preserve">
+    <value>The booking deposit has changed. Please submit a new request.</value>
+  </data>
+  <data name="Tiền cọc mới không hợp lệ." xml:space="preserve">
+    <value>The new deposit amount is invalid.</value>
+  </data>
+  <data name="Tiền hoàn khi hủy" xml:space="preserve">
+    <value>Cancellation refund</value>
+  </data>
+  <data name="Tiền phải nộp thêm" xml:space="preserve">
+    <value>Additional amount to pay</value>
+  </data>
+  <data name="Tài khoản không hoạt động." xml:space="preserve">
+    <value>This account is not active.</value>
+  </data>
+  <data name="Tìm kiếm" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="Tìm đơn theo mã hoặc số điện thoại để đổi/hủy thay khách." xml:space="preserve">
+    <value>Find a booking by code or phone number to request a change or cancellation for a customer.</value>
+  </data>
+  <data name="Tổng tiền mới" xml:space="preserve">
+    <value>New total</value>
+  </data>
+  <data name="Tổng tiền mới nhỏ hơn cọc chuyển sang; vui lòng chọn lịch hoặc loại phòng khác." xml:space="preserve">
+    <value>The new total is below the carried-over deposit. Please choose different dates or a room type.</value>
+  </data>
+  <data name="Vui lòng dùng nút hủy đơn" xml:space="preserve">
+    <value>Please use the Cancel booking button</value>
+  </data>
+  <data name="Vui lòng gửi ảnh bill hợp lệ." xml:space="preserve">
+    <value>Please upload a valid receipt image.</value>
+  </data>
+  <data name="Vui lòng nhập ghi chú/lý do có nội dung, tối đa 500 ký tự." xml:space="preserve">
+    <value>Please enter a non-blank note or reason, up to 500 characters.</value>
+  </data>
+  <data name="Vui lòng xem lại báo giá trước khi gửi yêu cầu." xml:space="preserve">
+    <value>Please review the quote before submitting your request.</value>
+  </data>
+  <data name="Vui lòng đăng nhập." xml:space="preserve">
+    <value>Please sign in.</value>
+  </data>
+  <data name="Xem báo giá" xml:space="preserve">
+    <value>Review quote</value>
+  </data>
+  <data name="Xác nhận" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="Xác nhận gửi yêu cầu" xml:space="preserve">
+    <value>Confirm and submit request</value>
+  </data>
+  <data name="Xác nhận gửi yêu cầu này?" xml:space="preserve">
+    <value>Submit this request?</value>
+  </data>
+  <data name="Yêu cầu cũ, cần gửi lại" xml:space="preserve">
+    <value>Legacy request: please resubmit</value>
+  </data>
+  <data name="Yêu cầu cũ, cần gửi lại; quản lý chỉ được từ chối." xml:space="preserve">
+    <value>This legacy request needs to be resubmitted; a manager may only reject it.</value>
+  </data>
+  <data name="Yêu cầu hủy không có cọc bổ sung." xml:space="preserve">
+    <value>Cancellation requests do not require an additional deposit.</value>
+  </data>
+  <data name="Yêu cầu đang chờ quản lý duyệt nghiệp vụ." xml:space="preserve">
+    <value>Your request is awaiting manager approval.</value>
+  </data>
+  <data name="Yêu cầu đã có khoản nộp đang chờ xử lý." xml:space="preserve">
+    <value>This request already has a payment awaiting review.</value>
+  </data>
+  <data name="Yêu cầu đã đóng hoặc hết hạn nộp cọc bổ sung." xml:space="preserve">
+    <value>This request is closed or its payment deadline has passed.</value>
+  </data>
+  <data name="Yêu cầu đã đóng hoặc đã có khoản nộp." xml:space="preserve">
+    <value>This request is closed or already has a payment.</value>
+  </data>
+  <data name="Yêu cầu đã được xử lý" xml:space="preserve">
+    <value>This request has already been processed</value>
+  </data>
+  <data name="Yêu cầu đã được áp dụng trên đơn này." xml:space="preserve">
+    <value>This request has been applied to your booking.</value>
+  </data>
+  <data name="Yêu cầu đổi" xml:space="preserve">
+    <value>Change requests</value>
+  </data>
+  <data name="giá đã thay đổi, vui lòng gửi lại yêu cầu" xml:space="preserve">
+    <value>The price has changed. Please submit a new request.</value>
+  </data>
+  <data name="Đã gửi cọc bổ sung, vui lòng chờ kế toán xác nhận." xml:space="preserve">
+    <value>Your additional deposit receipt was submitted. Please wait for accountant confirmation.</value>
+  </data>
+  <data name="Đã gửi yêu cầu thay khách, vui lòng chờ quản lý duyệt." xml:space="preserve">
+    <value>The request was submitted for the customer and awaits manager approval.</value>
+  </data>
+  <data name="Đã gửi yêu cầu đổi, vui lòng chờ quản lý duyệt." xml:space="preserve">
+    <value>Your change request was submitted and awaits manager approval.</value>
+  </data>
+  <data name="Đã hết hạn nộp thêm tiền; lịch đặt ban đầu được giữ nguyên." xml:space="preserve">
+    <value>The additional payment deadline has passed. Your original booking is unchanged.</value>
+  </data>
+  <data name="Đã xử lý yêu cầu." xml:space="preserve">
+    <value>The request has been processed.</value>
+  </data>
+  <data name="Đơn dùng voucher, vui lòng liên hệ nhân viên" xml:space="preserve">
+    <value>This booking uses a voucher. Please contact a staff member.</value>
+  </data>
+  <data name="Đơn đã có khoản hoàn tiền, vui lòng liên hệ nhân viên." xml:space="preserve">
+    <value>This booking already has a refund. Please contact a staff member.</value>
+  </data>
+  <data name="Đơn đã có một yêu cầu đang chờ xử lý." xml:space="preserve">
+    <value>This booking already has an open request.</value>
+  </data>
+  <data name="Đơn đã có đối soát, vui lòng liên hệ nhân viên." xml:space="preserve">
+    <value>This booking has already entered settlement. Please contact a staff member.</value>
+  </data>
+  <data name="Đơn đã đạt số lần đổi tối đa." xml:space="preserve">
+    <value>This booking has reached its maximum number of changes.</value>
+  </data>
+  <data name="Đổi / hủy thay khách" xml:space="preserve">
+    <value>Change/cancel for a customer</value>
+  </data>
+  <data name="Đổi ngày / loại phòng" xml:space="preserve">
+    <value>Change dates / room type</value>
+  </data>
+  <data name="Đổi ngày" xml:space="preserve">
+    <value>Change dates</value>
+  </data>
+  <data name="Đổi loại phòng" xml:space="preserve">
+    <value>Change room type</value>
+  </data>
+  <data name="Đổi ngày và loại phòng" xml:space="preserve">
+    <value>Change dates and room type</value>
+  </data>
+  <data name="Hủy thay khách" xml:space="preserve">
+    <value>Cancel for a customer</value>
+  </data>
+  <data name="Chờ quản lý duyệt" xml:space="preserve">
+    <value>Awaiting manager approval</value>
+  </data>
+  <data name="Chờ cọc bổ sung" xml:space="preserve">
+    <value>Awaiting additional deposit</value>
+  </data>
+  <data name="Đã áp dụng" xml:space="preserve">
+    <value>Applied</value>
+  </data>
+  <data name="Hết hạn nộp cọc bổ sung" xml:space="preserve">
+    <value>Additional payment expired</value>
+  </data>
+  <data name="Đã nộp cọc bổ sung, chờ kế toán xác nhận." xml:space="preserve">
+    <value>Additional deposit submitted; awaiting accountant confirmation.</value>
+  </data>
+  <data name="Đang chờ khách nộp cọc bổ sung." xml:space="preserve">
+    <value>Awaiting the customer’s additional deposit.</value>
+  </data>
+  <data name="Ảnh bill" xml:space="preserve">
+    <value>Receipt image</value>
+  </data>
+  <data name="Ghi chú / lý do" xml:space="preserve">
+    <value>Note / reason</value>
+  </data>
+  <data name="Bạn không có quyền gửi yêu cầu cho đơn này." xml:space="preserve">
+    <value>You cannot submit a request for this booking.</value>
+  </data>
 </root>

@@ -81,6 +81,7 @@ builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<VoucherService>();
 builder.Services.AddScoped<BookingService>();
 builder.Services.AddScoped<BookingChangeRequestService>();
+builder.Services.AddScoped<ChangeRequestUiService>();
 builder.Services.AddScoped<BankMatchingService>();
 builder.Services.AddScoped<ReceiptReviewService>();
 builder.Services.AddScoped<VietQrService>();

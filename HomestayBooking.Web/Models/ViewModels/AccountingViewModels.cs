@@ -3,7 +3,7 @@ using HomestayBooking.Web.Models.Entities;
 namespace HomestayBooking.Web.Models.ViewModels;
 
 /// <summary>Số việc đang chờ ở từng tab kế toán (hiện trên thanh tab và trang tổng quan).</summary>
-public record AccountingCounts(int PendingReceipts, int OpenTransactions, int PendingRefunds, decimal PendingRefundAmount);
+public record AccountingCounts(int PendingReceipts, int OpenTransactions, int PendingRefunds, decimal PendingRefundAmount, int PendingAdditionalDeposits = 0);
 
 /// <summary>Ảnh bill (ManualReceipt) trong danh sách duyệt.</summary>
 public record ReceiptRow(

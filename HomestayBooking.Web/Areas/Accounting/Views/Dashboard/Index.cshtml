@@ -1,8 +1,10 @@
+@using HomestayBooking.Web.Identity
 @{
     ViewData["Title"] = L["Kế toán"];
     var counts = (AccountingCounts)ViewData["Counts"]!;
     var cards = new (string Controller, string Label, string Hint, string Icon, string Tone, string Value)[]
     {
+        ("AdditionalDeposits", L["Cọc bổ sung"], L["Khoản nộp thêm cho yêu cầu đổi, chờ kế toán xác nhận."], "bi-wallet2", "tone-violet", counts.PendingAdditionalDeposits.ToString()),
         ("Receipts", L["Bill chờ duyệt"], L["Khách tải ảnh bill vì giao dịch không tự khớp được."], "bi-receipt", "tone-amber", counts.PendingReceipts.ToString()),
         ("Transactions", L["Giao dịch cần xử lý"], L["Chuyển thiếu, đến muộn hoặc không đọc được mã đơn."], "bi-bank", "tone-rose", counts.OpenTransactions.ToString()),
         ("Refunds", L["Chờ hoàn tiền"], L["Tổng {0:N0}đ cần chuyển trả khách.", counts.PendingRefundAmount], "bi-arrow-counterclockwise", "tone-sky", counts.PendingRefunds.ToString()),
@@ -15,7 +17,7 @@
 <partial name="_AccountingTabs" />
 
 <div class="row g-3">
-    @foreach (var card in cards)
+    @foreach (var card in cards.Where(c => c.Controller != "AdditionalDeposits" || (User.IsInRole(AppRoles.Employee) && User.EmployeePosition() == EmployeePosition.Accountant)))
     {
         <div class="col-md-4">
             <a class="card-soft stat-card stat-link @card.Tone h-100" asp-controller="@card.Controller" asp-action="Index">

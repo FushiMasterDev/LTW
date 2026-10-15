@@ -260,7 +260,7 @@ public sealed partial class BookingChangeRequestServiceTests
     public async Task VoucherCancellationDoesNotDependOnAuditHistory()
     {
         using var s = new Scenario(); var b = await s.Book(4); await VoucherAsync(s, b);
-        var request = await s.Service().SubmitAsync(new(b.Id, ChangeRequestType.Cancel), s.Customer);
+        var request = await s.Service().SubmitAsync(new(b.Id, ChangeRequestType.Cancel), s.Consultant);
         // Giả lập audit không chứa tỷ lệ: nguồn tính tiền vẫn là báo giá chốt trên yêu cầu.
         foreach (var audit in await s.Db.AuditLogs.ToListAsync()) audit.NewValues = "{}";
         await s.Db.SaveChangesAsync(); s.H.Clock.Advance(TimeSpan.FromDays(3));

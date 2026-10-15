@@ -18,6 +18,8 @@ public sealed partial class BookingChangeRequestServiceTests
         public ApplicationDbContext Db => H.Db;
         public ClaimsPrincipal Customer { get; }
         public ClaimsPrincipal Manager { get; }
+        public ClaimsPrincipal Consultant => Principal(Db.Users.Where(u => u.Person.Employee != null
+            && u.Person.Employee.EmployeeCode == "NV001").Select(u => u.Id).Single(), AppRoles.Employee, EmployeePosition.Consultant);
         public int ManagerId { get; }
         public DateOnly Today => VietnamTime.Today(H.Clock);
         private int _sequence;
@@ -201,7 +203,7 @@ public sealed partial class BookingChangeRequestServiceTests
     public async Task CancellationFreezesRefundAndVoucherPercentage()
     {
         using var s = new Scenario(); var b = await s.Book(4); await VoucherAsync(s,b);
-        var r = await s.Service().SubmitAsync(new(b.Id, ChangeRequestType.Cancel), s.Customer);
+        var r = await s.Service().SubmitAsync(new(b.Id, ChangeRequestType.Cancel), s.Consultant);
         Assert.Equal(280_000, r.RefundAmount);
         s.H.Clock.Advance(TimeSpan.FromDays(3));
         Assert.Equal(0, (await s.H.Refunds().QuoteCancellationAsync(b)).RefundAmount);
@@ -313,13 +315,13 @@ public sealed partial class BookingChangeRequestServiceTests
             ChangeFee=missingSender?0:null,DepositCarriedOver=0,AdditionalDeposit=0,NewTotalAmount=0,RefundAmount=0};
         s.Db.Add(r);await s.Db.SaveChangesAsync();
         await Assert.ThrowsAsync<BookingException>(()=>s.Service().ApproveAsync(r.Id,"Đồng ý",s.Manager));
-        await Assert.ThrowsAsync<BookingException>(()=>s.Service().SubmitAsync(new(b.Id,ChangeRequestType.Cancel),s.Customer));
+        await Assert.ThrowsAsync<BookingException>(()=>s.Service().SubmitAsync(new(b.Id,ChangeRequestType.Cancel),s.Consultant));
         await Assert.ThrowsAsync<BookingException>(()=>s.Service().RejectAsync(r.Id,"  ",s.Manager));
         await s.Service().RejectAsync(r.Id,"Yêu cầu cũ, vui lòng gửi lại",s.Manager);
         var stored=await s.Db.BookingChangeRequests.AsNoTracking().SingleAsync();
         Assert.Equal(ChangeRequestStatus.Rejected,stored.Status);Assert.Equal(stored.DecisionNote,stored.RejectionReason);
         Assert.NotNull(stored.DecidedAt);Assert.Equal(s.Manager.FindFirstValue(ClaimTypes.NameIdentifier),stored.DecidedByAccountId);
-        await s.Service().SubmitAsync(new(b.Id,ChangeRequestType.Cancel),s.Customer);
+        await s.Service().SubmitAsync(new(b.Id,ChangeRequestType.Cancel),s.Consultant);
     }
 
     [Fact]
@@ -529,6 +531,16 @@ public sealed partial class BookingChangeRequestServiceTests
         var ex = await Assert.ThrowsAsync<BookingException>(() => s.Service(db).ApproveAsync(r.Id, "Đồng ý", s.Manager));
         Assert.Equal(BookingChangeRequestService.Processed, ex.Message);
         Assert.Equal(before, await Snapshot(s.Db));
+    }
+
+    [Fact]
+    public async Task CustomerMustUseImmediateCancellationInsteadOfSendingCancelRequest()
+    {
+        using var s = new Scenario(); var booking = await s.Book();
+        var ex = await Assert.ThrowsAsync<BookingException>(() => s.Service().SubmitAsync(new(booking.Id, ChangeRequestType.Cancel), s.Customer));
+        Assert.Equal("Vui lòng dùng nút hủy đơn", ex.Message);
+        Assert.Empty(await s.Db.BookingChangeRequests.ToListAsync());
+        Assert.Equal(BookingStatus.Confirmed, booking.Status);
     }
 
 }

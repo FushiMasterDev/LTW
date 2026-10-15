@@ -6,7 +6,8 @@
     ViewData["Title"] = L["Đơn {0}", b.Code];
     var nights = b.CheckOut.DayNumber - b.CheckIn.DayNumber;
     string Money(decimal v) => v.ToString("N0") + "đ";
-    var polling = b.Status is BookingStatus.AwaitingPayment or BookingStatus.PaymentSubmitted or BookingStatus.Deposited;
+    var polling = b.Status is BookingStatus.AwaitingPayment or BookingStatus.PaymentSubmitted or BookingStatus.Deposited
+        || Model.ChangeRequests?.History.Any(h => h.Request.Status is ChangeRequestStatus.Pending or ChangeRequestStatus.AwaitingPayment) == true;
     var hold = DateTime.SpecifyKind(b.HoldExpiresAt, DateTimeKind.Utc);
     // Tiến trình chỉ để hiển thị, suy ra từ trạng thái hiện tại; đơn đã kết thúc bất thường thì không vẽ
     var progress = new (string Label, BookingStatus[] Reached)[]
@@ -178,6 +179,8 @@
             </section>
         }
 
+        <partial name="_CustomerChanges" model="Model" />
+
         @* ---------------- Hủy đơn ---------------- *@
         @if (Model.CanCancel && Model.CancelQuote is not null)
         {
@@ -268,6 +271,16 @@
                 tick();
             }
 
+            document.querySelectorAll('[data-change-countdown]').forEach(cd => {
+                const expires = new Date(cd.dataset.expires).getTime();
+                const tick = () => {
+                    const left = Math.max(0, Math.floor((expires - Date.now()) / 1000));
+                    cd.textContent = String(Math.floor(left / 60)).padStart(2, '0') + ':' + String(left % 60).padStart(2, '0');
+                    if (left === 0) { clearInterval(timer); setTimeout(() => location.reload(), 3000); }
+                };
+                const timer = setInterval(tick, 1000); tick();
+            });
+
             // Tự tải lại khi trạng thái đơn đổi (tiền về, homestay xác nhận, hết hạn)
             @if (polling)
             {
@@ -278,7 +291,11 @@
                     if (document.hidden) return;
                     try {
                         const res = await fetch(statusUrl, { cache: 'no-store' });
-                        if (res.ok && (await res.json()).status !== initial) location.reload();
+                        if (res.ok) {
+                            const state = await res.json();
+                            const version = @Json.Serialize(ChangeRequestUiService.Version(Model.ChangeRequests?.History.Select(h => h.Request) ?? []));
+                            if (state.status !== initial || state.changeVersion !== version) location.reload();
+                        }
                     } catch { /* mất mạng tạm thời: lần sau thử lại */ }
                 }, 5000);
                 </text>

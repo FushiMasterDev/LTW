@@ -1,3 +1,8 @@
+@using HomestayBooking.Web.Data
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Authorization
+@inject ApplicationDbContext NavigationDb
+@inject IAuthorizationService NavigationAuthorization
 @using HomestayBooking.Web.Identity
 @using Microsoft.AspNetCore.Localization
 @{
@@ -5,6 +10,11 @@
     var area = ViewContext.RouteData.Values["area"]?.ToString();
     var controller = ViewContext.RouteData.Values["controller"]?.ToString();
     var counts = ViewData["Counts"] as AccountingCounts;
+    var canApproveChange = (await NavigationAuthorization.AuthorizeAsync(User, AppPolicies.ChangeRequestApprove)).Succeeded;
+    var canConfirmChange = (await NavigationAuthorization.AuthorizeAsync(User, AppPolicies.ChangeRequestFinance)).Succeeded;
+    var pendingChanges = canApproveChange ? await NavigationDb.BookingChangeRequests.CountAsync(r => r.Status == ChangeRequestStatus.Pending) : 0;
+    var additionalCount = canConfirmChange ? await NavigationDb.Payments.CountAsync(p => p.Type == PaymentType.AdditionalDeposit
+        && p.Status == PaymentStatus.Submitted && p.ChangeRequest!.Status == ChangeRequestStatus.AwaitingPayment) : 0;
     var workspaces = Workspaces.For(User);
     var currentWorkspace = workspaces.FirstOrDefault(w => w.Area == area);
 
@@ -26,9 +36,16 @@
             "Accounting" =>
             [
                 new("Accounting", "Dashboard", "Tổng quan", "bi-speedometer2"),
+                new("Accounting", "AdditionalDeposits", "Cọc bổ sung", "bi-wallet2", additionalCount),
                 new("Accounting", "Receipts", "Bill chờ duyệt", "bi-receipt", counts?.PendingReceipts),
                 new("Accounting", "Transactions", "Giao dịch cần xử lý", "bi-bank", counts?.OpenTransactions),
                 new("Accounting", "Refunds", "Chờ hoàn tiền", "bi-arrow-counterclockwise", counts?.PendingRefunds),
+            ],
+            "Staff" =>
+            [
+                new("Staff", "Dashboard", "Tổng quan", "bi-speedometer2"),
+                new("Staff", "ChangeRequests", "Gửi yêu cầu thay khách", "bi-arrow-repeat"),
+                new("Staff", "ChangeApprovals", "Duyệt yêu cầu đổi/hủy", "bi-calendar-check", pendingChanges),
             ],
             // Đơn đặt phòng cần policy ApprovedOwner
             "Owner" when User.IsApprovedOwner() =>
@@ -38,7 +55,8 @@
             ],
             _ => [new(w.Area, "Dashboard", "Tổng quan", "bi-speedometer2")],
         };
-        groups.Add((w, links));
+        groups.Add((w, links.Where(l => (l.Controller != "ChangeApprovals" || canApproveChange)
+            && (l.Controller != "AdditionalDeposits" || canConfirmChange)).ToArray()));
     }
 }
 <!DOCTYPE html>

@@ -1,0 +1,58 @@
+@model ChangeRequestForm
+@{
+    Layout = Model.IsStaff ? "_DashboardLayout" : "_Layout";
+    ViewData["Title"] = L["Đổi ngày / loại phòng"];
+    var id = Model.IsStaff ? Model.Booking.Id.ToString() : Model.Booking.Code;
+    var quoteAction = Model.IsStaff ? "Quote" : "QuoteChange";
+    var submitAction = Model.IsStaff ? "Submit" : "SubmitChange";
+    var dates = Model.RequestType is ChangeRequestType.ChangeDates or ChangeRequestType.ChangeDatesAndRoomType;
+    var types = Model.RequestType is ChangeRequestType.ChangeRoomType or ChangeRequestType.ChangeDatesAndRoomType;
+}
+<partial name="_PageHead" model="@(new PageHeadModel(L["Đổi ngày / loại phòng"], "bi-calendar2-range", "tone-sky", Model.Booking.Code + " · " + Model.Booking.Homestay.Name, ShowCreate: false))" />
+<p>@L["Lịch hiện tại"]: @Model.Booking.CheckIn.ToString("dd/MM/yyyy") – @Model.Booking.CheckOut.ToString("dd/MM/yyyy") · @Model.Booking.RoomType.Name</p>
+<form asp-action="@quoteAction" asp-route-id="@id" method="post" class="card-soft p-4 change-request-form">
+    <div asp-validation-summary="All" class="text-danger" role="alert"></div>
+    <input asp-for="PreviewToken" type="hidden" />
+    <div class="mb-3">
+        <label asp-for="RequestType" class="form-label">@L["Loại yêu cầu"]</label>
+        <select asp-for="RequestType" class="form-select" data-change-type>
+            @foreach (var type in Enum.GetValues<ChangeRequestType>().Where(t => Model.IsStaff || t != ChangeRequestType.Cancel))
+            { <option value="@type">@L[type.DisplayName()]</option> }
+        </select>
+    </div>
+    <div class="row g-3 mb-3">
+        <div class="col-sm-6"><label asp-for="NewCheckIn" class="form-label">@L["Ngày nhận phòng mới"]</label><input asp-for="NewCheckIn" type="date" class="form-control" data-change-dates disabled="@(!dates)" /></div>
+        <div class="col-sm-6"><label asp-for="NewCheckOut" class="form-label">@L["Ngày trả phòng mới"]</label><input asp-for="NewCheckOut" type="date" class="form-control" data-change-dates disabled="@(!dates)" /></div>
+    </div>
+    <div class="mb-3">
+        <label asp-for="NewRoomTypeId" class="form-label">@L["Loại phòng mới"]</label>
+        <select asp-for="NewRoomTypeId" class="form-select" data-change-room disabled="@(!types)">
+            <option value="">@L["Chọn loại phòng"]</option>
+            @foreach (var room in Model.RoomTypes) { <option value="@room.Id">@room.Name · @L["{0} khách", room.MaxGuests]</option> }
+        </select>
+    </div>
+    <p class="small text-muted">@L["Báo giá chưa giữ phòng. Quản lý sẽ kiểm tra lại phòng và giá khi duyệt."]</p>
+    <button class="btn btn-outline-primary" type="submit">@L["Xem báo giá"]</button>
+    @if (Model.Quote is { } quote)
+    {
+        <section class="border-top pt-3 mt-3" aria-label="@L["Báo giá yêu cầu"]" data-quote>
+            <partial name="_ChangeQuote" model="quote" />
+            <button class="btn btn-brand" type="submit" formaction="@Url.Action(submitAction, new { id })" data-confirm="@L["Xác nhận gửi yêu cầu này?"]">@L["Xác nhận gửi yêu cầu"]</button>
+        </section>
+    }
+</form>
+<p class="mt-3"><a asp-action="@(Model.IsStaff ? "Index" : "Details")" asp-route-id="@(Model.IsStaff ? null : Model.Booking.Code)">@L["Quay lại"]</a></p>
+@section Scripts {
+<script>
+    (() => {
+        const form = document.querySelector('.change-request-form');
+        const type = form.querySelector('[data-change-type]');
+        const toggle = () => {
+            form.querySelectorAll('[data-change-dates]').forEach(input => input.disabled = !['ChangeDates', 'ChangeDatesAndRoomType'].includes(type.value));
+            form.querySelector('[data-change-room]').disabled = !['ChangeRoomType', 'ChangeDatesAndRoomType'].includes(type.value);
+        };
+        type.addEventListener('change', toggle);
+        toggle();
+    })();
+</script>
+}

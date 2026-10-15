@@ -18,7 +18,7 @@ namespace HomestayBooking.Web.Controllers;
 /// Đặt phòng và thanh toán của khách. Xem đơn được khi: là khách của đơn (đăng nhập), hoặc đã tra cứu đúng
 /// mã đơn + SĐT trong phiên này (khách đặt qua điện thoại chưa có tài khoản).
 /// </summary>
-public class BookingsController : Controller
+public partial class BookingsController : Controller
 {
     private const string LookupSessionKey = "lookup_codes";
     private const int PageSize = 10;
@@ -36,6 +36,7 @@ public class BookingsController : Controller
     private readonly IWebHostEnvironment _env;
     private readonly TimeProvider _clock;
     private readonly IStringLocalizer<SharedResource> _localizer;
+    private readonly ChangeRequestUiService _changeUi;
 
     public BookingsController(
         ApplicationDbContext db,
@@ -50,7 +51,8 @@ public class BookingsController : Controller
         UserManager<ApplicationUser> userManager,
         IWebHostEnvironment env,
         TimeProvider clock,
-        IStringLocalizer<SharedResource> localizer)
+        IStringLocalizer<SharedResource> localizer,
+        ChangeRequestUiService changeUi)
     {
         _db = db;
         _bookings = bookings;
@@ -65,6 +67,7 @@ public class BookingsController : Controller
         _env = env;
         _clock = clock;
         _localizer = localizer;
+        _changeUi = changeUi;
     }
 
     private DateTime UtcNow => _clock.GetUtcNow().UtcDateTime;
@@ -254,8 +257,9 @@ public class BookingsController : Controller
             CancelQuote = cancelQuote,
             CanCancel = BookingService.CanTransition(booking.Status, BookingStatus.Cancelled) && cancelQuote.DaysBefore >= 0,
             ShowAddress = booking.Status is BookingStatus.Confirmed or BookingStatus.CheckedIn or BookingStatus.Completed,
-            PendingReceipt = booking.Payments.FirstOrDefault(p => p.Method == PaymentMethod.ManualReceipt && p.Status == PaymentStatus.Submitted),
-            LastRejectedReceipt = booking.Payments.Where(p => p.Status == PaymentStatus.Rejected).MaxBy(p => p.ReviewedAt),
+            ChangeRequests = await _changeUi.CustomerAsync(booking, User, _qr, booking.Customer.PersonId == User.PersonId()),
+            PendingReceipt = booking.Payments.FirstOrDefault(p => p.Type == PaymentType.Deposit && p.Method == PaymentMethod.ManualReceipt && p.Status == PaymentStatus.Submitted),
+            LastRejectedReceipt = booking.Payments.Where(p => p.Type == PaymentType.Deposit && p.Status == PaymentStatus.Rejected).MaxBy(p => p.ReviewedAt),
             IsOwnAccount = booking.Customer.PersonId == User.PersonId(),
             ShowDevSimulator = _env.IsDevelopment(),
         });
@@ -272,7 +276,10 @@ public class BookingsController : Controller
         {
             return NotFound();
         }
-        return Json(new { status = booking.Status.ToString(), holdExpiresAt = DateTime.SpecifyKind(booking.HoldExpiresAt, DateTimeKind.Utc) });
+        var requests = await _db.BookingChangeRequests.AsNoTracking().Include(r => r.Payments)
+            .Where(r => r.BookingId == booking.Id).ToListAsync();
+        return Json(new { status = booking.Status.ToString(), holdExpiresAt = DateTime.SpecifyKind(booking.HoldExpiresAt, DateTimeKind.Utc),
+            changeVersion = ChangeRequestUiService.Version(requests) });
     }
 
     [HttpPost]
