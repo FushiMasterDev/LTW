@@ -89,7 +89,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         AsString<ContractStatus>(20);
         AsString<PolicyScope>(10);
         AsString<DocumentType>(30);
-        AsString<ChangeRequestType>(20);
+        AsString<ChangeRequestType>(32);
         AsString<ChangeRequestStatus>(20);
         AsString<SettlementStatus>(20);
         AsString<SettlementItemType>(20);
@@ -340,8 +340,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
             e.HasKey(x => new { x.RoomId, x.Date });
             e.HasIndex(x => x.BookingId);
             e.HasIndex(x => x.RoomBlockId);
+            e.HasOne(x => x.BookingChangeRequest).WithMany(r => r.RoomNights)
+                .HasForeignKey(x => x.BookingChangeRequestId).OnDelete(DeleteBehavior.NoAction);
             e.ToTable(t => t.HasCheckConstraint("CK_RoomNights_Owner",
-                "([BookingId] IS NOT NULL AND [RoomBlockId] IS NULL) OR ([BookingId] IS NULL AND [RoomBlockId] IS NOT NULL)"));
+                "([BookingId] IS NOT NULL AND [RoomBlockId] IS NULL AND [BookingChangeRequestId] IS NULL) OR ([BookingId] IS NULL AND [RoomBlockId] IS NOT NULL AND [BookingChangeRequestId] IS NULL) OR ([BookingId] IS NULL AND [RoomBlockId] IS NULL AND [BookingChangeRequestId] IS NOT NULL)"));
             e.HasOne(x => x.Room).WithMany(r => r.RoomNights).HasForeignKey(x => x.RoomId);
             e.HasOne(x => x.Booking).WithMany(b => b.RoomNights).HasForeignKey(x => x.BookingId);
         });
@@ -377,6 +379,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
             e.Property(x => x.SpecialRequests).HasMaxLength(1000);
             e.Property(x => x.CancelReason).HasMaxLength(500);
             e.Property(x => x.DepositRate).HasPrecision(5, 4);
+            e.Property(x => x.ChangeFeeAmount).HasDefaultValue(0m);
             e.Property(x => x.CommissionRate).HasPrecision(5, 4);
             // Hai thao tác đổi trạng thái cùng lúc (job hết hạn và tiền về) → chỉ một bên thành công
             e.Property(x => x.Status).IsConcurrencyToken();
@@ -388,6 +391,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
             e.HasIndex(x => x.CheckOut);
             e.ToTable(t =>
             {
+                t.HasCheckConstraint("CK_Bookings_ChangeFeeAmount",
+                    "[ChangeFeeAmount] >= 0");
                 t.HasCheckConstraint("CK_Bookings_Dates", "[CheckOut] > [CheckIn]");
                 t.HasCheckConstraint("CK_Bookings_Guests", "[Guests] > 0");
                 t.HasCheckConstraint("CK_Bookings_Amounts", "[TotalAmount] > 0 AND [DepositAmount] >= 0 AND [DepositAmount] <= [TotalAmount]");
@@ -440,27 +445,82 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         builder.Entity<BookingChangeRequest>(e =>
         {
             e.Property(x => x.DecisionNote).HasMaxLength(500);
-            // Danh sách lấy từ enum: thêm giá trị mới thì EF thấy model đổi và buộc tạo migration
+            e.Property(x => x.RejectionReason).HasMaxLength(500);
+            e.HasIndex(x => x.BookingId);
+            e.Property(x => x.FinanceNote).HasMaxLength(500);
+            e.Property(x => x.Status).IsConcurrencyToken();
+            e.HasIndex(x => x.BookingId, "IX_BookingChangeRequests_OneActivePerBooking").IsUnique()
+                .HasFilter($"[Status] IN ({SqlList(ChangeRequestStatus.Pending, ChangeRequestStatus.AwaitingPayment)})");
+            // CHECK giữ lịch sử có cột mới NULL; service bắt buộc đủ dữ liệu cho yêu cầu mới.
             e.ToTable(t =>
             {
+                // Danh sách lấy từ enum: thêm giá trị mới thì EF thấy model đổi và buộc tạo migration
                 t.HasCheckConstraint("CK_BookingChangeRequests_Type", $"[RequestType] IN ({SqlList<ChangeRequestType>()})");
                 t.HasCheckConstraint("CK_BookingChangeRequests_Status", $"[Status] IN ({SqlList<ChangeRequestStatus>()})");
+                t.HasCheckConstraint("CK_BookingChangeRequests_Fields",
+                    $"([RequestType] = '{ChangeRequestType.Cancel}'"
+                    + " AND [NewCheckIn] IS NULL AND [NewCheckOut] IS NULL AND [NewRoomTypeId] IS NULL)"
+                    + $" OR ([RequestType] = '{ChangeRequestType.ChangeDates}'"
+                    + " AND [NewCheckIn] IS NOT NULL AND [NewCheckOut] IS NOT NULL"
+                    + " AND [NewCheckOut] > [NewCheckIn] AND [NewRoomTypeId] IS NULL)"
+                    + $" OR ([RequestType] = '{ChangeRequestType.ChangeRoomType}'"
+                    + " AND [NewRoomTypeId] IS NOT NULL AND [NewCheckIn] IS NULL AND [NewCheckOut] IS NULL)"
+                    + $" OR ([RequestType] = '{ChangeRequestType.ChangeDatesAndRoomType}'"
+                    + " AND [NewRoomTypeId] IS NOT NULL AND [NewCheckIn] IS NOT NULL AND [NewCheckOut] IS NOT NULL"
+                    + " AND [NewCheckOut] > [NewCheckIn])");
+                t.HasCheckConstraint("CK_BookingChangeRequests_Decision",
+                    $"([Status] = '{ChangeRequestStatus.Pending}' AND [DecidedByAccountId] IS NULL AND [DecidedAt] IS NULL)"
+                    + $" OR ([Status] <> '{ChangeRequestStatus.Pending}' AND [DecidedByAccountId] IS NOT NULL AND [DecidedAt] IS NOT NULL)");
+                t.HasCheckConstraint("CK_BookingChangeRequests_Amounts",
+                    "([ChangeFee] IS NULL OR [ChangeFee] >= 0)"
+                    + " AND ([DepositCarriedOver] IS NULL OR [DepositCarriedOver] >= 0)"
+                    + " AND ([AdditionalDeposit] IS NULL OR [AdditionalDeposit] >= 0)"
+                    + " AND ([NewTotalAmount] IS NULL OR [NewTotalAmount] >= 0)"
+                    + " AND ([RefundAmount] IS NULL OR [RefundAmount] >= 0)");
+                t.HasCheckConstraint("CK_BookingChangeRequests_Finance",
+                    $"([Status] = '{ChangeRequestStatus.Applied}' AND [AdditionalDeposit] IS NOT NULL AND [AdditionalDeposit] > 0"
+                    + " AND [FinanceConfirmedByAccountId] IS NOT NULL AND [FinanceConfirmedAt] IS NOT NULL"
+                    + " AND [FinanceConfirmedAt] >= [DecidedAt]"
+                    + " AND [FinanceNote] IS NOT NULL AND [FinanceNote] <> '')"
+                    + $" OR (([Status] <> '{ChangeRequestStatus.Applied}' OR [AdditionalDeposit] IS NULL OR [AdditionalDeposit] = 0)"
+                    + " AND [FinanceConfirmedByAccountId] IS NULL AND [FinanceConfirmedAt] IS NULL AND [FinanceNote] IS NULL)");
+                t.HasCheckConstraint("CK_BookingChangeRequests_ActorSeparation",
+                    "([RequestedByAccountId] IS NULL OR [DecidedByAccountId] IS NULL"
+                    + " OR [RequestedByAccountId] <> [DecidedByAccountId])"
+                    + " AND ([RequestedByAccountId] IS NULL OR [FinanceConfirmedByAccountId] IS NULL"
+                    + " OR [RequestedByAccountId] <> [FinanceConfirmedByAccountId])"
+                    + " AND ([DecidedByAccountId] IS NULL OR [FinanceConfirmedByAccountId] IS NULL"
+                    + " OR [DecidedByAccountId] <> [FinanceConfirmedByAccountId])");
+                t.HasCheckConstraint("CK_BookingChangeRequests_Notes",
+                    $"([Status] = '{ChangeRequestStatus.Pending}' OR"
+                    + " ([DecisionNote] IS NOT NULL AND [DecisionNote] <> ''))"
+                    + $" AND ([Status] <> '{ChangeRequestStatus.Rejected}' OR"
+                    + " ([RejectionReason] IS NOT NULL AND [RejectionReason] <> '')"
+                    + " OR ([RejectionReason] IS NULL AND [DecisionNote] IS NOT NULL AND [DecisionNote] <> ''))");
+                t.HasCheckConstraint("CK_BookingChangeRequests_PaymentDeadline",
+                    $"([Status] = '{ChangeRequestStatus.Pending}' AND [PaymentDeadlineAt] IS NULL)"
+                    + $" OR ([Status] IN ({SqlList(ChangeRequestStatus.AwaitingPayment, ChangeRequestStatus.Expired)})"
+                    + " AND [AdditionalDeposit] IS NOT NULL AND [AdditionalDeposit] > 0"
+                    + " AND [PaymentDeadlineAt] IS NOT NULL AND [PaymentDeadlineAt] > [DecidedAt])"
+                    + $" OR ([Status] = '{ChangeRequestStatus.Applied}'"
+                    + " AND (([AdditionalDeposit] IS NULL AND [PaymentDeadlineAt] IS NULL)"
+                    + " OR ([AdditionalDeposit] = 0 AND [PaymentDeadlineAt] IS NULL)"
+                    + " OR ([AdditionalDeposit] > 0 AND [PaymentDeadlineAt] IS NOT NULL"
+                    + " AND [PaymentDeadlineAt] > [DecidedAt])))"
+                    + $" OR ([Status] = '{ChangeRequestStatus.Rejected}'"
+                    + " AND ([PaymentDeadlineAt] IS NULL"
+                    + " OR ([AdditionalDeposit] IS NOT NULL AND [AdditionalDeposit] > 0"
+                    + " AND [PaymentDeadlineAt] > [DecidedAt])))");
                 // FR-05, Bảng 1.21: khách gửi, hoặc nhân viên gửi thay khách
                 t.HasCheckConstraint("CK_BookingChangeRequests_RequestedBy",
                     $"[RequestedByType] IN ({SqlList(ActorType.Customer, ActorType.Employee)})");
-                // Trường bắt buộc theo loại; cố ý chưa cấm trường thừa (đổi ngày kèm loại phòng chưa được chốt)
-                t.HasCheckConstraint("CK_BookingChangeRequests_Fields",
-                    $"([RequestType] <> '{ChangeRequestType.Cancel}' OR ([NewCheckIn] IS NULL AND [NewCheckOut] IS NULL AND [NewRoomTypeId] IS NULL))"
-                    + $" AND ([RequestType] <> '{ChangeRequestType.ChangeDates}' OR ([NewCheckIn] IS NOT NULL AND [NewCheckOut] IS NOT NULL AND [NewCheckOut] > [NewCheckIn]))"
-                    + $" AND ([RequestType] <> '{ChangeRequestType.ChangeRoomType}' OR [NewRoomTypeId] IS NOT NULL)");
-                // Người quyết định chưa bắt buộc: chưa chốt việc hệ thống tự đóng yêu cầu
-                t.HasCheckConstraint("CK_BookingChangeRequests_Decision",
-                    $"([Status] = '{ChangeRequestStatus.Pending}' AND [DecidedAt] IS NULL AND [DecidedByAccountId] IS NULL)"
-                    + $" OR ([Status] <> '{ChangeRequestStatus.Pending}' AND [DecidedAt] IS NOT NULL)");
             });
             e.HasOne(x => x.Booking).WithMany(b => b.ChangeRequests).HasForeignKey(x => x.BookingId);
             e.HasOne(x => x.NewRoomType).WithMany().HasForeignKey(x => x.NewRoomTypeId);
             e.HasOne(x => x.DecidedByAccount).WithMany().HasForeignKey(x => x.DecidedByAccountId);
+            e.HasOne(x => x.RequestedByAccount).WithMany().HasForeignKey(x => x.RequestedByAccountId).OnDelete(DeleteBehavior.NoAction);
+            e.HasOne(x => x.FinanceConfirmedByAccount).WithMany().HasForeignKey(x => x.FinanceConfirmedByAccountId).OnDelete(DeleteBehavior.NoAction);
+            e.HasOne(x => x.NewRoom).WithMany().HasForeignKey(x => x.NewRoomId).OnDelete(DeleteBehavior.NoAction);
         });
 
         // ---- F. Tiền ----
@@ -468,6 +528,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         builder.Entity<Payment>(e =>
         {
             e.Property(x => x.ReceiptImageUrl).HasMaxLength(300);
+            e.HasIndex(x => x.ChangeRequestId, "IX_Payments_OneAdditionalDepositPerChangeRequest").IsUnique()
+                .HasFilter($"[Type] = '{PaymentType.AdditionalDeposit}' AND [Status] <> '{PaymentStatus.Rejected}'");
+            e.HasOne(x => x.ChangeRequest).WithMany(r => r.Payments).HasForeignKey(x => x.ChangeRequestId).OnDelete(DeleteBehavior.NoAction);
             e.Property(x => x.TransferContent).HasMaxLength(255);
             e.Property(x => x.BankRef).HasMaxLength(100);
             e.Property(x => x.RejectReason).HasMaxLength(500);
@@ -484,6 +547,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
                 .HasFilter($"[Type] = '{PaymentType.Refund}'");
             e.ToTable(t =>
             {
+                t.HasCheckConstraint("CK_Payments_ChangeRequest",
+                    $"([Type] = '{PaymentType.AdditionalDeposit}' AND [ChangeRequestId] IS NOT NULL)"
+                    + $" OR ([Type] <> '{PaymentType.AdditionalDeposit}' AND [ChangeRequestId] IS NULL)");
                 t.HasCheckConstraint("CK_Payments_Amount", "[Amount] > 0");
                 // D11: bill tay phải có ảnh để kế toán duyệt
                 t.HasCheckConstraint("CK_Payments_Receipt",

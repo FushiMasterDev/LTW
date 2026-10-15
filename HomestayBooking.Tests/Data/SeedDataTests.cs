@@ -249,7 +249,7 @@ public class SeedDataTests
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var bookings = await db.Bookings
-            .Include(b => b.Nights).Include(b => b.RoomNights).Include(b => b.Payments).Include(b => b.Histories)
+            .Include(b => b.Nights).Include(b => b.RoomNights).Include(b => b.Payments).Include(b => b.Histories).Include(b => b.ChangeRequests)
             .ToListAsync();
 
         Assert.Equal(SeedData.SampleBookingCount, bookings.Count);
@@ -276,7 +276,16 @@ public class SeedDataTests
             for (var i = 1; i < history.Count; i++)
             {
                 Assert.Equal(history[i - 1].ToStatus, history[i].FromStatus);
-                Assert.True(BookingService.CanTransition(history[i].FromStatus!.Value, history[i].ToStatus));
+                if (history[i].FromStatus == BookingStatus.Confirmed && history[i].ToStatus == BookingStatus.Deposited)
+                {
+                    // Đổi đã Applied phải xác nhận lại; đây là thao tác riêng, không mở transition chung.
+                    var applied = Assert.Single(b.ChangeRequests, r => r.Status == ChangeRequestStatus.Applied);
+                    Assert.Equal(applied.DecidedAt, history[i].ChangedAt);
+                    Assert.Equal(applied.DecidedByAccountId, history[i].ActorAccountId);
+                    Assert.Equal(ActorType.Employee, history[i].ActorType);
+                    Assert.Null(b.ConfirmedAt);
+                }
+                else Assert.True(BookingService.CanTransition(history[i].FromStatus!.Value, history[i].ToStatus));
             }
             Assert.True(b.Payments.Count(p => p.Type == PaymentType.Deposit) <= 1);
             Assert.True(b.CreatedAt < b.CheckIn.ToDateTime(new TimeOnly(14, 0)));

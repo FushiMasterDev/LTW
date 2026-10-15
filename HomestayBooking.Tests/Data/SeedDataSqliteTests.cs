@@ -54,6 +54,29 @@ public class SeedDataSqliteTests
             Assert.True(await db.Payments.AnyAsync());
             Assert.True(await db.Settlements.AnyAsync());
             Assert.True(await db.BookingChangeRequests.AnyAsync());
+            var requests = await db.BookingChangeRequests.Include(r => r.Booking).ToListAsync();
+            Assert.Equal(5, requests.Count);
+            Assert.All(requests, r =>
+            {
+                Assert.NotNull(r.RequestedByAccountId);
+                Assert.NotNull(r.ChangeFee);
+                Assert.NotNull(r.DepositCarriedOver);
+                Assert.NotNull(r.AdditionalDeposit);
+                Assert.NotNull(r.NewTotalAmount);
+            });
+            var managerId = await db.Employees.Where(e => e.EmployeeCode == "QL001").Select(e => e.Person.Account!.Id).SingleAsync();
+            Assert.All(requests.Where(r => r.Status != HomestayBooking.Web.Models.Entities.ChangeRequestStatus.Pending), r => Assert.Equal(managerId, r.DecidedByAccountId));
+            var applied = Assert.Single(requests, r => r.Status == HomestayBooking.Web.Models.Entities.ChangeRequestStatus.Applied);
+            Assert.Equal(0m, applied.AdditionalDeposit);
+            Assert.Equal(0m, applied.ChangeFee);
+            Assert.Equal(applied.NewTotalAmount, applied.Booking.TotalAmount);
+            Assert.Equal(applied.DepositCarriedOver, applied.Booking.DepositAmount);
+            Assert.Equal(HomestayBooking.Web.Models.Entities.BookingStatus.Deposited, applied.Booking.Status);
+            Assert.Null(applied.Booking.ConfirmedAt);
+            var rejected = Assert.Single(requests, r => r.Status == HomestayBooking.Web.Models.Entities.ChangeRequestStatus.Rejected);
+            Assert.False(string.IsNullOrWhiteSpace(rejected.RejectionReason));
+            Assert.Equal(rejected.RejectionReason, rejected.DecisionNote);
+
         }
 
         await SeedData.InitializeAsync(services);

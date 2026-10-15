@@ -26,7 +26,7 @@ PRINT CONCAT(N'Đích ', DB_NAME(), N', ', @rowsBefore, N' dòng hiện có. B�
 
 DECLARE @now datetime2 = SYSUTCDATETIME();
 DECLARE @pOwner int, @pCust int, @owner int, @cust int, @area int, @hs int, @cat int, @rt int, @room int, @pol int,
-        @b1 int, @b2 int, @set int;
+        @b1 int, @b2 int, @set int, @pUser int, @acct nvarchar(450) = N'ht-test-decider';
 DECLARE @n int = 1, @max int, @name nvarchar(120), @sql nvarchar(max), @expect nvarchar(128),
         @pass int = 0, @fail int = 0, @err nvarchar(4000), @rowsAfter bigint;
 
@@ -56,6 +56,18 @@ BEGIN TRY
         VALUES (N'HT-0002', @cust, N'HT', N'+84999000002', N'Web', @hs, @rt, @room, '2030-02-01', '2030-02-03', 2, N'AwaitingPayment',
                 @now, 2000000, 0.3, 600000, 0.1, @pol, @now, @now); SET @b2 = SCOPE_IDENTITY();
 
+    INSERT PersonProfiles (PhoneNumber, CreatedAt, UpdatedAt) VALUES (N'+84999000003', @now, @now); SET @pUser = SCOPE_IDENTITY();
+    INSERT AspNetUsers (Id, PersonId, Status, CreatedAt, UpdatedAt, EmailConfirmed, PhoneNumberConfirmed, TwoFactorEnabled, LockoutEnabled, AccessFailedCount)
+        VALUES (@acct, @pUser, N'Active', @now, @now, 0, 0, 0, 0, 0);
+
+    -- Lấy đúng CHECK đang triển khai; tách enum sai khỏi Fields/Deadline cũng đang chặn nó.
+    DECLARE @typeCheck nvarchar(max) = (SELECT definition FROM sys.check_constraints WHERE name = N'CK_BookingChangeRequests_Type');
+    DECLARE @statusCheck nvarchar(max) = (SELECT definition FROM sys.check_constraints WHERE name = N'CK_BookingChangeRequests_Status');
+    CREATE TABLE #WorkflowTypeProbe (RequestType nvarchar(32) NOT NULL);
+    CREATE TABLE #WorkflowStatusProbe (Status nvarchar(20) NOT NULL);
+    EXEC (N'ALTER TABLE #WorkflowTypeProbe ADD CONSTRAINT CK_BookingChangeRequests_Type CHECK (' + @typeCheck + N');'
+        + N'ALTER TABLE #WorkflowStatusProbe ADD CONSTRAINT CK_BookingChangeRequests_Status CHECK (' + @statusCheck + N');');
+    INSERT #WorkflowStatusProbe VALUES ('Pending');
     -- Các ca: lỗi ràng buộc chỉ kết thúc câu lệnh, transaction vẫn dùng tiếp được
     SET XACT_ABORT OFF;
     PRINT N'Dữ liệu thử đã tạo trong transaction.';
@@ -86,11 +98,11 @@ BEGIN TRY
      (N'Mục đối soát hoa hồng 0', N'INSERT SettlementItems (SettlementId, BookingId, ItemType, RoomAmount, DepositAmount, RefundAmount, RetainedAmount, CommissionRate, CommissionAmount, PayoutAmount) SELECT Id, @b1, N''Completed'', 2000000, 600000, 0, 600000, 0, 60000, 540000 FROM Settlements WHERE HomestayId = @hs', N'CK_SettlementItems_CommissionRate'),
      (N'Mục đối soát hoa hồng 1', N'INSERT SettlementItems (SettlementId, BookingId, ItemType, RoomAmount, DepositAmount, RefundAmount, RetainedAmount, CommissionRate, CommissionAmount, PayoutAmount) SELECT Id, @b1, N''Completed'', 2000000, 600000, 0, 600000, 1, 60000, 540000 FROM Settlements WHERE HomestayId = @hs', N'CK_SettlementItems_CommissionRate'),
      (N'Mục đối soát hoa hồng 0.1 (hợp lệ)', N'INSERT SettlementItems (SettlementId, BookingId, ItemType, RoomAmount, DepositAmount, RefundAmount, RetainedAmount, CommissionRate, CommissionAmount, PayoutAmount) SELECT Id, @b1, N''Completed'', 2000000, 600000, 0, 600000, 0.1, 60000, 540000 FROM Settlements WHERE HomestayId = @hs', N''),
-     (N'Yêu cầu loại không có trong enum', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, Status, CreatedAt) VALUES (@b2, N''Upgrade'', N''Customer'', N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_Type'),
-     (N'Yêu cầu trạng thái không có trong enum', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, Status, DecidedAt, CreatedAt) VALUES (@b2, N''Cancel'', N''Customer'', N''Cancelled'', SYSUTCDATETIME(), SYSUTCDATETIME())', N'CK_BookingChangeRequests_Status'),
+     (N'Yêu cầu loại không có trong enum', N'INSERT #WorkflowTypeProbe VALUES (''Upgrade'')', N'CK_BookingChangeRequests_Type'),
+     (N'Yêu cầu trạng thái không có trong enum', N'UPDATE #WorkflowStatusProbe SET Status = ''Unknown''', N'CK_BookingChangeRequests_Status'),
      (N'Yêu cầu hủy chờ duyệt (hợp lệ)', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, Status, CreatedAt) VALUES (@b2, N''Cancel'', N''Customer'', N''Pending'', SYSUTCDATETIME())', N''),
-     (N'Đổi trạng thái yêu cầu sang giá trị lạ', N'UPDATE BookingChangeRequests SET Status = N''Done'', DecidedAt = SYSUTCDATETIME() WHERE BookingId = @b2', N'CK_BookingChangeRequests_Status'),
-     (N'Yêu cầu đổi loại phòng đã duyệt (hợp lệ)', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, NewRoomTypeId, Status, DecidedAt, CreatedAt) VALUES (@b2, N''ChangeRoomType'', N''Employee'', @rt, N''Approved'', SYSUTCDATETIME(), SYSUTCDATETIME())', N'');
+     (N'Đổi trạng thái yêu cầu sang giá trị lạ', N'UPDATE #WorkflowStatusProbe SET Status = ''Unknown''', N'CK_BookingChangeRequests_Status'),
+     (N'Yêu cầu đổi loại phòng đã duyệt (hợp lệ)', N'INSERT BookingChangeRequests (DecisionNote, DecidedByAccountId, BookingId, RequestType, RequestedByType, NewRoomTypeId, Status, DecidedAt, CreatedAt) VALUES (N''Đồng ý đổi phòng'', @acct, @b2, N''ChangeRoomType'', N''Employee'', @rt, N''Applied'', SYSUTCDATETIME(), SYSUTCDATETIME())', N'');
 
     SET @max = (SELECT MAX(n) FROM @cases);
     WHILE @n <= @max
@@ -98,7 +110,7 @@ BEGIN TRY
         SELECT @name = Name, @sql = Sql, @expect = Expect FROM @cases WHERE n = @n;
         SET @err = NULL;
         BEGIN TRY
-            EXEC sp_executesql @sql, N'@b1 int, @b2 int, @hs int, @rt int', @b1 = @b1, @b2 = @b2, @hs = @hs, @rt = @rt;
+            EXEC sp_executesql @sql, N'@b1 int, @b2 int, @hs int, @rt int, @acct nvarchar(450)', @b1 = @b1, @b2 = @b2, @hs = @hs, @rt = @rt, @acct = @acct;
         END TRY
         BEGIN CATCH
             SET @err = CONCAT(N'Msg ', ERROR_NUMBER(), N': ', ERROR_MESSAGE());

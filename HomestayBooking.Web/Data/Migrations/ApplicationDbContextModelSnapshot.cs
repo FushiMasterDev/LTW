@@ -387,6 +387,12 @@ namespace HomestayBooking.Web.Data.Migrations
                     b.Property<DateTime?>("CancelledAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<decimal>("ChangeFeeAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18)
+                        .HasColumnType("decimal(18,0)")
+                        .HasDefaultValue(0m);
+
                     b.Property<DateOnly>("CheckIn")
                         .HasColumnType("date");
 
@@ -534,6 +540,8 @@ namespace HomestayBooking.Web.Data.Migrations
                         {
                             t.HasCheckConstraint("CK_Bookings_Amounts", "[TotalAmount] > 0 AND [DepositAmount] >= 0 AND [DepositAmount] <= [TotalAmount]");
 
+                            t.HasCheckConstraint("CK_Bookings_ChangeFeeAmount", "[ChangeFeeAmount] >= 0");
+
                             t.HasCheckConstraint("CK_Bookings_CommissionRate", "[CommissionRate] > 0 AND [CommissionRate] < 1");
 
                             t.HasCheckConstraint("CK_Bookings_ConfirmedAt", "([Status] IN ('Confirmed', 'CheckedIn', 'Completed', 'NoShow') AND [ConfirmedAt] IS NOT NULL) OR ([Status] IN ('AwaitingPayment', 'PaymentSubmitted', 'Deposited', 'Rejected', 'Expired') AND [ConfirmedAt] IS NULL) OR [Status] = 'Cancelled'");
@@ -560,8 +568,16 @@ namespace HomestayBooking.Web.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal?>("AdditionalDeposit")
+                        .HasPrecision(18)
+                        .HasColumnType("decimal(18,0)");
+
                     b.Property<int>("BookingId")
                         .HasColumnType("int");
+
+                    b.Property<decimal?>("ChangeFee")
+                        .HasPrecision(18)
+                        .HasColumnType("decimal(18,0)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -576,14 +592,38 @@ namespace HomestayBooking.Web.Data.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<decimal?>("DepositCarriedOver")
+                        .HasPrecision(18)
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<DateTime?>("FinanceConfirmedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FinanceConfirmedByAccountId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("FinanceNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<DateOnly?>("NewCheckIn")
                         .HasColumnType("date");
 
                     b.Property<DateOnly?>("NewCheckOut")
                         .HasColumnType("date");
 
+                    b.Property<int?>("NewRoomId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("NewRoomTypeId")
                         .HasColumnType("int");
+
+                    b.Property<decimal?>("NewTotalAmount")
+                        .HasPrecision(18)
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<DateTime?>("PaymentDeadlineAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<decimal?>("PriceDifference")
                         .HasPrecision(18)
@@ -593,10 +633,17 @@ namespace HomestayBooking.Web.Data.Migrations
                         .HasPrecision(18)
                         .HasColumnType("decimal(18,0)");
 
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("RequestType")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("RequestedByAccountId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("RequestedByType")
                         .IsRequired()
@@ -604,6 +651,7 @@ namespace HomestayBooking.Web.Data.Migrations
                         .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Status")
+                        .IsConcurrencyToken()
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
@@ -614,19 +662,39 @@ namespace HomestayBooking.Web.Data.Migrations
 
                     b.HasIndex("DecidedByAccountId");
 
+                    b.HasIndex("FinanceConfirmedByAccountId");
+
+                    b.HasIndex("NewRoomId");
+
                     b.HasIndex("NewRoomTypeId");
+
+                    b.HasIndex("RequestedByAccountId");
+
+                    b.HasIndex(new[] { "BookingId" }, "IX_BookingChangeRequests_OneActivePerBooking")
+                        .IsUnique()
+                        .HasFilter("[Status] IN ('Pending', 'AwaitingPayment')");
 
                     b.ToTable("BookingChangeRequests", t =>
                         {
-                            t.HasCheckConstraint("CK_BookingChangeRequests_Decision", "([Status] = 'Pending' AND [DecidedAt] IS NULL AND [DecidedByAccountId] IS NULL) OR ([Status] <> 'Pending' AND [DecidedAt] IS NOT NULL)");
+                            t.HasCheckConstraint("CK_BookingChangeRequests_ActorSeparation", "([RequestedByAccountId] IS NULL OR [DecidedByAccountId] IS NULL OR [RequestedByAccountId] <> [DecidedByAccountId]) AND ([RequestedByAccountId] IS NULL OR [FinanceConfirmedByAccountId] IS NULL OR [RequestedByAccountId] <> [FinanceConfirmedByAccountId]) AND ([DecidedByAccountId] IS NULL OR [FinanceConfirmedByAccountId] IS NULL OR [DecidedByAccountId] <> [FinanceConfirmedByAccountId])");
 
-                            t.HasCheckConstraint("CK_BookingChangeRequests_Fields", "([RequestType] <> 'Cancel' OR ([NewCheckIn] IS NULL AND [NewCheckOut] IS NULL AND [NewRoomTypeId] IS NULL)) AND ([RequestType] <> 'ChangeDates' OR ([NewCheckIn] IS NOT NULL AND [NewCheckOut] IS NOT NULL AND [NewCheckOut] > [NewCheckIn])) AND ([RequestType] <> 'ChangeRoomType' OR [NewRoomTypeId] IS NOT NULL)");
+                            t.HasCheckConstraint("CK_BookingChangeRequests_Amounts", "([ChangeFee] IS NULL OR [ChangeFee] >= 0) AND ([DepositCarriedOver] IS NULL OR [DepositCarriedOver] >= 0) AND ([AdditionalDeposit] IS NULL OR [AdditionalDeposit] >= 0) AND ([NewTotalAmount] IS NULL OR [NewTotalAmount] >= 0) AND ([RefundAmount] IS NULL OR [RefundAmount] >= 0)");
+
+                            t.HasCheckConstraint("CK_BookingChangeRequests_Decision", "([Status] = 'Pending' AND [DecidedByAccountId] IS NULL AND [DecidedAt] IS NULL) OR ([Status] <> 'Pending' AND [DecidedByAccountId] IS NOT NULL AND [DecidedAt] IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_BookingChangeRequests_Fields", "([RequestType] = 'Cancel' AND [NewCheckIn] IS NULL AND [NewCheckOut] IS NULL AND [NewRoomTypeId] IS NULL) OR ([RequestType] = 'ChangeDates' AND [NewCheckIn] IS NOT NULL AND [NewCheckOut] IS NOT NULL AND [NewCheckOut] > [NewCheckIn] AND [NewRoomTypeId] IS NULL) OR ([RequestType] = 'ChangeRoomType' AND [NewRoomTypeId] IS NOT NULL AND [NewCheckIn] IS NULL AND [NewCheckOut] IS NULL) OR ([RequestType] = 'ChangeDatesAndRoomType' AND [NewRoomTypeId] IS NOT NULL AND [NewCheckIn] IS NOT NULL AND [NewCheckOut] IS NOT NULL AND [NewCheckOut] > [NewCheckIn])");
+
+                            t.HasCheckConstraint("CK_BookingChangeRequests_Finance", "([Status] = 'Applied' AND [AdditionalDeposit] IS NOT NULL AND [AdditionalDeposit] > 0 AND [FinanceConfirmedByAccountId] IS NOT NULL AND [FinanceConfirmedAt] IS NOT NULL AND [FinanceConfirmedAt] >= [DecidedAt] AND [FinanceNote] IS NOT NULL AND [FinanceNote] <> '') OR (([Status] <> 'Applied' OR [AdditionalDeposit] IS NULL OR [AdditionalDeposit] = 0) AND [FinanceConfirmedByAccountId] IS NULL AND [FinanceConfirmedAt] IS NULL AND [FinanceNote] IS NULL)");
+
+                            t.HasCheckConstraint("CK_BookingChangeRequests_Notes", "([Status] = 'Pending' OR ([DecisionNote] IS NOT NULL AND [DecisionNote] <> '')) AND ([Status] <> 'Rejected' OR ([RejectionReason] IS NOT NULL AND [RejectionReason] <> '') OR ([RejectionReason] IS NULL AND [DecisionNote] IS NOT NULL AND [DecisionNote] <> ''))");
+
+                            t.HasCheckConstraint("CK_BookingChangeRequests_PaymentDeadline", "([Status] = 'Pending' AND [PaymentDeadlineAt] IS NULL) OR ([Status] IN ('AwaitingPayment', 'Expired') AND [AdditionalDeposit] IS NOT NULL AND [AdditionalDeposit] > 0 AND [PaymentDeadlineAt] IS NOT NULL AND [PaymentDeadlineAt] > [DecidedAt]) OR ([Status] = 'Applied' AND (([AdditionalDeposit] IS NULL AND [PaymentDeadlineAt] IS NULL) OR ([AdditionalDeposit] = 0 AND [PaymentDeadlineAt] IS NULL) OR ([AdditionalDeposit] > 0 AND [PaymentDeadlineAt] IS NOT NULL AND [PaymentDeadlineAt] > [DecidedAt]))) OR ([Status] = 'Rejected' AND ([PaymentDeadlineAt] IS NULL OR ([AdditionalDeposit] IS NOT NULL AND [AdditionalDeposit] > 0 AND [PaymentDeadlineAt] > [DecidedAt])))");
 
                             t.HasCheckConstraint("CK_BookingChangeRequests_RequestedBy", "[RequestedByType] IN ('Customer', 'Employee')");
 
-                            t.HasCheckConstraint("CK_BookingChangeRequests_Status", "[Status] IN ('Pending', 'Approved', 'Rejected')");
+                            t.HasCheckConstraint("CK_BookingChangeRequests_Status", "[Status] IN ('Pending', 'AwaitingPayment', 'Applied', 'Rejected', 'Expired')");
 
-                            t.HasCheckConstraint("CK_BookingChangeRequests_Type", "[RequestType] IN ('ChangeDates', 'ChangeRoomType', 'Cancel')");
+                            t.HasCheckConstraint("CK_BookingChangeRequests_Type", "[RequestType] IN ('ChangeDates', 'ChangeRoomType', 'ChangeDatesAndRoomType', 'Cancel')");
                         });
                 });
 
@@ -1294,6 +1362,9 @@ namespace HomestayBooking.Web.Data.Migrations
                     b.Property<int>("BookingId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("ChangeRequestId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Method")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -1350,6 +1421,10 @@ namespace HomestayBooking.Web.Data.Migrations
 
                     b.HasIndex("Status", "SubmittedAt");
 
+                    b.HasIndex(new[] { "ChangeRequestId" }, "IX_Payments_OneAdditionalDepositPerChangeRequest")
+                        .IsUnique()
+                        .HasFilter("[Type] = 'AdditionalDeposit' AND [Status] <> 'Rejected'");
+
                     b.HasIndex(new[] { "BookingId" }, "IX_Payments_OneDepositPerBooking")
                         .IsUnique()
                         .HasFilter("[Type] = 'Deposit' AND [Status] <> 'Rejected'");
@@ -1361,6 +1436,8 @@ namespace HomestayBooking.Web.Data.Migrations
                     b.ToTable("Payments", t =>
                         {
                             t.HasCheckConstraint("CK_Payments_Amount", "[Amount] > 0");
+
+                            t.HasCheckConstraint("CK_Payments_ChangeRequest", "([Type] = 'AdditionalDeposit' AND [ChangeRequestId] IS NOT NULL) OR ([Type] <> 'AdditionalDeposit' AND [ChangeRequestId] IS NULL)");
 
                             t.HasCheckConstraint("CK_Payments_Receipt", "[Method] <> 'ManualReceipt' OR ([ReceiptImageUrl] IS NOT NULL AND [ReceiptImageUrl] <> '')");
                         });
@@ -1553,6 +1630,9 @@ namespace HomestayBooking.Web.Data.Migrations
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
 
+                    b.Property<int?>("BookingChangeRequestId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("BookingId")
                         .HasColumnType("int");
 
@@ -1561,13 +1641,15 @@ namespace HomestayBooking.Web.Data.Migrations
 
                     b.HasKey("RoomId", "Date");
 
+                    b.HasIndex("BookingChangeRequestId");
+
                     b.HasIndex("BookingId");
 
                     b.HasIndex("RoomBlockId");
 
                     b.ToTable("RoomNights", t =>
                         {
-                            t.HasCheckConstraint("CK_RoomNights_Owner", "([BookingId] IS NOT NULL AND [RoomBlockId] IS NULL) OR ([BookingId] IS NULL AND [RoomBlockId] IS NOT NULL)");
+                            t.HasCheckConstraint("CK_RoomNights_Owner", "([BookingId] IS NOT NULL AND [RoomBlockId] IS NULL AND [BookingChangeRequestId] IS NULL) OR ([BookingId] IS NULL AND [RoomBlockId] IS NOT NULL AND [BookingChangeRequestId] IS NULL) OR ([BookingId] IS NULL AND [RoomBlockId] IS NULL AND [BookingChangeRequestId] IS NOT NULL)");
                         });
                 });
 
@@ -2194,15 +2276,36 @@ namespace HomestayBooking.Web.Data.Migrations
                         .WithMany()
                         .HasForeignKey("DecidedByAccountId");
 
+                    b.HasOne("HomestayBooking.Web.Models.Entities.ApplicationUser", "FinanceConfirmedByAccount")
+                        .WithMany()
+                        .HasForeignKey("FinanceConfirmedByAccountId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("HomestayBooking.Web.Models.Entities.Room", "NewRoom")
+                        .WithMany()
+                        .HasForeignKey("NewRoomId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("HomestayBooking.Web.Models.Entities.RoomType", "NewRoomType")
                         .WithMany()
                         .HasForeignKey("NewRoomTypeId");
+
+                    b.HasOne("HomestayBooking.Web.Models.Entities.ApplicationUser", "RequestedByAccount")
+                        .WithMany()
+                        .HasForeignKey("RequestedByAccountId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Booking");
 
                     b.Navigation("DecidedByAccount");
 
+                    b.Navigation("FinanceConfirmedByAccount");
+
+                    b.Navigation("NewRoom");
+
                     b.Navigation("NewRoomType");
+
+                    b.Navigation("RequestedByAccount");
                 });
 
             modelBuilder.Entity("HomestayBooking.Web.Models.Entities.BookingNight", b =>
@@ -2430,6 +2533,11 @@ namespace HomestayBooking.Web.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("HomestayBooking.Web.Models.Entities.BookingChangeRequest", "ChangeRequest")
+                        .WithMany("Payments")
+                        .HasForeignKey("ChangeRequestId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("HomestayBooking.Web.Models.Entities.Employee", "ReviewedByEmployee")
                         .WithMany()
                         .HasForeignKey("ReviewedByEmployeeId");
@@ -2441,6 +2549,8 @@ namespace HomestayBooking.Web.Data.Migrations
                     b.Navigation("BankTransaction");
 
                     b.Navigation("Booking");
+
+                    b.Navigation("ChangeRequest");
 
                     b.Navigation("ReviewedByEmployee");
 
@@ -2498,6 +2608,11 @@ namespace HomestayBooking.Web.Data.Migrations
 
             modelBuilder.Entity("HomestayBooking.Web.Models.Entities.RoomNight", b =>
                 {
+                    b.HasOne("HomestayBooking.Web.Models.Entities.BookingChangeRequest", "BookingChangeRequest")
+                        .WithMany("RoomNights")
+                        .HasForeignKey("BookingChangeRequestId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("HomestayBooking.Web.Models.Entities.Booking", "Booking")
                         .WithMany("RoomNights")
                         .HasForeignKey("BookingId");
@@ -2514,6 +2629,8 @@ namespace HomestayBooking.Web.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Booking");
+
+                    b.Navigation("BookingChangeRequest");
 
                     b.Navigation("Room");
 
@@ -2697,6 +2814,13 @@ namespace HomestayBooking.Web.Data.Migrations
                     b.Navigation("RoomNights");
 
                     b.Navigation("SettlementItem");
+                });
+
+            modelBuilder.Entity("HomestayBooking.Web.Models.Entities.BookingChangeRequest", b =>
+                {
+                    b.Navigation("Payments");
+
+                    b.Navigation("RoomNights");
                 });
 
             modelBuilder.Entity("HomestayBooking.Web.Models.Entities.CancellationPolicy", b =>

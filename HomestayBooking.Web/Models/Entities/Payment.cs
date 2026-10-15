@@ -8,6 +8,7 @@ public class Payment
 {
     public int Id { get; set; }
     public int BookingId { get; set; }
+    public int? ChangeRequestId { get; set; }
     public PaymentType Type { get; set; }
     public PaymentMethod Method { get; set; }
 
@@ -40,6 +41,7 @@ public class Payment
     public DateTime? ReviewAlertSentAt { get; set; }
 
     public Booking Booking { get; set; } = null!;
+    public BookingChangeRequest? ChangeRequest { get; set; }
     public BankTransaction? BankTransaction { get; set; }
     public ApplicationUser? SubmittedByAccount { get; set; }
     public Employee? ReviewedByEmployee { get; set; }

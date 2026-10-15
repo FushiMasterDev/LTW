@@ -1,6 +1,6 @@
 -- Thử 4 CHECK của migration StatusConsistency trên HomestayBooking_DeployTest ĐÃ CÓ dữ liệu seed:
 -- CK_Bookings_ConfirmedAt, CK_BookingChangeRequests_RequestedBy, CK_BookingChangeRequests_Fields, CK_BookingChangeRequests_Decision.
--- Không đọc hay sửa dữ liệu seed: tự tạo dữ liệu nền riêng (SĐT +84998…, mã SC-…, khu vực StatusConsistencyTest).
+-- Cập nhật theo ChangeRequestWorkflow; vẫn giữ đủ 42 ca. Không đọc hay sửa dữ liệu seed: tự tạo dữ liệu nền riêng (SĐT +84998…, mã SC-…, khu vực StatusConsistencyTest).
 --   cd database && sqlcmd -S <server> -U <user> -C -d HomestayBooking_DeployTest -i tests/status_consistency_seeded.sql
 -- Mọi dữ liệu thử nằm trong một transaction và luôn ROLLBACK. Có ca trượt hoặc lỗi → thoát với mã khác 0.
 -- Lưu ý: ROLLBACK không trả lại bộ đếm IDENTITY.
@@ -66,7 +66,7 @@ BEGIN TRY
     PRINT N'Dữ liệu thử đã tạo trong transaction.';
 
     -- Expect = tên ràng buộc phải xuất hiện trong thông báo lỗi; rỗng = câu lệnh hợp lệ, phải chạy được.
-    -- Mỗi ca chặn chỉ vi phạm đúng một CHECK. Thứ tự có ý nghĩa: các ca hợp lệ của @b2 nối tiếp nhau.
+    -- Mỗi ca Request có savepoint riêng; các bước đổi trạng thái của Booking vẫn nối tiếp nhau.
     DECLARE @cases TABLE (n int IDENTITY, Name nvarchar(120), Sql nvarchar(max), Expect nvarchar(128));
     INSERT @cases (Name, Sql, Expect) VALUES
      -- CK_Bookings_ConfirmedAt: @b2 đang AwaitingPayment, chưa có ConfirmedAt
@@ -89,39 +89,46 @@ BEGIN TRY
      (N'Đơn đã hủy bỏ ConfirmedAt (hợp lệ)', N'UPDATE Bookings SET ConfirmedAt = NULL WHERE Id = @b2', N''),
      (N'Xác nhận lại mà không ghi ConfirmedAt', N'UPDATE Bookings SET Status = N''Confirmed'' WHERE Id = @b2', N'CK_Bookings_ConfirmedAt'),
      -- CK_BookingChangeRequests_RequestedBy
-     (N'Chủ homestay gửi yêu cầu', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, Status, CreatedAt) VALUES (@b1, N''Cancel'', N''Owner'', N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_RequestedBy'),
-     (N'Hệ thống gửi yêu cầu', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, Status, CreatedAt) VALUES (@b1, N''Cancel'', N''System'', N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_RequestedBy'),
-     (N'Khách gửi yêu cầu (hợp lệ)', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, Status, CreatedAt) VALUES (@b1, N''Cancel'', N''Customer'', N''Pending'', SYSUTCDATETIME())', N''),
-     (N'Nhân viên gửi thay khách (hợp lệ)', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, Status, CreatedAt) VALUES (@b1, N''Cancel'', N''Employee'', N''Pending'', SYSUTCDATETIME())', N''),
+     (N'Chủ homestay gửi yêu cầu', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, Status, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''Cancel'', N''Owner'', N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_RequestedBy'),
+     (N'Hệ thống gửi yêu cầu', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, Status, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''Cancel'', N''System'', N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_RequestedBy'),
+     (N'Khách gửi yêu cầu (hợp lệ)', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, Status, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''Cancel'', N''Customer'', N''Pending'', SYSUTCDATETIME())', N''),
+     (N'Nhân viên gửi thay khách (hợp lệ)', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, Status, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''Cancel'', N''Employee'', N''Pending'', SYSUTCDATETIME())', N''),
      -- Ghi nhận hành vi: collation CI nên SQL Server nhận chữ thường (EF đọc vẫn ra Customer); SQLite trong test thì chặn
-     (N'Chữ thường ''customer'' (collation CI, được nhận)', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, Status, CreatedAt) VALUES (@b1, N''Cancel'', N''customer'', N''Pending'', SYSUTCDATETIME())', N''),
+     (N'Chữ thường ''customer'' (collation CI, được nhận)', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, Status, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''Cancel'', N''customer'', N''Pending'', SYSUTCDATETIME())', N''),
      -- CK_BookingChangeRequests_Fields
-     (N'Hủy kèm ngày mới', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, NewCheckIn, Status, CreatedAt) VALUES (@b1, N''Cancel'', N''Customer'', ''2030-03-01'', N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_Fields'),
-     (N'Hủy kèm loại phòng mới', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, NewRoomTypeId, Status, CreatedAt) VALUES (@b1, N''Cancel'', N''Customer'', @rt, N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_Fields'),
-     (N'Đổi ngày thiếu ngày trả', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, NewCheckIn, Status, CreatedAt) VALUES (@b1, N''ChangeDates'', N''Customer'', ''2030-03-01'', N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_Fields'),
-     (N'Đổi ngày thiếu ngày nhận', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, NewCheckOut, Status, CreatedAt) VALUES (@b1, N''ChangeDates'', N''Customer'', ''2030-03-03'', N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_Fields'),
-     (N'Đổi ngày trả = ngày nhận', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, NewCheckIn, NewCheckOut, Status, CreatedAt) VALUES (@b1, N''ChangeDates'', N''Customer'', ''2030-03-03'', ''2030-03-03'', N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_Fields'),
-     (N'Đổi ngày trả trước ngày nhận', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, NewCheckIn, NewCheckOut, Status, CreatedAt) VALUES (@b1, N''ChangeDates'', N''Customer'', ''2030-03-03'', ''2030-03-01'', N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_Fields'),
-     (N'Đổi loại phòng thiếu loại phòng', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, Status, CreatedAt) VALUES (@b1, N''ChangeRoomType'', N''Customer'', N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_Fields'),
-     (N'Đổi ngày đủ, trả sau nhận (hợp lệ)', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, NewCheckIn, NewCheckOut, Status, CreatedAt) VALUES (@b1, N''ChangeDates'', N''Customer'', ''2030-03-01'', ''2030-03-03'', N''Pending'', SYSUTCDATETIME())', N''),
-     (N'Đổi loại phòng có loại phòng (hợp lệ)', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, NewRoomTypeId, Status, CreatedAt) VALUES (@b1, N''ChangeRoomType'', N''Customer'', @rt, N''Pending'', SYSUTCDATETIME())', N''),
-     (N'Đổi ngày kèm loại phòng (chưa chốt, đang cho phép)', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, NewCheckIn, NewCheckOut, NewRoomTypeId, Status, CreatedAt) VALUES (@b1, N''ChangeDates'', N''Customer'', ''2030-03-01'', ''2030-03-03'', @rt, N''Pending'', SYSUTCDATETIME())', N''),
-     (N'Đổi loại phòng kèm ngày (chưa chốt, đang cho phép)', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, NewCheckIn, NewCheckOut, NewRoomTypeId, Status, CreatedAt) VALUES (@b1, N''ChangeRoomType'', N''Customer'', ''2030-03-01'', ''2030-03-03'', @rt, N''Pending'', SYSUTCDATETIME())', N''),
+     (N'Hủy kèm ngày mới', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, NewCheckIn, Status, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''Cancel'', N''Customer'', ''2030-03-01'', N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_Fields'),
+     (N'Hủy kèm loại phòng mới', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, NewRoomTypeId, Status, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''Cancel'', N''Customer'', @rt, N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_Fields'),
+     (N'Đổi ngày thiếu ngày trả', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, NewCheckIn, Status, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''ChangeDates'', N''Customer'', ''2030-03-01'', N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_Fields'),
+     (N'Đổi ngày thiếu ngày nhận', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, NewCheckOut, Status, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''ChangeDates'', N''Customer'', ''2030-03-03'', N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_Fields'),
+     (N'Đổi ngày trả = ngày nhận', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, NewCheckIn, NewCheckOut, Status, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''ChangeDates'', N''Customer'', ''2030-03-03'', ''2030-03-03'', N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_Fields'),
+     (N'Đổi ngày trả trước ngày nhận', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, NewCheckIn, NewCheckOut, Status, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''ChangeDates'', N''Customer'', ''2030-03-03'', ''2030-03-01'', N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_Fields'),
+     (N'Đổi loại phòng thiếu loại phòng', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, Status, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''ChangeRoomType'', N''Customer'', N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_Fields'),
+     (N'Đổi ngày đủ, trả sau nhận (hợp lệ)', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, NewCheckIn, NewCheckOut, Status, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''ChangeDates'', N''Customer'', ''2030-03-01'', ''2030-03-03'', N''Pending'', SYSUTCDATETIME())', N''),
+     (N'Đổi loại phòng có loại phòng (hợp lệ)', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, NewRoomTypeId, Status, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''ChangeRoomType'', N''Customer'', @rt, N''Pending'', SYSUTCDATETIME())', N''),
+     (N'Đổi ngày kèm loại phòng (phải dùng loại kết hợp)', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, NewCheckIn, NewCheckOut, NewRoomTypeId, Status, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''ChangeDates'', N''Customer'', ''2030-03-01'', ''2030-03-03'', @rt, N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_Fields'),
+     (N'Đổi loại phòng kèm ngày (phải dùng loại kết hợp)', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, NewCheckIn, NewCheckOut, NewRoomTypeId, Status, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''ChangeRoomType'', N''Customer'', ''2030-03-01'', ''2030-03-03'', @rt, N''Pending'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_Fields'),
      -- CK_BookingChangeRequests_Decision
-     (N'Chờ duyệt mà có DecidedAt', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, Status, DecidedAt, CreatedAt) VALUES (@b1, N''Cancel'', N''Customer'', N''Pending'', SYSUTCDATETIME(), SYSUTCDATETIME())', N'CK_BookingChangeRequests_Decision'),
-     (N'Chờ duyệt mà có người quyết', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, Status, DecidedByAccountId, CreatedAt) VALUES (@b1, N''Cancel'', N''Customer'', N''Pending'', @acct, SYSUTCDATETIME())', N'CK_BookingChangeRequests_Decision'),
-     (N'Đã duyệt thiếu DecidedAt', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, Status, DecidedByAccountId, CreatedAt) VALUES (@b1, N''Cancel'', N''Customer'', N''Approved'', @acct, SYSUTCDATETIME())', N'CK_BookingChangeRequests_Decision'),
-     (N'Từ chối thiếu DecidedAt', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, Status, CreatedAt) VALUES (@b1, N''Cancel'', N''Customer'', N''Rejected'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_Decision'),
-     (N'Đã duyệt có DecidedAt, không người quyết (hợp lệ)', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, Status, DecidedAt, CreatedAt) VALUES (@b1, N''Cancel'', N''Customer'', N''Approved'', SYSUTCDATETIME(), SYSUTCDATETIME())', N''),
-     (N'Từ chối có DecidedAt và người quyết (hợp lệ)', N'INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, Status, DecidedAt, DecidedByAccountId, CreatedAt) VALUES (@b1, N''Cancel'', N''Customer'', N''Rejected'', SYSUTCDATETIME(), @acct, SYSUTCDATETIME())', N''),
-     (N'Duyệt yêu cầu chờ mà không ghi DecidedAt', N'UPDATE BookingChangeRequests SET Status = N''Approved'' WHERE BookingId = @b1 AND Status = N''Pending''', N'CK_BookingChangeRequests_Decision'),
-     (N'Duyệt yêu cầu chờ có DecidedAt và người quyết (hợp lệ)', N'UPDATE BookingChangeRequests SET Status = N''Approved'', DecidedAt = SYSUTCDATETIME(), DecidedByAccountId = @acct WHERE BookingId = @b1 AND Status = N''Pending''', N'');
+     (N'Chờ duyệt mà có DecidedAt', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, Status, DecidedAt, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''Cancel'', N''Customer'', N''Pending'', SYSUTCDATETIME(), SYSUTCDATETIME())', N'CK_BookingChangeRequests_Decision'),
+     (N'Chờ duyệt mà có người quyết', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, Status, DecidedByAccountId, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''Cancel'', N''Customer'', N''Pending'', @acct, SYSUTCDATETIME())', N'CK_BookingChangeRequests_Decision'),
+     (N'Đã duyệt thiếu DecidedAt', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, Status, DecidedByAccountId, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''Cancel'', N''Customer'', N''Applied'', @acct, SYSUTCDATETIME())', N'CK_BookingChangeRequests_Decision'),
+     (N'Từ chối thiếu DecidedAt', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, Status, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''Cancel'', N''Customer'', N''Rejected'', SYSUTCDATETIME())', N'CK_BookingChangeRequests_Decision'),
+     (N'Đã duyệt có DecidedAt, không người quyết', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, Status, DecidedAt, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''Cancel'', N''Customer'', N''Applied'', SYSUTCDATETIME(), SYSUTCDATETIME())', N'CK_BookingChangeRequests_Decision'),
+     (N'Từ chối có DecidedAt và người quyết (hợp lệ)', N'INSERT BookingChangeRequests (DecisionNote, BookingId, RequestType, RequestedByType, Status, DecidedAt, DecidedByAccountId, CreatedAt) VALUES (N''Quyết định thử'', @b1, N''Cancel'', N''Customer'', N''Rejected'', SYSUTCDATETIME(), @acct, SYSUTCDATETIME())', N''),
+     (N'Duyệt yêu cầu chờ mà không ghi DecidedAt', N'UPDATE BookingChangeRequests SET DecisionNote = N''Quyết định thử'', Status = N''Applied'' WHERE BookingId = @b1 AND Status = N''Pending''', N'CK_BookingChangeRequests_Decision'),
+     (N'Duyệt yêu cầu chờ có DecidedAt và người quyết (hợp lệ)', N'UPDATE BookingChangeRequests SET DecisionNote = N''Quyết định thử'', Status = N''Applied'', DecidedAt = SYSUTCDATETIME(), DecidedByAccountId = @acct WHERE BookingId = @b1 AND Status = N''Pending''', N'');
 
     SET @max = (SELECT MAX(n) FROM @cases);
     WHILE @n <= @max
     BEGIN
         SELECT @name = Name, @sql = Sql, @expect = Expect FROM @cases WHERE n = @n;
         SET @err = NULL;
+        IF @sql LIKE N'%BookingChangeRequests%'
+        BEGIN
+            SAVE TRANSACTION request_case;
+            IF @sql LIKE N'UPDATE BookingChangeRequests%'
+                INSERT BookingChangeRequests (BookingId, RequestType, RequestedByType, Status, CreatedAt)
+                VALUES (@b1, 'Cancel', 'Customer', 'Pending', @now);
+        END;
         BEGIN TRY
             EXEC sp_executesql @sql, N'@b1 int, @b2 int, @rt int, @acct nvarchar(450)', @b1 = @b1, @b2 = @b2, @rt = @rt, @acct = @acct;
         END TRY
@@ -138,6 +145,7 @@ BEGIN TRY
         ELSE
             SELECT @fail += 1, @err = N'TRƯỢT ' + @name + N'  | mong đợi: ' + IIF(@expect = N'', N'chạy được', @expect) + N' | thực tế: ' + ISNULL(@err, N'không bị chặn');
         PRINT @err;
+        IF @sql LIKE N'%BookingChangeRequests%' ROLLBACK TRANSACTION request_case;
         SET @n += 1;
     END;
 

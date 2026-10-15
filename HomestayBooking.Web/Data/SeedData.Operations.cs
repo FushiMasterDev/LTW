@@ -211,134 +211,168 @@ public static partial class SeedData
         await db.SaveChangesAsync();
     }
 
-    /// <summary>
-    /// Yêu cầu đổi/hủy trên các đơn đã xác nhận sắp tới: đổi ngày (chờ duyệt, bị từ chối, đã duyệt), đổi loại phòng, hủy (xem trước tiền hoàn).
-    /// </summary>
+    /// <summary>Yêu cầu mẫu theo luồng Manager duyệt; lịch sử Applied đã phản ánh vào chính đơn.</summary>
     private static async Task SeedChangeRequestsAsync(ApplicationDbContext db, DateTime nowUtc, DateOnly today)
     {
-        if (await db.BookingChangeRequests.AnyAsync())
-        {
-            return;
-        }
+        if (await db.BookingChangeRequests.AnyAsync()) return;
+
         var bookings = await db.Bookings
             .Include(b => b.Homestay).ThenInclude(h => h.Owner).ThenInclude(o => o.Person).ThenInclude(p => p.Account)
             .Include(b => b.Homestay).ThenInclude(h => h.RoomTypes).ThenInclude(t => t.Prices)
-            .Include(b => b.Nights)
+            .Include(b => b.Nights).Include(b => b.RoomNights)
             .Include(b => b.Customer).ThenInclude(c => c.Person).ThenInclude(p => p.Account)
-            .Where(b => b.Status == BookingStatus.Confirmed && b.CheckIn > today.AddDays(2))
-            .OrderBy(b => b.CheckIn)
-            .AsSplitQuery()
-            .ToListAsync();
-        if (bookings.Count == 0)
-        {
-            return;
-        }
+            .Where(b => b.Status == BookingStatus.Confirmed && b.CheckIn > today.AddDays(2) && b.DiscountAmount == 0)
+            .OrderBy(b => b.CheckIn).AsSplitQuery().ToListAsync();
+        if (bookings.Count == 0) return;
+
+        var manager = await db.Employees.Include(e => e.Person).ThenInclude(p => p.Account)
+            .SingleAsync(e => e.EmployeeCode == "QL001");
+        var consultant = await db.Employees.Include(e => e.Person).ThenInclude(p => p.Account)
+            .SingleAsync(e => e.EmployeeCode == "NV001");
+        var managerId = manager.Person.Account!.Id;
+        var consultantId = consultant.Person.Account!.Id;
         var holidays = (await db.Holidays.Select(h => h.Date).ToListAsync()).ToHashSet();
         var rules = await db.CancellationRules.ToListAsync();
+        var occupied = await db.RoomNights.AsNoTracking().ToListAsync();
 
-        decimal PriceOf(RoomType roomType, DateOnly checkIn, DateOnly checkOut)
+        List<BookingNight> NightsOf(RoomType type, DateOnly start, DateOnly end)
         {
-            var total = 0m;
-            for (var night = checkIn; night < checkOut; night = night.AddDays(1))
+            var nights = new List<BookingNight>();
+            for (var date = start; date < end; date = date.AddDays(1))
             {
-                var dayType = PricingService.DayTypeOf(night, holidays);
-                total += roomType.Prices.Where(p => p.DayType == dayType && p.EffectiveFrom <= night).MaxBy(p => p.EffectiveFrom)?.Price ?? 0;
+                var dayType = PricingService.DayTypeOf(date, holidays);
+                var price = type.Prices.Where(p => p.DayType == dayType && p.EffectiveFrom <= date)
+                    .MaxBy(p => p.EffectiveFrom)?.Price ?? throw new InvalidOperationException("Seed thiếu giá đêm.");
+                nights.Add(new BookingNight { Date = date, DayType = dayType, Price = price });
             }
-            return total;
+            return nights;
         }
 
-        BookingChangeRequest ChangeDates(Booking b, int shiftDays, double hoursAgo)
+        // Cùng công thức BR-04, nhưng lấy ngày gửi mẫu thay cho đồng hồ lúc chạy seed.
+        decimal RefundAt(Booking b, DateTime createdAt)
         {
-            var newIn = b.CheckIn.AddDays(shiftDays);
-            var newOut = b.CheckOut.AddDays(shiftDays);
-            var roomType = b.Homestay.RoomTypes.Single(t => t.Id == b.RoomTypeId);
+            var sentOn = DateOnly.FromDateTime(VietnamTime.ToLocal(createdAt));
+            var daysBefore = b.CheckIn.DayNumber - sentOn.DayNumber;
+            var percent = rules.Where(r => r.PolicyId == b.CancellationPolicyId && r.MinDaysBefore <= daysBefore)
+                .MaxBy(r => r.MinDaysBefore)?.RefundPercent ?? 0;
+            return PricingService.RoundToThousand(b.AmountDue * percent / 100m);
+        }
+
+        BookingChangeRequest Quote(Booking b, ChangeRequestType type, DateOnly? start, DateOnly? end, RoomType? roomType, DateTime createdAt)
+        {
+            var cancel = type == ChangeRequestType.Cancel;
+            var total = cancel ? 0 : NightsOf(roomType!, start ?? b.CheckIn, end ?? b.CheckOut).Sum(n => n.Price);
+            var fee = type is ChangeRequestType.ChangeDates or ChangeRequestType.ChangeDatesAndRoomType
+                ? b.AmountDue - RefundAt(b, createdAt) : 0;
+            var carried = cancel ? 0 : b.AmountDue - fee;
+            var customerId = b.Customer.Person.Account?.Id;
             return new BookingChangeRequest
             {
-                Booking = b,
-                RequestType = ChangeRequestType.ChangeDates,
-                RequestedByType = ActorType.Customer,
-                NewCheckIn = newIn,
-                NewCheckOut = newOut,
-                PriceDifference = PriceOf(roomType, newIn, newOut) - b.TotalAmount,
-                CreatedAt = nowUtc.AddHours(-hoursAgo),
+                Booking = b, RequestType = type,
+                RequestedByType = customerId is null ? ActorType.Employee : ActorType.Customer,
+                RequestedByAccountId = customerId ?? consultantId,
+                NewCheckIn = start, NewCheckOut = end,
+                NewRoomTypeId = type is ChangeRequestType.ChangeRoomType or ChangeRequestType.ChangeDatesAndRoomType ? roomType!.Id : null,
+                NewTotalAmount = total, ChangeFee = fee, DepositCarriedOver = carried,
+                AdditionalDeposit = cancel ? 0 : Math.Max(0, PricingService.RoundToThousand(b.DepositRate * total) - carried),
+                PriceDifference = cancel ? null : total - b.TotalAmount,
+                RefundAmount = cancel ? RefundAt(b, createdAt) : null, CreatedAt = createdAt,
             };
         }
 
+        await using var transaction = db.Database.IsRelational() ? await db.Database.BeginTransactionAsync() : null;
         var requests = new List<BookingChangeRequest>();
-        var owner = (Booking b) => b.Homestay.Owner.Person.Account?.Id;
+        var first = bookings[0];
+        requests.Add(Quote(first, ChangeRequestType.ChangeDates, first.CheckIn.AddDays(7), first.CheckOut.AddDays(7),
+            first.Homestay.RoomTypes.Single(t => t.Id == first.RoomTypeId), nowUtc.AddHours(-3)));
 
-        // 1. Khách xin lùi lịch 7 ngày — chờ chủ homestay duyệt
-        requests.Add(ChangeDates(bookings[0], 7, 3));
-
-        // 2. Nhân viên tư vấn gửi giúp khách xin lùi 1 ngày — chủ homestay từ chối vì kín phòng
         if (bookings.Count > 1)
         {
-            var rejected = ChangeDates(bookings[1], 1, 30);
+            var b = bookings[1];
+            var rejected = Quote(b, ChangeRequestType.ChangeDates, b.CheckIn.AddDays(1), b.CheckOut.AddDays(1),
+                b.Homestay.RoomTypes.Single(t => t.Id == b.RoomTypeId), nowUtc.AddHours(-30));
             rejected.RequestedByType = ActorType.Employee;
+            rejected.RequestedByAccountId = consultantId;
             rejected.Status = ChangeRequestStatus.Rejected;
-            rejected.DecidedByAccountId = owner(bookings[1]);
+            rejected.DecidedByAccountId = managerId;
             rejected.DecidedAt = rejected.CreatedAt.AddHours(2);
-            rejected.DecisionNote = "Ngày mới homestay đã kín phòng, mong khách thông cảm.";
+            rejected.DecisionNote = rejected.RejectionReason = "Ngày mới homestay đã kín phòng, mong khách thông cảm.";
             requests.Add(rejected);
         }
 
-        // 3. Đã duyệt: đơn đã mang ngày mới, yêu cầu giữ lại làm lịch sử
-        if (bookings.Count > 2)
+        Booking? appliedBooking = null;
+        foreach (var b in bookings.Skip(2))
         {
-            var b = bookings[2];
-            var roomType = b.Homestay.RoomTypes.Single(t => t.Id == b.RoomTypeId);
-            var oldIn = b.CheckIn.AddDays(-3);
-            requests.Add(new BookingChangeRequest
+            var type = b.Homestay.RoomTypes.Single(t => t.Id == b.RoomTypeId);
+            if (b.ConfirmedAt is null || b.ConfirmedAt > nowUtc.AddHours(-2)) continue;
+            var createdAt = b.ConfirmedAt.Value.AddMinutes(1);
+            if (RefundAt(b, createdAt) != b.AmountDue) continue;
+            foreach (var shift in new[] { 7, 14, -7 })
             {
-                Booking = b,
-                RequestType = ChangeRequestType.ChangeDates,
-                RequestedByType = ActorType.Customer,
-                NewCheckIn = b.CheckIn,
-                NewCheckOut = b.CheckOut,
-                PriceDifference = b.TotalAmount - PriceOf(roomType, oldIn, oldIn.AddDays(b.CheckOut.DayNumber - b.CheckIn.DayNumber)),
-                Status = ChangeRequestStatus.Approved,
-                DecidedByAccountId = owner(b),
-                DecidedAt = nowUtc.AddDays(-2).AddHours(1),
-                DecisionNote = "Đồng ý đổi ngày.",
-                CreatedAt = nowUtc.AddDays(-2),
-            });
-        }
+                var start = b.CheckIn.AddDays(shift);
+                var end = b.CheckOut.AddDays(shift);
+                if (start < today.AddDays(3) || end > today.AddDays(90)
+                    || occupied.Any(n => n.RoomId == b.RoomId && n.Date >= start && n.Date < end && n.BookingId != b.Id)) continue;
+                var request = Quote(b, ChangeRequestType.ChangeDates, start, end, type, createdAt);
+                if (request.AdditionalDeposit != 0 || request.NewTotalAmount < request.DepositCarriedOver) continue;
 
-        // 4. Đổi sang loại phòng khác cùng homestay — chờ duyệt
-        var upgrade = bookings.Skip(3).FirstOrDefault(b => b.Homestay.RoomTypes.Any(t => t.Id != b.RoomTypeId && t.MaxGuests >= b.Guests));
+                var oldValues = System.Text.Json.JsonSerializer.Serialize(new { b.CheckIn, b.CheckOut, b.TotalAmount, b.Status, b.ConfirmedAt });
+                request.Status = ChangeRequestStatus.Applied;
+                request.DecidedByAccountId = managerId;
+                request.DecidedAt = createdAt.AddHours(1);
+                request.DecisionNote = "Đồng ý đổi ngày, không cần nộp thêm cọc.";
+                request.NewRoomId = b.RoomId;
+                db.BookingNights.RemoveRange(b.Nights);
+                db.RoomNights.RemoveRange(b.RoomNights);
+                // Lưu phần xóa trước khi thêm lại các khóa (BookingId, Date) có thể giao nhau.
+                await db.SaveChangesAsync();
+                b.Nights = NightsOf(type, start, end);
+                b.RoomNights = b.Nights.Select(n => new RoomNight { RoomId = b.RoomId, Date = n.Date }).ToList();
+                b.CheckIn = start; b.CheckOut = end; b.TotalAmount = request.NewTotalAmount!.Value;
+                b.DepositAmount = request.DepositCarriedOver!.Value;
+                b.ChangeFeeAmount += request.ChangeFee!.Value;
+                b.Status = BookingStatus.Deposited; b.ConfirmedAt = null;
+                b.ConfirmDeadlineAt = request.DecidedAt.Value.AddMinutes(30); b.ConfirmAlertSentAt = null;
+                b.UpdatedAt = request.DecidedAt.Value;
+                b.Histories.Add(new BookingStatusHistory { FromStatus = BookingStatus.Confirmed, ToStatus = BookingStatus.Deposited,
+                    ActorType = ActorType.Employee, ActorAccountId = managerId, ChangedAt = b.UpdatedAt, Note = request.DecisionNote });
+                db.AuditLogs.Add(new AuditLog { AccountId = managerId, TableName = "Bookings", RecordId = b.Id.ToString(),
+                    Action = AuditAction.Update, OldValues = oldValues,
+                    NewValues = System.Text.Json.JsonSerializer.Serialize(new { b.CheckIn, b.CheckOut, b.TotalAmount, b.Status, b.ConfirmedAt }), CreatedAt = b.UpdatedAt });
+                if (b.Homestay.Owner.Person.Account is { } owner)
+                    db.Notifications.Add(new Notification { UserId = owner.Id, Message = $"Đơn {b.Code} đã đổi ngày, vui lòng xác nhận lại.",
+                        Url = $"/Owner/Bookings/Details/{b.Id}", CreatedAt = b.UpdatedAt });
+                requests.Add(request); appliedBooking = b;
+                break;
+            }
+            if (appliedBooking is not null) break;
+        }
+        if (bookings.Count > 2 && appliedBooking is null)
+            throw new InvalidOperationException("Không tìm được mẫu đổi ngày miễn phí, không cần thêm cọc và còn phòng.");
+
+        var upgrade = bookings.Skip(2).FirstOrDefault(b => b != appliedBooking
+            && b.Homestay.RoomTypes.Any(t => t.Id != b.RoomTypeId && t.MaxGuests >= b.Guests));
         if (upgrade is not null)
         {
-            var newType = upgrade.Homestay.RoomTypes.Where(t => t.Id != upgrade.RoomTypeId && t.MaxGuests >= upgrade.Guests).OrderBy(t => t.Id).First();
-            requests.Add(new BookingChangeRequest
-            {
-                Booking = upgrade,
-                RequestType = ChangeRequestType.ChangeRoomType,
-                RequestedByType = ActorType.Customer,
-                NewRoomTypeId = newType.Id,
-                PriceDifference = PriceOf(newType, upgrade.CheckIn, upgrade.CheckOut) - upgrade.TotalAmount,
-                CreatedAt = nowUtc.AddHours(-5),
-            });
+            var type = upgrade.Homestay.RoomTypes.Where(t => t.Id != upgrade.RoomTypeId && t.MaxGuests >= upgrade.Guests).OrderBy(t => t.Id).First();
+            requests.Add(Quote(upgrade, ChangeRequestType.ChangeRoomType, null, null, type, nowUtc.AddHours(-5)));
         }
-
-        // 5. Nhân viên gửi yêu cầu hủy giúp khách, kèm số tiền hoàn dự kiến theo chính sách (FR-05)
-        var cancel = bookings.Skip(3).FirstOrDefault(b => b != upgrade);
-        if (cancel is not null)
+        var cancelBooking = bookings.Skip(2).FirstOrDefault(b => b != appliedBooking && b != upgrade);
+        if (cancelBooking is not null)
         {
-            var daysBefore = cancel.CheckIn.DayNumber - today.DayNumber;
-            var percent = rules.Where(r => r.PolicyId == cancel.CancellationPolicyId && r.MinDaysBefore <= daysBefore)
-                .MaxBy(r => r.MinDaysBefore)?.RefundPercent ?? 0;
-            requests.Add(new BookingChangeRequest
-            {
-                Booking = cancel,
-                RequestType = ChangeRequestType.Cancel,
-                RequestedByType = ActorType.Employee,
-                RefundAmount = PricingService.RoundToThousand(cancel.AmountDue * percent / 100m),
-                CreatedAt = nowUtc.AddHours(-1),
-            });
+            var cancel = Quote(cancelBooking, ChangeRequestType.Cancel, null, null, null, nowUtc.AddHours(-1));
+            cancel.RequestedByType = ActorType.Employee; cancel.RequestedByAccountId = consultantId;
+            requests.Add(cancel);
         }
-
         db.BookingChangeRequests.AddRange(requests);
         await db.SaveChangesAsync();
+        foreach (var request in requests)
+            db.AuditLogs.Add(new AuditLog { AccountId = request.DecidedByAccountId ?? request.RequestedByAccountId,
+                TableName = "BookingChangeRequests", RecordId = request.Id.ToString(), Action = AuditAction.Insert,
+                NewValues = System.Text.Json.JsonSerializer.Serialize(new { request.Status, request.RequestType, request.NewTotalAmount,
+                    request.ChangeFee, request.DepositCarriedOver, request.AdditionalDeposit, request.DecisionNote, request.RejectionReason }), CreatedAt = request.DecidedAt ?? request.CreatedAt });
+        await db.SaveChangesAsync();
+        if (transaction is not null) await transaction.CommitAsync();
     }
 
     /// <summary>Khoản tiền chuyển nhầm không thuộc đơn nào, kế toán đã chuyển trả (D13: Refunded).</summary>

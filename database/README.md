@@ -9,6 +9,7 @@ Dựng database SQL Server cho ứng dụng trên một máy hoặc server mới
 | `verify.sql` | Kiểm tra sau khi dựng: số bảng/khóa/index, migration đã áp, các ràng buộc chính. Chỉ đọc |
 | `tests/constraints.sql` | Thử ràng buộc trên database **mới dựng, chưa seed** (mục 4) |
 | `tests/hardening_seeded.sql` | Thử các ràng buộc của migration `DatabaseHardening` trên database **đã seed** (mục 4) |
+| `tests/change_request_seeded.sql` | Thử 65 ca workflow trên database **đã seed** (mục 4), luôn ROLLBACK |
 | `tests/status_consistency_seeded.sql` | Thử các ràng buộc của migration `StatusConsistency` trên database **đã seed** (mục 4) |
 
 Nguồn chuẩn của schema là `HomestayBooking.Web/Data/Migrations` và `ApplicationDbContext`.
@@ -75,7 +76,7 @@ docker exec -i -w /tmp/hb -e SQLCMDPASSWORD sql-homestay /opt/mssql-tools18/bin/
 
 SSMS: mở `deploy.sql`, bật *SQLCMD Mode*, sửa dòng `:r schema.sql` thành đường dẫn đầy đủ, thêm `:setvar TargetDb HomestayBooking` ở đầu, chọn đúng database rồi chạy.
 
-Cách khác, không dùng file SQL: `dotnet ef database update --project HomestayBooking.Web --connection "<chuỗi kết nối>"` áp cùng các migration đó.
+Cách khác, không dùng file SQL: `dotnet ef database update --configuration Release --project HomestayBooking.Web --connection "<chuỗi kết nối>"` áp cùng các migration đó.
 
 ### Tự áp migration khi khởi động
 
@@ -83,7 +84,7 @@ Cách khác, không dùng file SQL: `dotnet ef database update --project Homesta
 
 - Cấu hình chung (`appsettings.json`): `false`. Ứng dụng chỉ đọc danh sách migration chưa áp dụng. Nếu còn migration, ứng dụng ghi log lỗi với tên từng migration và dừng khởi động; hãy triển khai bằng `deploy.sql` trước rồi khởi động lại.
 - Development (`appsettings.Development.json`): cũng `false`. Profile `http` chạy Development nhưng có thể trỏ tới database đang dùng, nên không tự áp migration theo môi trường.
-- Database mới cần dựng bằng `deploy.sql` ở mục 3 hoặc `dotnet ef database update --project HomestayBooking.Web` với cấu hình kết nối đã kiểm tra đúng đích.
+- Database mới cần dựng bằng `deploy.sql` ở mục 3 hoặc `dotnet ef database update --configuration Release --project HomestayBooking.Web` với cấu hình kết nối đã kiểm tra đúng đích.
 - Nếu chủ động cho phép ứng dụng áp migration, chỉ bật cho phiên chạy đó, ví dụ `Database__AutoMigrate=true ASPNETCORE_ENVIRONMENT=Development dotnet run --project HomestayBooking.Web`. Không đổi mặc định để những lần chạy sau vẫn tắt tự migrate.
 - Cờ này chỉ áp dụng với database quan hệ. Nhánh InMemory dùng trong test vẫn gọi `EnsureCreatedAsync`.
 
@@ -95,20 +96,20 @@ Khi triển khai, đặt `Database__AutoMigrate=false`, áp schema bằng quy tr
 sqlcmd -S localhost,1433 -U sa -C -d HomestayBooking -i verify.sql
 ```
 
-Kết quả đúng: mọi dòng ở bảng đầu là `OK`, có 7 migration (cuối là `20261013032617_StatusConsistency`), mọi ràng buộc ở bảng cuối là `OK`.
+Kết quả đúng: mọi dòng ở bảng đầu là `OK`, có 8 migration (cuối là `20261015092139_ChangeRequestWorkflow`), mọi ràng buộc ở bảng cuối là `OK`.
 
 | Hạng mục | Kỳ vọng |
 |---|---|
 | Bảng (gồm `__EFMigrationsHistory`) | 45 |
-| Cột | 368 |
-| Khóa chính / khóa ngoại / CHECK | 45 / 71 / 37 |
-| Default (`DEFAULT` ở database) | 3 (`Bookings.DiscountAmount`, `SettlementItems.DiscountAmount`, `HomestayImages.SortOrder`) |
+| Cột | 382 |
+| Khóa chính / khóa ngoại / CHECK | 45 / 76 / 44 |
+| Default (`DEFAULT` ở database) | 4 (`Bookings.DiscountAmount`, `Bookings.ChangeFeeAmount`, `SettlementItems.DiscountAmount`, `HomestayImages.SortOrder`) |
 | Khóa ngoại `ON DELETE CASCADE` | 13 (các bảng con thuần túy; còn lại NO ACTION) |
-| Index (không tính khóa chính) / có điều kiện | 87 / 10 |
+| Index (không tính khóa chính) / có điều kiện | 93 / 12 |
 
 ### Thử ràng buộc (tùy chọn, trước khi seed)
 
-`tests/constraints.sql` chỉ chạy trên `HomestayBooking_ConstraintTest` (database rỗng). Hai file `tests/hardening_seeded.sql` và `tests/status_consistency_seeded.sql` chạy trên `HomestayBooking_DeployTest` (database đã seed).
+`tests/constraints.sql` chỉ chạy trên `HomestayBooking_ConstraintTest` (database rỗng). Hai file `tests/hardening_seeded.sql`, `tests/status_consistency_seeded.sql` và `tests/change_request_seeded.sql` chạy trên `HomestayBooking_DeployTest` (database đã seed).
 
 `tests/constraints.sql` thử 35 ca trên SQL Server thật:
 - 26 ca dữ liệu sai phải bị chặn đúng tên ràng buộc (trùng phòng cùng đêm, mỗi đơn một khoản cọc/hoàn, CHECK tiền đơn/voucher/đối soát, hợp đồng hiệu lực, ảnh bìa, FK NO ACTION);
@@ -138,7 +139,7 @@ sqlcmd -S localhost,1433 -U sa -C -d HomestayBooking_DeployTest -i tests/hardeni
 
 ### Thử ràng buộc của `StatusConsistency` (database đã seed)
 
-`tests/status_consistency_seeded.sql` thử 42 ca cho 4 CHECK của migration `StatusConsistency`: `ConfirmedAt` của đơn theo trạng thái (hủy được cả trước lẫn sau xác nhận), người gửi yêu cầu đổi/hủy (`Customer`/`Employee`), trường bắt buộc theo loại yêu cầu, và `DecidedAt` theo trạng thái yêu cầu:
+`tests/status_consistency_seeded.sql` thử 42 ca cho 4 CHECK của migration `StatusConsistency`: `ConfirmedAt` của đơn theo trạng thái (hủy được cả trước lẫn sau xác nhận), người gửi yêu cầu đổi/hủy (`Customer`/`Employee`), trường bắt buộc theo loại yêu cầu, và quyết định theo trạng thái yêu cầu. Giữ đủ 42 ca, cập nhật kỳ vọng theo `ChangeRequestWorkflow`: Applied thay Approved, người quyết bắt buộc, trường thừa phải dùng loại kết hợp; các ca Request có savepoint riêng để không va unique yêu cầu mở:
 
 ```bash
 cd database
@@ -147,6 +148,26 @@ sqlcmd -S localhost,1433 -U sa -C -d HomestayBooking_DeployTest -i tests/status_
 
 - Cùng điều kiện an toàn như `hardening_seeded.sql`: chỉ chạy trên `HomestayBooking_DeployTest` đã áp `StatusConsistency`, dùng khóa thử riêng (SĐT `+84998…`, mã đơn `SC-…`, khu vực `StatusConsistencyTest`), luôn ROLLBACK. Kết quả đúng: `42 đạt, 0 trượt`, `open_tran = 0`, `test_rows_left = 0`, mã thoát 0.
 - Collation `SQL_Latin1_General_CP1_CI_AS` không phân biệt hoa thường nên SQL Server nhận `'customer'` (EF vẫn đọc ra `Customer`); test C# chạy trên SQLite thì chặn giá trị này.
+
+### Thử `ChangeRequestWorkflow` (database đã seed)
+
+`tests/change_request_seeded.sql` có **65 ca** cho 12 CHECK trong thiết kế (5 sửa, 7 thêm), 2 unique filtered và ba chủ của RoomNights. Chỉ chạy trên `HomestayBooking_DeployTest` đã áp migration mới; dùng SĐT `+84997…`, mã `WF-…`, khu vực `ChangeRequestWorkflowTest` và tài khoản `wf-test-…` riêng. Luôn ROLLBACK, so tổng số dòng trước/sau; mong đợi `65 đạt, 0 trượt`, `open_tran = 0`, `test_rows_left = 0`, exit 0.
+
+```bash
+cd database
+sqlcmd -S localhost,1433 -U sa -C -b -d HomestayBooking_DeployTest -i tests/change_request_seeded.sql
+```
+
+- Enum sai đồng thời có thể vi phạm Fields/PaymentDeadline. Các ca Type/Status trong script và test SQLite dùng đúng biểu thức lấy từ metadata ở bảng thử riêng để kiểm đúng tên CHECK; các ca Fields/Deadline và dữ liệu hợp lệ vẫn kiểm trên schema đầy đủ. Không tắt CHECK.
+- SQLite báo unique bằng tên cột; test C# đối chiếu thêm tên/index unique trong model và mã lỗi 2067. SQL Server kiểm trực tiếp tên index trong thông báo lỗi.
+- Chuỗi chỉ có khoảng trắng: SQL Server chặn `<> ''`, SQLite cho qua; service phải kiểm chuỗi trắng. Không thêm hàm TRIM hoặc sửa CHECK Receipt.
+- Trước/sau **mỗi bước ghi** trên database thử, chụp `COUNT_BIG(*)` và `CHECKSUM_AGG(BINARY_CHECKSUM(*))` của từng bảng. So cả hai, không chỉ tổng số dòng; các script test không để lại thay đổi dữ liệu, nhưng bộ đếm IDENTITY có thể tăng sau ROLLBACK.
+
+Migration `ChangeRequestWorkflow` thêm 14 cột, 5 FK NO ACTION, 6 index (gồm 2 unique filtered); giữ nguyên index cọc ban đầu và index BookingChangeRequests.BookingId không lọc. Không tạo bảng. Up thêm cột/FK trước, gỡ CHECK cũ rồi đổi **Approved → Applied**, sau đó đặt CHECK/index mới. Ba Pending cũ giữ nguyên (người gửi/tiền NULL); khi có service/giao diện, Manager chỉ được từ chối chúng với lý do thật, không được duyệt, vẫn chiếm unique mở tới khi từ chối. Actor Owner của dòng lịch sử đóng cũng giữ nguyên.
+
+Down đổi **Applied → Approved** và khôi phục schema/CHECK cũ. Down dừng trước khi sửa nếu đã sử dụng các cột/trạng thái/giữ phòng/cọc thêm mới để tránh mất dữ liệu không biểu diễn được ở phiên bản cũ; phải xử lý và duyệt dữ liệu chuyển tiếp trước khi hạ phiên bản. Không dùng Down như cách reset database.
+
+Seed Development mới dùng QL001 duyệt; đủ người gửi/cột tiền, DecisionNote và RejectionReason cùng có lý do khi từ chối. Mẫu Applied không cần thêm cọc, sửa lịch/BookingNights/RoomNights ngay trên mã đơn cũ, về Deposited và xóa ConfirmedAt, có history/audit/thông báo; không ghi lại các yêu cầu đã có trong database.
 
 ## 5. Dữ liệu mẫu (seed)
 
@@ -188,8 +209,8 @@ Sinh lại `schema.sql` từ migrations, không sửa tay:
 
 ```bash
 cd HomestayBooking.Web
-dotnet ef migrations has-pending-model-changes      # phải báo không có thay đổi
-dotnet ef migrations script --idempotent -o ../database/schema.sql
+dotnet ef migrations has-pending-model-changes --configuration Release      # phải báo không có thay đổi
+dotnet ef migrations script --configuration Release --idempotent -o ../database/schema.sql
 ```
 
 Sau đó cập nhật số kỳ vọng trong `verify.sql` và bảng ở mục 4.
@@ -200,7 +221,7 @@ Nếu một bản ứng dụng đang chạy từ `bin/Debug` (ví dụ `dotnet r
 
 Thứ tự an toàn (ví dụ áp `DatabaseHardening` lên database đang dùng):
 
-1. **Thử trước trên database thử nghiệm** có dữ liệu giống thật: `deploy.sql` → `verify.sql` → `tests/hardening_seeded.sql` và `tests/status_consistency_seeded.sql` → các truy vấn kiểm tra nhất quán.
+1. **Thử trước trên database thử nghiệm** có dữ liệu giống thật: `deploy.sql` → `verify.sql` → `tests/hardening_seeded.sql`, `tests/status_consistency_seeded.sql` và `tests/change_request_seeded.sql` → các truy vấn kiểm tra nhất quán.
 2. **Kiểm tra dữ liệu thật không vi phạm** các CHECK mới bằng truy vấn SELECT (SQL Server từ chối thêm CHECK nếu có dòng vi phạm, và cả migration được hủy).
 3. **Backup** database thật (`BACKUP DATABASE … WITH COPY_ONLY, CHECKSUM` rồi `RESTORE VERIFYONLY`).
 4. **Áp bằng `deploy.sql`** với `-d` và `-v TargetDb` là tên database thật, rồi chạy `verify.sql`.
