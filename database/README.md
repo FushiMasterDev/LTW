@@ -227,3 +227,12 @@ Thứ tự an toàn (ví dụ áp `DatabaseHardening` lên database đang dùng)
 4. **Áp bằng `deploy.sql`** với `-d` và `-v TargetDb` là tên database thật, rồi chạy `verify.sql`.
 
 Khi cập nhật database thật, giữ `Database:AutoMigrate=false`: ứng dụng sẽ dừng nếu schema còn thiếu migration. Nếu bật cờ này, ứng dụng có migration mới sẽ tự áp chúng khi khởi động; chỉ bật sau khi đã quyết định áp migration và hoàn tất quy trình thử nghiệm, kiểm tra dữ liệu, backup.
+
+### Đã triển khai `ChangeRequestWorkflow` lên v5 — 16/10/2026
+
+- Đã áp `20261015092139_ChangeRequestWorkflow` lên `HomestayBooking_v5` bằng `deploy.sql` ngày **16/10/2026**, khi app đã tắt. Deploy chạy một lần, mã thoát `0`; `verify.sql` có **96 dòng OK**, mã thoát `0`.
+- Schema sau triển khai: **8 migration, 45 bảng, 382 cột, 76 FK, 44 CHECK** đều bật và được tin cậy; **93 index ngoài khóa chính**, trong đó 12 index có điều kiện.
+- Backup trước triển khai: `HomestayBooking_v5_20261016_pre-ChangeRequestWorkflow.bak`, dùng `COPY_ONLY, CHECKSUM`; đã qua `RESTORE VERIFYONLY WITH CHECKSUM`. File lưu tại `~/Backups/HomestayBooking/`, kèm file `.sha256`; SHA-256 khớp bản trong container: `9fe5e8a769229b19b2cddb010cd6d2cb2dcb292fabe90dc564c5ae5bd6fc87bc`.
+- Đã restore thử sang database mới **`HomestayBooking_v5_RestoreCheck3`**, dùng MDF/LDF riêng, không `REPLACE`. `DBCC CHECKDB WITH NO_INFOMSGS` không báo lỗi; bản restore có 7 migration, cuối `StatusConsistency`, và số dòng/checksum 45 bảng khớp v5 trước triển khai. Giữ nguyên database restore này.
+- Đối chiếu trước/sau deploy bằng `COUNT_BIG(*)` và `CHECKSUM_AGG(BINARY_CHECKSUM(...))` theo danh sách **368 cột cũ**: 44 bảng nghiệp vụ giữ số dòng; 43 bảng giữ checksum. `BookingChangeRequests` chỉ đổi `Status` của **Id 3: Approved → Applied**, các trường khác giữ nguyên; ba Pending **Id 1/4/5** giữ nguyên. `Bookings.ChangeFeeAmount` toàn `0`, 13 cột mới còn lại toàn `NULL`.
+- `__EFMigrationsHistory` được đối chiếu riêng: giữ 7 dòng cũ và thêm đúng dòng `ChangeRequestWorkflow`, thành 8 dòng. Kết quả snapshot này được ghi nhận **trước khi người dùng bật lại app**, không dùng để khẳng định dữ liệu sau khi app seed/job đã chạy.
