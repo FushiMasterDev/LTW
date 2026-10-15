@@ -17,4 +17,10 @@ public static class AppPolicies
 
     /// <summary>Màn hình kế toán (bill, giao dịch ngân hàng, hoàn tiền): Kế toán, Quản lý, Quản trị hệ thống.</summary>
     public const string Accounting = "Accounting";
+
+    /// <summary>Chỉ Quản lý duyệt nghiệp vụ yêu cầu đổi/hủy.</summary>
+    public const string ChangeRequestApprove = "ChangeRequestApprove";
+
+    /// <summary>Chỉ Kế toán xác nhận khoản cọc bổ sung.</summary>
+    public const string ChangeRequestFinance = "ChangeRequestFinance";
 }

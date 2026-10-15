@@ -349,6 +349,41 @@ public class BookingService
         await NotifyAsync(booking, to);
     }
 
+    /// <summary>Chỉ dùng sau khi yêu cầu đổi đã được duyệt; không mở Transitions chung.</summary>
+    internal void ApplyChangeRequestReconfirmation(Booking booking, Actor actor, string note)
+    {
+        if (booking.Status is not (BookingStatus.Deposited or BookingStatus.Confirmed))
+            throw new BookingException("Đơn không còn được đổi.");
+        var from = booking.Status;
+        booking.Status = BookingStatus.Deposited;
+        booking.ConfirmedAt = null;
+        booking.ConfirmDeadlineAt = UtcNow.AddMinutes(_options.ConfirmMinutes);
+        booking.ConfirmAlertSentAt = null;
+        booking.UpdatedAt = UtcNow;
+        if (from != booking.Status)
+            _db.BookingStatusHistories.Add(new BookingStatusHistory { BookingId = booking.Id,
+                FromStatus = from, ToStatus = booking.Status, ActorType = actor.Type,
+                ActorAccountId = actor.AccountId, Note = note, ChangedAt = UtcNow });
+    }
+
+    /// <summary>Hủy bằng tiền hoàn và tỷ lệ voucher đã chốt lúc gửi, không báo giá lại theo ngày duyệt.</summary>
+    internal async Task ApplyChangeRequestCancellationAsync(Booking booking, decimal refund, int refundPercent, Actor actor, string note)
+    {
+        if (booking.Status is not (BookingStatus.Deposited or BookingStatus.Confirmed)
+            || refund < 0 || refund > booking.AmountDue || refundPercent is < 0 or > 100)
+            throw new BookingException("Đơn không còn được hủy theo yêu cầu này.");
+        var from = booking.Status;
+        booking.RefundAmount = refund;
+        booking.CancelledAt = booking.UpdatedAt = UtcNow;
+        booking.CancelReason = note;
+        booking.Status = BookingStatus.Cancelled;
+        await _vouchers.RestoreAsync(booking, refundPercent);
+        _db.RoomNights.RemoveRange(await _db.RoomNights.Where(n => n.BookingId == booking.Id).ToListAsync());
+        _db.BookingStatusHistories.Add(new BookingStatusHistory { BookingId = booking.Id,
+            FromStatus = from, ToStatus = booking.Status, ActorType = actor.Type,
+            ActorAccountId = actor.AccountId, Note = note, ChangedAt = UtcNow });
+    }
+
     private async Task NotifyAsync(Booking booking, BookingStatus to)
     {
         var accounts = await _db.Bookings
