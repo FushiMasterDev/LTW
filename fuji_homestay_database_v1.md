@@ -1,6 +1,7 @@
-# Fuji Homestay — Thiết kế Database v1.9
+# Fuji Homestay — Thiết kế Database v1.10
 
-> **Phiên bản:** 1.9 — 2026-10-16 (`ChangeRequestWorkflow` đã áp lên `HomestayBooking_v5`: 14 cột mới, 12 CHECK trong phạm vi, 5 FK, 6 index; toàn schema có 8 migration, 44 CHECK)\
+> **Phiên bản:** 1.10 — 2026-10-16 (`EnumAndReviewChecks`: thêm 16 CHECK, schema code/database thử có 9 migration và 60 CHECK; CHƯA áp migration này lên v5)\
+> 1.9 — 2026-10-16 (`ChangeRequestWorkflow` đã áp lên `HomestayBooking_v5`: 14 cột mới, 12 CHECK trong phạm vi, 5 FK, 6 index; toàn schema có 8 migration, 44 CHECK)\
 > 1.8 — 2026-10-13 (nhất quán trạng thái: 4 CHECK — `ConfirmedAt` của đơn theo trạng thái; yêu cầu đổi/hủy: người gửi `Customer`/`Employee`, trường bắt buộc theo loại, `DecidedAt` theo trạng thái — migration `StatusConsistency`)\
 > 1.7 — 2026-10-13 (siết ràng buộc: 7 CHECK — tỷ lệ cọc, hoa hồng của đơn và mục đối soát, bill tay phải có ảnh, đối soát đã gửi phải có `SentAt`, loại/trạng thái yêu cầu đổi/hủy; DEFAULT 0 cho `HomestayImages.SortOrder` — migration `DatabaseHardening`; tài liệu sửa `Notifications.AccountId` → `UserId` cho khớp schema sẵn có, không đổi database)  
 > 1.6 — 2026-10-12 (màn kế toán: migration `AccountingGuards` thêm 2 index trên `Payments` — `IX_Payments_BookingId` và `IX_Payments_OneRefundPerBooking` (UNIQUE một khoản hoàn mỗi đơn); concurrency token `BankTransactions.MatchStatus` ở cấu hình EF Core)  
@@ -55,6 +56,23 @@
 | D10 | Chính sách hủy riêng của homestay **được ưu tiên** hơn chính sách chung của Fuji | `CancellationPolicy`, `CancellationRule` |
 | D14 | **Voucher xin lỗi khách** (Q4): chỉ quản lý cấp, gắn với một khách; giá trị = 5% tổng đơn gốc (50.000–200.000đ), hạn 6 tháng; có **số dư**, dùng nhiều lần. Mỗi đơn chỉ giảm tối đa **20% hoa hồng Fuji** của đơn đó (Fuji nhận 300k hoa hồng thì chịu tối đa 60k), trừ vào tiền cọc. Fuji chịu toàn bộ, homestay nhận đủ | Bảng `Vouchers`; `Booking.VoucherId`, `Booking.DiscountAmount` |
 
+**10 quyết định chốt ngày 16/10/2026, Prompt 10 — backend phải tuân thủ, không tự mở rộng schema:**
+
+| # | Quyết định | Thực hiện |
+|---|---|---|
+| D15 | Chủ xác nhận đối soát không bắt buộc; Paid đi từ Sent hoặc Confirmed | Giữ CHECK hiện tại; không thêm CHECK Settlements.ConfirmedAt |
+| D16 | Người gửi/xác nhận đối soát ghi vào AuditLog | Không thêm cột actor trên Settlements |
+| D17 | OwnerRegistration chỉ duyệt người chủ; từng Homestay duyệt riêng qua Status; giấy tờ pháp lý gắn Homestay | Không thêm cột liên kết hồ sơ–homestay; giữ liên kết giấy tờ cũ, backend áp quy tắc pháp lý cho hồ sơ mới |
+| D18 | SubmittedAt là lúc nộp đủ hồ sơ | Tính SLA ba ngày làm việc từ mốc này, không thêm cột |
+| D19 | Giá/phòng/ảnh/mô tả sửa trực tiếp và ghi AuditLog; sửa địa chỉ/giấy tờ pháp lý đưa Homestay về PendingReview | Backend kiểm quyền và chuyển trạng thái; không tạo bảng phiên bản nội dung |
+| D20 | Hợp đồng phải Active và EndDate >= CheckOut của đơn | Backend kiểm khi báo giá/đặt/đổi; không chỉ kiểm ngày đặt |
+| D21 | Chưa hỗ trợ hợp đồng tương lai | Giữ enum/index một hợp đồng Active, chưa thêm trạng thái chờ hiệu lực |
+| D22 | Tắt phòng chặn bán mới, giữ các đơn đã nhận | Không xóa lịch hoặc hủy đơn khi đổi IsActive |
+| D23 | Doanh số nhân viên theo CreatedByEmployeeId; công việc xử lý theo AssignedEmployeeId | Backend/báo cáo dùng đúng hai cột, giao lại không đổi người tạo |
+| D24 | Chủ từ chối lịch mới sau đổi không tự hoàn phí; Manager có thể cấp voucher | Dùng Vouchers hiện có, không thêm khoản hoàn phí tự động |
+
+AuditLog được ghi **trực tiếp trong service**, cùng transaction với nghiệp vụ; không làm `SaveChangesInterceptor`. Các quyết định D15–D24 là đầu vào cho backend, không khẳng định toàn bộ backend đã được triển khai trong Prompt 10.
+
 ---
 
 ## 2. Quy ước
@@ -70,7 +88,7 @@
 | Ngày ở | `date` (`DateOnly`) |
 | Thời điểm | `datetime2`, lưu **UTC**, đổi sang giờ Việt Nam khi hiển thị |
 | Giá trị liệt kê (enum) | Lưu dạng **chuỗi** (`nvarchar(20–40)`) để script SQL dễ đọc |
-| `CreatedAt`, `UpdatedAt` | Có ở mọi bảng nghiệp vụ |
+| `CreatedAt`, `UpdatedAt` | Theo từng entity; không thêm vào bảng nối/đêm phòng chỉ để đồng nhất tên cột |
 | Số điện thoại | Chuẩn hóa **E.164** (`+84912345678`) trước khi lưu và tra cứu |
 | Xóa dữ liệu | **Không xóa cứng** đơn, thanh toán, đối soát, hợp đồng, hồ sơ người; đổi trạng thái. Chỉ xóa cứng: ảnh, liên kết tiện nghi, `RoomNight`, `RoomBlock` |
 | Xóa dây chuyền (cascade) | Chỉ ở bảng con thuần túy (ảnh, bảng nối, `RoomBlock → RoomNight`, bảng Identity). Còn lại `Restrict` — SQL Server không cho nhiều đường cascade tới cùng một bảng |
@@ -236,8 +254,10 @@ Khách có thể tồn tại **trước** khi có tài khoản (nhân viên tạ
 | Status | nvarchar(30) | `Draft`, `WaitingOwnerActivation`, `PendingReview`, `UnderReview`, `NeedsRevision`, `Approved`, `Rejected` |
 | CreatedByEmployeeId, ReviewedByEmployeeId | int | FK → Employees, NULL |
 | ReviewNote | nvarchar(1000) | NULL |
-| SubmittedAt, ReviewedAt | datetime2 | NULL |
+| SubmittedAt, ReviewedAt | datetime2 | NULL; SubmittedAt là lúc nhận đủ hồ sơ (D18) |
 | | | **UNIQUE (OwnerId) WHERE Status IN (Draft … NeedsRevision)** — mỗi Owner chỉ một hồ sơ đang xử lý |
+
+CHECK `CK_OwnerRegistrations_Status` lấy đủ enum. `CK_OwnerRegistrations_Decision`: NeedsRevision/Approved/Rejected phải có ReviewedByEmployeeId và ReviewedAt; NeedsRevision/Rejected phải có ReviewNote khác NULL, khác rỗng. Draft/WaitingOwnerActivation/PendingReview/UnderReview không buộc xóa dấu duyệt cũ khi gửi lại. Hồ sơ này duyệt người chủ; pháp lý và trạng thái kinh doanh được xét riêng theo từng Homestay (D17).
 
 #### `VerificationDocuments` — giấy tờ xác minh (**mới**)
 
@@ -246,12 +266,14 @@ Khách có thể tồn tại **trước** khi có tài khoản (nhân viên tạ
 | OwnerRegistrationId | int | FK, NULL | Giấy tờ nộp kèm hồ sơ đăng ký |
 | HomestayId | int | FK, NULL | Giấy tờ của một homestay (khi Owner thêm homestay mới sau này) |
 | DocumentType | nvarchar(30) | NOT NULL | `BusinessLicense`, `FireSafety`, `PropertyPhoto`, `Other` |
-| FileUrl | nvarchar(300) | NOT NULL | Đường dẫn trong `wwwroot/uploads/docs/` (không công khai) |
+| FileUrl | nvarchar(300) | NOT NULL | Đường dẫn tệp riêng; backend phải bảo vệ quyền đọc, không công khai giấy tờ trong wwwroot |
 | OriginalFileName | nvarchar(255) | NULL | |
 | ExpiryDate | date | NULL | Ngày hết hạn giấy phép |
 | | | CHECK **đúng một** trong `OwnerRegistrationId`, `HomestayId` khác NULL | |
 
 Nguồn: v5 mục 4.6 ("bảng tài liệu xác minh riêng"); BR-12 (giấy phép kinh doanh lưu trú, PCCC, ảnh thực tế).
+
+DocumentType có CHECK whitelist. Theo D17, giấy phép/PCCC mới phải gắn Homestay; CHECK chủ sở hữu hiện có vẫn hỗ trợ giấy tờ lịch sử gắn OwnerRegistration, migration không chuyển dữ liệu cũ.
 
 #### `Employees`
 
@@ -298,7 +320,7 @@ Nguồn: v5 mục 4.6 ("bảng tài liệu xác minh riêng"); BR-12 (giấy ph�
 | ApprovedAt | datetime2 | NULL | |
 
 - **Bỏ** `CommissionRate` (chuyển sang `Contracts`) và `IsActive` (thay bằng `Status`).
-- Chỉ homestay `Active` **và** có hợp đồng đang hiệu lực mới hiện cho khách tìm kiếm.
+- Chỉ homestay `Active` **và** có hợp đồng đang hiệu lực mới hiện cho khách tìm kiếm. Backend phải kiểm thêm EndDate >= CheckOut khi đã chọn ngày (D20).
 - Owner chỉ thêm/sửa homestay khi hồ sơ đăng ký đã `Approved` (policy `ApprovedOwner`).
 
 #### `Contracts` — hợp đồng hợp tác (**mới**)
@@ -314,6 +336,8 @@ Nguồn: v5 mục 4.6 ("bảng tài liệu xác minh riêng"); BR-12 (giấy ph�
 | | | **UNIQUE (HomestayId) WHERE Status = 'Active'** | Mỗi homestay tối đa một hợp đồng đang hiệu lực |
 
 Gia hạn = kết thúc hợp đồng cũ, tạo hợp đồng mới. Đơn lưu snapshot `CommissionRate` tại thời điểm đặt.
+
+Status có CHECK whitelist; chưa hỗ trợ hợp đồng tương lai (D21). D20 yêu cầu backend kiểm hợp đồng Active và EndDate >= CheckOut, kể cả khi đổi lịch; Prompt 10 chỉ thêm CHECK enum, chưa sửa service đặt/đổi.
 
 #### `Amenities`, `HomestayAmenities`
 
@@ -424,8 +448,9 @@ Chính sách đã có đơn dùng thì **không sửa**; muốn đổi thì tạ
 | Date | date | NOT NULL |
 | BookingId | int | FK → Bookings, NULL |
 | RoomBlockId | int | FK → RoomBlocks, NULL, **cascade** |
+| BookingChangeRequestId | int | FK → BookingChangeRequests, NULL, NO ACTION; giữ phòng mới chờ cọc bổ sung |
 | | | **PRIMARY KEY (RoomId, Date)** |
-| | | CHECK **đúng một** trong `BookingId`, `RoomBlockId` khác NULL |
+| | | CHECK **đúng một** trong `BookingId`, `RoomBlockId`, `BookingChangeRequestId` khác NULL |
 
 **Cách hoạt động:**
 - Khách **bấm đặt** → trong một transaction: chọn một phòng `IsActive` của loại phòng đã chọn mà không có `RoomNight` trong khoảng ngày, gán `Booking.RoomId`, thêm một dòng cho mỗi đêm `[CheckIn, CheckOut)`. Nếu hai khách đặt cùng lúc vào đúng phòng cuối cùng → người sau vi phạm khóa chính → service thử phòng trống khác, hết phòng thì báo "Đã hết phòng". **Không thể trùng phòng** (BR-05, NFR-01).
@@ -554,7 +579,7 @@ Các biểu thức CHECK mới dùng chuỗi thường và `IS NOT NULL AND <> '
 | Cột | Kiểu | Ràng buộc | Ghi chú |
 |---|---|---|---|
 | BookingId | int | FK, NOT NULL | Thanh toán **gắn với từng đơn** |
-| Type | nvarchar(20) | NOT NULL | `Deposit` (cọc), `Refund` (hoàn cọc), `Compensation` (Fuji bù chênh lệch, BR-11) |
+| Type | nvarchar(20) | NOT NULL | `Deposit`, `Refund`, `Compensation`, `AdditionalDeposit`; CHECK whitelist |
 | Method | nvarchar(20) | NOT NULL | `BankAutoMatch` (tự khớp từ giao dịch ngân hàng, D13), `ManualReceipt` (ảnh bill, kế toán duyệt, D11), `ManualTransfer` (Fuji chuyển ra: hoàn cọc, bù chênh lệch) |
 | BankTransactionId | int | FK → BankTransactions, NULL; **UNIQUE WHERE NOT NULL** | Một giao dịch ngân hàng chỉ thành **một** khoản thanh toán |
 | Amount | decimal(18,0) | NOT NULL, CHECK > 0 | Số tiền thực nhận (tự khớp) hoặc số tiền theo bill |
@@ -647,15 +672,17 @@ Quy tắc (service `VoucherService`, cấu hình `appsettings: Voucher`):
 | Cột | Kiểu | Ràng buộc |
 |---|---|---|
 | HomestayId | int | FK, NOT NULL |
-| Year, Month | int | NOT NULL |
+| Year, Month | int | NOT NULL; CHECK Year BETWEEN 2020 AND 2100, Month BETWEEN 1 AND 12 |
 | PeriodNo | int | CHECK IN (1, 2) — kỳ 1: ngày 1–15; kỳ 2: 16 – cuối tháng |
 | TotalRoomAmount, TotalRetained, TotalCommission, PayoutAmount | decimal(18,0) | NOT NULL; CHECK ≥ 0, `TotalCommission ≤ TotalRetained`, `PayoutAmount = TotalRetained − TotalCommission` |
-| Status | nvarchar(20) | `Draft` (kế toán lập) → `Sent` (gửi chủ homestay) → `Confirmed` (chủ xác nhận số liệu) → `Paid` (Fuji đã chuyển) |
+| Status | nvarchar(20) | CHECK whitelist: Draft → Sent → Confirmed → Paid, hoặc Sent → Paid khi chủ không xác nhận (D15) |
 | SentAt, ConfirmedAt | datetime2 | NULL — mốc gửi và mốc chủ homestay xác nhận. CHECK `CK_Settlements_Sent`: khác `Draft` thì phải có `SentAt` (`Sent`, `Confirmed`, `Paid` đều đã qua bước gửi). `ConfirmedAt` **chưa** có CHECK |
 | PaidAt | datetime2 | NULL; CHECK bắt buộc khi `Status = Paid` |
 | PaidBankRef | nvarchar(100) | NULL — mã giao dịch Fuji chuyển tiền cho chủ homestay |
 | PaidByEmployeeId | int | FK, NULL |
 | | | **UNIQUE (HomestayId, Year, Month, PeriodNo)** |
+
+Chủ xác nhận số liệu là tùy chọn; giữ nguyên CHECK Sent/Paid, không thêm CHECK ConfirmedAt. Người gửi/xác nhận ghi trong AuditLog, không thêm cột (D15–D16).
 
 #### `SettlementItems` — từng đơn trong bảng đối soát (**mới**)
 
@@ -688,6 +715,8 @@ Quy tắc (service `VoucherService`, cấu hình `appsettings: Voucher`):
 
 Chỉ cho đánh giá khi đơn `Completed` (service).
 
+CHECK `CK_Reviews_Reply`: OwnerReply và RepliedAt cùng NULL, hoặc OwnerReply khác NULL/khác rỗng và RepliedAt khác NULL.
+
 #### `Notifications` — thông báo trong hệ thống
 
 Giữ như code: `UserId` (FK → AspNetUsers), `Message`, `Url`, `IsRead`, `CreatedAt`; chỉ mục `(UserId, IsRead)`.
@@ -698,7 +727,9 @@ Giữ như code: `UserId` (FK → AspNetUsers), `Message`, `Url`, `IsRead`, `Cre
 
 #### `AuditLogs` — thay đổi dữ liệu nhạy cảm (○, **mới**)
 
-`Id bigint`, `AccountId`, `TableName`, `RecordId`, `Action` (`Insert`/`Update`/`Delete`), `OldValues`, `NewValues` (JSON), `IpAddress`, `CreatedAt`. Chỉ ghi các bảng: `RoomTypePrices`, `Contracts`, `Payments`, `Settlements`, `Homestays.Status`. Hiện thực bằng `SaveChangesInterceptor` của EF Core.
+`Id bigint`, `AccountId`, `TableName`, `RecordId`, `Action` (`Insert`/`Update`/`Delete`), `OldValues`, `NewValues` (JSON), `IpAddress`, `CreatedAt`. Service ghi trực tiếp cùng transaction; không dùng interceptor. Code đổi/hủy hiện ghi BookingChangeRequests và Bookings; backend tiếp theo phải bổ sung audit cho giá, phòng, ảnh, mô tả, địa chỉ, pháp lý, hợp đồng, thanh toán và các bước đối soát. Với tác vụ hệ thống, AccountId có thể NULL và nội dung phải nêu actor System.
+
+**Schema Prompt 10:** `20261015200521_EnumAndReviewChecks` thêm 13 whitelist cho Settlements.Status, SettlementItems.ItemType, Contracts.Status, Homestays.Status, RoomTypePrices.DayType, BookingNights.DayType, RoomBlocks.Reason, OwnerRegistrations.Status, VerificationDocuments.DocumentType, CancellationPolicies.Scope, Payments.Type/Method/Status; thêm Reply, Year và OwnerRegistrations.Decision, tổng **16 CHECK**. Tất cả whitelist sinh từ `SqlList<TEnum>()`; không thêm bảng/cột/FK/index, không đổi dữ liệu. Schema database thử có 9 migration/60 CHECK; **v5 vẫn 8 migration/44 CHECK**, chưa triển khai migration này. Down chỉ gỡ 16 CHECK đã thêm. Các CHECK dùng chuỗi thường và `<> ''`, chạy được trên SQLite/SQL Server.
 
 ---
 

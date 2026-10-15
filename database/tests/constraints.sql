@@ -22,7 +22,7 @@ PRINT N'Đích ' + DB_NAME() + N', không có dữ liệu. Bắt đầu transact
 
 DECLARE @now datetime2 = SYSUTCDATETIME();
 DECLARE @pOwner int, @pCust int, @pUser int, @pEmp int, @owner int, @area int, @hs int, @cat int, @rt int,
-        @room int, @room2 int, @cust int, @emp int, @pol int, @b1 int, @b2 int, @blk int, @v int,
+        @room int, @room2 int, @cust int, @emp int, @pol int, @b1 int, @b2 int, @blk int, @v int, @cs int, @reg int,
         @acct nvarchar(450) = N'test-constraint-acct';
 DECLARE @n int = 1, @max int, @name nvarchar(120), @sql nvarchar(max), @expect nvarchar(128),
         @pass int = 0, @fail int = 0, @err nvarchar(4000);
@@ -68,6 +68,19 @@ BEGIN TRY
     INSERT BankTransactions (Provider, ProviderTransactionId, AccountNumber, Amount, TransactionTime, ReceivedAt, MatchStatus)
         VALUES (N'SePay', N'TX1', N'000', 600000, @now, @now, N'Unmatched');
 
+
+    -- Dữ liệu riêng cho 16 CHECK của EnumAndReviewChecks; không làm thay đổi kỳ vọng 35 ca cũ.
+    INSERT Settlements (HomestayId, Year, Month, PeriodNo, TotalRoomAmount, TotalRetained, TotalCommission, PayoutAmount, Status, SentAt, PaidAt, CreatedAt, UpdatedAt)
+        VALUES (@hs, 2027, 11, 2, 2000000, 600000, 200000, 400000, 'Draft', @now, @now, @now, @now); SET @cs = SCOPE_IDENTITY();
+    INSERT SettlementItems (SettlementId, BookingId, ItemType, RoomAmount, DepositAmount, RefundAmount, RetainedAmount, CommissionRate, CommissionAmount, PayoutAmount, DiscountAmount)
+        VALUES (@cs, @b2, 'Completed', 2000000, 600000, 0, 600000, 0.1, 200000, 400000, 0);
+    INSERT RoomTypePrices (RoomTypeId, DayType, Price, EffectiveFrom, CreatedAt) VALUES (@rt, 'Weekday', 1000000, '2026-01-01', @now);
+    INSERT BookingNights (BookingId, Date, DayType, Price) VALUES (@b2, '2027-03-01', 'Weekday', 1000000);
+    INSERT OwnerRegistrations (OwnerId, Source, Status, CreatedAt, UpdatedAt)
+        VALUES (@owner, 'SelfService', 'PendingReview', @now, @now); SET @reg = SCOPE_IDENTITY();
+    INSERT VerificationDocuments (HomestayId, DocumentType, FileUrl, CreatedAt) VALUES (@hs, 'BusinessLicense', '/test/license.pdf', @now);
+    INSERT Reviews (BookingId, HomestayId, Rating, IsHidden, CreatedAt) VALUES (@b2, @hs, 5, 0, @now);
+
     -- Các ca: lỗi ràng buộc chỉ kết thúc câu lệnh, transaction vẫn dùng tiếp được
     SET XACT_ABORT OFF;
     PRINT N'Dữ liệu thử đã tạo trong transaction.';
@@ -75,6 +88,58 @@ BEGIN TRY
     -- Expect = tên ràng buộc phải xuất hiện trong thông báo lỗi; rỗng = câu lệnh hợp lệ, phải chạy được
     DECLARE @cases TABLE (n int IDENTITY, Name nvarchar(120), Sql nvarchar(max), Expect nvarchar(128));
     INSERT @cases (Name, Sql, Expect) VALUES
+     (N'Settlements.Status sai enum', N'UPDATE [Settlements] SET [Status]=''Unknown'' WHERE Id=@cs', N'CK_Settlements_Status'),
+     (N'Settlements.Status enum hợp lệ', N'UPDATE [Settlements] SET [Status]=''Draft'' WHERE Id=@cs', N''),
+     (N'SettlementItems.ItemType sai enum', N'UPDATE [SettlementItems] SET [ItemType]=''Unknown'' WHERE SettlementId=@cs', N'CK_SettlementItems_ItemType'),
+     (N'SettlementItems.ItemType enum hợp lệ', N'UPDATE [SettlementItems] SET [ItemType]=''Completed'' WHERE SettlementId=@cs', N''),
+     (N'Contracts.Status sai enum', N'UPDATE [Contracts] SET [Status]=''Unknown'' WHERE ContractNo=''TEST-C1''', N'CK_Contracts_Status'),
+     (N'Contracts.Status enum hợp lệ', N'UPDATE [Contracts] SET [Status]=''Active'' WHERE ContractNo=''TEST-C1''', N''),
+     (N'Homestays.Status sai enum', N'UPDATE [Homestays] SET [Status]=''Unknown'' WHERE Id=@hs', N'CK_Homestays_Status'),
+     (N'Homestays.Status enum hợp lệ', N'UPDATE [Homestays] SET [Status]=''Active'' WHERE Id=@hs', N''),
+     (N'RoomTypePrices.DayType sai enum', N'UPDATE [RoomTypePrices] SET [DayType]=''Unknown'' WHERE RoomTypeId=@rt', N'CK_RoomTypePrices_DayType'),
+     (N'RoomTypePrices.DayType enum hợp lệ', N'UPDATE [RoomTypePrices] SET [DayType]=''Weekday'' WHERE RoomTypeId=@rt', N''),
+     (N'BookingNights.DayType sai enum', N'UPDATE [BookingNights] SET [DayType]=''Unknown'' WHERE BookingId=@b2', N'CK_BookingNights_DayType'),
+     (N'BookingNights.DayType enum hợp lệ', N'UPDATE [BookingNights] SET [DayType]=''Weekday'' WHERE BookingId=@b2', N''),
+     (N'RoomBlocks.Reason sai enum', N'UPDATE [RoomBlocks] SET [Reason]=''Unknown'' WHERE Id=@blk', N'CK_RoomBlocks_Reason'),
+     (N'RoomBlocks.Reason enum hợp lệ', N'UPDATE [RoomBlocks] SET [Reason]=''Maintenance'' WHERE Id=@blk', N''),
+     (N'OwnerRegistrations.Status sai enum', N'UPDATE [OwnerRegistrations] SET [Status]=''Unknown'' WHERE Id=@reg', N'CK_OwnerRegistrations_Status'),
+     (N'OwnerRegistrations.Status enum hợp lệ', N'UPDATE [OwnerRegistrations] SET [Status]=''PendingReview'' WHERE Id=@reg', N''),
+     (N'VerificationDocuments.DocumentType sai enum', N'UPDATE [VerificationDocuments] SET [DocumentType]=''Unknown'' WHERE HomestayId=@hs', N'CK_VerificationDocuments_DocumentType'),
+     (N'VerificationDocuments.DocumentType enum hợp lệ', N'UPDATE [VerificationDocuments] SET [DocumentType]=''BusinessLicense'' WHERE HomestayId=@hs', N''),
+     (N'CancellationPolicies.Scope sai enum', N'UPDATE [CancellationPolicies] SET [Scope]=''Unknown'' WHERE Id=@pol', N'CK_CancellationPolicies_Scope'),
+     (N'CancellationPolicies.Scope enum hợp lệ', N'UPDATE [CancellationPolicies] SET [Scope]=''All'' WHERE Id=@pol', N''),
+     (N'Payments.Type sai enum', N'UPDATE [Payments] SET [Type]=''Unknown'' WHERE BookingId=@b1 AND Type=''Deposit'' AND Status=''Submitted''', N'CK_Payments_Type'),
+     (N'Payments.Type enum hợp lệ', N'UPDATE [Payments] SET [Type]=''Deposit'' WHERE BookingId=@b1 AND Type=''Deposit'' AND Status=''Submitted''', N''),
+     (N'Payments.Method sai enum', N'UPDATE [Payments] SET [Method]=''Unknown'' WHERE BookingId=@b1 AND Type=''Deposit'' AND Status=''Submitted''', N'CK_Payments_Method'),
+     (N'Payments.Method enum hợp lệ', N'UPDATE [Payments] SET [Method]=''BankAutoMatch'' WHERE BookingId=@b1 AND Type=''Deposit'' AND Status=''Submitted''', N''),
+     (N'Payments.Status sai enum', N'UPDATE [Payments] SET [Status]=''Unknown'' WHERE BookingId=@b1 AND Type=''Deposit'' AND Status=''Submitted''', N'CK_Payments_Status'),
+     (N'Payments.Status enum hợp lệ', N'UPDATE [Payments] SET [Status]=''Submitted'' WHERE BookingId=@b1 AND Type=''Deposit'' AND Status=''Submitted''', N''),
+     (N'Trả lời đánh giá 26', N'UPDATE Reviews SET OwnerReply=NULL, RepliedAt=NULL WHERE BookingId=@b2', N''),
+     (N'Trả lời đánh giá 27', N'UPDATE Reviews SET OwnerReply=NULL, RepliedAt=SYSUTCDATETIME() WHERE BookingId=@b2', N'CK_Reviews_Reply'),
+     (N'Trả lời đánh giá 28', N'UPDATE Reviews SET OwnerReply='''', RepliedAt=NULL WHERE BookingId=@b2', N'CK_Reviews_Reply'),
+     (N'Trả lời đánh giá 29', N'UPDATE Reviews SET OwnerReply='''', RepliedAt=SYSUTCDATETIME() WHERE BookingId=@b2', N'CK_Reviews_Reply'),
+     (N'Trả lời đánh giá 30', N'UPDATE Reviews SET OwnerReply=''Da tra loi'', RepliedAt=NULL WHERE BookingId=@b2', N'CK_Reviews_Reply'),
+     (N'Trả lời đánh giá 31', N'UPDATE Reviews SET OwnerReply=''Da tra loi'', RepliedAt=SYSUTCDATETIME() WHERE BookingId=@b2', N''),
+     (N'Năm đối soát 2019', N'UPDATE Settlements SET [Year]=2019 WHERE Id=@cs', N'CK_Settlements_Year'),
+     (N'Năm đối soát 2020', N'UPDATE Settlements SET [Year]=2020 WHERE Id=@cs', N''),
+     (N'Năm đối soát 2100', N'UPDATE Settlements SET [Year]=2100 WHERE Id=@cs', N''),
+     (N'Năm đối soát 2101', N'UPDATE Settlements SET [Year]=2101 WHERE Id=@cs', N'CK_Settlements_Year'),
+     (N'Quyết định hồ sơ Draft 36', N'UPDATE OwnerRegistrations SET Status=''Draft'', ReviewedByEmployeeId=NULL, ReviewedAt=NULL, ReviewNote=NULL WHERE Id=@reg', N''),
+     (N'Quyết định hồ sơ WaitingOwnerActivation 37', N'UPDATE OwnerRegistrations SET Status=''WaitingOwnerActivation'', ReviewedByEmployeeId=NULL, ReviewedAt=NULL, ReviewNote=NULL WHERE Id=@reg', N''),
+     (N'Quyết định hồ sơ PendingReview 38', N'UPDATE OwnerRegistrations SET Status=''PendingReview'', ReviewedByEmployeeId=NULL, ReviewedAt=NULL, ReviewNote=NULL WHERE Id=@reg', N''),
+     (N'Quyết định hồ sơ UnderReview 39', N'UPDATE OwnerRegistrations SET Status=''UnderReview'', ReviewedByEmployeeId=NULL, ReviewedAt=NULL, ReviewNote=NULL WHERE Id=@reg', N''),
+     (N'Quyết định hồ sơ NeedsRevision 40', N'UPDATE OwnerRegistrations SET Status=''NeedsRevision'', ReviewedByEmployeeId=NULL, ReviewedAt=SYSUTCDATETIME(), ReviewNote=''Can bo sung'' WHERE Id=@reg', N'CK_OwnerRegistrations_Decision'),
+     (N'Quyết định hồ sơ NeedsRevision 41', N'UPDATE OwnerRegistrations SET Status=''NeedsRevision'', ReviewedByEmployeeId=@emp, ReviewedAt=NULL, ReviewNote=''Can bo sung'' WHERE Id=@reg', N'CK_OwnerRegistrations_Decision'),
+     (N'Quyết định hồ sơ NeedsRevision 42', N'UPDATE OwnerRegistrations SET Status=''NeedsRevision'', ReviewedByEmployeeId=@emp, ReviewedAt=SYSUTCDATETIME(), ReviewNote=NULL WHERE Id=@reg', N'CK_OwnerRegistrations_Decision'),
+     (N'Quyết định hồ sơ NeedsRevision 43', N'UPDATE OwnerRegistrations SET Status=''NeedsRevision'', ReviewedByEmployeeId=@emp, ReviewedAt=SYSUTCDATETIME(), ReviewNote='''' WHERE Id=@reg', N'CK_OwnerRegistrations_Decision'),
+     (N'Quyết định hồ sơ NeedsRevision 44', N'UPDATE OwnerRegistrations SET Status=''NeedsRevision'', ReviewedByEmployeeId=@emp, ReviewedAt=SYSUTCDATETIME(), ReviewNote=''Can bo sung'' WHERE Id=@reg', N''),
+     (N'Quyết định hồ sơ Approved 45', N'UPDATE OwnerRegistrations SET Status=''Approved'', ReviewedByEmployeeId=NULL, ReviewedAt=SYSUTCDATETIME(), ReviewNote=NULL WHERE Id=@reg', N'CK_OwnerRegistrations_Decision'),
+     (N'Quyết định hồ sơ Approved 46', N'UPDATE OwnerRegistrations SET Status=''Approved'', ReviewedByEmployeeId=@emp, ReviewedAt=NULL, ReviewNote=NULL WHERE Id=@reg', N'CK_OwnerRegistrations_Decision'),
+     (N'Quyết định hồ sơ Approved 47', N'UPDATE OwnerRegistrations SET Status=''Approved'', ReviewedByEmployeeId=@emp, ReviewedAt=SYSUTCDATETIME(), ReviewNote=NULL WHERE Id=@reg', N''),
+     (N'Quyết định hồ sơ Rejected 48', N'UPDATE OwnerRegistrations SET Status=''Rejected'', ReviewedByEmployeeId=@emp, ReviewedAt=SYSUTCDATETIME(), ReviewNote=NULL WHERE Id=@reg', N'CK_OwnerRegistrations_Decision'),
+     (N'Quyết định hồ sơ Rejected 49', N'UPDATE OwnerRegistrations SET Status=''Rejected'', ReviewedByEmployeeId=@emp, ReviewedAt=SYSUTCDATETIME(), ReviewNote='''' WHERE Id=@reg', N'CK_OwnerRegistrations_Decision'),
+     (N'Quyết định hồ sơ Rejected 50', N'UPDATE OwnerRegistrations SET Status=''Rejected'', ReviewedByEmployeeId=@emp, ReviewedAt=SYSUTCDATETIME(), ReviewNote=''Khong du dieu kien'' WHERE Id=@reg', N''),
+     (N'Quyết định hồ sơ PendingReview 51', N'UPDATE OwnerRegistrations SET Status=''PendingReview'', ReviewedByEmployeeId=@emp, ReviewedAt=SYSUTCDATETIME(), ReviewNote=''Dau duyet lan truoc'' WHERE Id=@reg', N''),
      (N'Trùng phòng cùng đêm', N'INSERT RoomNights (RoomId, Date, BookingId) VALUES (@room, ''2027-01-01'', @b2)', N'PK_RoomNights'),
      (N'Cùng phòng đêm khác (hợp lệ)', N'INSERT RoomNights (RoomId, Date, BookingId) VALUES (@room, ''2027-01-02'', @b1)', N''),
      (N'Đêm không thuộc đơn hay khóa', N'INSERT RoomNights (RoomId, Date) VALUES (@room, ''2027-05-01'')', N'CK_RoomNights_Owner'),
@@ -118,8 +183,8 @@ BEGIN TRY
         SELECT @name = Name, @sql = Sql, @expect = Expect FROM @cases WHERE n = @n;
         SET @err = NULL;
         BEGIN TRY
-            EXEC sp_executesql @sql, N'@room int, @room2 int, @b1 int, @b2 int, @blk int, @hs int, @v int, @acct nvarchar(450)',
-                 @room = @room, @room2 = @room2, @b1 = @b1, @b2 = @b2, @blk = @blk, @hs = @hs, @v = @v, @acct = @acct;
+            EXEC sp_executesql @sql, N'@room int, @room2 int, @b1 int, @b2 int, @blk int, @hs int, @v int, @acct nvarchar(450), @cs int, @reg int, @emp int, @rt int, @pol int',
+                 @room = @room, @room2 = @room2, @b1 = @b1, @b2 = @b2, @blk = @blk, @hs = @hs, @v = @v, @acct = @acct, @cs = @cs, @reg = @reg, @emp = @emp, @rt = @rt, @pol = @pol;
         END TRY
         BEGIN CATCH
             SET @err = CONCAT(N'Msg ', ERROR_NUMBER(), N': ', ERROR_MESSAGE());

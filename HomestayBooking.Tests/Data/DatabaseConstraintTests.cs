@@ -968,9 +968,14 @@ public sealed partial class DatabaseConstraintTests : IDisposable
     public async Task OwnerRegistration_ClosedHistoryPlusOneOpen_IsAllowed()
     {
         var ownerId = _homestay.OwnerId;
+        // Hồ sơ đã đóng phải có quyết định hợp lệ trước khi kiểm tra unique của hồ sơ mở.
+        var reviewerId = await ReviewEmployeeIdAsync();
+        var reviewedAt = DateTime.UtcNow;
         _db.OwnerRegistrations.AddRange(
-            new OwnerRegistration { OwnerId = ownerId, Status = OwnerRegistrationStatus.Rejected },
-            new OwnerRegistration { OwnerId = ownerId, Status = OwnerRegistrationStatus.Approved },
+            new OwnerRegistration { OwnerId = ownerId, Status = OwnerRegistrationStatus.Rejected,
+                ReviewedByEmployeeId = reviewerId, ReviewedAt = reviewedAt, ReviewNote = "Hồ sơ chưa đạt." },
+            new OwnerRegistration { OwnerId = ownerId, Status = OwnerRegistrationStatus.Approved,
+                ReviewedByEmployeeId = reviewerId, ReviewedAt = reviewedAt },
             new OwnerRegistration { OwnerId = ownerId, Status = OwnerRegistrationStatus.PendingReview });
 
         await _db.SaveChangesAsync();

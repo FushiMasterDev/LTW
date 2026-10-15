@@ -1,6 +1,6 @@
 -- Kiểm tra schema sau khi chạy deploy.sql. Chỉ đọc (SELECT), không thay đổi dữ liệu.
 --   sqlcmd -S <server> -U <user> -C -d <TenDb> -i verify.sql
--- Số kỳ vọng ứng với migration cuối 20261015092139_ChangeRequestWorkflow; thêm migration mới thì cập nhật lại.
+-- Số kỳ vọng ứng với migration cuối 20261015200521_EnumAndReviewChecks; thêm migration mới thì cập nhật lại.
 SET NOCOUNT ON;
 
 WITH Expected (Item, Expected) AS (
@@ -9,11 +9,11 @@ WITH Expected (Item, Expected) AS (
     SELECT N'Khóa chính', 45 UNION ALL
     SELECT N'Khóa ngoại', 76 UNION ALL
     SELECT N'Khóa ngoại ON DELETE CASCADE', 13 UNION ALL
-    SELECT N'CHECK', 44 UNION ALL
+    SELECT N'CHECK', 60 UNION ALL
     SELECT N'Default', 4 UNION ALL
     SELECT N'Index (không tính khóa chính)', 93 UNION ALL
     SELECT N'Index có điều kiện (filtered)', 12 UNION ALL
-    SELECT N'Migration đã áp', 8
+    SELECT N'Migration đã áp', 9
 ), Actual (Item, Actual) AS (
     SELECT N'Bảng (gồm __EFMigrationsHistory)', COUNT(*) FROM sys.tables WHERE is_ms_shipped = 0 UNION ALL
     SELECT N'Cột', COUNT(*) FROM sys.columns c JOIN sys.tables t ON t.object_id = c.object_id WHERE t.is_ms_shipped = 0 UNION ALL
@@ -46,7 +46,23 @@ FROM (VALUES (N'PK_RoomNights'), (N'CK_RoomNights_Owner'), (N'IX_Payments_OneDep
              (N'CK_Bookings_ChangeFeeAmount'), (N'CK_Payments_ChangeRequest'), (N'CK_BookingChangeRequests_Amounts'),
              (N'CK_BookingChangeRequests_Finance'), (N'CK_BookingChangeRequests_ActorSeparation'),
              (N'CK_BookingChangeRequests_Notes'), (N'CK_BookingChangeRequests_PaymentDeadline'),
-             (N'IX_BookingChangeRequests_OneActivePerBooking'), (N'IX_Payments_OneAdditionalDepositPerChangeRequest')) v(ObjName);
+             (N'IX_BookingChangeRequests_OneActivePerBooking'), (N'IX_Payments_OneAdditionalDepositPerChangeRequest'),
+             (N'CK_Settlements_Status'),
+             (N'CK_SettlementItems_ItemType'),
+             (N'CK_Contracts_Status'),
+             (N'CK_Homestays_Status'),
+             (N'CK_RoomTypePrices_DayType'),
+             (N'CK_BookingNights_DayType'),
+             (N'CK_RoomBlocks_Reason'),
+             (N'CK_OwnerRegistrations_Status'),
+             (N'CK_VerificationDocuments_DocumentType'),
+             (N'CK_CancellationPolicies_Scope'),
+             (N'CK_Payments_Type'),
+             (N'CK_Payments_Method'),
+             (N'CK_Payments_Status'),
+             (N'CK_Reviews_Reply'),
+             (N'CK_Settlements_Year'),
+             (N'CK_OwnerRegistrations_Decision')) v(ObjName);
 GO
 
 -- 14 cột workflow: loại/độ dài và nullability phải đúng, không chỉ đủ tổng số cột.
