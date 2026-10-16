@@ -68,9 +68,23 @@
     UNION ALL
     SELECT 19 AS STT, N'Ảnh gắn loại phòng của homestay khác' AS Muc, COUNT_BIG(*) AS SoDongLech
     FROM HomestayImages i JOIN RoomTypes t ON t.Id = i.RoomTypeId WHERE i.HomestayId <> t.HomestayId
+    UNION ALL
+    SELECT 20 AS STT, N'Đơn có đơn thay thế nhưng chưa hủy' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Bookings b WHERE b.ReplacedByBookingId IS NOT NULL AND b.Status <> 'Cancelled'
+    UNION ALL
+    SELECT 21 AS STT, N'Đơn thay thế khác khách hoặc ngày lưu trú' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Bookings b JOIN Bookings n ON n.Id = b.ReplacedByBookingId
+    WHERE b.CustomerId <> n.CustomerId OR b.CheckIn <> n.CheckIn OR b.CheckOut <> n.CheckOut
+    UNION ALL
+    SELECT 22 AS STT, N'Khoản bù không gắn đơn thay thế' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Payments p WHERE p.Type = 'Compensation' AND NOT EXISTS (SELECT 1 FROM Bookings b WHERE b.ReplacedByBookingId = p.BookingId)
+    UNION ALL
+    SELECT 23 AS STT, N'Đơn giao nhân viên không đúng vị trí' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Bookings b JOIN Employees e ON e.Id = b.AssignedEmployeeId
+    WHERE e.Position NOT IN ('Consultant','Manager','Administrator')
 )
 SELECT CASE WHEN GROUPING(STT) = 1 THEN 99 ELSE STT END AS STT,
-       CASE WHEN GROUPING(STT) = 1 THEN N'TỔNG (19 mục)' ELSE Muc END AS Muc,
+       CASE WHEN GROUPING(STT) = 1 THEN N'TỔNG (23 mục)' ELSE Muc END AS Muc,
        SUM(SoDongLech) AS SoDongLech,
        CASE WHEN SUM(SoDongLech) = 0 THEN N'OK' ELSE N'LỆCH' END AS KetQua
 FROM KiemTra
@@ -143,6 +157,20 @@ IF EXISTS (
     UNION ALL
     SELECT 19 AS STT, N'Ảnh gắn loại phòng của homestay khác' AS Muc, COUNT_BIG(*) AS SoDongLech
     FROM HomestayImages i JOIN RoomTypes t ON t.Id = i.RoomTypeId WHERE i.HomestayId <> t.HomestayId
+    UNION ALL
+    SELECT 20 AS STT, N'Đơn có đơn thay thế nhưng chưa hủy' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Bookings b WHERE b.ReplacedByBookingId IS NOT NULL AND b.Status <> 'Cancelled'
+    UNION ALL
+    SELECT 21 AS STT, N'Đơn thay thế khác khách hoặc ngày lưu trú' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Bookings b JOIN Bookings n ON n.Id = b.ReplacedByBookingId
+    WHERE b.CustomerId <> n.CustomerId OR b.CheckIn <> n.CheckIn OR b.CheckOut <> n.CheckOut
+    UNION ALL
+    SELECT 22 AS STT, N'Khoản bù không gắn đơn thay thế' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Payments p WHERE p.Type = 'Compensation' AND NOT EXISTS (SELECT 1 FROM Bookings b WHERE b.ReplacedByBookingId = p.BookingId)
+    UNION ALL
+    SELECT 23 AS STT, N'Đơn giao nhân viên không đúng vị trí' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Bookings b JOIN Employees e ON e.Id = b.AssignedEmployeeId
+    WHERE e.Position NOT IN ('Consultant','Manager','Administrator')
     ) AS KiemTra WHERE SoDongLech > 0
 )
     THROW 50020, N'Đối chiếu dữ liệu có mục LỆCH; không tự sửa dữ liệu.', 1;

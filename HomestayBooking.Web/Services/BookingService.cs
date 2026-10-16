@@ -43,6 +43,7 @@ public class BookingService
     private readonly TimeProvider _clock;
     private readonly BookingOptions _options;
     private readonly VoucherService _vouchers;
+    private readonly AvailabilityService _availability;
 
     public BookingService(
         ApplicationDbContext db,
@@ -52,7 +53,8 @@ public class BookingService
         NotificationService notifications,
         TimeProvider clock,
         IOptions<BookingOptions> options,
-        VoucherService vouchers)
+        VoucherService vouchers,
+        AvailabilityService? availability = null)
     {
         _vouchers = vouchers;
         _db = db;
@@ -62,6 +64,7 @@ public class BookingService
         _notifications = notifications;
         _clock = clock;
         _options = options.Value;
+        _availability = availability ?? new AvailabilityService(db, clock, options);
     }
 
     private DateTime UtcNow => _clock.GetUtcNow().UtcDateTime;
@@ -77,8 +80,18 @@ public class BookingService
     /// </summary>
     public async Task<Booking> CreateAsync(CreateBookingRequest request)
     {
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+        var booking = await CreateInTransactionAsync(request);
+        await transaction.CommitAsync();
+        return booking;
+    }
+
+    /// <summary>Đường tạo đơn chung; bên gọi sở hữu transaction, bản thay thế không trừ voucher lần nữa.</summary>
+    internal async Task<Booking> CreateInTransactionAsync(CreateBookingRequest request,
+        Action<Booking>? configure = null, bool replacement = false)
+    {
         var today = VietnamTime.Today(_clock);
-        if (request.CheckIn < today)
+        if (!replacement && request.CheckIn < today)
         {
             throw new BookingException("Ngày nhận phòng không được ở quá khứ.");
         }
@@ -104,7 +117,7 @@ public class BookingService
 
         var awaiting = await _db.Bookings.CountAsync(b =>
             b.CustomerId == request.CustomerId && b.Status == BookingStatus.AwaitingPayment);
-        if (awaiting >= _options.MaxAwaitingPerCustomer)
+        if (!replacement && awaiting >= _options.MaxAwaitingPerCustomer)
         {
             throw new BookingException("Bạn đang có quá nhiều đơn chờ thanh toán. Vui lòng thanh toán hoặc hủy bớt đơn.");
         }
@@ -118,7 +131,6 @@ public class BookingService
             throw new BookingException("Loại phòng này đã hết phòng trong thời gian bạn chọn.");
         }
 
-        await using var transaction = await _db.Database.BeginTransactionAsync();
         var code = await _codes.NextAsync(today);
         var now = UtcNow;
 
@@ -167,12 +179,12 @@ public class BookingService
                 // Trừ số dư voucher trong cùng lần lưu với đơn: đặt phòng lỗi thì voucher không bị trừ
                 await _vouchers.ApplyAsync(booking, voucherId, request.CustomerId);
             }
+            configure?.Invoke(booking);
             _db.Bookings.Add(booking);
 
             try
             {
                 await _db.SaveChangesAsync();
-                await transaction.CommitAsync();
                 return booking;
             }
             catch (DbUpdateConcurrencyException)
@@ -181,7 +193,7 @@ public class BookingService
                 _db.ChangeTracker.Clear();
                 throw new BookingException("Voucher vừa được dùng cho đơn khác, vui lòng thử lại.");
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException) when (!replacement)
             {
                 // Phòng vừa bị người khác giữ giữa lúc kiểm tra và lúc ghi → bỏ đơn nháp, thử phòng kế tiếp
                 _db.ChangeTracker.Clear();
@@ -197,12 +209,7 @@ public class BookingService
 
     /// <summary>Phòng đang kinh doanh của loại phòng mà không có đêm nào bị chiếm trong [checkIn, checkOut).</summary>
     public Task<List<int>> FreeRoomIdsAsync(int roomTypeId, DateOnly checkIn, DateOnly checkOut) =>
-        _db.Rooms
-            .Where(r => r.RoomTypeId == roomTypeId && r.IsActive && r.RoomType.IsActive)
-            .Where(r => !r.RoomNights.Any(n => n.Date >= checkIn && n.Date < checkOut))
-            .OrderBy(r => r.Id)
-            .Select(r => r.Id)
-            .ToListAsync();
+        _availability.FreeRoomIdsAsync(roomTypeId, checkIn, checkOut);
 
     private Task<bool> IsTakenAsync(int roomId, DateOnly checkIn, DateOnly checkOut) =>
         _db.RoomNights.AnyAsync(n => n.RoomId == roomId && n.Date >= checkIn && n.Date < checkOut);
@@ -223,25 +230,16 @@ public class BookingService
     /// Homestay xác nhận đơn đã cọc (D12). Được đổi sang phòng trống khác cùng loại (Q8): chuyển RoomNights
     /// và đổi trạng thái trong cùng một SaveChanges, ghi "Đổi phòng" vào lịch sử.
     /// </summary>
-    public async Task ConfirmAsync(Booking booking, int? newRoomId, Actor actor)
+    public async Task ConfirmAsync(Booking booking, int? newRoomId, Actor actor, string? note = null)
     {
-        string? note = null;
+        var changedRoom = newRoomId is int selectedRoom && selectedRoom != booking.RoomId;
         if (newRoomId is int roomId && roomId != booking.RoomId)
         {
             if (booking.Status != BookingStatus.Deposited)
-            {
                 throw new BookingException("Chỉ đổi phòng được khi xác nhận đơn đã đặt cọc.");
-            }
-            if (!(await FreeRoomIdsAsync(booking.RoomTypeId, booking.CheckIn, booking.CheckOut)).Contains(roomId))
-            {
-                throw new BookingException("Phòng được chọn không trống hoặc không cùng loại phòng.");
-            }
-            var codes = await _db.Rooms.Where(r => r.Id == roomId || r.Id == booking.RoomId).ToDictionaryAsync(r => r.Id, r => r.RoomCode);
-            var nights = await _db.RoomNights.Where(n => n.BookingId == booking.Id).ToListAsync();
-            _db.RoomNights.RemoveRange(nights);
-            _db.RoomNights.AddRange(nights.Select(n => new RoomNight { RoomId = roomId, Date = n.Date, BookingId = booking.Id }));
-            note = $"Đổi phòng {codes[booking.RoomId]} → {codes[roomId]}";
-            booking.RoomId = roomId;
+            var roomNote = await MoveRoomAsync(booking, roomId);
+            note = string.IsNullOrWhiteSpace(note) ? roomNote : note + "; " + roomNote;
+            if (note.Length > 500) throw new BookingException("Ghi chú kèm thông tin đổi phòng không được quá 500 ký tự.");
         }
 
         await ApplyStatusAsync(booking, BookingStatus.Confirmed, actor, note);
@@ -249,7 +247,7 @@ public class BookingService
         {
             await _db.SaveChangesAsync();
         }
-        catch (DbUpdateException ex) when (ex is not DbUpdateConcurrencyException && note is not null)
+        catch (DbUpdateException ex) when (ex is not DbUpdateConcurrencyException && changedRoom)
         {
             // Phòng mới vừa bị đơn khác giữ giữa lúc kiểm tra và lúc ghi (khóa chính RoomNights)
             _db.ChangeTracker.Clear();
@@ -257,8 +255,31 @@ public class BookingService
         }
     }
 
+    /// <summary>Chuyển đêm/phòng cùng loại, chưa lưu; Confirm và xử lý trùng phòng dùng chung.</summary>
+    internal async Task<string> MoveRoomAsync(Booking booking, int roomId)
+    {
+        if (roomId == booking.RoomId) throw new BookingException("Vui lòng chọn phòng khác phòng hiện tại.");
+        if (!(await FreeRoomIdsAsync(booking.RoomTypeId, booking.CheckIn, booking.CheckOut)).Contains(roomId))
+            throw new BookingException("Phòng được chọn không trống hoặc không cùng loại phòng.");
+        var codes = await _db.Rooms.Where(r => r.Id == roomId || r.Id == booking.RoomId).ToDictionaryAsync(r => r.Id, r => r.RoomCode);
+        var previous = booking.RoomId;
+        var nights = await _db.RoomNights.Where(n => n.BookingId == booking.Id).ToListAsync();
+        _db.RoomNights.RemoveRange(nights);
+        _db.RoomNights.AddRange(nights.Select(n => new RoomNight { RoomId = roomId, Date = n.Date, BookingId = booking.Id }));
+        booking.RoomId = roomId; booking.UpdatedAt = UtcNow;
+        return $"Đổi phòng {codes[previous]} → {codes[roomId]}";
+    }
+
+    internal Task ApplyFujiCancellationAsync(Booking booking, Actor actor, string note, bool transferDeposit = false) =>
+        ApplyStatusCoreAsync(booking, BookingStatus.Cancelled, actor, note, transferDeposit ? CancellationHandling.Transfer : CancellationHandling.FujiRefund);
+
+    private enum CancellationHandling { Policy, FujiRefund, Transfer }
+
     /// <summary>Như ChangeStatusAsync nhưng không lưu — để gộp chung một SaveChanges với thao tác khác (ví dụ tạo Payment).</summary>
-    public async Task ApplyStatusAsync(Booking booking, BookingStatus to, Actor actor, string? note = null)
+    public Task ApplyStatusAsync(Booking booking, BookingStatus to, Actor actor, string? note = null) =>
+        ApplyStatusCoreAsync(booking, to, actor, note, CancellationHandling.Policy);
+
+    private async Task ApplyStatusCoreAsync(Booking booking, BookingStatus to, Actor actor, string? note, CancellationHandling cancellation)
     {
         var from = booking.Status;
         if (!CanTransition(from, to))
@@ -306,10 +327,14 @@ public class BookingService
                 booking.CancelReason = note;
                 break;
             case BookingStatus.Cancelled:
-                var refund = await _refunds.QuoteCancellationAsync(booking);
-                booking.RefundAmount = refund.RefundAmount;
-                // Đã có cọc: voucher trả lại theo cùng tỷ lệ hoàn tiền; chưa có cọc: trả lại đủ
-                voucherRestorePercent = from is BookingStatus.Deposited or BookingStatus.Confirmed ? refund.RefundPercent : 100;
+                if (cancellation == CancellationHandling.Policy)
+                {
+                    var refund = await _refunds.QuoteCancellationAsync(booking);
+                    booking.RefundAmount = refund.RefundAmount;
+                    // Đã có cọc: trả voucher theo cùng tỷ lệ hoàn; chưa có cọc: trả lại đủ.
+                    voucherRestorePercent = from is BookingStatus.Deposited or BookingStatus.Confirmed ? refund.RefundPercent : 100;
+                }
+                else booking.RefundAmount = cancellation == CancellationHandling.Transfer ? 0 : booking.AmountDue;
                 booking.CancelledAt = now;
                 booking.CancelReason = note;
                 break;
@@ -321,7 +346,8 @@ public class BookingService
                 break;
         }
 
-        if (to is BookingStatus.Cancelled or BookingStatus.Rejected or BookingStatus.Expired)
+        if (to is BookingStatus.Cancelled or BookingStatus.Rejected or BookingStatus.Expired
+            && cancellation != CancellationHandling.Transfer)
         {
             // Đơn không thành (không do khách vắng mặt) → trả lại số tiền đã giảm vào voucher
             await _vouchers.RestoreAsync(booking, voucherRestorePercent);

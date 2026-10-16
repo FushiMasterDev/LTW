@@ -11,15 +11,14 @@ namespace HomestayBooking.Web.Controllers;
 
 public class HomeController : Controller
 {
-    private const int FeaturedCount = 6;
 
     private readonly ApplicationDbContext _db;
-    private readonly TimeProvider _clock;
+    private readonly AvailabilityService _availability;
 
-    public HomeController(ApplicationDbContext db, TimeProvider clock)
+    public HomeController(ApplicationDbContext db, TimeProvider clock, AvailabilityService? availability = null)
     {
         _db = db;
-        _clock = clock;
+        _availability = availability ?? new AvailabilityService(db, clock, Microsoft.Extensions.Options.Options.Create(new BookingOptions()));
     }
 
     public async Task<IActionResult> Index()
@@ -33,43 +32,9 @@ public class HomeController : Controller
                 .OrderBy(a => a.Name)
                 .Select(a => new AreaSummary(a.Id, a.Name, a.Homestays.Count(h => h.Status == HomestayStatus.Active)))
                 .ToListAsync(),
-            Featured = await FeaturedAsync(),
+            Featured = await _availability.FeaturedAsync(),
         };
         return View(model);
-    }
-
-    /// <summary>Homestay đang nhận đặt, điểm đánh giá cao trước; cùng điều kiện "đặt được" với trang tìm kiếm.</summary>
-    private async Task<List<FeaturedHomestay>> FeaturedAsync()
-    {
-        var today = VietnamTime.Today(_clock);
-        var rows = await _db.Homestays
-            .Where(h => h.Status == HomestayStatus.Active
-                        && _db.Contracts.Covering(today, today).Any(c => c.HomestayId == h.Id)
-                        && h.RoomTypes.Any(t => t.IsActive && t.Rooms.Any(r => r.IsActive)))
-            .Select(h => new
-            {
-                h.Id,
-                h.Name,
-                AreaName = h.Area.Name,
-                Cover = h.Images.Where(i => i.IsCover).Select(i => i.Url).FirstOrDefault(),
-                Rating = _db.Reviews.Where(r => r.HomestayId == h.Id && !r.IsHidden).Average(r => (double?)r.Rating),
-                ReviewCount = _db.Reviews.Count(r => r.HomestayId == h.Id && !r.IsHidden),
-                RoomTypeIds = h.RoomTypes.Where(t => t.IsActive && t.Rooms.Any(r => r.IsActive)).Select(t => t.Id).ToList(),
-            })
-            .OrderByDescending(h => h.Rating ?? 0)
-            .ThenByDescending(h => h.ReviewCount)
-            .ThenBy(h => h.Name)
-            .Take(FeaturedCount)
-            .ToListAsync();
-
-        var roomTypeIds = rows.SelectMany(r => r.RoomTypeIds).ToList();
-        var prices = PricingService.CurrentPrices(
-            await _db.RoomTypePrices.AsNoTracking().Where(p => roomTypeIds.Contains(p.RoomTypeId)).ToListAsync(), today);
-        return rows
-            .Select(r => new FeaturedHomestay(r.Id, r.Name, r.AreaName, r.Cover,
-                r.RoomTypeIds.Select(id => prices.TryGetValue((id, DayType.Weekday), out var p) ? p : (decimal?)null).Min(),
-                r.Rating, r.ReviewCount))
-            .ToList();
     }
 
     /// <summary>

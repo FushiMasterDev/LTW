@@ -5,13 +5,20 @@ using HomestayBooking.Web.Services;
 namespace HomestayBooking.Web.Models.ViewModels;
 
 /// <summary>Bộ lọc tìm homestay (query string).</summary>
+public enum HomestaySort { Default, PriceAscending, PriceDescending, Rating }
+
 public class HomestaySearchQuery
 {
     public int? AreaId { get; set; }
     public DateOnly? CheckIn { get; set; }
     public DateOnly? CheckOut { get; set; }
     public int Guests { get; set; } = 2;
+    public decimal? MinPrice { get; set; }
     public decimal? MaxPrice { get; set; }
+    public int? CategoryId { get; set; }
+    public List<int> AmenityIds { get; set; } = [];
+    public HomestaySort Sort { get; set; }
+
     public string? Q { get; set; }
     public int? Page { get; set; }
 

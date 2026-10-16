@@ -7,7 +7,7 @@ Dựng database SQL Server cho ứng dụng trên một máy hoặc server mới
 | `schema.sql` | Toàn bộ schema (bảng, khóa, CHECK, index) **sinh tự động từ EF Core migrations**, không sửa tay |
 | `deploy.sql` | Chạy `schema.sql` với kiểm tra database đích và `XACT_ABORT` |
 | `verify.sql` | Kiểm tra sau khi dựng: số bảng/khóa/index, migration đã áp, các ràng buộc chính. Chỉ đọc |
-| `tests/data_consistency.sql` | Đối chiếu 19 quy tắc dữ liệu liên bảng, chỉ đọc; dùng được trên mọi database đã deploy, có LỆCH thì mã thoát khác 0 |
+| `tests/data_consistency.sql` | Đối chiếu 23 quy tắc dữ liệu liên bảng, chỉ đọc; dùng được trên mọi database đã deploy, có LỆCH thì mã thoát khác 0 |
 | `tests/constraints.sql` | Thử ràng buộc trên database **mới dựng, chưa seed** (mục 4) |
 | `tests/hardening_seeded.sql` | Thử các ràng buộc của migration `DatabaseHardening` trên database **đã seed** (mục 4) |
 | `tests/change_request_seeded.sql` | Thử 65 ca workflow trên database **đã seed** (mục 4), luôn ROLLBACK |
@@ -118,7 +118,7 @@ DeployTest, ConstraintTest hoặc database đã deploy khác, không có guard t
 sqlcmd -S localhost,1433 -U sa -C -b -d HomestayBooking_DeployTest -i tests/data_consistency.sql
 ```
 
-Mỗi mục in tên tiếng Việt, số dòng lệch và `OK`/`LỆCH`, cuối có tổng 19 mục.
+Mỗi mục in tên tiếng Việt, số dòng lệch và `OK`/`LỆCH`, cuối có tổng 23 mục.
 Mã thoát 0 khi tất cả OK; có LỆCH thì THROW để `sqlcmd -b` thoát khác 0.
 Tổng là tổng lượt vi phạm; một bản ghi có thể lệch nhiều mục. Script dùng đúng trạng thái
 `HoldsRoom()` (kể cả Completed), ngày Việt Nam cho hợp đồng hết hạn. Nếu đổi enum hoặc
@@ -265,3 +265,5 @@ Migration `20261015200521_EnumAndReviewChecks` chỉ thêm **16 CHECK**: 13 whit
 - Triển khai/thử bằng `deploy.sql` và `verify.sql` **chỉ trên ConstraintTest và DeployTest**. `constraints.sql` giữ đủ 35 ca cũ, thêm 52 ca, tổng 87; các script seeded giữ 28/42/65 ca.
 - **CHƯA áp `EnumAndReviewChecks` lên v5**. v5 đang ở 8 migration/44 CHECK sau đợt triển khai `ChangeRequestWorkflow` ngày 16/10/2026; cần quy trình duyệt, backup và kiểm tra riêng trước lần triển khai tiếp theo.
 - Quyết định backend đã chốt: chủ xác nhận đối soát tùy chọn, Paid đi từ Sent hoặc Confirmed; ghi actor vào AuditLog trực tiếp ở service. Không thêm cột actor/liên kết hồ sơ, không thêm CHECK `Settlements.ConfirmedAt`; xem 10 quyết định ngày 16/10 trong tài liệu database.
+
+B3 giữ nguyên 19 mục B1/B2, thêm 4 mục: đơn có ReplacedByBookingId phải Cancelled; đơn thay thế giữ CustomerId/CheckIn/CheckOut; Payment Compensation gắn đơn được thay thế tới; AssignedEmployeeId chỉ trỏ Consultant/Manager/Administrator. Script không sửa dữ liệu; có LỆCH thì dừng báo lại, không tự sửa seed hoặc nới điều kiện.
