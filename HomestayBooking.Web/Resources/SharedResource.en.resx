@@ -1052,8 +1052,8 @@
   <data name="Ảnh bill (JPG, PNG, WEBP, tối đa 5MB)" xml:space="preserve">
     <value>Receipt image (JPG, PNG, WEBP, max 5MB)</value>
   </data>
-  <data name="Ảnh bill phải nhỏ hơn 5MB." xml:space="preserve">
-    <value>The receipt image must be smaller than 5MB.</value>
+  <data name="Ảnh phải có dung lượng từ 1 byte đến 5MB." xml:space="preserve">
+    <value>The image must be between 1 byte and 5MB.</value>
   </data>
   <data name="Ảnh bill trước chưa hợp lệ: {0}. Vui lòng thanh toán lại hoặc gửi ảnh khác." xml:space="preserve">
     <value>Your previous receipt was not accepted: {0}. Please pay again or send another image.</value>

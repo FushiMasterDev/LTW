@@ -7,7 +7,7 @@ Dựng database SQL Server cho ứng dụng trên một máy hoặc server mới
 | `schema.sql` | Toàn bộ schema (bảng, khóa, CHECK, index) **sinh tự động từ EF Core migrations**, không sửa tay |
 | `deploy.sql` | Chạy `schema.sql` với kiểm tra database đích và `XACT_ABORT` |
 | `verify.sql` | Kiểm tra sau khi dựng: số bảng/khóa/index, migration đã áp, các ràng buộc chính. Chỉ đọc |
-| `tests/data_consistency.sql` | Đối chiếu 14 quy tắc dữ liệu liên bảng, chỉ đọc; dùng được trên mọi database đã deploy, có LỆCH thì mã thoát khác 0 |
+| `tests/data_consistency.sql` | Đối chiếu 19 quy tắc dữ liệu liên bảng, chỉ đọc; dùng được trên mọi database đã deploy, có LỆCH thì mã thoát khác 0 |
 | `tests/constraints.sql` | Thử ràng buộc trên database **mới dựng, chưa seed** (mục 4) |
 | `tests/hardening_seeded.sql` | Thử các ràng buộc của migration `DatabaseHardening` trên database **đã seed** (mục 4) |
 | `tests/change_request_seeded.sql` | Thử 65 ca workflow trên database **đã seed** (mục 4), luôn ROLLBACK |
@@ -118,7 +118,7 @@ DeployTest, ConstraintTest hoặc database đã deploy khác, không có guard t
 sqlcmd -S localhost,1433 -U sa -C -b -d HomestayBooking_DeployTest -i tests/data_consistency.sql
 ```
 
-Mỗi mục in tên tiếng Việt, số dòng lệch và `OK`/`LỆCH`, cuối có tổng 14 mục.
+Mỗi mục in tên tiếng Việt, số dòng lệch và `OK`/`LỆCH`, cuối có tổng 19 mục.
 Mã thoát 0 khi tất cả OK; có LỆCH thì THROW để `sqlcmd -b` thoát khác 0.
 Tổng là tổng lượt vi phạm; một bản ghi có thể lệch nhiều mục. Script dùng đúng trạng thái
 `HoldsRoom()` (kể cả Completed), ngày Việt Nam cho hợp đồng hết hạn. Nếu đổi enum hoặc

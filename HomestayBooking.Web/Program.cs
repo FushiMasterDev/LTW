@@ -88,6 +88,14 @@ builder.Services.AddScoped<VietQrService>();
 builder.Services.AddScoped<CustomerAccountService>();
 builder.Services.AddScoped<OwnerRegistrationService>();
 builder.Services.AddScoped<ContractService>();
+builder.Services.AddScoped<HomestayAccessService>();
+builder.Services.AddScoped<HomestayContentService>();
+builder.Services.AddScoped<RoomService>();
+builder.Services.AddScoped<HomestayImageService>();
+builder.Services.AddScoped<RoomBlockService>();
+builder.Services.AddScoped<HomestayDocumentService>();
+builder.Services.AddScoped<HomestayPolicyService>();
+builder.Services.AddScoped<HomestayReviewService>();
 builder.Services.AddSingleton<ReceiptFileStore>();
 builder.Services.AddHostedService<BookingTimeoutJob>();
 

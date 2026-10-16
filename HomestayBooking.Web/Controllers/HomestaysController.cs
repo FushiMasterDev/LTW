@@ -61,7 +61,7 @@ public class HomestaysController : Controller
         }
         else
         {
-            homestays = homestays.Where(h => h.RoomTypes.Any(t => t.IsActive && t.MaxGuests >= guests));
+            homestays = homestays.Where(h => h.RoomTypes.Any(t => t.IsActive && t.MaxGuests >= guests && t.Rooms.Any(r => r.IsActive)));
         }
 
         var rows = await homestays
@@ -72,9 +72,9 @@ public class HomestaysController : Controller
                 h.Name,
                 AreaName = h.Area.Name,
                 Cover = h.Images.Where(i => i.IsCover).Select(i => i.Url).FirstOrDefault(),
-                MaxGuests = h.RoomTypes.Where(t => t.IsActive).Max(t => (int?)t.MaxGuests) ?? 0,
+                MaxGuests = h.RoomTypes.Where(t => t.IsActive && t.Rooms.Any(r => r.IsActive)).Max(t => (int?)t.MaxGuests) ?? 0,
                 Amenities = h.HomestayAmenities.OrderBy(a => a.AmenityId).Select(a => a.Amenity.Name).Take(4).ToList(),
-                RoomTypeIds = h.RoomTypes.Where(t => t.IsActive && t.MaxGuests >= guests).Select(t => t.Id).ToList(),
+                RoomTypeIds = h.RoomTypes.Where(t => t.IsActive && t.MaxGuests >= guests && t.Rooms.Any(r => r.IsActive)).Select(t => t.Id).ToList(),
             })
             .ToListAsync();
 
@@ -107,8 +107,8 @@ public class HomestaysController : Controller
             .Include(h => h.Area)
             .Include(h => h.Images)
             .Include(h => h.HomestayAmenities).ThenInclude(a => a.Amenity)
-            .Include(h => h.RoomTypes.Where(t => t.IsActive)).ThenInclude(t => t.Category)
-            .Include(h => h.RoomTypes.Where(t => t.IsActive)).ThenInclude(t => t.Prices)
+            .Include(h => h.RoomTypes.Where(t => t.IsActive && t.Rooms.Any(r => r.IsActive))).ThenInclude(t => t.Category)
+            .Include(h => h.RoomTypes.Where(t => t.IsActive && t.Rooms.Any(r => r.IsActive))).ThenInclude(t => t.Prices)
             .AsSplitQuery()
             .SingleOrDefaultAsync(h => h.Id == id);
         if (homestay is null)
