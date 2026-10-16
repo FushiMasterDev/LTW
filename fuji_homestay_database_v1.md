@@ -259,6 +259,25 @@ Khách có thể tồn tại **trước** khi có tài khoản (nhân viên tạ
 
 CHECK `CK_OwnerRegistrations_Status` lấy đủ enum. `CK_OwnerRegistrations_Decision`: NeedsRevision/Approved/Rejected phải có ReviewedByEmployeeId và ReviewedAt; NeedsRevision/Rejected phải có ReviewNote khác NULL, khác rỗng. Draft/WaitingOwnerActivation/PendingReview/UnderReview không buộc xóa dấu duyệt cũ khi gửi lại. Hồ sơ này duyệt người chủ; pháp lý và trạng thái kinh doanh được xét riêng theo từng Homestay (D17).
 
+**Backend B1 (service + test; chưa có giao diện tiếp nhận/thẩm định):** `OwnerRegistrationService` tự đăng ký SĐT + mật khẩu tạo Person/Owner/Account role Owner, hồ sơ Draft và Homestay Draft. Không tự ghép SĐT đã thuộc Owner/Account khác. Nhân viên tạo thay không tạo mật khẩu; gửi mời tạo Account PendingActivation không mật khẩu, hồ sơ WaitingOwnerActivation. Chủ dùng token mời + SĐT để tự đặt mật khẩu, trở lại Draft rồi tự nộp. Đây là shortcut chưa xác minh OTP; token/mật khẩu không ghi vào AuditLog.
+
+Sau review B1: có `ResendInviteAsync` cho WaitingOwnerActivation + Account PendingActivation chưa có mật khẩu; đổi security stamp để vô hiệu token cũ, không ghi token vào audit. Nhân viên chỉ sửa thông tin/ngân hàng và giấy tờ của hồ sơ EmployeeAssisted khi chủ chưa kích hoạt (chưa Account hoặc PendingActivation); sau kích hoạt chỉ chủ được sửa. Thông báo chủ dùng tiếng Việt, không chứa ReviewNote, tối đa 500 ký tự. Audit Insert của OwnerRegistrations/Homestays/Contracts/VerificationDocuments dùng Id thật, lưu entity rồi audit trong cùng transaction mặc định; unique index vẫn chặn trùng.
+
+Bảng chuyển trạng thái của `CanTransition`:
+
+| Từ | Đến | Người thực hiện |
+|---|---|---|
+| Draft | WaitingOwnerActivation | Consultant/Manager/Administrator gửi mời hồ sơ tạo thay |
+| WaitingOwnerActivation | Draft | Chủ tự kích hoạt |
+| Draft / NeedsRevision | PendingReview | Chủ nộp đủ hồ sơ; SubmittedAt là lúc nộp/nộp lại |
+| PendingReview | UnderReview | Consultant/Manager nhận thẩm định |
+| UnderReview | NeedsRevision | Consultant/Manager; ghi chú bắt buộc |
+| UnderReview | Approved / Rejected | Manager/Administrator, khác người tạo thay; từ chối bắt buộc lý do |
+
+Nộp mới cần họ tên, SĐT, đủ ba thông tin ngân hàng và ít nhất một Homestay Draft đủ thông tin, BusinessLicense + FireSafety + PropertyPhoto còn hạn. Chỉ các homestay đủ hồ sơ chuyển PendingReview; nháp chưa đủ giữ nguyên. Nộp lại sau NeedsRevision cũng xét các cơ sở PendingReview đang bổ sung. Thiếu điều kiện trả danh sách, không đổi trạng thái. Approve chỉ duyệt người chủ, không làm Homestay Active; cập nhật security stamp để claim OwnerApproved được tạo lại ở lần đăng nhập/làm mới. Reject đưa các cơ sở PendingReview của chủ về Draft (schema không liên kết trực tiếp hồ sơ–cơ sở, D17).
+
+SLA: `ReviewDeadlineLocal` cộng ba ngày làm việc sau ngày nộp, giữ giờ VN, bỏ thứ Bảy/CN và Holidays. `BookingTimeoutJob` gọi `AlertOverdueAsync` cho PendingReview/UnderReview quá hạn; bỏ NeedsRevision. Thông báo tất cả Manager đang làm việc có Account Active, chống lặp bằng Notification.Url của hồ sơ + CreatedAt sau SubmittedAt. Nộp lại đổi SubmittedAt nên cảnh báo lại được. Audit trực tiếp cùng nghiệp vụ, có JSON cũ/mới và AccountId; job dùng actor System/AccountId NULL.
+
 #### `VerificationDocuments` — giấy tờ xác minh (**mới**)
 
 | Cột | Kiểu | Ràng buộc | Ghi chú |
@@ -273,7 +292,9 @@ CHECK `CK_OwnerRegistrations_Status` lấy đủ enum. `CK_OwnerRegistrations_De
 
 Nguồn: v5 mục 4.6 ("bảng tài liệu xác minh riêng"); BR-12 (giấy phép kinh doanh lưu trú, PCCC, ảnh thực tế).
 
-DocumentType có CHECK whitelist. Theo D17, giấy phép/PCCC mới phải gắn Homestay; CHECK chủ sở hữu hiện có vẫn hỗ trợ giấy tờ lịch sử gắn OwnerRegistration, migration không chuyển dữ liệu cũ.
+DocumentType có CHECK whitelist. Theo D17, BusinessLicense/FireSafety/PropertyPhoto mới gắn HomestayId, không gắn OwnerRegistrationId. Upload/xóa chỉ khi cơ sở Draft, hoặc PendingReview khi hồ sơ NeedsRevision; Active/Suspended/Ended luôn bị chặn; ExpiryDate nếu có >= ngày VN hiện tại. B1 dùng ReceiptFileStore kiểm chữ ký JPG/PNG/WEBP và giới hạn 5 MB, lưu ngoài wwwroot; xóa bản ghi giấy tờ vẫn giữ file riêng tư phục vụ truy vết.
+
+**Dữ liệu cũ (B1.H):** chuẩn đủ giấy tờ chỉ áp khi nộp mới qua service. Homestay Active và giấy tờ cũ gắn OwnerRegistrationId giữ nguyên, không chuyển liên kết, không bắt bổ sung PropertyPhoto. Đặt phòng, ký/gia hạn hợp đồng không kiểm lại giấy tờ cũ; service chỉ kiểm Owner đã Approved khi tạo hợp đồng. Không quét toàn bộ homestay để đổi trạng thái vì thiếu hồ sơ.
 
 #### `Employees`
 
@@ -335,9 +356,11 @@ DocumentType có CHECK whitelist. Theo D17, giấy phép/PCCC mới phải gắn
 | SignedByEmployeeId | int | FK, NULL | |
 | | | **UNIQUE (HomestayId) WHERE Status = 'Active'** | Mỗi homestay tối đa một hợp đồng đang hiệu lực |
 
-Gia hạn = kết thúc hợp đồng cũ, tạo hợp đồng mới. Đơn lưu snapshot `CommissionRate` tại thời điểm đặt.
+Gia hạn = lùi `EndDate` về sau trên hợp đồng `Active`, không đổi `CommissionRate`. Đổi tỷ lệ phải chấm dứt rồi tạo hợp đồng mới. Đơn đã đặt giữ snapshot `CommissionRate`.
 
-Status có CHECK whitelist; chưa hỗ trợ hợp đồng tương lai (D21). D20 yêu cầu backend kiểm hợp đồng Active và EndDate >= CheckOut, kể cả khi đổi lịch; Prompt 10 chỉ thêm CHECK enum, chưa sửa service đặt/đổi.
+Status có CHECK whitelist; chưa hỗ trợ hợp đồng tương lai (D21). B1 dùng `ContractEligibility.Covers/Covering` để kiểm `Active`, `StartDate <= hôm nay`, `EndDate >= CheckOut` khi đặt, báo giá/gửi/duyệt đổi và tìm kiếm có ngày trả; không có ngày thì kiểm đến hôm nay. `BookingsController` xem trước voucher cũng dùng ngày trả phòng.
+
+`ContractService`: Manager/Administrator đang làm việc được tạo hợp đồng cho chủ Approved và homestay chưa Ended; số hợp đồng nhập tay, hoa hồng 10–15%, StartDate <= hôm nay, EndDate > hôm nay. Không có hợp đồng Active thứ hai. Gia hạn chỉ tăng EndDate. Chấm dứt cần lý do và chặn nếu còn đơn thuộc `HoldsRoom()` trừ `Completed`; lỗi trả mã đơn. Đơn Completed giữ đêm lịch sử nhưng không chặn chấm dứt (đã chốt sau review B1). Job chuyển Active có EndDate < ngày VN sang Expired, audit System, báo Manager; ngày EndDate vẫn hiệu lực đến hết ngày.
 
 #### `Amenities`, `HomestayAmenities`
 

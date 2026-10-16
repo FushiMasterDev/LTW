@@ -1,6 +1,6 @@
 namespace HomestayBooking.Web.Models.Entities;
 
-/// <summary>Hợp đồng hợp tác; hoa hồng là điều khoản của hợp đồng (D6, BR-02). Gia hạn = hợp đồng mới.</summary>
+/// <summary>Hợp đồng hợp tác; hoa hồng là điều khoản của hợp đồng (D6, BR-02). Gia hạn = lùi EndDate về sau trên hợp đồng Active; giữ nguyên CommissionRate.</summary>
 public class Contract
 {
     public int Id { get; set; }

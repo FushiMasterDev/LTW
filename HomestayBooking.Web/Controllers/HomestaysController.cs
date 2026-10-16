@@ -27,9 +27,9 @@ public class HomestaysController : Controller
         _options = options.Value;
     }
 
-    private IQueryable<Homestay> Bookable(DateOnly today) =>
+    private IQueryable<Homestay> Bookable(DateOnly today, DateOnly? checkOut = null) =>
         _db.Homestays.Where(h => h.Status == HomestayStatus.Active
-                                 && h.Contracts.Any(c => c.Status == ContractStatus.Active && c.StartDate <= today && c.EndDate >= today));
+                                 && _db.Contracts.Covering(today, checkOut ?? today).Any(c => c.HomestayId == h.Id));
 
     public async Task<IActionResult> Index(HomestaySearchQuery query)
     {
@@ -40,7 +40,7 @@ public class HomestaysController : Controller
             query.CheckIn = today;
         }
 
-        var homestays = Bookable(today);
+        var homestays = Bookable(today, query.HasDates ? query.CheckOut : null);
         if (query.AreaId is int areaId)
         {
             homestays = homestays.Where(h => h.AreaId == areaId);
@@ -102,7 +102,7 @@ public class HomestaysController : Controller
     public async Task<IActionResult> Details(int id, HomestaySearchQuery query)
     {
         var today = VietnamTime.Today(_clock);
-        var homestay = await Bookable(today)
+        var homestay = await Bookable(today, query.HasDates ? query.CheckOut : null)
             .AsNoTracking()
             .Include(h => h.Area)
             .Include(h => h.Images)

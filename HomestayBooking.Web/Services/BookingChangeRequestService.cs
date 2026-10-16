@@ -107,6 +107,8 @@ public partial class BookingChangeRequestService
         var roomType = await _db.RoomTypes.AsNoTracking().SingleOrDefaultAsync(t => t.Id == (input.NewRoomTypeId ?? b.RoomTypeId));
         if (roomType is null || !roomType.IsActive || roomType.HomestayId != b.HomestayId || b.Homestay.Status != HomestayStatus.Active)
             throw new BookingException("Loại phòng phải đang hoạt động và thuộc cùng homestay.");
+        if (!await _db.Contracts.Covering(today, end).AnyAsync(c => c.HomestayId == b.HomestayId))
+            throw new BookingException("Hợp đồng không còn hiệu lực đến ngày trả phòng mới.");
         if (b.Guests > roomType.MaxGuests) throw new BookingException("Số khách vượt quá sức chứa của phòng.");
         return new Target(start, end, roomType.Id, await _pricing.QuoteAsync(roomType.Id, start, end));
     }

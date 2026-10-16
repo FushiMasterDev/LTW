@@ -86,6 +86,8 @@ builder.Services.AddScoped<BankMatchingService>();
 builder.Services.AddScoped<ReceiptReviewService>();
 builder.Services.AddScoped<VietQrService>();
 builder.Services.AddScoped<CustomerAccountService>();
+builder.Services.AddScoped<OwnerRegistrationService>();
+builder.Services.AddScoped<ContractService>();
 builder.Services.AddSingleton<ReceiptFileStore>();
 builder.Services.AddHostedService<BookingTimeoutJob>();
 

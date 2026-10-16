@@ -383,6 +383,22 @@ AwaitingPayment → PaymentSubmitted → Deposited → Confirmed → CheckedIn �
 
 AuditLog ghi trực tiếp trong service và transaction nghiệp vụ; không làm interceptor. Đây là yêu cầu cho backend tiếp theo, không khẳng định mọi thao tác đã có API/service. Không thêm CHECK Settlements.ConfirmedAt; Paid không bắt buộc chủ đã xác nhận.
 
+### 7.4. Backend tiếp nhận đối tác và hợp đồng (B1)
+
+Đã có service và test, chưa cung cấp giao diện/API tiếp nhận đối tác mới:
+
+Sau review B1: có `ResendInviteAsync` cho WaitingOwnerActivation + Account PendingActivation chưa có mật khẩu; đổi security stamp để vô hiệu token cũ, không ghi token vào audit. Nhân viên chỉ sửa thông tin/ngân hàng và giấy tờ của hồ sơ EmployeeAssisted khi chủ chưa kích hoạt (chưa Account hoặc PendingActivation); sau kích hoạt chỉ chủ được sửa. Thông báo chủ dùng tiếng Việt, không chứa ReviewNote, tối đa 500 ký tự. Audit Insert của OwnerRegistrations/Homestays/Contracts/VerificationDocuments dùng Id thật, lưu entity rồi audit trong cùng transaction mặc định; unique index vẫn chặn trùng.
+
+- `OwnerRegistrationService`: chủ tự đăng ký tạo Person/Owner/Account role Owner + Draft + Homestay Draft; không tự ghép SĐT có chủ/tài khoản khác. Nhân viên tạo thay không có mật khẩu; gửi mời sang WaitingOwnerActivation, chủ tự đặt mật khẩu bằng token mời + SĐT rồi trở về Draft. Chưa có OTP, cần nâng cấp SMS sau.
+- Nộp mới đủ họ tên/SĐT/ngân hàng và ít nhất một cơ sở có giấy phép kinh doanh, PCCC, ảnh thực tế còn hạn → PendingReview; chỉ cơ sở đủ chuyển PendingReview. SubmittedAt ghi lúc nộp đủ, nộp lại sau NeedsRevision tính lại SLA. Chủ tự bấm nộp, nhân viên không nộp thay.
+- PendingReview → UnderReview do Consultant/Manager nhận; UnderReview → NeedsRevision (Consultant/Manager, có ghi chú), Approved/Rejected (Manager/Administrator, khác người tạo thay; từ chối có lý do). Approve chỉ duyệt chủ, cập nhật security stamp, không tự Active homestay. Reject đưa cơ sở PendingReview của chủ về Draft.
+- Giấy tờ mới gắn HomestayId; sửa/xóa khi cơ sở Draft, hoặc PendingReview khi hồ sơ NeedsRevision; Active/Suspended/Ended luôn bị chặn. ReceiptFileStore lưu riêng tư ngoài wwwroot, kiểm chữ ký ảnh và 5 MB. Giấy tờ cũ gắn hồ sơ và homestay Active không bị chuyển liên kết hay bắt bổ sung PropertyPhoto (B1.H). Quy tắc đủ giấy tờ không chặn đặt phòng/ký/gia hạn của cơ sở cũ.
+- `ContractService`: Manager/Administrator tạo cho chủ Approved, homestay chưa Ended; hoa hồng 10–15%, StartDate không tương lai, EndDate > hôm nay, tối đa một Active. Gia hạn = tăng EndDate hợp đồng Active, giữ tỷ lệ. Đổi tỷ lệ = chấm dứt + tạo mới; đơn cũ giữ snapshot. Chấm dứt cần lý do, chặn đơn thuộc HoldsRoom trừ Completed và trả mã đơn. Completed vẫn giữ đêm lịch sử nhưng không chặn chấm dứt (đã chốt sau review B1).
+- `ContractEligibility` dùng một biểu thức Active + StartDate <= hôm nay + EndDate >= CheckOut trong đặt phòng, báo giá/gửi/duyệt đổi, lọc tìm kiếm và xem trước voucher. Không có ngày trả thì lọc đến hôm nay.
+- `BookingTimeoutJob` gọi hết hạn hợp đồng (EndDate < ngày VN), audit System và báo Manager. SLA hồ sơ = ba ngày làm việc sau SubmittedAt, giữ giờ VN, bỏ thứ Bảy/CN và Holidays; chỉ cảnh báo PendingReview/UnderReview, không NeedsRevision. Chống lặp bằng Notification.Url + CreatedAt sau SubmittedAt; nộp lại được cảnh báo mới.
+- Audit trực tiếp trong service/transaction, JSON cũ/mới, AccountId thật; job AccountId NULL và ghi System. Không thêm schema hay interceptor.
+- `database/tests/data_consistency.sql` đối chiếu 14 mục liên bảng bằng SELECT, in OK/LỆCH và tổng; có LỆCH thì `sqlcmd -b` thất bại, dừng báo lại. Không tự sửa dữ liệu.
+
 ---
 
 ## 8. Danh sách REST API

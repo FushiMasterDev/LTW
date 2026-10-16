@@ -86,7 +86,7 @@ public partial class BookingsController : Controller
         {
             var quote = await _pricing.QuoteAsync(roomTypeId, checkIn, checkOut);
             var free = (await _bookings.FreeRoomIdsAsync(roomTypeId, checkIn, checkOut)).Count;
-            var discount = voucherId is int id ? await PreviewDiscountAsync(id, roomTypeId, quote.Total) : 0;
+            var discount = voucherId is int id ? await PreviewDiscountAsync(id, roomTypeId, quote.Total, checkOut) : 0;
             return Json(new
             {
                 ok = true,
@@ -105,7 +105,7 @@ public partial class BookingsController : Controller
     }
 
     /// <summary>Số tiền voucher sẽ giảm cho đơn này; 0 nếu voucher không thuộc khách đang đăng nhập hoặc không dùng được.</summary>
-    private async Task<decimal> PreviewDiscountAsync(int voucherId, int roomTypeId, decimal total)
+    private async Task<decimal> PreviewDiscountAsync(int voucherId, int roomTypeId, decimal total, DateOnly checkOut)
     {
         var personId = User.PersonId();
         var today = VietnamTime.Today(_clock);
@@ -114,7 +114,7 @@ public partial class BookingsController : Controller
         var commissionRate = await _db.RoomTypes
             .Where(t => t.Id == roomTypeId)
             .SelectMany(t => t.Homestay.Contracts)
-            .Where(c => c.Status == ContractStatus.Active && c.StartDate <= today && c.EndDate >= today)
+            .Covering(today, checkOut)
             .Select(c => (decimal?)c.CommissionRate)
             .SingleOrDefaultAsync();
         return voucher is null || commissionRate is null ? 0 : _vouchers.PreviewDiscount(voucher, total, commissionRate.Value);
