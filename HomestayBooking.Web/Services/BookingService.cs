@@ -97,8 +97,8 @@ public class BookingService
         }
 
         var contract = await _db.Contracts
-            .Where(c => c.HomestayId == roomType.HomestayId && c.Status == ContractStatus.Active
-                        && c.StartDate <= today && c.EndDate >= today)
+            .Covering(today, request.CheckOut)
+            .Where(c => c.HomestayId == roomType.HomestayId)
             .SingleOrDefaultAsync()
             ?? throw new BookingException("Loại phòng này hiện không nhận đặt.");
 

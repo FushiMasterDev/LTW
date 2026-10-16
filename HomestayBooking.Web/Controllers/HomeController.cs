@@ -44,7 +44,7 @@ public class HomeController : Controller
         var today = VietnamTime.Today(_clock);
         var rows = await _db.Homestays
             .Where(h => h.Status == HomestayStatus.Active
-                        && h.Contracts.Any(c => c.Status == ContractStatus.Active && c.StartDate <= today && c.EndDate >= today)
+                        && _db.Contracts.Covering(today, today).Any(c => c.HomestayId == h.Id)
                         && h.RoomTypes.Any(t => t.IsActive))
             .Select(h => new
             {
