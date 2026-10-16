@@ -3,6 +3,7 @@
 -- Tên trạng thái theo Enums.cs và BookingStatusExtensions.HoldsRoom(); sửa enum thì sửa script.
 -- Completed vẫn giữ lịch phòng theo HoldsRoom(); Cancelled/Rejected/Expired phải nhả phòng.
 -- Không kiểm giấy tờ mới trên toàn bộ homestay cũ (D17, mục H của B1).
+-- Ba loại giá Weekday/Weekend/Holiday theo DayType; sửa enum thì sửa script.
 -- Ngày hợp đồng tính theo giờ Việt Nam; mỗi mục đếm dòng vi phạm trong bảng được nêu.
 ;WITH KiemTra AS (
     SELECT 1 AS STT, N'Đơn khác homestay của loại phòng' AS Muc, COUNT_BIG(*) AS SoDongLech
@@ -46,9 +47,30 @@
     UNION ALL
     SELECT 14 AS STT, N'Tiền trả đối soát khác tổng chi tiết' AS Muc, COUNT_BIG(*) AS SoDongLech
     FROM Settlements s WHERE s.PayoutAmount <> COALESCE((SELECT SUM(i.PayoutAmount) FROM SettlementItems i WHERE i.SettlementId = s.Id), 0)
+    UNION ALL
+    SELECT 15 AS STT, N'Homestay Active thiếu ảnh bìa' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Homestays h WHERE h.Status = 'Active' AND NOT EXISTS (SELECT 1 FROM HomestayImages i WHERE i.HomestayId = h.Id AND i.IsCover = 1)
+    UNION ALL
+    SELECT 16 AS STT, N'Loại phòng Active thiếu giá hiệu lực hôm nay' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM RoomTypes t JOIN Homestays h ON h.Id = t.HomestayId
+    WHERE t.IsActive = 1 AND h.Status = 'Active' AND (
+        NOT EXISTS (SELECT 1 FROM RoomTypePrices p WHERE p.RoomTypeId = t.Id AND p.DayType = 'Weekday' AND p.EffectiveFrom <= CONVERT(date, SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'SE Asia Standard Time'))
+        OR NOT EXISTS (SELECT 1 FROM RoomTypePrices p WHERE p.RoomTypeId = t.Id AND p.DayType = 'Weekend' AND p.EffectiveFrom <= CONVERT(date, SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'SE Asia Standard Time'))
+        OR NOT EXISTS (SELECT 1 FROM RoomTypePrices p WHERE p.RoomTypeId = t.Id AND p.DayType = 'Holiday' AND p.EffectiveFrom <= CONVERT(date, SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'SE Asia Standard Time')))
+    UNION ALL
+    SELECT 17 AS STT, N'Homestay Active thiếu loại phòng có phòng đang bán' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Homestays h WHERE h.Status = 'Active' AND NOT EXISTS (
+        SELECT 1 FROM RoomTypes t WHERE t.HomestayId = h.Id AND t.IsActive = 1
+        AND EXISTS (SELECT 1 FROM Rooms r WHERE r.RoomTypeId = t.Id AND r.IsActive = 1))
+    UNION ALL
+    SELECT 18 AS STT, N'Đêm khóa ngoài khoảng khóa ngày' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM RoomNights n JOIN RoomBlocks b ON b.Id = n.RoomBlockId WHERE n.[Date] < b.StartDate OR n.[Date] >= b.EndDate
+    UNION ALL
+    SELECT 19 AS STT, N'Ảnh gắn loại phòng của homestay khác' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM HomestayImages i JOIN RoomTypes t ON t.Id = i.RoomTypeId WHERE i.HomestayId <> t.HomestayId
 )
 SELECT CASE WHEN GROUPING(STT) = 1 THEN 99 ELSE STT END AS STT,
-       CASE WHEN GROUPING(STT) = 1 THEN N'TỔNG (14 mục)' ELSE Muc END AS Muc,
+       CASE WHEN GROUPING(STT) = 1 THEN N'TỔNG (19 mục)' ELSE Muc END AS Muc,
        SUM(SoDongLech) AS SoDongLech,
        CASE WHEN SUM(SoDongLech) = 0 THEN N'OK' ELSE N'LỆCH' END AS KetQua
 FROM KiemTra
@@ -100,6 +122,27 @@ IF EXISTS (
     UNION ALL
     SELECT 14 AS STT, N'Tiền trả đối soát khác tổng chi tiết' AS Muc, COUNT_BIG(*) AS SoDongLech
     FROM Settlements s WHERE s.PayoutAmount <> COALESCE((SELECT SUM(i.PayoutAmount) FROM SettlementItems i WHERE i.SettlementId = s.Id), 0)
+    UNION ALL
+    SELECT 15 AS STT, N'Homestay Active thiếu ảnh bìa' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Homestays h WHERE h.Status = 'Active' AND NOT EXISTS (SELECT 1 FROM HomestayImages i WHERE i.HomestayId = h.Id AND i.IsCover = 1)
+    UNION ALL
+    SELECT 16 AS STT, N'Loại phòng Active thiếu giá hiệu lực hôm nay' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM RoomTypes t JOIN Homestays h ON h.Id = t.HomestayId
+    WHERE t.IsActive = 1 AND h.Status = 'Active' AND (
+        NOT EXISTS (SELECT 1 FROM RoomTypePrices p WHERE p.RoomTypeId = t.Id AND p.DayType = 'Weekday' AND p.EffectiveFrom <= CONVERT(date, SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'SE Asia Standard Time'))
+        OR NOT EXISTS (SELECT 1 FROM RoomTypePrices p WHERE p.RoomTypeId = t.Id AND p.DayType = 'Weekend' AND p.EffectiveFrom <= CONVERT(date, SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'SE Asia Standard Time'))
+        OR NOT EXISTS (SELECT 1 FROM RoomTypePrices p WHERE p.RoomTypeId = t.Id AND p.DayType = 'Holiday' AND p.EffectiveFrom <= CONVERT(date, SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'SE Asia Standard Time')))
+    UNION ALL
+    SELECT 17 AS STT, N'Homestay Active thiếu loại phòng có phòng đang bán' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Homestays h WHERE h.Status = 'Active' AND NOT EXISTS (
+        SELECT 1 FROM RoomTypes t WHERE t.HomestayId = h.Id AND t.IsActive = 1
+        AND EXISTS (SELECT 1 FROM Rooms r WHERE r.RoomTypeId = t.Id AND r.IsActive = 1))
+    UNION ALL
+    SELECT 18 AS STT, N'Đêm khóa ngoài khoảng khóa ngày' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM RoomNights n JOIN RoomBlocks b ON b.Id = n.RoomBlockId WHERE n.[Date] < b.StartDate OR n.[Date] >= b.EndDate
+    UNION ALL
+    SELECT 19 AS STT, N'Ảnh gắn loại phòng của homestay khác' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM HomestayImages i JOIN RoomTypes t ON t.Id = i.RoomTypeId WHERE i.HomestayId <> t.HomestayId
     ) AS KiemTra WHERE SoDongLech > 0
 )
     THROW 50020, N'Đối chiếu dữ liệu có mục LỆCH; không tự sửa dữ liệu.', 1;

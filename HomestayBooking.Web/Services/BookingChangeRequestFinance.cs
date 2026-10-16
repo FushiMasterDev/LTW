@@ -96,7 +96,7 @@ public partial class BookingChangeRequestService
         if (IsLegacy(request)) throw new BookingException(LegacyRequest);
         // Hạn báo trước đã kiểm khi duyệt nghiệp vụ; không biến thành hạn kế toán duyệt.
         await ValidateBookingAsync(booking, false, checkNotice: false);
-        var target = await TargetAsync(booking, new(booking.Id, request.RequestType, request.NewCheckIn, request.NewCheckOut, request.NewRoomTypeId))
+        var target = await TargetAsync(booking, new(booking.Id, request.RequestType, request.NewCheckIn, request.NewCheckOut, request.NewRoomTypeId), allowPendingReview: true)
             ?? throw new BookingException("Yêu cầu hủy không có cọc bổ sung.");
         if (target.Price.Total != request.NewTotalAmount)
         {
@@ -109,7 +109,7 @@ public partial class BookingChangeRequestService
             || request.AdditionalDeposit != Math.Max(0, required - request.DepositCarriedOver.Value))
             throw new BookingException("Tiền cọc của đơn đã thay đổi, vui lòng gửi lại yêu cầu.");
         var room = request.NewRoomId ?? throw new BookingException(NoRooms);
-        if (!await _db.Rooms.AnyAsync(r => r.Id == room && r.RoomTypeId == target.RoomTypeId && r.IsActive))
+        if (!await _db.Rooms.AnyAsync(r => r.Id == room && r.RoomTypeId == target.RoomTypeId && r.IsActive && r.RoomType.IsActive))
             throw new BookingException(NoRooms);
         // Không tự chiếm lại phòng nếu phần giữ của yêu cầu đã bị mất.
         for (var date = target.CheckIn; date < target.CheckOut; date = date.AddDays(1))

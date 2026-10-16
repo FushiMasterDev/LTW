@@ -19,9 +19,7 @@ public partial class OwnerRegistrationService
             .SingleOrDefaultAsync(r => r.OwnerId == home.OwnerId && OwnerRegistration.OpenStatuses.Contains(r.Status));
         if (registration is not null) await AuthorizeEditorAsync(registration, actor);
         else await OwnerAsync(home.OwnerId, actor);
-        if (home.Status != HomestayStatus.Draft
-            && !(home.Status == HomestayStatus.PendingReview && registration?.Status == OwnerRegistrationStatus.NeedsRevision))
-            throw new BookingException("Chỉ sửa giấy tờ khi homestay còn nháp hoặc đang chờ duyệt và hồ sơ cần bổ sung.");
+        EnsureDraftEditable(registration, home);
         return home;
     }
 
@@ -34,16 +32,8 @@ public partial class OwnerRegistrationService
             return await WriteAsync(async () =>
             {
                 var home = await EditableHomestayAsync(homestayId, actor);
-                if (!Enum.IsDefined(type)) throw new BookingException("Loại giấy tờ không hợp lệ.");
-                if (Path.GetFileName(file.FileName).Length > 255) throw new BookingException("Tên file quá dài.");
-                if (expiryDate < VietnamTime.Today(clock)) throw new BookingException("Giấy tờ đã hết hạn.");
-                stored = await files.SaveAsync(file, $"HS{home.Id}");
-                var document = new VerificationDocument { HomestayId = home.Id, DocumentType = type,
-                    FileUrl = stored, OriginalFileName = Path.GetFileName(file.FileName), ExpiryDate = expiryDate, CreatedAt = Now };
-                db.VerificationDocuments.Add(document);
-                await db.SaveChangesAsync();
-                PartnerServiceSupport.Audit(db, clock, actor, "VerificationDocuments", document.Id.ToString(), null,
-                    new { document.HomestayId, Type = type.ToString(), document.FileUrl, document.ExpiryDate }, AuditAction.Insert);
+                var document = await StoreDocumentAsync(home, type, file, expiryDate, actor);
+                stored = document.FileUrl;
                 return document;
             });
         }
@@ -53,6 +43,42 @@ public partial class OwnerRegistrationService
             if (stored is not null && files.Resolve(stored) is { } path) File.Delete(path);
             throw;
         }
+    }
+
+    /// <summary>Dùng chung B1/B2 sau chốt quyền của từng luồng; không tự thay trạng thái cơ sở.</summary>
+    internal async Task<VerificationDocument> StoreDocumentAsync(Homestay home, DocumentType type, IFormFile file,
+        DateOnly? expiryDate, Actor actor)
+    {
+        if (!Enum.IsDefined(type)) throw new BookingException("Loại giấy tờ không hợp lệ.");
+        if (Path.GetFileName(file.FileName).Length > 255) throw new BookingException("Tên file quá dài.");
+        if (expiryDate < VietnamTime.Today(clock)) throw new BookingException("Giấy tờ đã hết hạn.");
+        var stored = await files.SaveAsync(file, $"HS{home.Id}");
+        try
+        {
+            var document = new VerificationDocument { HomestayId = home.Id, DocumentType = type,
+                FileUrl = stored, OriginalFileName = Path.GetFileName(file.FileName), ExpiryDate = expiryDate, CreatedAt = Now };
+            db.VerificationDocuments.Add(document); await db.SaveChangesAsync();
+            PartnerServiceSupport.Audit(db, clock, actor, "VerificationDocuments", document.Id.ToString(), null,
+                new { document.HomestayId, Type = type.ToString(), document.FileUrl, document.ExpiryDate }, AuditAction.Insert);
+            return document;
+        }
+        catch { DeleteNewDocumentFile(stored); throw; }
+    }
+
+    internal void DeleteNewDocumentFile(string stored)
+    {
+        if (files.Resolve(stored) is { } path) File.Delete(path);
+    }
+
+    internal async Task<List<string>> MissingDocumentsAsync(Homestay home, bool requirePhoto, bool allowLegacy = false)
+    {
+        var today = VietnamTime.Today(clock);
+        var types = await db.VerificationDocuments.Where(d => (d.HomestayId == home.Id
+            || (allowLegacy && d.OwnerRegistrationId != null && d.OwnerRegistration!.OwnerId == home.OwnerId
+                && d.OwnerRegistration.Status == OwnerRegistrationStatus.Approved))
+            && (d.ExpiryDate == null || d.ExpiryDate >= today)).Select(d => d.DocumentType).ToListAsync();
+        return RequiredDocuments.Where(t => requirePhoto || t != DocumentType.PropertyPhoto)
+            .Where(t => !types.Contains(t)).Select(t => $"{home.Name}: {DocumentName(t)} còn hạn").ToList();
     }
 
     public Task<int> DeleteDocumentAsync(int id, Actor actor) => WriteAsync(async () =>

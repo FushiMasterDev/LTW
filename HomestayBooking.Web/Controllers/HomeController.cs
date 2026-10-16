@@ -45,7 +45,7 @@ public class HomeController : Controller
         var rows = await _db.Homestays
             .Where(h => h.Status == HomestayStatus.Active
                         && _db.Contracts.Covering(today, today).Any(c => c.HomestayId == h.Id)
-                        && h.RoomTypes.Any(t => t.IsActive))
+                        && h.RoomTypes.Any(t => t.IsActive && t.Rooms.Any(r => r.IsActive)))
             .Select(h => new
             {
                 h.Id,
@@ -54,7 +54,7 @@ public class HomeController : Controller
                 Cover = h.Images.Where(i => i.IsCover).Select(i => i.Url).FirstOrDefault(),
                 Rating = _db.Reviews.Where(r => r.HomestayId == h.Id && !r.IsHidden).Average(r => (double?)r.Rating),
                 ReviewCount = _db.Reviews.Count(r => r.HomestayId == h.Id && !r.IsHidden),
-                RoomTypeIds = h.RoomTypes.Where(t => t.IsActive).Select(t => t.Id).ToList(),
+                RoomTypeIds = h.RoomTypes.Where(t => t.IsActive && t.Rooms.Any(r => r.IsActive)).Select(t => t.Id).ToList(),
             })
             .OrderByDescending(h => h.Rating ?? 0)
             .ThenByDescending(h => h.ReviewCount)

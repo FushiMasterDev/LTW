@@ -198,7 +198,7 @@ public class BookingService
     /// <summary>Phòng đang kinh doanh của loại phòng mà không có đêm nào bị chiếm trong [checkIn, checkOut).</summary>
     public Task<List<int>> FreeRoomIdsAsync(int roomTypeId, DateOnly checkIn, DateOnly checkOut) =>
         _db.Rooms
-            .Where(r => r.RoomTypeId == roomTypeId && r.IsActive)
+            .Where(r => r.RoomTypeId == roomTypeId && r.IsActive && r.RoomType.IsActive)
             .Where(r => !r.RoomNights.Any(n => n.Date >= checkIn && n.Date < checkOut))
             .OrderBy(r => r.Id)
             .Select(r => r.Id)

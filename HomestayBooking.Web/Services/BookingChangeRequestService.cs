@@ -87,7 +87,7 @@ public partial class BookingChangeRequestService
 
     private sealed record Target(DateOnly CheckIn, DateOnly CheckOut, int RoomTypeId, PriceQuote Price);
 
-    private async Task<Target?> TargetAsync(Booking b, ChangeBookingRequest input)
+    private async Task<Target?> TargetAsync(Booking b, ChangeBookingRequest input, bool allowPendingReview = false)
     {
         var dates = input.RequestType is ChangeRequestType.ChangeDates or ChangeRequestType.ChangeDatesAndRoomType;
         var type = input.RequestType is ChangeRequestType.ChangeRoomType or ChangeRequestType.ChangeDatesAndRoomType;
@@ -105,7 +105,8 @@ public partial class BookingChangeRequestService
         if (start < today || end <= start || end > today.AddDays(_options.ChangeWindowDays))
             throw new BookingException("Ngày mới không hợp lệ hoặc nằm ngoài thời hạn cho phép.");
         var roomType = await _db.RoomTypes.AsNoTracking().SingleOrDefaultAsync(t => t.Id == (input.NewRoomTypeId ?? b.RoomTypeId));
-        if (roomType is null || !roomType.IsActive || roomType.HomestayId != b.HomestayId || b.Homestay.Status != HomestayStatus.Active)
+        if (roomType is null || !roomType.IsActive || roomType.HomestayId != b.HomestayId
+            || !(b.Homestay.Status == HomestayStatus.Active || allowPendingReview && b.Homestay.Status == HomestayStatus.PendingReview))
             throw new BookingException("Loại phòng phải đang hoạt động và thuộc cùng homestay.");
         if (!await _db.Contracts.Covering(today, end).AnyAsync(c => c.HomestayId == b.HomestayId))
             throw new BookingException("Hợp đồng không còn hiệu lực đến ngày trả phòng mới.");
@@ -115,7 +116,7 @@ public partial class BookingChangeRequestService
 
     private async Task<int> AvailableRoomAsync(Booking b, Target target, int? requestId = null)
     {
-        var rooms = await _db.Rooms.Where(r => r.RoomTypeId == target.RoomTypeId && r.IsActive)
+        var rooms = await _db.Rooms.Where(r => r.RoomTypeId == target.RoomTypeId && r.IsActive && r.RoomType.IsActive)
             .Where(r => !r.RoomNights.Any(n => n.Date >= target.CheckIn && n.Date < target.CheckOut
                 && n.BookingId != b.Id && (requestId == null || n.BookingChangeRequestId != requestId)))
             .OrderBy(r => r.Id == b.RoomId ? 0 : 1).ThenBy(r => r.Id).Select(r => r.Id).ToListAsync();
@@ -161,6 +162,7 @@ public partial class BookingChangeRequestService
         {
             var booking = await BookingAsync(bookingId);
             await ActorAsync(principal, booking);
+            if (booking.Homestay.Status != HomestayStatus.Active) return false;
             await ValidateBookingAsync(booking, false);
             return !await _db.BookingChangeRequests.AnyAsync(r => r.BookingId == bookingId
                 && (r.Status == ChangeRequestStatus.Pending || r.Status == ChangeRequestStatus.AwaitingPayment));
@@ -249,7 +251,7 @@ public partial class BookingChangeRequestService
         if (IsLegacy(request)) throw new BookingException(LegacyRequest);
         await ValidateBookingAsync(booking, request.RequestType == ChangeRequestType.Cancel);
         var input = new ChangeBookingRequest(booking.Id, request.RequestType, request.NewCheckIn, request.NewCheckOut, request.NewRoomTypeId);
-        var target = await TargetAsync(booking, input);
+        var target = await TargetAsync(booking, input, allowPendingReview: true);
         if (target is not null && target.Price.Total != request.NewTotalAmount)
         {
             Reject(request, actor, PriceChanged); Notify(booking, "bị từ chối vì giá đã thay đổi");

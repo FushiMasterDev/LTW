@@ -292,7 +292,7 @@ SLA: `ReviewDeadlineLocal` cộng ba ngày làm việc sau ngày nộp, giữ gi
 
 Nguồn: v5 mục 4.6 ("bảng tài liệu xác minh riêng"); BR-12 (giấy phép kinh doanh lưu trú, PCCC, ảnh thực tế).
 
-DocumentType có CHECK whitelist. Theo D17, BusinessLicense/FireSafety/PropertyPhoto mới gắn HomestayId, không gắn OwnerRegistrationId. Upload/xóa chỉ khi cơ sở Draft, hoặc PendingReview khi hồ sơ NeedsRevision; Active/Suspended/Ended luôn bị chặn; ExpiryDate nếu có >= ngày VN hiện tại. B1 dùng ReceiptFileStore kiểm chữ ký JPG/PNG/WEBP và giới hạn 5 MB, lưu ngoài wwwroot; xóa bản ghi giấy tờ vẫn giữ file riêng tư phục vụ truy vết.
+DocumentType có CHECK whitelist. Theo D17, BusinessLicense/FireSafety/PropertyPhoto mới gắn HomestayId, không gắn OwnerRegistrationId. Upload/xóa qua B1 chỉ khi hồ sơ Draft/WaitingOwnerActivation/NeedsRevision và cơ sở Draft, hoặc hồ sơ NeedsRevision và cơ sở PendingReview; hồ sơ PendingReview/UnderReview khóa sửa cả khi cơ sở còn Draft; Active/Suspended/Ended luôn bị chặn; ExpiryDate nếu có >= ngày VN hiện tại. B1 dùng ReceiptFileStore kiểm chữ ký JPG/PNG/WEBP và giới hạn 5 MB, lưu ngoài wwwroot; xóa bản ghi giấy tờ vẫn giữ file riêng tư phục vụ truy vết.
 
 **Dữ liệu cũ (B1.H):** chuẩn đủ giấy tờ chỉ áp khi nộp mới qua service. Homestay Active và giấy tờ cũ gắn OwnerRegistrationId giữ nguyên, không chuyển liên kết, không bắt bổ sung PropertyPhoto. Đặt phòng, ký/gia hạn hợp đồng không kiểm lại giấy tờ cũ; service chỉ kiểm Owner đã Approved khi tạo hợp đồng. Không quét toàn bộ homestay để đổi trạng thái vì thiếu hồ sơ.
 
@@ -343,6 +343,31 @@ DocumentType có CHECK whitelist. Theo D17, BusinessLicense/FireSafety/PropertyP
 - **Bỏ** `CommissionRate` (chuyển sang `Contracts`) và `IsActive` (thay bằng `Status`).
 - Chỉ homestay `Active` **và** có hợp đồng đang hiệu lực mới hiện cho khách tìm kiếm. Backend phải kiểm thêm EndDate >= CheckOut khi đã chọn ngày (D20).
 - Owner chỉ thêm/sửa homestay khi hồ sơ đăng ký đã `Approved` (policy `ApprovedOwner`).
+
+**Backend B2 (service + test, chưa có giao diện quản lý mới):**
+
+- Quyền chung tại `HomestayAccessService.AuthorizeAsync`: chủ có Account Active, không phải nhân viên, sửa cơ sở của mình chưa Ended. Consultant chỉ sửa Draft/PendingReview khi thỏa quy tắc B1: EmployeeAssisted, chủ chưa có Account hoặc PendingActivation. Manager/Administrator đang làm việc hỗ trợ cơ sở chưa Ended, nhưng không vượt khóa hồ sơ đang duyệt. Khi có hồ sơ thuộc OpenStatuses, mọi actor (kể cả Manager) chỉ sửa nếu hồ sơ Draft/WaitingOwnerActivation/NeedsRevision và homestay Draft, hoặc hồ sơ NeedsRevision và homestay PendingReview. B1 UpdateDraftAsync, EditableHomestayAsync và B2 dùng chung EnsureDraftEditable; PendingReview/UnderReview khóa nội dung, vị trí, ảnh, phòng, giá, chính sách và giấy tờ. Quyền nhân viên tạo thay trước kích hoạt của B1 vẫn áp dụng. Accountant/chủ khác bị chặn; lịch đọc được cả cơ sở đã Ended của đúng chủ hoặc quản lý.
+- `HomestayContentService`: sửa tên, liên hệ E.164, giờ nhận/trả, mô tả/hướng dẫn (HtmlSanitizer), thay danh sách tiện nghi hợp lệ; không tự đổi trạng thái. Đổi Address/AreaId/Latitude/Longitude khi Active đưa về PendingReview; Suspended lưu và giữ Suspended, chỉ mở lại qua ResumeAsync sau khi kiểm đủ điều kiện; Draft/PendingReview chỉ lưu. Manager nhận thông báo theo nhóm mã đơn Confirmed/Deposited sắp tới để liên hệ khách (BR-13). Không đổi trạng thái/phòng/giá/lịch của các đơn đã nhận.
+- `RoomService`: tạo loại phòng cần danh mục hợp lệ, sức chứa > 0 và đủ ba giá Weekday/Weekend/Holiday > 0 hiệu lực hôm nay. Tên loại unique trong cơ sở, mã phòng unique trong loại. Không xóa cứng phòng/loại, chỉ bật/tắt. Active không được tắt phòng/loại phòng cuối cùng khiến không còn loại bật có phòng bật; báo dùng khóa ngày hoặc đề nghị Manager tạm ngưng. Draft/PendingReview/Suspended vẫn tắt được. Tắt chỉ chặn bán/chọn mới, trả mã đơn sắp tới; đơn và RoomNights cũ giữ nguyên. FreeRoomIds, chọn phòng khi Confirm, chọn đích Quote/Submit/Manager Approve/Finance Confirm và tìm kiếm đều kiểm phòng/loại đang bật; xác nhận nguyên phòng cũ của đơn đã nhận vẫn được.
+- Giá: thêm RoomTypePrice với EffectiveFrom >= ngày VN hiện tại. Cùng khóa (loại, loại ngày, ngày hiệu lực) chỉ cập nhật nếu ngày đó còn ở tương lai; dòng đã hiệu lực (<= hôm nay) không sửa/xóa. Đơn giữ BookingNights cũ, PricingService chọn phiên bản gần nhất <= từng đêm. Có thể thêm phiên bản hôm nay nếu chưa có dòng khóa đó, không ghi đè phiên bản đã có.
+- `HomestayImageService`: ảnh công khai lưu `wwwroot/uploads/homestays/{id}/` bằng GUID, kiểm dung lượng <= 5 MB và magic bytes dùng chung ReceiptFileStore. Gắn RoomType phải cùng cơ sở; hỗ trợ thứ tự/ảnh bìa. Đổi bìa thả unique bằng SaveChanges trước khi bật bìa mới, cùng transaction. Active không xóa bìa duy nhất; xóa file quản lý sau commit DB, lỗi lưu thì dọn file vừa tạo; không xóa ảnh demo/URL ngoài.
+- `HomestayDocumentService` dùng chung pipeline `StoreDocumentAsync` của B1, không chuyển liên kết cũ. Active/Suspended chỉ tải thêm pháp lý BusinessLicense/FireSafety: Active về PendingReview, Suspended giữ Suspended; cả hai báo Manager; không xóa bản cũ. PropertyPhoto/Other trên Active lưu thẳng, không tự đưa về PendingReview. B1 API tiếp nhận vẫn giữ giới hạn giấy tờ như mục B1; B2 không mở thao tác xóa trên Active/Suspended/Ended.
+- `HomestayPolicyService`: thay chính sách riêng bằng tắt phiên bản cũ → SaveChanges → tạo mới và rules trong cùng transaction; không sửa rules cũ kể cả đã có đơn dùng. Bỏ chính sách riêng là tắt để quay về chung Fuji. Rules không trùng mốc, có mốc 0, ngày >= 0, % 0–100, hủy càng sớm thì % không giảm. RefundService của đơn cũ vẫn dùng CancellationPolicyId cũ.
+- `HomestayReviewService`: chủ Approved thêm Draft và tự nộp Draft → PendingReview: cơ sở mới cần đủ ba giấy tờ còn hạn gắn cơ sở; cơ sở đã từng duyệt (ApprovedAt khác NULL) chỉ cần giấy phép/PCCC còn hạn, nhận liên kết hồ sơ Approved cũ cùng chủ, không bắt PropertyPhoto; không tạo OwnerRegistration mới. Danh sách chờ lấy mốc chuyển PendingReview gần nhất từ AuditLog, không lấy lần sửa nội dung muộn hơn; lịch sử thiếu audit để mốc NULL, xếp trước để xử lý. Không thêm SLA cho homestay.
+- Manager/Administrator duyệt PendingReview hoặc mở lại Suspended khi đủ: chủ Approved; hợp đồng Covers(hôm nay, hôm nay); giấy phép/PCCC còn hạn (cơ sở cũ nhận giấy tờ gắn hồ sơ Approved cùng chủ, không yêu cầu PropertyPhoto lại); ít nhất một loại bật có phòng bật và đủ ba giá hôm nay; ảnh bìa; địa chỉ/liên hệ/mô tả không rỗng. Thiếu trả danh sách, không đổi trạng thái. Thành công đặt ApprovedByEmployeeId/ApprovedAt, audit và báo chủ.
+- Từ chối PendingReview → Draft, tạm ngưng Active → Suspended, mở lại Suspended → Active đều do Manager/Administrator; lý do bắt buộc cho từ chối/tạm ngưng/mở lại, chỉ lưu audit, không ghép vào Message. Ended chặn hợp đồng Active và đơn HoldsRoom trừ Completed. Suspended/Ended không bán mới, đơn đã nhận giữ nguyên.
+
+| Từ | Đến được phép qua `HomestayReviewService.CanTransition` |
+|---|---|
+| Draft | PendingReview, Ended |
+| PendingReview | Active, Draft, Ended |
+| Active | PendingReview, Suspended, Ended |
+| Suspended | Active (chỉ ResumeAsync), Ended |
+| Ended | Không có |
+
+Chỉ sửa vị trí/pháp lý trên Active mới gọi chốt chuyển về PendingReview; Suspended không được tự sang PendingReview, ApproveAsync không mở lại được. Yêu cầu đổi mới (QuoteAsync/SubmitAsync) cần homestay Active; CanChangeAsync trả false khi cơ sở không Active. Với yêu cầu đã gửi, Manager ApproveAsync và Accountant ConfirmAsync cho tiếp tục khi homestay PendingReview qua tham số allowPendingReview của TargetAsync; vẫn kiểm hợp đồng D20 và phòng/loại phòng đang bật. Suspended/Ended chặn cả yêu cầu mới và xử lý yêu cầu đã gửi. Hủy đơn giữ luồng hiện tại.
+
+Audit B2 dùng PartnerServiceSupport.Audit, RecordId là Id thật sau SaveChanges tạo mới, JSON cũ/mới và actor thật, cùng transaction mặc định. Thông báo tiếng Việt qua PartnerServiceSupport.Notify, <= 500 ký tự. Không thêm schema/migration; kiểm dữ liệu bằng SELECT ở data_consistency.sql, nay 19 mục.
 
 #### `Contracts` — hợp đồng hợp tác (**mới**)
 
@@ -462,6 +487,10 @@ Chính sách đã có đơn dùng thì **không sửa**; muốn đổi thì tạ
 | Reason | nvarchar(20) | NOT NULL | `OtherChannel` (khách tự đến, Facebook…), `Maintenance` |
 | Note | nvarchar(255) | NULL | |
 | CreatedByAccountId | nvarchar(450) | FK, NOT NULL | |
+
+**RoomBlockService B2 — [StartDate, EndDate):** chủ đúng cơ sở hoặc Manager/Administrator tạo khóa từ hôm nay, Reason OtherChannel/Maintenance, Note <= 255; sinh RoomNights với RoomBlockId. Trùng đơn/khóa/yêu cầu đổi trả danh sách mã + ngày; PK chặn tranh chấp lúc lưu, rollback toàn bộ và dịch lỗi tiếng Việt. Lịch đọc tối đa 62 ngày, một truy vấn RoomNights cho toàn khoảng, trả Trống/Đã đặt (mã, trạng thái)/Khóa (lý do)/Giữ cho yêu cầu đổi.
+
+Mở khóa D3 đã duyệt: StartDate >= hôm nay xóa block (đêm cascade); StartDate < hôm nay < EndDate cắt EndDate về hôm nay và xóa đêm từ hôm nay, giữ lịch sử; EndDate <= hôm nay ném `BookingException("Khóa ngày đã kết thúc, không cần mở khóa.")`, không audit. Không tạo khoảng rỗng, giữ CK_RoomBlocks_Dates EndDate > StartDate. Tạo/mở khóa thành công có audit.
 
 #### `RoomNights` — mỗi dòng là một phòng bị chiếm trong một đêm
 

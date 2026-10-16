@@ -18,17 +18,7 @@ public class ReceiptFileStore
     /// <summary>Lưu file, trả về tên file (lưu vào Payments.ReceiptImageUrl). Ném BookingException nếu file không hợp lệ.</summary>
     public async Task<string> SaveAsync(IFormFile file, string bookingCode)
     {
-        if (file.Length == 0 || file.Length > MaxBytes)
-        {
-            throw new BookingException("Ảnh bill phải nhỏ hơn 5MB.");
-        }
-
-        var header = new byte[12];
-        await using (var stream = file.OpenReadStream())
-        {
-            _ = await stream.ReadAtLeastAsync(header, header.Length, throwOnEndOfStream: false);
-        }
-        var extension = DetectExtension(header) ?? throw new BookingException("Chỉ nhận ảnh JPG, PNG hoặc WEBP.");
+        var extension = await ValidateImageAsync(file);
 
         Directory.CreateDirectory(_root);
         var fileName = $"{bookingCode}-{Guid.NewGuid():N}{extension}";
@@ -37,6 +27,23 @@ public class ReceiptFileStore
             await file.CopyToAsync(output);
         }
         return fileName;
+    }
+
+    /// <summary>Kiểm dung lượng/chữ ký dùng chung cho biên lai, giấy tờ riêng tư và ảnh công khai.</summary>
+    public static async Task<string> ValidateImageAsync(IFormFile file)
+    {
+        if (file.Length == 0 || file.Length > MaxBytes)
+        {
+            throw new BookingException("Ảnh phải có dung lượng từ 1 byte đến 5MB.");
+        }
+
+        var header = new byte[12];
+        await using (var stream = file.OpenReadStream())
+        {
+            _ = await stream.ReadAtLeastAsync(header, header.Length, throwOnEndOfStream: false);
+        }
+        return DetectExtension(header) ?? throw new BookingException("Chỉ nhận ảnh JPG, PNG hoặc WEBP.");
+
     }
 
     /// <summary>Đường dẫn thật của file đã lưu; null nếu tên không hợp lệ hoặc file không tồn tại.</summary>

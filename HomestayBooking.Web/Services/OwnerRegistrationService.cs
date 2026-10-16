@@ -86,7 +86,7 @@ public partial class OwnerRegistrationService(ApplicationDbContext db, UserManag
         return (person, person.Owner);
     }
 
-    private async Task ValidateHomestayAsync(OwnerRegistrationInput input)
+    internal async Task ValidateHomestayAsync(OwnerRegistrationInput input)
     {
         if (input.FullName.Trim().Length > 100 || input.BankName?.Trim().Length > 100
             || input.BankAccountNo?.Trim().Length > 30 || input.BankAccountName?.Trim().Length > 100)
@@ -176,13 +176,10 @@ public partial class OwnerRegistrationService(ApplicationDbContext db, UserManag
     public Task<OwnerRegistration> UpdateDraftAsync(int id, int homestayId, OwnerRegistrationInput input, Actor actor) => WriteAsync(async () =>
     {
         var registration = await LoadAsync(id); await AuthorizeEditorAsync(registration, actor);
-        if (registration.Status is not (OwnerRegistrationStatus.Draft or OwnerRegistrationStatus.WaitingOwnerActivation or OwnerRegistrationStatus.NeedsRevision))
-            throw new BookingException("Chỉ sửa hồ sơ nháp hoặc cần bổ sung.");
         await ValidateHomestayAsync(input);
         var home = await db.Homestays.SingleOrDefaultAsync(h => h.Id == homestayId && h.OwnerId == registration.OwnerId)
             ?? throw new BookingException("Homestay không thuộc hồ sơ của chủ.");
-        if (home.Status != HomestayStatus.Draft && !(registration.Status == OwnerRegistrationStatus.NeedsRevision && home.Status == HomestayStatus.PendingReview))
-            throw new BookingException("Không sửa cơ sở đang kinh doanh qua hồ sơ nháp.");
+        EnsureDraftEditable(registration, home);
         if (PhoneNumberNormalizer.ToE164(input.PhoneNumber) != registration.Owner.Person.PhoneNumber)
             throw new BookingException("Không đổi số điện thoại định danh qua hồ sơ đối tác.");
         var old = new { Registration = State(registration), Profile = ProfileState(registration.Owner) };
@@ -216,7 +213,6 @@ public partial class OwnerRegistrationService(ApplicationDbContext db, UserManag
         var homestays = await db.Homestays.Where(h => h.OwnerId == owner.Id
             && (h.Status == HomestayStatus.Draft || (registration.Status == OwnerRegistrationStatus.NeedsRevision && h.Status == HomestayStatus.PendingReview))).ToListAsync();
         if (homestays.Count == 0) missing.Add("Ít nhất một homestay nháp");
-        var today = VietnamTime.Today(clock);
         var readyHomes = new List<Homestay>();
         var missingDocuments = new List<string>();
         foreach (var home in homestays)
@@ -224,10 +220,7 @@ public partial class OwnerRegistrationService(ApplicationDbContext db, UserManag
             var homeMissing = new List<string>();
             if (string.IsNullOrWhiteSpace(home.Name) || string.IsNullOrWhiteSpace(home.Address)
                 || PhoneNumberNormalizer.ToE164(home.ContactPhone ?? "") is null) homeMissing.Add($"Thông tin homestay {home.Id}");
-            var documents = await db.VerificationDocuments.Where(d => d.HomestayId == home.Id
-                && (d.ExpiryDate == null || d.ExpiryDate >= today)).Select(d => d.DocumentType).ToListAsync();
-            foreach (var kind in RequiredDocuments)
-                if (!documents.Contains(kind)) homeMissing.Add($"{home.Name}: {DocumentName(kind)} còn hạn");
+            homeMissing.AddRange(await MissingDocumentsAsync(home, requirePhoto: true));
             if (homeMissing.Count == 0) readyHomes.Add(home);
             else missingDocuments.AddRange(homeMissing);
         }
@@ -299,7 +292,18 @@ public partial class OwnerRegistrationService(ApplicationDbContext db, UserManag
             throw new BookingException("Chỉ chủ tài khoản được thao tác hồ sơ của mình.");
     }
 
-    private async Task AuthorizeEditorAsync(OwnerRegistration registration, Actor actor)
+    // Dùng chung cho B1/B2: hồ sơ đang duyệt khóa mọi thay đổi, kể cả do Quản lý hỗ trợ.
+    internal static void EnsureDraftEditable(OwnerRegistration? registration, Homestay home)
+    {
+        if (registration is not null && registration.Status is not (OwnerRegistrationStatus.Draft
+            or OwnerRegistrationStatus.WaitingOwnerActivation or OwnerRegistrationStatus.NeedsRevision))
+            throw new BookingException("Hồ sơ đang duyệt, chỉ được sửa khi còn nháp, chờ kích hoạt hoặc cần bổ sung.");
+        if (home.Status != HomestayStatus.Draft
+            && !(registration?.Status == OwnerRegistrationStatus.NeedsRevision && home.Status == HomestayStatus.PendingReview))
+            throw new BookingException("Chỉ sửa homestay nháp hoặc homestay chờ duyệt khi hồ sơ cần bổ sung.");
+    }
+
+    internal async Task AuthorizeEditorAsync(OwnerRegistration registration, Actor actor)
     {
         if (actor.Type == ActorType.Employee)
         {
