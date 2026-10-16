@@ -163,7 +163,9 @@ public sealed class ContractServiceTests
         home.Contracts.Add(new Contract { ContractNo = "HD-SEARCH", StartDate = c.StartDate, EndDate = c.EndDate, CommissionRate = .12m });
         var type = new RoomType { Name = "Phòng đôi", MaxGuests = 2, Category = new RoomCategory { Name = "Đôi" } };
         type.Rooms.Add(new Room { RoomCode = "101" });
-        type.Prices.Add(new RoomTypePrice { DayType = DayType.Weekday, EffectiveFrom = h.Today.AddDays(-1), Price = 500000 });
+        // Tìm có ngày nay tính đủ kỳ ở; fixture hợp đồng cần giá cho cả cuối tuần/ngày lễ.
+        foreach (var day in Enum.GetValues<DayType>())
+            type.Prices.Add(new RoomTypePrice { DayType = day, EffectiveFrom = h.Today.AddDays(-1), Price = 500000 });
         home.RoomTypes.Add(type); searchDb.Add(home); await searchDb.SaveChangesAsync();
         var pricing = new PricingService(searchDb, Options.Create(h.H.Options));
         var controller = new HomestaysController(searchDb, pricing, h.H.Clock, Options.Create(h.H.Options));

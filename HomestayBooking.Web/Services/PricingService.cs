@@ -62,6 +62,16 @@ public class PricingService
             .Where(p => p.RoomTypeId == roomTypeId && p.EffectiveFrom <= lastNight)
             .ToListAsync();
 
+        return QuoteFromPrices(roomTypeId, checkIn, checkOut, prices, holidays, _options.DepositRate, _options.MaxNights);
+    }
+
+    /// <summary>Tính từ bảng giá/ngày lễ đã nạp theo lô; dùng chung cho đặt phòng và tìm kiếm.</summary>
+    public static PriceQuote QuoteFromPrices(int roomTypeId, DateOnly checkIn, DateOnly checkOut,
+        IEnumerable<RoomTypePrice> allPrices, IReadOnlySet<DateOnly> holidays, decimal depositRate, int maxNights)
+    {
+        if (checkOut <= checkIn) throw new BookingException("Ngày trả phòng phải sau ngày nhận phòng.");
+        if (checkOut.DayNumber - checkIn.DayNumber > maxNights) throw new BookingException("Thời gian lưu trú quá dài.");
+        var prices = allPrices.Where(p => p.RoomTypeId == roomTypeId).ToList();
         var nights = new List<NightPrice>();
         for (var night = checkIn; night < checkOut; night = night.AddDays(1))
         {
@@ -75,6 +85,6 @@ public class PricingService
         }
 
         var total = nights.Sum(n => n.Price);
-        return new PriceQuote(nights, total, _options.DepositRate, RoundToThousand(total * _options.DepositRate));
+        return new PriceQuote(nights, total, depositRate, RoundToThousand(total * depositRate));
     }
 }

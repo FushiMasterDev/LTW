@@ -96,6 +96,10 @@ builder.Services.AddScoped<RoomBlockService>();
 builder.Services.AddScoped<HomestayDocumentService>();
 builder.Services.AddScoped<HomestayPolicyService>();
 builder.Services.AddScoped<HomestayReviewService>();
+builder.Services.AddScoped<AvailabilityService>();
+builder.Services.AddScoped<StaffBookingService>();
+builder.Services.AddScoped<CustomerService>();
+builder.Services.AddScoped<OverbookingService>();
 builder.Services.AddSingleton<ReceiptFileStore>();
 builder.Services.AddHostedService<BookingTimeoutJob>();
 

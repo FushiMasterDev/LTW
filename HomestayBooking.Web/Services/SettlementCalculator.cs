@@ -24,6 +24,8 @@ public static class SettlementCalculator
     /// </summary>
     public static SettlementItem? ItemFor(Booking booking)
     {
+        // Cọc đã chuyển sang đơn mới; không trả cọc giữ lại cho cơ sở cũ (BR-11/Q3).
+        if (booking.ReplacedByBookingId is not null) return null;
         var itemType = booking.Status switch
         {
             BookingStatus.Completed => SettlementItemType.Completed,

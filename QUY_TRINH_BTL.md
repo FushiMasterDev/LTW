@@ -373,7 +373,7 @@ AwaitingPayment → PaymentSubmitted → Deposited → Confirmed → CheckedIn �
 | BR-08 | Giá từng đêm: lễ ưu tiên, cuối tuần thứ Sáu/thứ Bảy, còn lại ngày thường | PricingService.QuoteAsync; phiên bản EffectiveFrom gần nhất <= đêm đó, BookingNights snapshot |
 | BR-09 | Đơn Completed mới được đánh giá một lần; chủ trả lời | UNIQUE Review.BookingId, CHECK 1–5 và Reply; service kiểm người/đơn |
 | BR-10 | Mã đơn + đúng số tiền; QR tự đối chiếu 24/7, bill dự phòng | BankMatchingService, ReceiptReviewService; khoản bổ sung có CR{id}, không coi là cọc đầu |
-| BR-11 | Fuji xử lý thay thế/bù; không tìm được thì hoàn cọc và voucher | ReplacedByBookingId, Payment.Compensation/Refund, Vouchers; backend sự cố cần hoàn thiện |
+| BR-11 | Fuji xử lý thay thế/bù; không tìm được thì hoàn cọc và voucher | OverbookingService: chuyển phòng / đơn thay thế + Compensation / hoàn 100% + voucher D14; Compensation chờ B5 |
 | BR-12 | Duyệt chủ và từng Homestay riêng; giấy phép/PCCC gắn cơ sở, có hợp đồng và duyệt nội dung | OwnerRegistration, VerificationDocuments, Homestay.Status, Contracts; SLA 3 ngày làm việc từ SubmittedAt đủ hồ sơ |
 | BR-13 | Ẩn liên hệ/địa chỉ chính xác trước Confirmed | Backend lọc dữ liệu trả về; nhắc trước nhận phòng chỉ gửi đúng điều kiện |
 
@@ -397,7 +397,7 @@ Sau review B1: có `ResendInviteAsync` cho WaitingOwnerActivation + Account Pend
 - `ContractEligibility` dùng một biểu thức Active + StartDate <= hôm nay + EndDate >= CheckOut trong đặt phòng, báo giá/gửi/duyệt đổi, lọc tìm kiếm và xem trước voucher. Không có ngày trả thì lọc đến hôm nay.
 - `BookingTimeoutJob` gọi hết hạn hợp đồng (EndDate < ngày VN), audit System và báo Manager. SLA hồ sơ = ba ngày làm việc sau SubmittedAt, giữ giờ VN, bỏ thứ Bảy/CN và Holidays; chỉ cảnh báo PendingReview/UnderReview, không NeedsRevision. Chống lặp bằng Notification.Url + CreatedAt sau SubmittedAt; nộp lại được cảnh báo mới.
 - Audit trực tiếp trong service/transaction, JSON cũ/mới, AccountId thật; job AccountId NULL và ghi System. Không thêm schema hay interceptor.
-- `database/tests/data_consistency.sql` đối chiếu 19 mục liên bảng bằng SELECT, in OK/LỆCH và tổng; có LỆCH thì `sqlcmd -b` thất bại, dừng báo lại. Không tự sửa dữ liệu.
+- `database/tests/data_consistency.sql` đối chiếu 23 mục liên bảng bằng SELECT, in OK/LỆCH và tổng; có LỆCH thì `sqlcmd -b` thất bại, dừng báo lại. Không tự sửa dữ liệu.
 
 ### 7.5. Backend quản lý cơ sở, lịch và duyệt homestay (B2)
 
@@ -417,6 +417,27 @@ Sau review B1: có `ResendInviteAsync` cho WaitingOwnerActivation + Account Pend
 - Danh sách PendingReview xếp theo audit chuyển trạng thái gần nhất (thiếu audit có mốc NULL, xếp trước); không thêm SLA cho homestay. Mọi thông báo qua PartnerServiceSupport.Notify <= 500 ký tự.
 - Quote/Submit yêu cầu đổi mới chỉ nhận cơ sở Active; CanChangeAsync trả false khi cơ sở không Active. Manager Approve/Accountant Confirm của yêu cầu đã gửi được tiếp tục khi PendingReview qua tham số TargetAsync, vẫn kiểm phòng/loại bật và hợp đồng D20. Suspended/Ended chặn cả hai nhóm; Suspended chỉ mở lại qua ResumeAsync kiểm đủ điều kiện, không qua sửa vị trí/giấy tờ rồi Approve. Luồng hủy không đổi.
 - data_consistency.sql giữ 14 mục B1 và thêm năm mục B2: ảnh bìa, đủ giá hôm nay, có loại/phòng bật, đêm khóa trong khoảng, ảnh đúng cơ sở của loại phòng. Chỉ SELECT; có LỆCH thì dừng, không sửa seed/dữ liệu.
+
+### 7.6. Backend tìm phòng, quản lý đơn/khách và trùng phòng (B3)
+
+Đã có service + test; không thêm view/controller quản trị mới, không thay schema. Controller khách hiện có chỉ gọi service thay các truy vấn lặp.
+
+- AvailabilityService dùng chốt Active + ContractEligibility.Covering(hôm nay, CheckOut) + loại/phòng bật + không có RoomNights trong [nhận,trả). BookingService.FreeRoomIdsAsync và các trang tìm/chi tiết/nổi bật dùng chung. Phòng khóa và đêm giữ yêu cầu đổi đều chiếm lịch. Không có ngày chỉ kiểm hợp đồng đến hôm nay, giá “từ” là ngày thường hiện hành; có ngày thẻ, lọc MinPrice/MaxPrice và sắp xếp giá dùng trung bình mỗi đêm = RoundToThousand(tổng kỳ ở / số đêm) của loại rẻ nhất còn trống và đủ sức chứa. AvailabilityOffer.TotalPrice giữ tổng kỳ ở cho nhân viên và đề xuất trùng phòng. Filter khu vực/từ khóa/danh mục/đủ tất cả tiện nghi/giá min–max; sắp tên mặc định, giá tăng/giảm, điểm Review không ẩn. Nạp giá/Holidays một lần, tính thuần bằng PricingService.QuoteFromPrices; không gọi QuoteAsync theo từng loại. Giá thẻ và bộ lọc khớp nhãn `/đêm` của view cũ, không sửa view.
+- StaffAvailabilityAsync cho Consultant/Manager/Administrator, tối đa 31 đêm, trả số trống/tổng phòng đang bán và tổng giá từng loại; một truy vấn RoomNights, không cache. Loại đã kín vẫn hiện 0 phòng trống.
+- StaffBookingService tìm theo mã/người ở/tên khách/SĐT E.164, lọc trạng thái/cơ sở/ngày nhận/người phụ trách/chưa giao và phân trang; chi tiết có BookingNights, history, yêu cầu đổi, Payments, audit theo thời gian. Shortcut Contains chấp nhận quét, không thêm index. Manager/Administrator giao mọi đơn; Consultant chỉ tự nhận đơn chưa giao hoặc giao lại đơn mình phụ trách; người nhận Consultant/Manager đang hoạt động. UPDATE có điều kiện chặn cùng nhận; CreatedByEmployeeId giữ nguyên, AssignedEmployeeId là người xử lý (D23), audit + báo người nhận.
+- Nhân viên xác nhận/đổi phòng lúc xác nhận, từ chối, CheckedIn/Completed/NoShow sau khi gọi chủ: ghi chú bắt buộc, gọi BookingService, history/audit actor Employee. Không tự hủy trực tiếp, không xử lý tiền; hủy theo yêu cầu hiện có. NoShow chỉ từ ngày sau CheckIn.
+- CustomerService chỉ Consultant/Manager/Administrator: tìm tên/SĐT/email, xem đơn/voucher dùng được. Note <=1000: null giữ nguyên ghi chú cũ, chuỗi rỗng xóa ghi chú (lưu NULL); không đổi SĐT. Chỉ sửa tên/email khi khách chưa có Account. Consultant nhận DTO CCCD/mã sinh viên che, chỉ bốn ký tự cuối (giá trị ngắn che hết); Manager/Administrator xem đủ, không trả entity Profile thô.
+- Báo trùng: chủ đúng cơ sở hoặc nhân viên, chỉ Confirmed trước CheckOut, chặn khi có Pending/AwaitingPayment. Audit và báo người phụ trách + Manager. Đề xuất đủ sức chứa/bán được, cùng homestay → cùng khu vực → nơi khác, kèm tổng mới/chênh lệch/điểm; không lộ liên hệ cơ sở mới trước xác nhận.
+
+| Cách | Trạng thái và lịch | Dòng tiền |
+|---|---|---|
+| 1. Chuyển phòng cùng loại/cơ sở | Staff chuyển tại chỗ, giữ Confirmed/mã, history “Đổi phòng do trùng phòng” | Không đổi giá/cọc/voucher/hoa hồng, không tạo khoản tiền |
+| 2. Đơn thay thế | Staff tạo N dùng chung CreateInTransactionAsync; cũ Cancelled, ReplacedByBookingId=N và nhả phòng; N Deposited chờ chủ mới xác nhận | N giữ cọc/tỷ lệ/voucher/giảm cũ, khách không nộp thêm cọc; giá/hoa hồng/hủy lấy mới, tổng mới >= cọc cũ. Cũ RefundAmount=0, không trả voucher; Compensation trên N=max(0,tổng mới−tổng cũ), ManualTransfer/Submitted, chờ B5, không trừ homestay cũ |
+| 3. Không tìm được | Chỉ Manager/Administrator hủy và nhả phòng | RefundAmount=AmountDue, trả voucher 100% qua quy tắc còn hiệu lực hiện có, cấp voucher xin lỗi D14; khoản hoàn chờ kế toán, không tự tạo Payment Refund |
+
+Cách 2 giữ khách/người ở/ngày/số khách/kênh/người tạo, giao người xử lý. Fuji bù phần tăng nên khách còn trả tổng cũ−cọc cũ; khi tổng mới giảm, tiền còn trả giảm theo. Chủ mới từ chối N thì luồng Rejected hiện có hoàn 100% AmountDue và trả voucher. Đơn có ReplacedByBookingId bị loại toàn bộ khỏi SettlementCalculator. Thông báo mã N, chủ mới chờ xác nhận; địa chỉ/SĐT/hướng dẫn chỉ mở sau Confirmed (BR-13). Mọi bước ghi audit trực tiếp, Id thật; transaction mặc định rollback cả đơn, counter, đêm, cọc/voucher/Compensation/history/audit/thông báo khi có lỗi, kể cả tranh phòng.
+
+Hàm tách dùng chung: AvailabilityService.BookableHomestays/SellableRooms/NightsDuring; PricingService.QuoteFromPrices; BookingService.CreateInTransactionAsync/MoveRoomAsync/ApplyStatusCoreAsync/ApplyFujiCancellationAsync. data_consistency.sql có 23 mục: giữ 19 cũ + đơn được thay chưa hủy, N khác khách/ngày, Compensation không gắn N, AssignedEmployeeId sai vị trí; chỉ SELECT, có lệch thì dừng.
 
 ---
 
