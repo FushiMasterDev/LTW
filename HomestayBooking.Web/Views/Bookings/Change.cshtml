@@ -1,3 +1,4 @@
+@using Microsoft.AspNetCore.Html
 @model ChangeRequestForm
 @{
     Layout = Model.IsStaff ? "_DashboardLayout" : "_Layout";
@@ -9,7 +10,9 @@
     var types = Model.RequestType is ChangeRequestType.ChangeRoomType or ChangeRequestType.ChangeDatesAndRoomType;
 }
 <partial name="_PageHead" model="@(new PageHeadModel(L["Đổi ngày / loại phòng"], "bi-calendar2-range", "tone-sky", Model.Booking.Code + " · " + Model.Booking.Homestay.Name, ShowCreate: false))" />
-<p>@L["Lịch hiện tại"]: @Model.Booking.CheckIn.ToString("dd/MM/yyyy") – @Model.Booking.CheckOut.ToString("dd/MM/yyyy") · @Model.Booking.RoomType.Name</p>
+<div class="change-current">
+    <partial name="_DescriptionList" model="@(new DescriptionItem[] { new("Lịch hiện tại", new HtmlContentBuilder().Append($"{Model.Booking.CheckIn:dd/MM/yyyy} – {Model.Booking.CheckOut:dd/MM/yyyy}")), new("Loại phòng", new HtmlContentBuilder().Append(Model.Booking.RoomType.Name)) })" />
+</div>
 <form asp-action="@quoteAction" asp-route-id="@id" method="post" class="card-soft p-4 change-request-form">
     <div asp-validation-summary="All" class="text-danger" role="alert"></div>
     <input asp-for="PreviewToken" type="hidden" />
@@ -35,9 +38,9 @@
     <button class="btn btn-outline-primary" type="submit">@L["Xem báo giá"]</button>
     @if (Model.Quote is { } quote)
     {
-        <section class="border-top pt-3 mt-3" aria-label="@L["Báo giá yêu cầu"]" data-quote>
+        <section class="mt-4" aria-label="@L["Báo giá yêu cầu"]" data-quote>
             <partial name="_PriceBreakdown" model="@PriceBreakdownModel.From(quote)" />
-            <button class="btn btn-brand" type="submit" formaction="@Url.Action(submitAction, new { id })" data-confirm="@L["Xác nhận gửi yêu cầu này?"]">@L["Xác nhận gửi yêu cầu"]</button>
+            <button class="btn btn-brand mt-3" type="submit" formaction="@Url.Action(submitAction, new { id })" data-confirm="@L["Xác nhận gửi yêu cầu này?"]">@L["Xác nhận gửi yêu cầu"]</button>
         </section>
     }
 </form>

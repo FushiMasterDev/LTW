@@ -1,176 +1,93 @@
+@using HomestayBooking.Web.Services
+@inject TimeProvider Clock
 @model BookingCreateViewModel
 @{
     ViewData["Title"] = L["Đặt phòng"];
-    var today = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
+    var today = VietnamTime.Today(Clock);
+    string DayLabel(DayType type) => type switch { DayType.Weekend => L["Cuối tuần"], DayType.Holiday => L["Ngày lễ"], _ => L["Ngày thường"] };
+    var vouchers = Model.Vouchers.Select(v => new SelectListItem($"{v.Code} · {L["còn {0:N0}đ, hạn {1}", v.Balance, v.ExpiresOn.ToString("dd/MM/yyyy")]}", v.Id.ToString())).ToList();
+    string? Error(string key) => ViewData.ModelState[key]?.Errors.FirstOrDefault()?.ErrorMessage;
+    var lines = Model.Quote is { } quote
+        ? quote.Nights.Select(n => new PriceLine($"{n.Date:dd/MM (ddd)} · {DayLabel(n.DayType)}", n.Price))
+            .Append(new PriceLine("Tổng tiền phòng", quote.Total)).Append(new PriceLine("Cọc cần thanh toán ngay", quote.Deposit)).ToList()
+        : null;
+    var blockedUrl = Url.Action("BlockedDates", "Homestays", new { roomTypeId = Model.RoomTypeId, from = today.ToString("yyyy-MM-dd"), to = today.AddDays(92).ToString("yyyy-MM-dd") });
+    var text = new Dictionary<string, string>
+    {
+        ["total"] = L["Tổng tiền phòng"], ["deposit"] = L["Cọc (30%)"], ["discount"] = L["Giảm từ voucher"],
+        ["due"] = L["Cọc cần thanh toán ngay"], ["free"] = L["Còn {0} phòng trống"], ["soldOut"] = L["Hết phòng trong thời gian này."],
+        ["failed"] = L["Không tải được giá, vui lòng thử lại."],
+    };
 }
 
-<nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb small mb-0">
-        <li class="breadcrumb-item"><a asp-controller="Homestays" asp-action="Index">@L["Tìm homestay"]</a></li>
-        <li class="breadcrumb-item"><a asp-controller="Homestays" asp-action="Details" asp-route-id="@Model.HomestayId">@Model.HomestayName</a></li>
-        <li class="breadcrumb-item active" aria-current="page">@L["Đặt phòng"]</li>
-    </ol>
-</nav>
+@section Head {
+    <link rel="stylesheet" href="~/lib/flatpickr/flatpickr.min.css" />
+}
 
-<div class="mb-4">
-    <h1 class="mb-1">@L["Đặt phòng"]</h1>
-    <p class="text-muted mb-0">@Model.HomestayName, <strong class="text-body">@Model.RoomTypeName</strong> · @L["Tối đa {0} khách", Model.MaxGuests]</p>
-</div>
+<partial name="_Breadcrumb" model="@(new BreadcrumbModel([new BreadcrumbItem("Tìm homestay", Url.Action("Index", "Homestays"), HideOnMobile: true), new BreadcrumbItem(Model.HomestayName, Url.Action("Details", "Homestays", new { id = Model.HomestayId })), new BreadcrumbItem("Đặt phòng")]))" />
 
-<form asp-action="Create" method="post" novalidate id="bookingForm">
+<header class="booking-head">
+    <h1>@L["Đặt phòng"]</h1>
+    <p>@Model.HomestayName · <strong>@Model.RoomTypeName</strong> · @L["Tối đa {0} khách", Model.MaxGuests]</p>
+</header>
+
+<form asp-action="Create" method="post" novalidate id="bookingForm" class="booking-layout">
     <input type="hidden" asp-for="RoomTypeId" />
-    <div asp-validation-summary="ModelOnly" class="alert tone-rose" role="alert"></div>
-    <div class="row g-4">
-        <div class="col-lg-7">
-            <section class="card-soft form-section mb-3" aria-labelledby="stayTitle">
-                <h2 class="h5" id="stayTitle"><i class="bi bi-calendar-range" aria-hidden="true"></i> @L["Thời gian lưu trú"]</h2>
-                <div class="row g-3">
-                    <div class="col-sm-5">
-                        <label asp-for="CheckIn" class="form-label"></label>
-                        <input asp-for="CheckIn" class="form-control" type="date" min="@today" data-quote />
-                        <span asp-validation-for="CheckIn" class="text-danger small"></span>
-                    </div>
-                    <div class="col-sm-5">
-                        <label asp-for="CheckOut" class="form-label"></label>
-                        <input asp-for="CheckOut" class="form-control" type="date" min="@today" data-quote />
-                        <span asp-validation-for="CheckOut" class="text-danger small"></span>
-                    </div>
-                    <div class="col-sm-2">
-                        <label asp-for="Guests" class="form-label"></label>
-                        <input asp-for="Guests" class="form-control" type="number" min="1" max="@Model.MaxGuests" />
-                        <span asp-validation-for="Guests" class="text-danger small"></span>
-                    </div>
-                </div>
-            </section>
+    <div class="booking-layout__main">
+        <div asp-validation-summary="ModelOnly" class="alert tone-rose" role="alert"></div>
 
-            <section class="card-soft form-section" aria-labelledby="contactTitle">
-                <h2 class="h5" id="contactTitle"><i class="bi bi-person-vcard" aria-hidden="true"></i> @L["Người nhận phòng"]</h2>
-                <div class="row g-3">
-                    <div class="col-sm-6">
-                        <label asp-for="ContactName" class="form-label"></label>
-                        <input asp-for="ContactName" class="form-control" autocomplete="name" />
-                        <span asp-validation-for="ContactName" class="text-danger small"></span>
-                    </div>
-                    <div class="col-sm-6">
-                        <label asp-for="ContactPhone" class="form-label"></label>
-                        <input asp-for="ContactPhone" class="form-control" type="tel" inputmode="tel" autocomplete="tel" />
-                        <span asp-validation-for="ContactPhone" class="text-danger small"></span>
-                    </div>
-                    <div class="col-12">
-                        <label asp-for="SpecialRequests" class="form-label"></label>
-                        <textarea asp-for="SpecialRequests" class="form-control" rows="3" placeholder="@L["Ví dụ: nhận phòng muộn, cần nôi em bé..."]"></textarea>
-                        <span asp-validation-for="SpecialRequests" class="text-danger small"></span>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <aside class="col-lg-5">
-            <div class="card-soft form-section booking-panel sticky-lg-top">
-                <h2 class="h5"><i class="bi bi-receipt" aria-hidden="true"></i> @L["Chi tiết giá"]</h2>
-                <div id="quoteBox" aria-live="polite">
-                    @if (Model.Quote is null)
-                    {
-                        <p class="text-muted small mb-0" data-empty>@L["Chọn ngày để xem giá."]</p>
-                    }
-                    else
-                    {
-                        <ul class="list-unstyled small night-list mb-2">
-                            @foreach (var n in Model.Quote.Nights)
-                            {
-                                <li><span>@n.Date.ToString("dd/MM (ddd)")</span><span>@n.Price.ToString("N0")đ</span></li>
-                            }
-                        </ul>
-                        <div class="d-flex justify-content-between fw-bold border-top pt-2"><span>@L["Tổng tiền phòng"]</span><span>@Model.Quote.Total.ToString("N0")đ</span></div>
-                        <div class="d-flex justify-content-between text-accent fw-bold"><span>@L["Cọc cần thanh toán ngay"]</span><span>@Model.Quote.Deposit.ToString("N0")đ</span></div>
-                    }
-                </div>
-                @if (Model.Vouchers.Count > 0)
-                {
-                    <div class="mt-3">
-                        <label asp-for="VoucherId" class="form-label small fw-semibold"><i class="bi bi-ticket-perforated text-brand" aria-hidden="true"></i> @L["Dùng voucher"]</label>
-                        <select asp-for="VoucherId" class="form-select">
-                            <option value="">@L["Không dùng"]</option>
-                            @foreach (var v in Model.Vouchers)
-                            {
-                                <option value="@v.Id">@v.Code · @L["còn {0:N0}đ, hạn {1}", v.Balance, v.ExpiresOn.ToString("dd/MM/yyyy")]</option>
-                            }
-                        </select>
-                        <div class="form-text">@L["Mỗi đơn được giảm một phần, số dư còn lại dùng cho lần sau."]</div>
-                    </div>
-                }
-                <div class="alert tone-amber small mt-3 mb-3" role="note">
-                    <i class="bi bi-hourglass-split" aria-hidden="true"></i>
-                    <div>@L["Sau khi bấm đặt, phòng được giữ 15 phút để bạn chuyển khoản tiền cọc qua mã QR. Phần còn lại thanh toán tại homestay."]</div>
-                </div>
-                <button type="submit" class="btn btn-accent btn-lg w-100" data-loading-text="@L["Đang giữ phòng..."]">
-                    <i class="bi bi-lock-fill" aria-hidden="true"></i> @L["Đặt và giữ phòng"]
-                </button>
+        <section class="booking-section" aria-labelledby="stayTitle">
+            <h2 id="stayTitle">@L["Thời gian lưu trú"]</h2>
+            <partial name="_DateRangePicker" model="@(new DateRangePickerModel("booking-dates", Model.CheckIn, Model.CheckOut, BlockedUrl: blockedUrl, Error: Error("CheckIn") ?? Error("CheckOut")))" />
+            <div class="booking-section__guests">
+                <partial name="_GuestPicker" model="@(new GuestPickerModel("Guests", Value: Model.Guests, Max: Model.MaxGuests, Error: Error("Guests")))" />
             </div>
-        </aside>
+        </section>
+
+        <section class="booking-section" aria-labelledby="contactTitle">
+            <h2 id="contactTitle">@L["Người nhận phòng"]</h2>
+            @if (User.Identity?.IsAuthenticated != true)
+            {
+                <p class="booking-section__lead">@L["Không cần tài khoản: Fuji dùng số điện thoại để gửi thông tin đơn và để bạn tra cứu đơn sau này."]</p>
+            }
+            <div class="row g-3">
+                <div class="col-sm-6"><form-field asp-for="ContactName" autocomplete="name" wrapper="mb-0" /></div>
+                <div class="col-sm-6"><form-field asp-for="ContactPhone" type="tel" inputmode="tel" autocomplete="tel" wrapper="mb-0" /></div>
+                <div class="col-12"><form-field asp-for="SpecialRequests" type="textarea" rows="3" placeholder="@L["Ví dụ: nhận phòng muộn, cần nôi em bé..."]" wrapper="mb-0" /></div>
+            </div>
+        </section>
     </div>
+
+    <aside class="booking-layout__aside">
+        <div class="booking-summary">
+            <h2>@L["Chi tiết giá"]</h2>
+            <div id="quoteBox" aria-live="polite" data-booking-quote data-quote-url="@Url.Action("Quote")" data-room-type="@Model.RoomTypeId" data-text="@System.Text.Json.JsonSerializer.Serialize(text)">
+                @if (lines is null)
+                {
+                    <p class="text-muted mb-0">@L["Chọn ngày để xem giá."]</p>
+                }
+                else
+                {
+                    <partial name="_PriceBreakdown" model="@(new PriceBreakdownModel(lines))" />
+                }
+            </div>
+            @if (Model.Vouchers.Count > 0)
+            {
+                <div class="mt-3">
+                    <form-field asp-for="VoucherId" type="select" placeholder="@L["Không dùng"]" asp-items="vouchers" hint="@L["Mỗi đơn được giảm một phần, số dư còn lại dùng cho lần sau."]" wrapper="mb-0" />
+                </div>
+            }
+            <partial name="_Alert" model="@(new AlertModel("Sau khi bấm đặt, phòng được giữ 15 phút để bạn chuyển khoản tiền cọc qua mã QR. Phần còn lại thanh toán tại homestay.", "warning", Dismissible: false))" />
+            <button type="submit" class="btn btn-brand btn-lg w-100" data-loading-text="@L["Đang giữ phòng..."]">@L["Đặt và giữ phòng"]</button>
+        </div>
+    </aside>
 </form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        (() => {
-            const box = document.getElementById('quoteBox');
-            const checkIn = document.getElementById('CheckIn');
-            const checkOut = document.getElementById('CheckOut');
-            const url = '@Url.Action("Quote")';
-            const voucher = document.getElementById('VoucherId');
-            const roomTypeId = @Model.RoomTypeId;
-            const text = {
-                total: @Json.Serialize(L["Tổng tiền phòng"].Value),
-                deposit: @Json.Serialize(L["Cọc (30%)"].Value),
-                discount: @Json.Serialize(L["Giảm từ voucher"].Value),
-                due: @Json.Serialize(L["Cọc cần thanh toán ngay"].Value),
-                free: @Json.Serialize(L["Còn {0} phòng trống"].Value),
-                soldOut: @Json.Serialize(L["Hết phòng trong thời gian này."].Value),
-                loading: @Json.Serialize(L["Đang tính giá..."].Value),
-                failed: @Json.Serialize(L["Không tải được giá, vui lòng thử lại."].Value),
-            };
-            const money = v => Number(v).toLocaleString('vi-VN') + 'đ';
-            const esc = s => $('<span>').text(s).html();
-            let seq = 0;
-
-            async function refresh() {
-                if (!checkIn.value || !checkOut.value) return;
-                const my = ++seq;
-                box.innerHTML = `<p class="text-muted small mb-0">${esc(text.loading)}</p>`;
-                try {
-                    const v = voucher && voucher.value ? `&voucherId=${voucher.value}` : '';
-                    const res = await fetch(`${url}?roomTypeId=${roomTypeId}&checkIn=${checkIn.value}&checkOut=${checkOut.value}${v}`);
-                    const q = await res.json();
-                    if (my !== seq) return;
-                    if (!q.ok) {
-                        box.innerHTML = `<p class="text-danger small mb-0">${esc(q.error)}</p>`;
-                        return;
-                    }
-                    const nights = q.nights.map(n =>
-                        `<li><span>${esc(n.date)} <span class="text-muted">· ${esc(n.dayType)}</span></span><span>${money(n.price)}</span></li>`).join('');
-                    const avail = q.freeRooms > 0
-                        ? `<span class="badge-tone tone-emerald">${esc(text.free.replace('{0}', q.freeRooms))}</span>`
-                        : `<span class="badge-tone tone-rose">${esc(text.soldOut)}</span>`;
-                    box.innerHTML = `<div class="mb-2">${avail}</div>
-                        <ul class="list-unstyled small night-list mb-2">${nights}</ul>
-                        <div class="d-flex justify-content-between fw-bold border-top pt-2"><span>${esc(text.total)}</span><span>${money(q.total)}</span></div>
-                        <div class="d-flex justify-content-between small"><span>${esc(text.deposit)}</span><span>${money(q.deposit)}</span></div>
-                        ${q.discount > 0 ? `<div class="d-flex justify-content-between small text-success"><span>${esc(text.discount)}</span><span>−${money(q.discount)}</span></div>` : ''}
-                        <div class="d-flex justify-content-between text-accent fw-bold"><span>${esc(text.due)}</span><span>${money(q.amountDue)}</span></div>`;
-                } catch {
-                    if (my === seq) box.innerHTML = `<p class="text-danger small mb-0">${esc(text.failed)}</p>`;
-                }
-            }
-
-            checkIn.addEventListener('change', () => {
-                if (checkIn.value) checkOut.min = checkIn.value;
-                refresh();
-            });
-            checkOut.addEventListener('change', refresh);
-            if (voucher) voucher.addEventListener('change', refresh);
-            refresh();
-        })();
-    </script>
+    <script src="~/lib/flatpickr/flatpickr.min.js"></script>
+    <script src="~/lib/flatpickr/l10n/vn.min.js"></script>
+    <script src="~/js/components/date-range-picker.js" asp-append-version="true"></script>
+    <script src="~/js/components/guest-picker.js" asp-append-version="true"></script>
+    <script src="~/js/components/booking-quote.js" asp-append-version="true"></script>
 }

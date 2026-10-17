@@ -383,12 +383,23 @@ public partial class BookingsController : Controller
 
     [Authorize]
     [HttpGet]
-    public async Task<IActionResult> Mine(int? page)
+    public async Task<IActionResult> Mine(int? page, string? tab = null)
     {
         var personId = User.PersonId();
-        var query = _db.Bookings.AsNoTracking()
-            .Where(b => b.Customer.PersonId == personId)
-            .OrderByDescending(b => b.CreatedAt)
+        var today = VietnamTime.Today(_clock);
+        BookingStatus[] closed = [BookingStatus.Cancelled, BookingStatus.Expired, BookingStatus.Rejected];
+        BookingStatus[] finished = [BookingStatus.Completed, BookingStatus.NoShow];
+        tab = tab is "past" or "cancelled" ? tab : "upcoming";
+        var own = _db.Bookings.AsNoTracking().Where(b => b.Customer.PersonId == personId);
+        // Chỉ chia tab hiển thị đơn của chính khách: đã hủy/hết hạn/bị từ chối; đã qua (hoàn thành, không đến hoặc đã trả phòng); còn lại là sắp tới.
+        var filtered = tab switch
+        {
+            "cancelled" => own.Where(b => closed.Contains(b.Status)).OrderByDescending(b => b.CreatedAt),
+            "past" => own.Where(b => !closed.Contains(b.Status) && (finished.Contains(b.Status) || b.CheckOut < today)).OrderByDescending(b => b.CheckIn),
+            _ => own.Where(b => !closed.Contains(b.Status) && !finished.Contains(b.Status) && b.CheckOut >= today).OrderBy(b => b.CheckIn),
+        };
+        ViewBag.Tab = tab;
+        var query = filtered
             .Select(b => new MyBookingRow(b.Code, b.Homestay.Name, b.RoomType.Name, b.CheckIn, b.CheckOut, b.TotalAmount, b.Status, b.CreatedAt));
         var customerId = await _db.Customers.Where(c => c.PersonId == personId).Select(c => (int?)c.Id).SingleOrDefaultAsync();
         ViewBag.Vouchers = customerId is int cid

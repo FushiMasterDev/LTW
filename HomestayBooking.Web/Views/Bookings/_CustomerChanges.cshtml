@@ -3,31 +3,35 @@
 @{
     var changes = Model.ChangeRequests;
     var b = Model.Booking;
+    var voucherNote = b.DiscountAmount > 0 && b.Status is BookingStatus.Deposited or BookingStatus.Confirmed;
+    // Khách tra cứu không đổi được và chưa có yêu cầu nào: không hiện khối rỗng.
+    if (!voucherNote && changes?.CanChange != true && !(changes?.History.Count > 0)) { return; }
 }
-<section class="mb-4" aria-labelledby="changeTitle">
-    <h2 class="h5" id="changeTitle">@L["Yêu cầu đổi"]</h2>
-    @if (b.DiscountAmount > 0 && b.Status is BookingStatus.Deposited or BookingStatus.Confirmed)
-    { <p class="alert tone-amber">@L["Đơn dùng voucher, vui lòng liên hệ nhân viên"]</p> }
+<section class="booking-section" aria-labelledby="changeTitle">
+    <h2 id="changeTitle">@L["Yêu cầu đổi"]</h2>
+    @if (voucherNote)
+    { <partial name="_Alert" model="@(new AlertModel("Đơn dùng voucher, vui lòng liên hệ nhân viên", "warning", Dismissible: false))" /> }
     @if (changes?.CanChange == true)
     { <a class="btn btn-outline-primary mb-3" asp-action="Change" asp-route-id="@b.Code">@L["Đổi ngày / loại phòng"]</a> }
     @if (changes is not null)
     {
-        <partial name="_Timeline" model="@(new TimelineModel(Changes: changes.History))" />
+        @if (changes.History.Count > 0) { <partial name="_Timeline" model="@(new TimelineModel(Changes: changes.History))" /> }
         @if (changes.QrUrl is { } qr && changes.PaymentRequestId is { } requestId)
         {
             var content = $"CR{requestId} {b.Code}";
             var request = changes.History.Single(h => h.Request.Id == requestId).Request;
-            <div class="card-soft p-3" data-additional-payment="@requestId">
-                <h3 class="h6">@L["Nộp cọc bổ sung"] · CR@(requestId)</h3>
+            <div class="order-additional" data-additional-payment="@requestId">
+                <h3>@L["Nộp cọc bổ sung"] · CR@(requestId)</h3>
                 <partial name="_PaymentQr" model="@(new PaymentQrModel(qr, request.AdditionalDeposit!.Value, content, changes.PaymentDeadline!.Value, Model.Bank, Additional: true, ReloadOnExpiry: true))" />
-                <p class="small text-muted">@L["Giữ đúng mã CR và số tiền. Kế toán sẽ xác nhận khoản nộp; đơn chưa đổi ngay."]</p>
+                <p class="text-muted my-3">@L["Giữ đúng mã CR và số tiền. Kế toán sẽ xác nhận khoản nộp; đơn chưa đổi ngay."]</p>
                 <form asp-action="UploadChangeReceipt" asp-route-id="@b.Code" method="post" enctype="multipart/form-data">
                     <input name="requestId" value="@requestId" type="hidden" />
-                    <label for="changeReceipt" class="form-label">@L["Ảnh bill (JPG, PNG, WEBP, tối đa 5MB)"]</label>
-                    <input type="file" name="receipt" id="changeReceipt" class="form-control mb-2" accept="image/jpeg,image/png,image/webp" required />
-                    <label for="changeContent" class="form-label">@L["Nội dung chuyển khoản"]</label>
-                    <input name="transferContent" id="changeContent" class="form-control mb-2" value="@content" maxlength="200" />
-                    <button class="btn btn-brand" type="submit">@L["Gửi ảnh bill"]</button>
+                    <partial name="_UploadZone" model="@(new UploadZoneModel("changeReceipt", "receipt", AllowPdf: false))" />
+                    <div class="my-3">
+                        <label for="changeContent" class="form-label">@L["Nội dung chuyển khoản"]</label>
+                        <input name="transferContent" id="changeContent" class="form-control" value="@content" maxlength="200" />
+                    </div>
+                    <button class="btn btn-brand" type="submit" data-loading-text="@L["Đang gửi..."]">@L["Gửi ảnh bill"]</button>
                 </form>
             </div>
         }

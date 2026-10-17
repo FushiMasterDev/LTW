@@ -754,159 +754,221 @@
   margin: 0;
 }
 
-/* ---------- Cũ: Bookings dùng tới bước 03 nhóm 2 ---------- */
-.booking-panel {
-  padding: 1.25rem;
+/* ---------- Đặt phòng và chi tiết đơn ---------- */
+.booking-head {
+  margin: 1rem 0 2rem;
+}
+
+.booking-head h1 {
+  margin-bottom: 0.35rem;
+}
+
+.booking-head p {
+  margin: 0;
+  color: var(--fx-muted);
+}
+
+.booking-head strong {
+  color: var(--fx-ink);
+}
+
+.booking-layout {
+  display: grid;
+  gap: 2rem;
+}
+
+.booking-layout__main {
+  min-width: 0;
 }
 
 @media (min-width: 992px) {
-  .booking-panel.sticky-lg-top {
+  .booking-layout {
+    grid-template-columns: minmax(0, 1fr) 24rem;
+    gap: 3rem;
+    align-items: start;
+  }
+
+  .booking-layout__aside {
+    position: sticky;
     top: 5.5rem;
   }
 }
 
-/* ---------- Đặt phòng & tóm tắt đơn ---------- */
-.form-section {
-  padding: 1.25rem;
+.booking-section + .booking-section {
+  margin-top: 2.5rem;
 }
 
-@media (min-width: 768px) {
-  .form-section {
-    padding: 1.5rem;
-  }
+.booking-section h2,
+.booking-summary h2 {
+  margin-bottom: 1rem;
 }
 
-.form-section h2 {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1.1rem;
+.booking-section__lead {
+  max-width: 40rem;
+  margin-bottom: 1rem;
+  color: var(--fx-muted);
 }
 
-.form-section h2 .bi {
-  color: var(--fx-primary);
+.booking-section__guests {
+  max-width: 16rem;
+  margin-top: 1.25rem;
 }
 
-.night-list li {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.2rem 0;
-  font-variant-numeric: tabular-nums;
+/* Ô tóm tắt: nền surface, không viền, tách khỏi nền trang bằng bước tông */
+.booking-summary {
+  padding: 1.5rem;
+  border-radius: var(--fx-radius);
+  background: var(--fx-surface);
 }
 
-.summary-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  font-variant-numeric: tabular-nums;
+.site-public .booking-summary h2 {
+  font-family: var(--fx-font-sans);
+  font-size: 1.25rem;
+  font-weight: 600;
 }
 
-.summary-total {
-  border-top: 1px solid var(--fx-border);
-  padding-top: 0.6rem;
-  margin-top: 0.4rem;
-  font-weight: 700;
+.site-public .booking-summary h3 {
+  margin: 1.5rem 0 0.25rem;
+  font-size: 1rem;
 }
 
-.order-head {
+.booking-summary .alert {
+  margin-block: 1.25rem;
+}
+
+.booking-summary .fx-price-breakdown > div {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.order-header {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-end;
   justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
+  gap: 0.75rem 1.5rem;
+  margin: 0.5rem 0 1.5rem;
 }
 
-/* Tiến trình đơn: chỉ để đọc, không phải nút bấm */
-.order-progress {
-  display: flex;
-  gap: 0.25rem;
-  margin: 0 0 1.5rem;
-  padding: 0;
-  list-style: none;
-  counter-reset: none;
-}
-
-.order-progress li {
-  flex: 1;
-  min-width: 0;
-  font-size: 0.8125rem;
+.order-header p {
+  margin: 0 0 0.25rem;
   color: var(--fx-muted);
 }
 
-.order-progress li::before {
-  content: "";
-  display: block;
-  height: 4px;
-  border-radius: 4px;
-  margin-bottom: 0.45rem;
-  background: var(--fx-surface-3);
+.order-header h1 {
+  margin: 0;
 }
 
-.order-progress li.is-done::before {
-  background: var(--fx-primary);
+.order-stepper {
+  margin-bottom: 1.5rem;
 }
 
-.order-progress li.is-current {
-  color: var(--fx-ink);
-  font-weight: 600;
-}
-
-.order-progress li.is-current::before {
-  background: linear-gradient(to right, var(--fx-primary) 50%, var(--fx-surface-3) 50%);
-}
-
-@media (max-width: 575.98px) {
-  .order-progress li span {
-    display: none;
-  }
-
-  .order-progress li.is-current span {
-    display: inline;
-  }
-}
-
-/* ---------- Thanh toán ---------- */
-.pay-card {
-  border-top: 3px solid var(--fx-primary);
-}
-
-.pay-steps {
+.order-pay-steps {
+  max-width: 40rem;
   margin: 1.25rem 0 0;
   padding-left: 1.25rem;
+}
+
+.order-pay-steps li + li {
+  margin-top: 0.35rem;
+}
+
+.order-receipt {
+  margin-top: 1.5rem;
+  padding: 0.25rem 1.25rem;
+  border-radius: var(--fx-radius);
+  background: var(--fx-surface-2);
+}
+
+.order-receipt summary {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--fx-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.order-receipt form {
+  padding-bottom: 1.25rem;
+}
+
+.order-additional {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  border-radius: var(--fx-radius);
+  background: var(--fx-surface);
+}
+
+.site-public .order-additional h3 {
+  margin-bottom: 1rem;
+  font-size: 1.0625rem;
+}
+
+.change-current {
+  max-width: 36rem;
+  margin-bottom: 1.5rem;
+}
+
+.site-public .change-request-form {
+  max-width: 44rem;
+}
+
+/* ---------- Form gọn ở giữa trang: tra cứu đơn, tài khoản ---------- */
+.form-panel {
+  width: 100%;
+  max-width: 30rem;
+  margin: 1rem auto 0;
+  padding: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+  border-radius: var(--fx-radius-lg);
+  background: var(--fx-surface);
+}
+
+.form-panel h1 {
+  margin-bottom: 0.5rem;
+}
+
+.form-panel__lead {
+  margin-bottom: 1.5rem;
   color: var(--fx-muted);
 }
 
-.pay-steps li + li {
-  margin-top: 0.25rem;
+.form-panel__foot {
+  margin: 1.5rem 0 0;
+  color: var(--fx-muted);
 }
 
-.receipt-box {
-  border-top: 1px solid var(--fx-border);
-  margin-top: 1.25rem;
-  padding-top: 1rem;
-}
-
-.receipt-box summary {
-  font-weight: 600;
-  color: var(--fx-primary);
-  min-height: 2.75rem;
+/* ---------- Đơn của tôi ---------- */
+.mine-head {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
-.dev-box {
-  padding: 0.65rem 0.85rem;
-  border: 1px dashed #a15c00;
-  border-radius: var(--fx-radius-sm);
-  background: #fbf5e6;
-  color: #5c3d06;
+.mine-vouchers {
+  margin-bottom: 2rem;
+  padding: 1.25rem;
+  border-radius: var(--fx-radius);
+  background: var(--fx-primary-soft);
+  color: var(--fx-on-primary-soft);
 }
 
-[data-bs-theme="dark"] .dev-box {
-  background: #2a2214;
-  color: #e6cf86;
+.site-public .mine-vouchers h2 {
+  margin-bottom: 0.5rem;
+  color: var(--fx-on-primary-soft);
+  font-family: var(--fx-font-sans);
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.mine-vouchers ul {
+  margin: 0 0 0.5rem;
+  padding-left: 1.25rem;
+}
+
+.mine-vouchers p {
+  margin: 0;
 }
 
 /* ---------- Tài khoản ---------- */

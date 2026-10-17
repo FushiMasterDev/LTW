@@ -5,7 +5,11 @@
     <dl class="fx-price-breakdown">
         @foreach (var line in lines)
         {
-            <div><dt>@L[line.Label]</dt><dd data-quote-total="@(line.QuotedTotal ? line.Amount.ToString(CultureInfo.InvariantCulture) : null)" data-additional-payment="@(line.Additional ? line.Amount.ToString(CultureInfo.InvariantCulture) : null)"><money value="line.Amount" /></dd></div>
+            var amount = line.Amount.ToString(CultureInfo.InvariantCulture);
+            @* Hook test chỉ có trên đúng dòng tổng báo giá / cọc bổ sung; thuộc tính null vẫn bị render rỗng nên tách nhánh. *@
+            if (line.QuotedTotal) { <div><dt>@L[line.Label]</dt><dd data-quote-total="@amount"><money value="line.Amount" /></dd></div> }
+            else if (line.Additional) { <div><dt>@L[line.Label]</dt><dd data-additional-payment="@amount"><money value="line.Amount" /></dd></div> }
+            else { <div><dt>@L[line.Label]</dt><dd><money value="line.Amount" /></dd></div> }
         }
     </dl>
 }

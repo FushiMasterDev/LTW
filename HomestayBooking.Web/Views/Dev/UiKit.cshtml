@@ -11,7 +11,7 @@
     var sections = new (string Id, string Title)[]
     {
         ("colors", "Màu"), ("type", "Chữ"), ("buttons", "Nút"), ("badges", "Badge trạng thái"), ("money", "Tiền và ngày"),
-        ("icons", "Icon"), ("forms", "Form"), ("alerts", "Thông báo"), ("lists", "Trang danh sách"), ("empty", "Trạng thái rỗng"), ("layout", "Khung trang"), ("rating", "Điểm đánh giá"), ("stats", "Ô số liệu"), ("data-table", "Bảng dùng chung"), ("descriptions", "Mô tả"), ("timeline", "Dòng thời gian"), ("prices", "Bảng giá"), ("skeleton", "Khung chờ tải"), ("filters", "Thanh lọc"), ("date-picker", "Bộ chọn ngày"), ("guest-picker", "Số khách"), ("uploads", "Vùng tải file"), ("feedback", "Xác nhận và toast"), ("navigation", "Tabs, đường dẫn, đầu trang"), ("notifications", "Chuông thông báo"), ("booking-search", "Thanh tìm phòng"), ("homestay-cards", "Thẻ homestay"), ("gallery", "Gallery"), ("booking-panel", "Ô báo giá"), ("booking-stepper", "Tiến trình đơn"), ("payment-qr", "Thanh toán QR"), ("room-calendar", "Lịch tháng"),
+        ("icons", "Icon"), ("forms", "Form"), ("alerts", "Thông báo"), ("lists", "Trang danh sách"), ("empty", "Trạng thái rỗng"), ("layout", "Khung trang"), ("rating", "Điểm đánh giá"), ("stats", "Ô số liệu"), ("data-table", "Bảng dùng chung"), ("descriptions", "Mô tả"), ("timeline", "Dòng thời gian"), ("prices", "Bảng giá"), ("skeleton", "Khung chờ tải"), ("filters", "Thanh lọc"), ("date-picker", "Bộ chọn ngày"), ("guest-picker", "Số khách"), ("uploads", "Vùng tải file"), ("feedback", "Xác nhận và toast"), ("navigation", "Tabs, đường dẫn, đầu trang"), ("notifications", "Chuông thông báo"), ("booking-search", "Thanh tìm phòng"), ("homestay-cards", "Thẻ homestay"), ("gallery", "Gallery"), ("booking-panel", "Ô báo giá"), ("booking-stepper", "Tiến trình đơn"), ("booking-cards", "Thẻ đơn của khách"), ("payment-qr", "Thanh toán QR"), ("room-calendar", "Lịch tháng"),
     };
     var tokens = new[] { "bg", "surface", "surface-2", "surface-3", "border", "border-strong", "ink", "muted", "primary", "primary-hover",
         "primary-soft", "focus", "success", "warning", "danger", "info" };
@@ -349,6 +349,15 @@
 <section id="booking-stepper" class="uikit-section" aria-labelledby="booking-stepper-title">
     <h2 id="booking-stepper-title" class="section-title">Tiến trình chỉ đọc: mọi trạng thái đơn</h2>
     @foreach (var state in Enum.GetValues<BookingStatus>()) { <p class="fw-semibold mt-3">@L[state.DisplayName()]</p><partial name="_BookingStepper" model="@(new BookingStepperModel(state))" /> }
+</section>
+<section id="booking-cards" class="uikit-section" aria-labelledby="booking-cards-title">
+    <h2 id="booking-cards-title" class="section-title">Thẻ đơn của khách: sắp tới, chờ cọc, tên dài</h2>
+    <ul class="fx-booking-list">
+        @foreach (var row in sampleRows)
+        {
+            <li><partial name="_BookingCard" model="@(new MyBookingRow(row.Code, row.Guest == "Lê Hùng" ? "Ba Vì Mountain Lodge" : "Homestay có tên rất dài để kiểm tra việc xuống dòng trên điện thoại " + row.Code, "Phòng đôi", row.In, row.Out, row.Total, row.Status, DateTime.UtcNow))" /></li>
+        }
+    </ul>
 </section>
 <section id="payment-qr" class="uikit-section" aria-labelledby="payment-qr-title">
     <h2 id="payment-qr-title" class="section-title">QR thanh toán mẫu</h2>

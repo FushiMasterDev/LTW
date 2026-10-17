@@ -1,102 +1,80 @@
 @using HomestayBooking.Web.Identity
 @using HomestayBooking.Web.Services
+@using Microsoft.AspNetCore.Html
 @model BookingDetailsViewModel
 @{
     var b = Model.Booking;
     ViewData["Title"] = L["Đơn {0}", b.Code];
-    var nights = b.CheckOut.DayNumber - b.CheckIn.DayNumber;
-    string Money(decimal v) => v.ToString("N0") + "đ";
+    string Money(decimal v) => HomestayBooking.Web.TagHelpers.MoneyTagHelper.Format(v);
+    IHtmlContent Text(string? value) => new HtmlContentBuilder().Append(value ?? "");
     var polling = b.Status is BookingStatus.AwaitingPayment or BookingStatus.PaymentSubmitted or BookingStatus.Deposited
         || Model.ChangeRequests?.History.Any(h => h.Request.Status is ChangeRequestStatus.Pending or ChangeRequestStatus.AwaitingPayment) == true;
     var hold = DateTime.SpecifyKind(b.HoldExpiresAt, DateTimeKind.Utc);
-    // Tiến trình chỉ để hiển thị, suy ra từ trạng thái hiện tại; đơn đã kết thúc bất thường thì không vẽ
-    var progress = new (string Label, BookingStatus[] Reached)[]
+    // Một thông báo theo trạng thái hiện tại; nội dung đã dịch, _Alert chỉ encode.
+    (string Message, string Tone)? notice = b.Status switch
     {
-        (L["Giữ phòng"], [BookingStatus.AwaitingPayment, BookingStatus.PaymentSubmitted, BookingStatus.Deposited, BookingStatus.Confirmed, BookingStatus.CheckedIn, BookingStatus.Completed]),
-        (L["Đã cọc"], [BookingStatus.Deposited, BookingStatus.Confirmed, BookingStatus.CheckedIn, BookingStatus.Completed]),
-        (L["Đã xác nhận"], [BookingStatus.Confirmed, BookingStatus.CheckedIn, BookingStatus.Completed]),
-        (L["Nhận phòng"], [BookingStatus.CheckedIn, BookingStatus.Completed]),
-        (L["Hoàn thành"], [BookingStatus.Completed]),
+        BookingStatus.AwaitingPayment when Model.QrImageUrl is null => (L["Đã hết thời gian giữ phòng. Hệ thống đang hủy giữ chỗ; nếu bạn vừa chuyển khoản, đơn sẽ tự cập nhật."], "info"),
+        BookingStatus.PaymentSubmitted => ($"{L["Fuji đã nhận ảnh bill và đang kiểm tra."]} {L["Phòng vẫn được giữ cho bạn. Bill được duyệt trong giờ hành chính (thứ Hai–thứ Sáu, 8h–17h); bill gửi ngoài giờ sẽ được duyệt vào sáng ngày làm việc kế tiếp."]}", "warning"),
+        BookingStatus.Deposited => ($"{L["Fuji đã nhận tiền cọc."]} {L["Homestay sẽ xác nhận đơn trong khoảng 30 phút. Trang này tự cập nhật."]}", "info"),
+        BookingStatus.Confirmed => ($"{L["Đơn đã được xác nhận."]} {L["Hẹn gặp bạn ngày {0}.", b.CheckIn.ToString("dd/MM/yyyy")]}", "success"),
+        BookingStatus.Expired => (L["Đơn đã hết hạn giữ phòng. Nếu bạn đã chuyển khoản, vui lòng gọi 1900 0000 để được hoàn tiền."], "info"),
+        BookingStatus.Rejected => (L["Homestay không nhận được đơn này. Fuji sẽ hoàn 100% tiền cọc ({0}) cho bạn.", Money(b.RefundAmount ?? b.AmountDue)], "danger"),
+        BookingStatus.Cancelled => (b.RefundAmount > 0 ? $"{L["Đơn đã hủy."]} {L["Số tiền hoàn: {0}.", Money(b.RefundAmount.Value)]}" : L["Đơn đã hủy."], "info"),
+        _ => null,
     };
-    var showProgress = b.Status is not (BookingStatus.Expired or BookingStatus.Rejected or BookingStatus.Cancelled or BookingStatus.NoShow);
-    var currentStep = Array.FindLastIndex(progress, p => p.Reached.Contains(b.Status));
+    var summary = new List<DescriptionItem>
+    {
+        new("Khu vực", Text(b.Homestay.Area.Name)),
+        new("Loại phòng", Text(b.RoomType.Name)),
+        new("Ngày ở", new HtmlContentBuilder().AppendHtml($"<span class=\"fx-date-range\">{b.CheckIn:dd/MM/yyyy} – {b.CheckOut:dd/MM/yyyy}</span>").Append($" ({L["{0} đêm", b.CheckOut.DayNumber - b.CheckIn.DayNumber]})")),
+        new("Số khách", Text(b.Guests.ToString())),
+        new("Người nhận phòng", Text($"{b.ContactName} · {PhoneNumberNormalizer.ToNational(b.ContactPhone)}")),
+    };
+    if (!string.IsNullOrEmpty(b.SpecialRequests)) summary.Add(new("Yêu cầu đặc biệt", Text(b.SpecialRequests)));
+    var prices = b.Nights.OrderBy(n => n.Date).Select(n => new PriceLine(n.Date.ToString("dd/MM (ddd)"), n.Price))
+        .Append(new PriceLine("Tổng tiền phòng", b.TotalAmount))
+        .Append(new PriceLine(L["Tiền cọc ({0:P0})", b.DepositRate], b.DepositAmount)).ToList();
+    if (b.DiscountAmount > 0)
+    {
+        prices.Add(new PriceLine(L["Giảm từ voucher {0}", b.Voucher?.Code ?? ""], -b.DiscountAmount));
+        prices.Add(new PriceLine("Cọc cần chuyển", b.AmountDue));
+    }
+    prices.Add(new PriceLine("Thanh toán tại homestay", b.TotalAmount - b.DepositAmount));
 }
 
-<div class="order-head">
+<header class="order-header">
     <div>
-        <p class="text-muted small mb-1">@L["Mã đơn"]</p>
-        <h1 class="mb-0 booking-code">@b.Code</h1>
+        <p>@L["Mã đơn"]</p>
+        <h1 class="booking-code">@b.Code</h1>
     </div>
-    <span class="badge-tone @b.Status.ToneClass() fs-6"><i class="bi @b.Status.Icon()" aria-hidden="true"></i> @L[b.Status.DisplayName()]</span>
+    <status-badge value="b.Status" icon="true" />
+</header>
+
+<div class="order-stepper">
+    <partial name="_BookingStepper" model="@(new BookingStepperModel(b.Status))" />
 </div>
 
-@if (showProgress)
+@if (notice is { } n)
 {
-    <ol class="order-progress" aria-label="@L["Tiến trình đơn"]">
-        @for (var i = 0; i < progress.Length; i++)
-        {
-            var state = i < currentStep ? "is-done" : i == currentStep ? (b.Status == BookingStatus.Completed ? "is-done is-current" : "is-current") : "";
-            <li class="@state" aria-current="@(i == currentStep ? "step" : null)"><span>@progress[i].Label</span></li>
-        }
-    </ol>
+    <partial name="_Alert" model="@(new AlertModel(n.Message, n.Tone, Dismissible: false))" />
+}
+@if (b.Status == BookingStatus.PaymentSubmitted && Model.PendingReceipt is not null)
+{
+    <p><a asp-action="Receipt" asp-route-paymentId="@Model.PendingReceipt.Id" target="_blank" rel="noopener">@L["Xem ảnh đã gửi"]</a></p>
 }
 
-@* ---------------- Thông báo theo trạng thái ---------------- *@
-@switch (b.Status)
-{
-    case BookingStatus.AwaitingPayment when Model.QrImageUrl is null:
-        <div class="alert tone-slate" role="status"><i class="bi bi-hourglass-bottom" aria-hidden="true"></i>
-            <div>@L["Đã hết thời gian giữ phòng. Hệ thống đang hủy giữ chỗ; nếu bạn vừa chuyển khoản, đơn sẽ tự cập nhật."]</div></div>
-        break;
-    case BookingStatus.PaymentSubmitted:
-        <div class="alert tone-orange" role="status"><i class="bi bi-receipt" aria-hidden="true"></i>
-            <div>
-                <strong>@L["Fuji đã nhận ảnh bill và đang kiểm tra."]</strong>
-                @L["Phòng vẫn được giữ cho bạn. Bill được duyệt trong giờ hành chính (thứ Hai–thứ Sáu, 8h–17h); bill gửi ngoài giờ sẽ được duyệt vào sáng ngày làm việc kế tiếp."]
-                @if (Model.PendingReceipt is not null)
-                {
-                    <a asp-action="Receipt" asp-route-paymentId="@Model.PendingReceipt.Id" target="_blank" rel="noopener">@L["Xem ảnh đã gửi"]</a>
-                }
-            </div></div>
-        break;
-    case BookingStatus.Deposited:
-        <div class="alert tone-violet" role="status"><i class="bi bi-wallet2" aria-hidden="true"></i>
-            <div><strong>@L["Fuji đã nhận tiền cọc."]</strong> @L["Homestay sẽ xác nhận đơn trong khoảng 30 phút. Trang này tự cập nhật."]</div></div>
-        break;
-    case BookingStatus.Confirmed:
-        <div class="alert tone-emerald" role="status"><i class="bi bi-check2-circle" aria-hidden="true"></i>
-            <div><strong>@L["Đơn đã được xác nhận."]</strong> @L["Hẹn gặp bạn ngày {0}.", b.CheckIn.ToString("dd/MM/yyyy")]</div></div>
-        break;
-    case BookingStatus.Expired:
-        <div class="alert tone-slate" role="status"><i class="bi bi-hourglass-bottom" aria-hidden="true"></i>
-            <div>@L["Đơn đã hết hạn giữ phòng. Nếu bạn đã chuyển khoản, vui lòng gọi 1900 0000 để được hoàn tiền."]</div></div>
-        break;
-    case BookingStatus.Rejected:
-        <div class="alert tone-rose" role="status"><i class="bi bi-x-circle" aria-hidden="true"></i>
-            <div>@L["Homestay không nhận được đơn này. Fuji sẽ hoàn 100% tiền cọc ({0}) cho bạn.", Money(b.RefundAmount ?? b.AmountDue)]</div></div>
-        break;
-    case BookingStatus.Cancelled:
-        <div class="alert tone-slate" role="status"><i class="bi bi-slash-circle" aria-hidden="true"></i>
-            <div>@L["Đơn đã hủy."] @if (b.RefundAmount > 0) { @L["Số tiền hoàn: {0}.", Money(b.RefundAmount.Value)] }</div></div>
-        break;
-}
-
-<div class="row g-4">
-    <div class="col-lg-7">
-        @* ---------------- Thanh toán bằng QR ---------------- *@
+<div class="booking-layout">
+    <div class="booking-layout__main">
         @if (Model.QrImageUrl is not null)
         {
-            <section class="card-soft form-section mb-4 pay-card" aria-labelledby="payTitle">
-                <h2 class="h5 mb-3" id="payTitle"><i class="bi bi-qr-code-scan" aria-hidden="true"></i> @L["Chuyển khoản tiền cọc"]</h2>
-
+            <section class="booking-section" aria-labelledby="payTitle">
+                <h2 id="payTitle">@L["Chuyển khoản tiền cọc"]</h2>
                 @if (Model.LastRejectedReceipt is not null)
                 {
-                    <div class="alert tone-rose small" role="alert"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
-                        <div>@L["Ảnh bill trước chưa hợp lệ: {0}. Vui lòng thanh toán lại hoặc gửi ảnh khác.", Model.LastRejectedReceipt.RejectReason ?? ""]</div></div>
+                    <partial name="_Alert" model="@(new AlertModel(L["Ảnh bill trước chưa hợp lệ: {0}. Vui lòng thanh toán lại hoặc gửi ảnh khác.", Model.LastRejectedReceipt.RejectReason ?? ""], "danger", Dismissible: false))" />
                 }
-
                 <partial name="_PaymentQr" model="@(new PaymentQrModel(Model.QrImageUrl, b.AmountDue, b.Code, hold, Model.Bank, ReloadOnExpiry: true))" />
-                <ol class="small pay-steps">
+                <ol class="order-pay-steps">
                     <li>@L["Mở app ngân hàng, quét mã QR (số tiền và nội dung đã điền sẵn)."]</li>
                     <li>@L["Giữ nguyên nội dung chuyển khoản là mã đơn để hệ thống tự xác nhận."]</li>
                     <li>@L["Trang này tự cập nhật khi Fuji nhận được tiền, thường trong 1–2 phút."]</li>
@@ -104,74 +82,72 @@
 
                 @if (Model.CanUploadReceipt)
                 {
-                    <details class="receipt-box">
+                    <details class="order-receipt">
                         <summary>@L["Đã chuyển khoản nhưng sau vài phút trang vẫn chưa cập nhật?"]</summary>
-                        <form asp-action="UploadReceipt" asp-route-id="@b.Code" method="post" enctype="multipart/form-data" class="mt-3">
-                            <p class="small text-muted">@L["Gửi ảnh chụp màn hình giao dịch để kế toán kiểm tra. Phòng vẫn được giữ trong lúc chờ duyệt. Bill gửi ngoài giờ hành chính sẽ được duyệt vào sáng hôm sau."]</p>
-                            <div class="mb-2">
-                                <label class="form-label small" for="receipt">@L["Ảnh bill (JPG, PNG, WEBP, tối đa 5MB)"]</label>
-                                <input class="form-control" type="file" id="receipt" name="receipt" accept="image/jpeg,image/png,image/webp" required />
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label small" for="transferContent">@L["Nội dung bạn đã ghi khi chuyển khoản (nếu nhớ)"]</label>
+                        <form asp-action="UploadReceipt" asp-route-id="@b.Code" method="post" enctype="multipart/form-data">
+                            <p>@L["Gửi ảnh chụp màn hình giao dịch để kế toán kiểm tra. Phòng vẫn được giữ trong lúc chờ duyệt. Bill gửi ngoài giờ hành chính sẽ được duyệt vào sáng hôm sau."]</p>
+                            <partial name="_UploadZone" model="@(new UploadZoneModel("receipt", "receipt", AllowPdf: false))" />
+                            <div class="my-3">
+                                <label class="form-label" for="transferContent">@L["Nội dung bạn đã ghi khi chuyển khoản (nếu nhớ)"]</label>
                                 <input class="form-control" id="transferContent" name="transferContent" maxlength="200" />
                             </div>
-                            <button type="submit" class="btn btn-brand" data-loading-text="@L["Đang gửi..."]"><i class="bi bi-upload" aria-hidden="true"></i> @L["Gửi ảnh bill"]</button>
+                            <button type="submit" class="btn btn-brand" data-loading-text="@L["Đang gửi..."]">@L["Gửi ảnh bill"]</button>
                         </form>
                     </details>
                 }
 
                 @if (Model.ShowDevSimulator)
                 {
-                    <div class="dev-box small mt-3">
-                        <i class="bi bi-bug" aria-hidden="true"></i> <strong>Development:</strong>
-                        @L["Giả lập tiền về cho đơn này (cần đăng nhập quản lý, nên mở ở cửa sổ ẩn danh):"]
-                        <a asp-controller="Dev" asp-action="SimulateBank" asp-route-code="@b.Code" asp-route-amount="@decimal.ToInt64(b.AmountDue)" target="_blank" rel="noopener">@L["Mở trang giả lập"]</a>
+                    <div class="alert tone-amber small mt-3 mb-0">
+                        <icon name="bug" />
+                        <div><strong>Development:</strong> @L["Giả lập tiền về cho đơn này (cần đăng nhập quản lý, nên mở ở cửa sổ ẩn danh):"]
+                            <a asp-controller="Dev" asp-action="SimulateBank" asp-route-code="@b.Code" asp-route-amount="@decimal.ToInt64(b.AmountDue)" target="_blank" rel="noopener">@L["Mở trang giả lập"]</a></div>
                     </div>
                 }
             </section>
         }
 
-        @* ---------------- Thông tin nhận phòng (chỉ khi đã xác nhận, BR-13) ---------------- *@
         @if (Model.ShowAddress)
         {
-            <section class="card-soft form-section mb-4" aria-labelledby="checkinTitle">
-                <h2 class="h5" id="checkinTitle"><i class="bi bi-signpost-split" aria-hidden="true"></i> @L["Thông tin nhận phòng"]</h2>
-                <dl class="row small mb-0">
-                    <dt class="col-sm-4">@L["Địa chỉ"]</dt><dd class="col-sm-8">@b.Homestay.Address</dd>
-                    <dt class="col-sm-4">@L["Số phòng"]</dt><dd class="col-sm-8">@b.Room.RoomCode</dd>
-                    @if (b.Homestay.ContactPhone is string phone)
-                    {
-                        <dt class="col-sm-4">@L["Điện thoại homestay"]</dt><dd class="col-sm-8"><a href="tel:@phone">@PhoneNumberNormalizer.ToNational(phone)</a></dd>
-                    }
-                    <dt class="col-sm-4">@L["Giờ nhận / trả phòng"]</dt><dd class="col-sm-8">@b.Homestay.CheckinTime.ToString("HH:mm") / @b.Homestay.CheckoutTime.ToString("HH:mm")</dd>
-                </dl>
+            var checkin = new List<DescriptionItem>
+            {
+                new("Địa chỉ", Text(b.Homestay.Address)),
+                new("Số phòng", Text(b.Room.RoomCode)),
+                new("Giờ nhận / trả phòng", Text($"{b.Homestay.CheckinTime:HH:mm} / {b.Homestay.CheckoutTime:HH:mm}")),
+            };
+            if (b.Homestay.ContactPhone is string phone)
+            {
+                checkin.Insert(2, new("Điện thoại homestay", new HtmlContentBuilder().AppendHtml("<a href=\"tel:").Append(phone).AppendHtml("\">").Append(PhoneNumberNormalizer.ToNational(phone)).AppendHtml("</a>")));
+            }
+            <section class="booking-section" aria-labelledby="checkinTitle">
+                <h2 id="checkinTitle">@L["Thông tin nhận phòng"]</h2>
+                <partial name="_DescriptionList" model="checkin" />
                 @if (!string.IsNullOrEmpty(b.Homestay.CheckinGuideHtml))
                 {
-                    <div class="rich-text small border-top pt-3 mt-2">@Html.Raw(b.Homestay.CheckinGuideHtml)</div>
+                    <div class="rich-text mt-3">@Html.Raw(b.Homestay.CheckinGuideHtml)</div>
                 }
             </section>
         }
 
         <partial name="_CustomerChanges" model="Model" />
 
-        @* ---------------- Hủy đơn ---------------- *@
-        @if (Model.CanCancel && Model.CancelQuote is not null)
+        @if (Model.CanCancel && Model.CancelQuote is { } refund)
         {
-            var refund = Model.CancelQuote;
-            <section class="card-soft form-section mb-4" aria-labelledby="cancelTitle">
-                <h2 class="h5 mb-2" id="cancelTitle"><i class="bi bi-slash-circle" aria-hidden="true"></i> @L["Hủy đơn"]</h2>
+            <section class="booking-section" aria-labelledby="cancelTitle">
+                <h2 id="cancelTitle">@L["Hủy đơn"]</h2>
                 @if (b.Status is BookingStatus.Deposited or BookingStatus.Confirmed)
                 {
-                    <p class="small mb-3">@L["Hủy hôm nay (còn {0} ngày trước ngày nhận phòng): hoàn {1}% tiền cọc = {2}.", refund.DaysBefore, refund.RefundPercent, Money(refund.RefundAmount)]</p>
+                    <p>@L["Hủy hôm nay (còn {0} ngày trước ngày nhận phòng): hoàn {1}% tiền cọc = {2}.", refund.DaysBefore, refund.RefundPercent, Money(refund.RefundAmount)]</p>
+                    <partial name="_PriceBreakdown" model="@(new PriceBreakdownModel([new PriceLine("Tiền cọc", b.AmountDue), new PriceLine("Tiền hoàn khi hủy", refund.RefundAmount)]))" />
                 }
                 else
                 {
-                    <p class="small mb-3">@L["Đơn chưa có tiền cọc nên hủy không mất phí."]</p>
+                    <p>@L["Đơn chưa có tiền cọc nên hủy không mất phí."]</p>
                 }
-                <form asp-action="Cancel" asp-route-id="@b.Code" method="post" data-confirm="@L["Bạn chắc chắn muốn hủy đơn {0}?", b.Code]">
+                <form asp-action="Cancel" asp-route-id="@b.Code" method="post" class="mt-3" data-confirm="@L["Bạn chắc chắn muốn hủy đơn {0}?", b.Code]">
+                    <label class="form-label" for="cancelReason">@L["Lý do hủy (không bắt buộc)"]</label>
                     <div class="input-group">
-                        <input class="form-control" name="reason" maxlength="200" placeholder="@L["Lý do hủy (không bắt buộc)"]" aria-label="@L["Lý do hủy"]" />
+                        <input class="form-control" id="cancelReason" name="reason" maxlength="200" />
                         <button type="submit" class="btn btn-outline-danger">@L["Hủy đơn"]</button>
                     </div>
                 </form>
@@ -179,53 +155,30 @@
         }
     </div>
 
-    @* ---------------- Tóm tắt đơn ---------------- *@
-    <aside class="col-lg-5">
-        <section class="card-soft form-section booking-panel sticky-lg-top" aria-labelledby="summaryTitle">
-            <h2 class="h5" id="summaryTitle"><i class="bi bi-house-heart" aria-hidden="true"></i> @b.Homestay.Name</h2>
-            <dl class="row small mb-2">
-                <dt class="col-5">@L["Khu vực"]</dt><dd class="col-7">@b.Homestay.Area.Name</dd>
-                <dt class="col-5">@L["Loại phòng"]</dt><dd class="col-7">@b.RoomType.Name</dd>
-                <dt class="col-5">@L["Nhận phòng"]</dt><dd class="col-7">@b.CheckIn.ToString("dd/MM/yyyy")</dd>
-                <dt class="col-5">@L["Trả phòng"]</dt><dd class="col-7">@b.CheckOut.ToString("dd/MM/yyyy") (@L["{0} đêm", nights])</dd>
-                <dt class="col-5">@L["Số khách"]</dt><dd class="col-7">@b.Guests</dd>
-                <dt class="col-5">@L["Người nhận phòng"]</dt><dd class="col-7">@b.ContactName · @PhoneNumberNormalizer.ToNational(b.ContactPhone)</dd>
-                @if (!string.IsNullOrEmpty(b.SpecialRequests))
-                {
-                    <dt class="col-5">@L["Yêu cầu đặc biệt"]</dt><dd class="col-7">@b.SpecialRequests</dd>
-                }
-            </dl>
-            <ul class="list-unstyled small night-list border-top pt-2 mb-2">
-                @foreach (var n in b.Nights.OrderBy(n => n.Date))
-                {
-                    <li><span>@n.Date.ToString("dd/MM (ddd)")</span><span>@Money(n.Price)</span></li>
-                }
-            </ul>
-            <div class="summary-row summary-total"><span>@L["Tổng tiền phòng"]</span><span>@Money(b.TotalAmount)</span></div>
-            <div class="summary-row small"><span>@L["Tiền cọc ({0:P0})", b.DepositRate]</span><span>@Money(b.DepositAmount)</span></div>
-            @if (b.DiscountAmount > 0)
-            {
-                <div class="summary-row small text-success"><span>@L["Giảm từ voucher {0}", b.Voucher?.Code ?? ""]</span><span>−@Money(b.DiscountAmount)</span></div>
-                <div class="summary-row small fw-semibold"><span>@L["Cọc cần chuyển"]</span><span>@Money(b.AmountDue)</span></div>
-            }
-            <div class="summary-row small text-muted"><span>@L["Thanh toán tại homestay"]</span><span>@Money(b.TotalAmount - b.DepositAmount)</span></div>
+    <aside class="booking-layout__aside">
+        <section class="booking-summary" aria-labelledby="summaryTitle">
+            <h2 id="summaryTitle">@b.Homestay.Name</h2>
+            <partial name="_DescriptionList" model="summary" />
+            <h3>@L["Chi tiết giá"]</h3>
+            <partial name="_PriceBreakdown" model="@(new PriceBreakdownModel(prices))" />
         </section>
         @if (Model.IsOwnAccount)
         {
-            <a class="btn btn-outline-secondary mt-3" asp-action="Mine"><i class="bi bi-arrow-left" aria-hidden="true"></i> @L["Đơn của tôi"]</a>
+            <a class="btn btn-outline-secondary mt-3" asp-action="Mine"><icon name="arrow-left" /> @L["Đơn của tôi"]</a>
         }
     </aside>
 </div>
 
 @section Scripts {
     <script src="~/js/components/payment-qr.js" asp-append-version="true"></script>
-    <script>
-        (() => {
-            // Tự tải lại khi trạng thái đơn đổi (tiền về, homestay xác nhận, hết hạn)
-            @if (polling)
-            {
-                <text>
+    <script src="~/js/components/upload-zone.js" asp-append-version="true"></script>
+    @if (polling)
+    {
+        <script>
+            (() => {
+                // Tự tải lại khi trạng thái đơn đổi (tiền về, homestay xác nhận, hết hạn)
                 const initial = @Json.Serialize(b.Status.ToString());
+                const version = @Json.Serialize(ChangeRequestUiService.Version(Model.ChangeRequests?.History.Select(h => h.Request) ?? []));
                 const statusUrl = '@Url.Action("Status", new { id = b.Code })';
                 setInterval(async () => {
                     if (document.hidden) return;
@@ -233,13 +186,11 @@
                         const res = await fetch(statusUrl, { cache: 'no-store' });
                         if (res.ok) {
                             const state = await res.json();
-                            const version = @Json.Serialize(ChangeRequestUiService.Version(Model.ChangeRequests?.History.Select(h => h.Request) ?? []));
                             if (state.status !== initial || state.changeVersion !== version) location.reload();
                         }
                     } catch { /* mất mạng tạm thời: lần sau thử lại */ }
                 }, 5000);
-                </text>
-            }
-        })();
-    </script>
+            })();
+        </script>
+    }
 }

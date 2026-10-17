@@ -2098,4 +2098,10 @@
   <data name="Cách sắp xếp không hợp lệ." xml:space="preserve"><value>Invalid sort order.</value></data>
   <data name="Bất kỳ" xml:space="preserve"><value>Any</value></data>
   <data name="Điểm {0} trên 5" xml:space="preserve"><value>Rated {0} out of 5</value></data>
+  <data name="Không cần tài khoản: Fuji dùng số điện thoại để gửi thông tin đơn và để bạn tra cứu đơn sau này." xml:space="preserve"><value>No account needed: Fuji uses your phone number to send booking details and to let you look up the booking later.</value></data>
+  <data name="Sắp tới" xml:space="preserve"><value>Upcoming</value></data>
+  <data name="Đã qua" xml:space="preserve"><value>Past</value></data>
+  <data name="Chưa có đơn đã qua." xml:space="preserve"><value>No past bookings yet.</value></data>
+  <data name="Không có đơn đã hủy." xml:space="preserve"><value>No cancelled bookings.</value></data>
+  <data name="Bạn chưa có đơn sắp tới." xml:space="preserve"><value>You have no upcoming bookings.</value></data>
 </root>

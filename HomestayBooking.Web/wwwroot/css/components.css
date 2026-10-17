@@ -716,6 +716,14 @@
 .fx-stepper [aria-current="step"] { color: var(--fx-primary); font-weight: 600; }
 .fx-stepper__number { display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border: 1px solid var(--fx-border-strong); border-radius: 50%; }
 .fx-stepper .is-complete .fx-stepper__number, .fx-stepper [aria-current="step"] .fx-stepper__number { background: var(--fx-primary-soft); color: var(--fx-on-primary-soft); border-color: var(--fx-primary); }
+/* ---------- Thẻ đơn của khách ---------- */
+.fx-booking-list { display: grid; gap: .75rem; margin: 0; padding: 0; list-style: none; }
+.fx-booking-card { display: grid; gap: .5rem; padding: 1.25rem; border-radius: var(--fx-radius); background: var(--fx-surface); color: var(--fx-ink); text-decoration: none; overflow-wrap: anywhere; transition: background-color .18s var(--fx-ease); }
+.fx-booking-card:hover { background: var(--fx-surface-2); color: var(--fx-ink); }
+.fx-booking-card__head, .fx-booking-card__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; }
+.fx-booking-card__title { font-size: 1.0625rem; font-weight: 600; }
+.fx-booking-card__meta { color: var(--fx-muted); }
+.fx-booking-card__foot .fx-money { font-weight: 600; }
 /* ---------- QR luôn trắng; vùng thông tin theo theme ---------- */
 .fx-payment-qr { display: grid; grid-template-columns: minmax(0, 18rem) minmax(0, 1fr); align-items: start; gap: 1.25rem; }
 .fx-payment-qr__frame { background: var(--fx-paper); color: var(--fx-on-paper); padding: .75rem; border: 1px solid var(--fx-border); border-radius: var(--fx-radius); }

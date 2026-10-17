@@ -2,59 +2,54 @@
 @{
     ViewData["Title"] = L["Đơn của tôi"];
     var vouchers = (List<VoucherOption>)ViewBag.Vouchers;
+    var tab = (string)ViewBag.Tab;
+    var tabs = new TabsModel("Đơn của tôi", [
+        new TabItem("Sắp tới", "/Bookings/Mine", tab == "upcoming"),
+        new TabItem("Đã qua", "/Bookings/Mine?tab=past", tab == "past"),
+        new TabItem("Đã hủy", "/Bookings/Mine?tab=cancelled", tab == "cancelled"),
+    ]);
+    var empty = tab switch
+    {
+        "past" => new EmptyStateModel("Chưa có đơn đã qua.", Icon: "clock-history"),
+        "cancelled" => new EmptyStateModel("Không có đơn đã hủy.", Icon: "slash-circle"),
+        _ => new EmptyStateModel("Bạn chưa có đơn sắp tới.", "Gồm cả đơn nhân viên tư vấn đặt giúp bằng số điện thoại của bạn.", "calendar2-heart", "Tìm homestay", Url.Action("Index", "Homestays")),
+    };
 }
-<div class="page-head">
+<div class="stays-head mine-head">
     <div>
         <h1>@L["Đơn của tôi"]</h1>
-        <p class="text-muted mb-0">@L["Gồm cả đơn nhân viên tư vấn đặt giúp bằng số điện thoại của bạn."]</p>
+        <p>@L["Gồm cả đơn nhân viên tư vấn đặt giúp bằng số điện thoại của bạn."]</p>
     </div>
-    <a class="btn btn-brand" asp-controller="Homestays" asp-action="Index"><i class="bi bi-plus-lg" aria-hidden="true"></i> @L["Đặt phòng mới"]</a>
+    <a class="btn btn-brand" asp-controller="Homestays" asp-action="Index"><icon name="plus-lg" /> @L["Đặt phòng mới"]</a>
 </div>
 
 @if (vouchers.Count > 0)
 {
-    <section class="card-soft p-3 p-md-4 mb-4" aria-labelledby="voucherTitle">
-        <h2 class="h6 mb-2" id="voucherTitle"><i class="bi bi-ticket-perforated text-brand" aria-hidden="true"></i> @L["Voucher của bạn"]</h2>
-        <div class="d-flex flex-wrap gap-2">
+    <section class="mine-vouchers" aria-labelledby="voucherTitle">
+        <h2 id="voucherTitle">@L["Voucher của bạn"]</h2>
+        <ul>
             @foreach (var v in vouchers)
             {
-                <span class="badge-tone tone-emerald">@v.Code · @L["còn {0:N0}đ, hạn {1}", v.Balance, v.ExpiresOn.ToString("dd/MM/yyyy")]</span>
+                <li><span class="booking-code">@v.Code</span> · @L["còn {0:N0}đ, hạn {1}", v.Balance, v.ExpiresOn.ToString("dd/MM/yyyy")]</li>
             }
-        </div>
-        <p class="small text-muted mt-2 mb-0">@L["Chọn voucher ở bước đặt phòng để được trừ vào tiền cọc."]</p>
+        </ul>
+        <p>@L["Chọn voucher ở bước đặt phòng để được trừ vào tiền cọc."]</p>
     </section>
 }
 
+<partial name="_Tabs" model="tabs" />
+
 @if (Model.TotalCount == 0)
 {
-    <div class="card-soft"><partial name="_EmptyState" model='new EmptyStateModel("Bạn chưa có đơn đặt phòng nào.", ActionLabel: "Tìm homestay", ActionUrl: Url.Action("Index", "Homestays"))' /></div>
+    <partial name="_EmptyState" model="empty" />
 }
 else
 {
-    <div class="card-soft overflow-hidden"><div class="table-responsive">
-        <table class="table table-modern align-middle mb-0">
-            <thead>
-                <tr>
-                    <th scope="col">@L["Mã đơn"]</th>
-                    <th scope="col">@L["Homestay"]</th>
-                    <th scope="col">@L["Ngày ở"]</th>
-                    <th scope="col" class="text-end">@L["Tổng tiền"]</th>
-                    <th scope="col">@L["Trạng thái"]</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var r in Model)
-                {
-                    <tr>
-                        <td><a class="fw-semibold booking-code" asp-action="Details" asp-route-id="@r.Code">@r.Code</a></td>
-                        <td>@r.HomestayName<div class="small text-muted">@r.RoomTypeName</div></td>
-                        <td class="text-nowrap">@r.CheckIn.ToString("dd/MM") – @r.CheckOut.ToString("dd/MM/yyyy")</td>
-                        <td class="text-end text-nowrap">@r.TotalAmount.ToString("N0")đ</td>
-                        <td><span class="badge-tone @r.Status.ToneClass()">@L[r.Status.DisplayName()]</span></td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div></div>
+    <ul class="fx-booking-list">
+        @foreach (var r in Model)
+        {
+            <li><partial name="_BookingCard" model="r" /></li>
+        }
+    </ul>
     <partial name="_Pager" model="Model" />
 }

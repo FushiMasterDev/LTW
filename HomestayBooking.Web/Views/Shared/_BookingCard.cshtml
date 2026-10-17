@@ -1,0 +1,13 @@
+@model MyBookingRow
+@* Thẻ một đơn của khách (Bookings/Mine): cả thẻ là liên kết tới chi tiết đơn. *@
+<a class="fx-booking-card" asp-area="" asp-controller="Bookings" asp-action="Details" asp-route-id="@Model.Code">
+    <span class="fx-booking-card__head">
+        <span class="fx-booking-card__title">@Model.HomestayName</span>
+        <status-badge value="Model.Status" />
+    </span>
+    <span class="fx-booking-card__meta">@Model.RoomTypeName · <date-range from="Model.CheckIn" to="Model.CheckOut" /></span>
+    <span class="fx-booking-card__foot">
+        <span class="booking-code">@Model.Code</span>
+        <money value="Model.TotalAmount" />
+    </span>
+</a>
