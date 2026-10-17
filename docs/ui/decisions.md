@@ -14,7 +14,6 @@ Mỗi quyết định ghi một dòng: ngày, bước, nội dung, lý do. Dùng
 | 17/10/2026 | 01 | Đăng nhập, đăng ký, đổi mật khẩu, AccessDenied, StatusCode, Error dùng `_AuthLayout` | Khung gọn theo `ui-rebuild.md`; các view vốn đã tự dựng thẻ 2 cột |
 | 17/10/2026 | 01 | `<money>` luôn định dạng VND theo vi-VN (`1.500.000đ`) kể cả khi giao diện tiếng Anh | Theo `ui-rebuild.md`; đơn vị là đồng, dấu nhóm kiểu Việt Nam tránh đọc nhầm |
 | 17/10/2026 | 01 | Chữ mô tả trên `Dev/UiKit` không đưa vào resource; trang dùng `_DashboardLayout` | Trang công cụ cho nhóm phát triển như `SimulateBank`; component bên trong vẫn tự dịch |
-
 | 17/10/2026 | 02-A | Component hiển thị dùng record trong Models/ViewModels/Ui; Timeline/PriceBreakdown thay toàn bộ lời gọi ChangeHistory/ChangeQuote/PolicyRules, giữ hook tích hợp | Một mẫu hiển thị, không đổi dữ liệu hoặc nghiệp vụ |
 | 17/10/2026 | 02-A | EmptyState nhận object ở ranh giới tương thích, chỉ đọc EmptyStateModel; model trang cũ bị bỏ qua | Partial không truyền model sẽ kế thừa model trang; giữ lời gọi cũ mà không dùng dynamic |
 | 17/10/2026 | 02-A | Flatpickr 4.6.13 (JS/CSS, vi), Chart.js 4.4.1 từ cdnjs, kèm LICENSE.md từ tag chính thức; Chart.js chưa nạp ở bước 02 | Phiên bản cố định theo prompt, không dùng npm/bundler; CSS thư viện không sửa, chỉ theme qua token |
@@ -27,3 +26,8 @@ Mỗi quyết định ghi một dòng: ngày, bước, nội dung, lý do. Dùng
 | 17/10/2026 | 02-C | MarkRead dùng returnUrl từ form sau khi service xác nhận thông báo thuộc tài khoản, chỉ LocalRedirect khi Url.IsLocalUrl | Dùng service B8 hiện có, không tự truy vấn DbContext; chặn open redirect và thao tác người khác |
 | 17/10/2026 | 02-C | Giữ Icon/Tone/ShowCreate của PageHead để tương thích; Tone không còn tô màu module, thêm Action/Controller/Area/RouteValues/ActionLabel | Các lời gọi cũ vẫn hoạt động; bỏ page-banner ở cả bốn dashboard |
 | 17/10/2026 | 02-C | Nội dung Notification do service lưu bằng tiếng Việt được hiển thị nguyên văn và encode; nhãn điều khiển được dịch | Không dịch dữ liệu người dùng hoặc sửa Services trong giai đoạn giao diện |
+| 17/10/2026 | 02-D | Thẻ/galleries nhận ảnh từ view model, fallback qua .is-broken; UI Kit chỉ dùng đường dẫn ảnh demo đã có | Không thêm stock hoặc ảnh ngoài dữ liệu vào thẻ thật |
+| 17/10/2026 | 02-D | SearchBar và BookingPanel chỉ dựng ở UI Kit; thẻ, gallery và QR thay mẫu lặp tại trang thật | Giữ phạm vi thư viện; chưa bắt đầu bước 03 hoặc gắn header tìm kiếm |
+| 17/10/2026 | 02-D | Lịch tháng bắt đầu thứ Hai, C# dựng đủ tuần, dữ liệu nhận từ CalendarNight; chỉ chọn ô/phát sự kiện, không tự ghi lịch | Dùng cho Chủ/Quản lý ở bước 05, Tư vấn vẫn xem bảng phòng trống |
+| 17/10/2026 | 02-D | PaymentQr dùng URL VietQrService, luôn nền paper trắng; fallback/clipboard/timer chuyển sang payment-qr.js, giữ data-change-countdown | Bỏ inline onerror, dùng chung cọc đầu và bổ sung; QR demo hết hạn không tự reload |
+| 17/10/2026 | 02-D | Áp dụng house style và vòng chụp → sửa của design-taste-frontend; không chạy draw.mjs, không đổi DESIGN.md/tokens.css so với cuối C; chuyển động D chỉ dùng thời lượng cũ và --fx-ease | Theo chỉ dẫn bổ sung của người dùng; không đưa bảng màu/font hoặc animation marketing vào ứng dụng |

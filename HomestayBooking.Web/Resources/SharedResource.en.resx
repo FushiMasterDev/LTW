@@ -2054,4 +2054,19 @@
   <data name="Không tìm thấy thông báo của bạn." xml:space="preserve"><value>Your notification was not found.</value></data>
   <data name="Đã đánh dấu tất cả thông báo là đã đọc." xml:space="preserve"><value>All notifications have been marked as read.</value></data>
   <data name="Xem tất cả thông báo" xml:space="preserve"><value>View all notifications</value></data>
+  <data name="Chưa có giá" xml:space="preserve"><value>Price not available</value></data>
+  <data name="Mã QR thanh toán" xml:space="preserve"><value>Payment QR code</value></data>
+  <data name="Chưa sao chép được. Hãy chọn văn bản để chép thủ công." xml:space="preserve"><value>Could not copy. Please select and copy the text manually.</value></data>
+  <data name="Tiến trình đơn đặt phòng" xml:space="preserve"><value>Booking progress</value></data>
+  <data name="Lịch phòng theo đêm" xml:space="preserve"><value>Room availability by night</value></data>
+  <data name="Phòng {0}" xml:space="preserve"><value>Room {0}</value></data>
+  <data name="Phòng {0}, đêm {1}: {2}" xml:space="preserve"><value>Room {0}, night of {1}: {2}</value></data>
+  <data name="Chọn một đêm để xem trạng thái." xml:space="preserve"><value>Select a night to view its status.</value></data>
+  <data name="Tháng trước" xml:space="preserve"><value>Previous month</value></data>
+  <data name="Tháng sau" xml:space="preserve"><value>Next month</value></data>
+  <data name="Trống" xml:space="preserve"><value>Available</value></data>
+  <data name="Đã đặt" xml:space="preserve"><value>Booked</value></data>
+  <data name="Bảo trì" xml:space="preserve"><value>Maintenance</value></data>
+  <data name="Khóa" xml:space="preserve"><value>Blocked</value></data>
+  <data name="Giữ đổi" xml:space="preserve"><value>Change hold</value></data>
 </root>

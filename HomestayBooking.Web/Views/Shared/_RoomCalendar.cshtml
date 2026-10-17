@@ -1,0 +1,34 @@
+@using System.Globalization
+@using HomestayBooking.Web.Services
+@model RoomCalendarModel
+<section class="fx-room-calendar" data-room-calendar aria-label="@L["Lịch phòng theo đêm"]">
+    <div class="fx-room-calendar__head">
+        <a class="btn btn-outline-secondary" href="@RoomCalendarModel.MonthLink(Context.Request.PathBase + Context.Request.Path, Context.Request.Query, Model.Month.AddMonths(-1))" aria-label="@L["Tháng trước"]"><icon name="chevron-left" /></a>
+        <h3 class="h6 mb-0">@Model.Month.ToString("MM/yyyy")</h3>
+        <a class="btn btn-outline-secondary" href="@RoomCalendarModel.MonthLink(Context.Request.PathBase + Context.Request.Path, Context.Request.Query, Model.Month.AddMonths(1))" aria-label="@L["Tháng sau"]"><icon name="chevron-right" /></a>
+    </div>
+    <ul class="fx-room-calendar__legend">
+        @foreach (var sample in new[] { new CalendarNight(0, "", Model.Month, CalendarNightState.Free), new CalendarNight(0, "", Model.Month, CalendarNightState.Booked), new CalendarNight(0, "", Model.Month, CalendarNightState.Blocked, BlockReason: RoomBlockReason.Maintenance), new CalendarNight(0, "", Model.Month, CalendarNightState.Blocked), new CalendarNight(0, "", Model.Month, CalendarNightState.ChangeRequestHeld) })
+        { var item = RoomCalendarModel.Describe(sample); <li class="@item.Tone"><icon name="@item.Icon" /> @L[item.Label]</li> }
+    </ul>
+    @foreach (var room in Model.Rooms)
+    {
+        <div class="fx-room-calendar__room" data-calendar-room>
+            <h4 class="h6 px-2 pt-3">@L["Phòng"] @room.Code</h4>
+            <div class="fx-room-calendar__grid" role="group" aria-label="@L["Phòng {0}", room.Code]">
+                @for (var i = 0; i < 7; i++) { <span class="fx-room-calendar__weekday">@CultureInfo.CurrentUICulture.DateTimeFormat.GetAbbreviatedDayName((DayOfWeek)((i + 1) % 7))</span> }
+                @foreach (var date in Model.Days)
+                {
+                    var night = Model.Night(room, date); var item = RoomCalendarModel.Describe(night);
+                    var inMonth = date.Month == Model.Month.Month;
+                    var label = L["Phòng {0}, đêm {1}: {2}", room.Code, date.ToString("dd/MM/yyyy"), L[item.Label]].Value + (night.Code is { } code ? " · " + code : "");
+                    <button type="button" class="fx-room-calendar__night @item.Tone" data-calendar-night data-room-id="@room.Id" data-date="@date.ToString("yyyy-MM-dd")" data-state="@night.State" aria-label="@label" aria-pressed="false" disabled="@(!inMonth)">
+                        <span>@date.Day <icon name="@item.Icon" /></span><small>@L[item.Label]</small>
+                    </button>
+                }
+            </div>
+        </div>
+    }
+    @if (Model.Rooms.Count == 0) { <partial name="_EmptyState" model='new EmptyStateModel("Không có dữ liệu.", Icon: "calendar")' /> }
+    <p class="small text-muted mb-0 p-2" data-calendar-selection role="status" aria-live="polite">@L["Chọn một đêm để xem trạng thái."]</p>
+</section>

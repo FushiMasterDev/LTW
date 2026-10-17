@@ -1,0 +1,25 @@
+@model GalleryModel
+@{ var shown = Math.Min(5, Model.Images.Count); }
+@if (shown > 0)
+{
+    <div class="fx-gallery mb-4" data-count="@shown" data-gallery>
+        @for (var i = 0; i < shown; i++)
+        {
+            <button type="button" class="fx-gallery__item" data-lightbox-src="@Model.Images[i]" data-lightbox-index="@i" data-lightbox-alt="@L["Ảnh {0} của {1}", i + 1, Model.Name]" aria-label="@L["Xem ảnh {0} trên {1}", i + 1, Model.Images.Count]">
+                <span class="fx-gallery__fallback" aria-hidden="true"><icon name="images" /> @L["Chưa có ảnh"]</span>
+                <img src="@(i == 0 ? Model.Images[i] : Model.Images[i].Thumbnail())" alt="" width="960" height="640" loading="@(i == 0 ? "eager" : "lazy")" />
+                @if (i == shown - 1 && Model.Images.Count > shown) { <span class="fx-gallery__more">@L["+{0} ảnh", Model.Images.Count - shown]</span> }
+            </button>
+        }
+        @for (var i = shown; i < Model.Images.Count; i++) { <span hidden data-lightbox-src="@Model.Images[i]" data-lightbox-index="@i" data-lightbox-alt="@L["Ảnh {0} của {1}", i + 1, Model.Name]"></span> }
+    </div>
+    <div class="modal fade lightbox" id="lightbox" tabindex="-1" aria-labelledby="lightboxTitle" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content">
+            <div class="modal-header"><h2 class="modal-title h6" id="lightboxTitle">@Model.Name · <span data-lightbox-counter></span></h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Đóng"]"></button></div>
+            <div class="modal-body"><img data-lightbox-view alt="" />
+                @if (Model.Images.Count > 1) { <button type="button" class="lightbox-nav prev" data-lightbox-step="-1" aria-label="@L["Ảnh trước"]"><icon name="chevron-left" /></button><button type="button" class="lightbox-nav next" data-lightbox-step="1" aria-label="@L["Ảnh sau"]"><icon name="chevron-right" /></button> }
+            </div>
+        </div></div>
+    </div>
+}
+else { <partial name="_EmptyState" model='new EmptyStateModel("Homestay chưa cập nhật ảnh.", Icon: "images")' /> }

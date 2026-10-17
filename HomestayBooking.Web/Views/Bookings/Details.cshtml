@@ -89,9 +89,7 @@
             <section class="card-soft form-section mb-4 pay-card" aria-labelledby="payTitle">
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                     <h2 class="h5 mb-0" id="payTitle"><i class="bi bi-qr-code-scan" aria-hidden="true"></i> @L["Chuyển khoản tiền cọc"]</h2>
-                    <div class="countdown" role="timer" aria-live="off">
-                        <i class="bi bi-alarm" aria-hidden="true"></i> @L["Giữ phòng còn"] <strong id="countdown" data-expires="@hold.ToString("o")">--:--</strong>
-                    </div>
+
                 </div>
 
                 @if (Model.LastRejectedReceipt is not null)
@@ -100,28 +98,7 @@
                         <div>@L["Ảnh bill trước chưa hợp lệ: {0}. Vui lòng thanh toán lại hoặc gửi ảnh khác.", Model.LastRejectedReceipt.RejectReason ?? ""]</div></div>
                 }
 
-                <div class="row g-3 align-items-center">
-                    <div class="col-sm-6 text-center">
-                        <span class="qr-frame"><img class="qr-image" src="@Model.QrImageUrl" width="270" height="320"
-                             alt="@L["Mã QR chuyển khoản MB Bank cho đơn {0}", b.Code]"
-                             onerror="this.onerror=null;this.src='@VietQrService.StaticImagePath';document.getElementById('qrFallback').hidden=false;" /></span>
-                        <p id="qrFallback" class="small text-danger mt-2" hidden>@L["Không tải được mã QR theo đơn. Khi quét mã này, hãy tự nhập đúng số tiền và nội dung bên cạnh."]</p>
-                    </div>
-                    <div class="col-sm-6">
-                        <dl class="transfer-info mb-0">
-                            <dt>@L["Ngân hàng"]</dt>
-                            <dd>MB Bank (@L["Ngân hàng Quân đội"])</dd>
-                            <dt>@L["Số tài khoản"]</dt>
-                            <dd><span>@Model.Bank.AccountNumber</span> <button type="button" class="btn btn-sm btn-outline-secondary" data-copy="@Model.Bank.AccountNumber">@L["Sao chép"]</button></dd>
-                            <dt>@L["Chủ tài khoản"]</dt>
-                            <dd>@Model.Bank.AccountName</dd>
-                            <dt>@L["Số tiền"]</dt>
-                            <dd><span class="price">@Money(b.AmountDue)</span> <button type="button" class="btn btn-sm btn-outline-secondary" data-copy="@decimal.ToInt64(b.AmountDue)">@L["Sao chép"]</button></dd>
-                            <dt>@L["Nội dung chuyển khoản"]</dt>
-                            <dd><strong class="booking-code">@b.Code</strong> <button type="button" class="btn btn-sm btn-outline-secondary" data-copy="@b.Code">@L["Sao chép"]</button></dd>
-                        </dl>
-                    </div>
-                </div>
+                <partial name="_PaymentQr" model="@(new PaymentQrModel(Model.QrImageUrl, b.AmountDue, b.Code, hold, Model.Bank, ReloadOnExpiry: true))" />
                 <ol class="small pay-steps">
                     <li>@L["Mở app ngân hàng, quét mã QR (số tiền và nội dung đã điền sẵn)."]</li>
                     <li>@L["Giữ nguyên nội dung chuyển khoản là mã đơn để hệ thống tự xác nhận."]</li>
@@ -244,43 +221,9 @@
 </div>
 
 @section Scripts {
+    <script src="~/js/components/payment-qr.js" asp-append-version="true"></script>
     <script>
         (() => {
-            // Sao chép số tài khoản / số tiền / mã đơn
-            const copied = @Json.Serialize(L["Đã chép"].Value);
-            document.querySelectorAll('[data-copy]').forEach(btn => btn.addEventListener('click', async () => {
-                try {
-                    await navigator.clipboard.writeText(btn.dataset.copy);
-                    const old = btn.textContent;
-                    btn.textContent = copied;
-                    setTimeout(() => btn.textContent = old, 1500);
-                } catch { /* trình duyệt chặn clipboard: người dùng tự chọn chữ */ }
-            }));
-
-            // Đếm ngược thời gian giữ phòng
-            const cd = document.getElementById('countdown');
-            if (cd) {
-                const expires = new Date(cd.dataset.expires).getTime();
-                const tick = () => {
-                    const left = Math.max(0, Math.floor((expires - Date.now()) / 1000));
-                    cd.textContent = String(Math.floor(left / 60)).padStart(2, '0') + ':' + String(left % 60).padStart(2, '0');
-                    cd.closest('.countdown').classList.toggle('is-urgent', left < 120);
-                    if (left === 0) { clearInterval(timer); setTimeout(() => location.reload(), 3000); }
-                };
-                const timer = setInterval(tick, 1000);
-                tick();
-            }
-
-            document.querySelectorAll('[data-change-countdown]').forEach(cd => {
-                const expires = new Date(cd.dataset.expires).getTime();
-                const tick = () => {
-                    const left = Math.max(0, Math.floor((expires - Date.now()) / 1000));
-                    cd.textContent = String(Math.floor(left / 60)).padStart(2, '0') + ':' + String(left % 60).padStart(2, '0');
-                    if (left === 0) { clearInterval(timer); setTimeout(() => location.reload(), 3000); }
-                };
-                const timer = setInterval(tick, 1000); tick();
-            });
-
             // Tự tải lại khi trạng thái đơn đổi (tiền về, homestay xác nhận, hết hạn)
             @if (polling)
             {

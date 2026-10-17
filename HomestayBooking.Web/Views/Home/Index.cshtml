@@ -96,32 +96,10 @@
             </div>
             <a class="btn btn-outline-secondary" asp-controller="Homestays" asp-action="Index">@L["Xem tất cả homestay"]</a>
         </div>
-        <div class="stay-grid">
+        <div class="fx-homestay-grid">
             @foreach (var h in Model.Featured)
             {
-                <a class="stay-card" asp-controller="Homestays" asp-action="Details" asp-route-id="@h.Id">
-                    <div class="stay-media">
-                        <span class="stay-fallback" aria-hidden="true"><i class="bi bi-house-heart"></i></span>
-                        @if (h.CoverUrl is not null)
-                        {
-                            <img src="@h.CoverUrl.Thumbnail()" alt="" loading="lazy" width="640" height="427" />
-                        }
-                    </div>
-                    <div class="stay-body">
-                        <div class="d-flex justify-content-between align-items-start gap-2">
-                            <h3 class="stay-title">@h.Name</h3>
-                            @if (h.Rating is double rating)
-                            {
-                                <rating value="rating" count="h.ReviewCount" />
-                            }
-                        </div>
-                        <p class="stay-meta"><i class="bi bi-geo-alt" aria-hidden="true"></i> @h.AreaName</p>
-                        @if (h.FromPrice is decimal price)
-                        {
-                            <p class="stay-price"><span class="text-muted small">@L["Từ"]</span> <span class="price">@price.ToString("N0")đ</span><span class="text-muted small"> / @L["đêm"]</span></p>
-                        }
-                    </div>
-                </a>
+                <partial name="_HomestayCard" model="@HomestayCardModel.From(h)" />
             }
         </div>
     </section>

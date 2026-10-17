@@ -5,8 +5,6 @@
     var today = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
     var nights = q.HasDates ? q.CheckOut!.Value.DayNumber - q.CheckIn!.Value.DayNumber : 0;
     string Money(decimal? v) => v is decimal d ? d.ToString("N0") + "đ" : "—";
-    var shown = Model.Images.Take(5).ToList();
-    var extra = Model.Images.Count - shown.Count;
 }
 
 <nav aria-label="breadcrumb" class="mb-3">
@@ -24,56 +22,7 @@
     </ul>
 </div>
 
-@if (shown.Count > 0)
-{
-    <div class="stay-gallery mb-4" data-count="@shown.Count">
-        @for (var i = 0; i < shown.Count; i++)
-        {
-            <button type="button" class="gallery-item" data-lightbox-src="@shown[i]" data-lightbox-index="@i"
-                    data-lightbox-alt="@L["Ảnh {0} của {1}", i + 1, Model.Name]"
-                    aria-label="@L["Xem ảnh {0} trên {1}", i + 1, Model.Images.Count]">
-                <img src="@(i == 0 ? shown[i] : shown[i].Thumbnail())" alt="" loading="@(i == 0 ? "eager" : "lazy")" />
-                @if (i == shown.Count - 1 && extra > 0)
-                {
-                    <span class="gallery-more">@L["+{0} ảnh", extra]</span>
-                }
-            </button>
-        }
-        @for (var i = shown.Count; i < Model.Images.Count; i++)
-        {
-            <span hidden data-lightbox-src="@Model.Images[i]" data-lightbox-index="@i" data-lightbox-alt="@L["Ảnh {0} của {1}", i + 1, Model.Name]"></span>
-        }
-    </div>
-
-    <div class="modal fade lightbox" id="lightbox" tabindex="-1" aria-labelledby="lightboxTitle" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2 class="modal-title h6" id="lightboxTitle">@Model.Name · <span data-lightbox-counter></span></h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Đóng"]"></button>
-                </div>
-                <div class="modal-body">
-                    <img data-lightbox-view src="" alt="" />
-                    @if (Model.Images.Count > 1)
-                    {
-                        <button type="button" class="lightbox-nav prev" data-lightbox-step="-1" aria-label="@L["Ảnh trước"]"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
-                        <button type="button" class="lightbox-nav next" data-lightbox-step="1" aria-label="@L["Ảnh sau"]"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
-}
-else
-{
-    <div class="gallery-empty mb-4" role="note">
-        <i class="bi bi-images" aria-hidden="true"></i>
-        <div>
-            <p class="fw-semibold">@L["Homestay chưa cập nhật ảnh."]</p>
-            <p class="small">@L["Thông tin phòng, giá và chính sách bên dưới vẫn đầy đủ. Cần xem thêm, hãy gọi 1900 0000."]</p>
-        </div>
-    </div>
-}
+<partial name="_Gallery" model="@(new GalleryModel(Model.Name, Model.Images))" />
 
 <div class="row g-4 g-xl-5">
     <div class="col-lg-8 order-2 order-lg-1">

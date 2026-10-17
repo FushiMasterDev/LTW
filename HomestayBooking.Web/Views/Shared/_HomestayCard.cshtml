@@ -1,0 +1,16 @@
+@model HomestayCardModel
+<a class="fx-homestay-card" asp-area="" asp-controller="Homestays" asp-action="Details" asp-route-id="@Model.Id" asp-route-checkIn="@Model.Query?.CheckIn?.ToString("yyyy-MM-dd")" asp-route-checkOut="@Model.Query?.CheckOut?.ToString("yyyy-MM-dd")" asp-route-guests="@Model.Query?.Guests">
+    <div class="fx-homestay-card__media">
+        <span class="fx-homestay-card__fallback" aria-hidden="true"><icon name="house-heart" /><span>@L["Chưa có ảnh"]</span></span>
+        @if (Model.CoverUrl is not null) { <img src="@Model.CoverUrl.Thumbnail()" alt="" width="640" height="427" loading="lazy" /> }
+    </div>
+    <div class="fx-homestay-card__body">
+        @if (Model.HeadingLevel == 2) { <h2 class="fx-homestay-card__title" title="@Model.Name">@Model.Name</h2> } else { <h3 class="fx-homestay-card__title" title="@Model.Name">@Model.Name</h3> }
+        <p class="text-muted mb-1">@Model.AreaName</p>
+        @if (Model.Badge is not null) { <span class="badge-tone tone-slate">@L[Model.Badge]</span> }
+        else if (Model.MaxGuests > 0) { <span class="badge-tone tone-slate">@L["≤ {0} khách", Model.MaxGuests]</span> }
+        @if (Model.Amenities?.Count > 0) { <p class="small text-muted my-1">@string.Join(", ", Model.Amenities)</p> }
+        <div class="fx-homestay-card__price">@if (Model.FromPrice is not null) { <span>@L["Từ"] <money value="Model.FromPrice" /> / @L["đêm"]</span> } else { <span class="text-muted">@L["Chưa có giá"]</span> }</div>
+        <rating value="Model.Rating" count="Model.ReviewCount" />
+    </div>
+</a>

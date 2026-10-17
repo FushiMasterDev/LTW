@@ -19,11 +19,7 @@
             var request = changes.History.Single(h => h.Request.Id == requestId).Request;
             <div class="card-soft p-3" data-additional-payment="@requestId">
                 <h3 class="h6">@L["Nộp cọc bổ sung"] · CR@(requestId)</h3>
-                <p>@L["Số tiền"]: <strong>@request.AdditionalDeposit?.ToString("N0")đ</strong> · @L["Nội dung chuyển khoản"]: <strong>@content</strong></p>
-                <p>@L["Ngân hàng"]: @Model.Bank.BankCode · @Model.Bank.AccountNumber · @Model.Bank.AccountName</p>
-                <p>@L["Hạn nộp"]: @VietnamTime.ToLocal(changes.PaymentDeadline!.Value).ToString("HH:mm dd/MM/yyyy")
-                    · <strong data-change-countdown data-expires="@DateTime.SpecifyKind(changes.PaymentDeadline.Value, DateTimeKind.Utc).ToString("o")">--:--</strong></p>
-                <img src="@qr" alt="@L["Mã QR cọc bổ sung"]" width="270" height="320" class="qr-image" />
+                <partial name="_PaymentQr" model="@(new PaymentQrModel(qr, request.AdditionalDeposit!.Value, content, changes.PaymentDeadline!.Value, Model.Bank, Additional: true, ReloadOnExpiry: true))" />
                 <p class="small text-muted">@L["Giữ đúng mã CR và số tiền. Kế toán sẽ xác nhận khoản nộp; đơn chưa đổi ngay."]</p>
                 <form asp-action="UploadChangeReceipt" asp-route-id="@b.Code" method="post" enctype="multipart/form-data">
                     <input name="requestId" value="@requestId" type="hidden" />

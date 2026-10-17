@@ -1,0 +1,9 @@
+@model BookingStepperModel
+<ol class="fx-stepper" aria-label="@L["Tiến trình đơn đặt phòng"]">
+    @for (var i = 0; i < BookingStepperModel.Progress.Length; i++)
+    {
+        var status = BookingStepperModel.Progress[i];
+        <li class="@(Model.Current > i ? "is-complete" : null)" aria-current="@(Model.Status == status ? "step" : null)"><span class="fx-stepper__number" aria-hidden="true">@(i + 1)</span><span>@L[status.DisplayName()]</span></li>
+    }
+    @if (Model.Current < 0) { <li aria-current="step"><status-badge value="Model.Status" icon="true" /></li> }
+</ol>

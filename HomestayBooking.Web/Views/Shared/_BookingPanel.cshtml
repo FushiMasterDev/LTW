@@ -1,0 +1,9 @@
+@model BookingPanelModel
+<aside class="fx-booking-panel">
+    <form id="@Model.Id" action="@Model.Action" method="get">
+        <partial name="_DateRangePicker" model="Model.Dates" />
+        <div class="my-3"><partial name="_GuestPicker" model="Model.Guests" /></div>
+        <partial name="_PriceBreakdown" model="Model.Price" />
+        <button class="btn btn-brand w-100 mt-3" type="submit">@L["Xem báo giá"]</button>
+    </form>
+</aside>

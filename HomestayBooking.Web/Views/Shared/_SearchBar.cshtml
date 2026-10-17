@@ -1,0 +1,15 @@
+@using System.Globalization
+@model SearchBarModel
+@{ var q = Model.Query ?? new HomestaySearchQuery(); }
+<form class="fx-search @(Model.Variant == "hero" ? "fx-search--hero" : "fx-search--compact")" method="get" asp-area="" asp-controller="Homestays" asp-action="Index" role="search" aria-label="@L["Tìm homestay"]">
+    @if (q.Q is not null) { <input name="Q" value="@q.Q" type="hidden" /> }
+    @if (q.MinPrice is { } min) { <input type="hidden" name="MinPrice" value="@min.ToString(CultureInfo.InvariantCulture)" /> }
+    @if (q.MaxPrice is { } max) { <input type="hidden" name="MaxPrice" value="@max.ToString(CultureInfo.InvariantCulture)" /> }
+    @if (q.CategoryId is { } category) { <input type="hidden" name="CategoryId" value="@category" /> }
+    @foreach (var amenity in q.AmenityIds) { <input type="hidden" name="AmenityIds" value="@amenity" /> }
+    <input type="hidden" name="Sort" value="@q.Sort" />
+    <div class="fx-search__area"><label class="form-label" for="@(Model.Id)-area">@L["Khu vực"]</label><select class="form-select" name="AreaId" id="@(Model.Id)-area"><option value="">@L["Tất cả khu vực"]</option>@foreach (var area in Model.Areas) { <option value="@area.Value" selected="@(area.Value == q.AreaId?.ToString())">@area.Text</option> }</select></div>
+    <div class="fx-search__dates"><partial name="_DateRangePicker" model="@(new DateRangePickerModel(Model.Id + "-dates", q.CheckIn, q.CheckOut))" /></div>
+    <div class="fx-search__guests"><partial name="_GuestPicker" model="@(new GuestPickerModel(Model.Id + "-guests", Value: q.Guests))" /></div>
+    <button type="submit" class="btn btn-brand fx-search__submit"><icon name="search" /> @L["Tìm phòng trống"]</button>
+</form>

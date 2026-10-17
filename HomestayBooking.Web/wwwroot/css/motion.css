@@ -40,49 +40,49 @@
 }
 
 /* ---------- Thẻ homestay: nâng nhẹ, đổ bóng, ảnh phóng trong khung ----------
-   Thẻ <a> là vùng nhận chuột nên đứng yên; chỉ hai phần tử con (.stay-media, .stay-body) nâng lên,
+   Thẻ <a> là vùng nhận chuột nên đứng yên; chỉ hai phần tử con (.fx-homestay-card__media, .fx-homestay-card__body) nâng lên,
    nếu không đáy thẻ rời khỏi con trỏ và hover bật/tắt liên tục ở mép dưới. */
-.stay-card > .stay-body {
-  transition: translate 0.25s var(--fx-ease-enter);
+.fx-homestay-card > .fx-homestay-card__body {
+  transition: translate 0.25s var(--fx-ease);
 }
 
-.stay-card > .stay-media {
+.fx-homestay-card > .fx-homestay-card__media {
   isolation: isolate; /* Safari: giữ góc bo khi ảnh bên trong phóng to */
-  transition: translate 0.25s var(--fx-ease-enter), box-shadow 0.25s var(--fx-ease-enter);
+  transition: translate 0.25s var(--fx-ease), box-shadow 0.25s var(--fx-ease);
 }
 
-.stay-media > img {
-  transition: scale 0.35s var(--fx-ease-expo), opacity 0.2s var(--fx-ease-enter);
+.fx-homestay-card__media > img {
+  transition: scale 0.35s var(--fx-ease), opacity 0.2s var(--fx-ease);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .stay-card:hover > .stay-media,
-  .stay-card:hover > .stay-body {
+  .fx-homestay-card:hover > .fx-homestay-card__media,
+  .fx-homestay-card:hover > .fx-homestay-card__body {
     translate: 0 -3px;
   }
 
-  .stay-card:hover .stay-media {
+  .fx-homestay-card:hover .fx-homestay-card__media {
     box-shadow: var(--fx-shadow-card-hover);
   }
 
-  .stay-card:hover .stay-media > img {
+  .fx-homestay-card:hover .fx-homestay-card__media > img {
     scale: 1.03;
   }
 }
 
 /* Bàn phím nhận cùng phản hồi như chuột */
-.stay-card:focus-visible > .stay-media,
-.stay-card:focus-visible > .stay-body {
+.fx-homestay-card:focus-visible > .fx-homestay-card__media,
+.fx-homestay-card:focus-visible > .fx-homestay-card__body {
   translate: 0 -3px;
 }
 
-.stay-card:focus-visible .stay-media {
+.fx-homestay-card:focus-visible .fx-homestay-card__media {
   box-shadow: var(--fx-shadow-card-hover);
 }
 
 /* ---------- Ảnh: mờ dần khi tải xong (khung đã đặt sẵn tỉ lệ nên không xô bố cục) ---------- */
-.stay-media > img.is-loading,
-.gallery-item img.is-loading {
+.fx-homestay-card__media > img.is-loading,
+.fx-gallery__item img.is-loading {
   opacity: 0;
 }
 
@@ -193,11 +193,11 @@
 /* ---------- Giảm chuyển động: bỏ di chuyển/phóng to, giữ đổi màu, độ mờ, bóng ---------- */
 @media (prefers-reduced-motion: reduce) {
   .btn:not(:disabled):not(.disabled):active:not(.btn-group > .btn):not(.input-group > .btn),
-  .stay-card:hover > .stay-media,
-  .stay-card:hover > .stay-body,
-  .stay-card:focus-visible > .stay-media,
-  .stay-card:focus-visible > .stay-body,
-  .stay-card:hover .stay-media > img {
+  .fx-homestay-card:hover > .fx-homestay-card__media,
+  .fx-homestay-card:hover > .fx-homestay-card__body,
+  .fx-homestay-card:focus-visible > .fx-homestay-card__media,
+  .fx-homestay-card:focus-visible > .fx-homestay-card__body,
+  .fx-homestay-card:hover .fx-homestay-card__media > img {
     translate: none;
     scale: none;
   }

@@ -628,3 +628,90 @@
 .fx-notification-list__item.is-read { border-inline-start-color: var(--fx-border); }
 .fx-notification-list__item > div { flex: 1 1 14rem; min-width: 0; overflow-wrap: anywhere; }
 .fx-notification-list__item p { margin: .5rem 0 0; }
+
+/* ---------- Thanh tìm phòng dạng viên thuốc ---------- */
+.fx-search { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: 1.25rem; border: 1px solid var(--fx-border); border-radius: var(--fx-radius-full); background: var(--fx-surface); }
+.fx-search > div { min-width: 0; }
+.fx-search__area { flex: 1 1 9rem; }
+.fx-search__dates { flex: 2 1 14rem; }
+.fx-search__guests { flex: 1 1 9rem; }
+.fx-search__submit { border-radius: var(--fx-radius-full); }
+.fx-search--hero { padding: 1.5rem; }
+.fx-search .form-label { font-size: .875rem; }
+@media (max-width: 767.98px) { .fx-search { flex-direction: column; align-items: stretch; border-radius: var(--fx-radius-lg); } .fx-search > div { flex: none; } }
+/* ---------- Thẻ homestay ---------- */
+.fx-homestay-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(16rem, 100%), 1fr)); gap: 1.5rem; }
+.fx-homestay-card { display: block; min-width: 0; color: var(--fx-ink); text-decoration: none; border-radius: var(--fx-radius); }
+.fx-homestay-card:hover { color: var(--fx-ink); }
+.fx-homestay-card__media { position: relative; aspect-ratio: 3 / 2; border-radius: var(--fx-radius); overflow: hidden; background: var(--fx-primary-soft); }
+.fx-homestay-card__media > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.fx-homestay-card__fallback { position: absolute; inset: 0; display: grid; place-content: center; gap: .5rem; text-align: center; color: var(--fx-on-primary-soft); }
+.fx-homestay-card__fallback .bi { font-size: 2rem; }
+.fx-homestay-card__media:has(img):not(.is-broken) .fx-homestay-card__fallback { visibility: hidden; }
+.fx-homestay-card__media.is-broken img { display: none; }
+.fx-homestay-card__body { padding-block: .85rem; overflow-wrap: anywhere; }
+.fx-homestay-card__title, .site-public .fx-homestay-card__title { margin: 0 0 .4rem; font-family: var(--fx-font-sans); font-size: 1.05rem; font-weight: 600; }
+.fx-homestay-card__title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.fx-homestay-card__price { margin-block: .5rem; }
+/* ---------- Gallery và lightbox ---------- */
+.fx-gallery { display: grid; gap: .5rem; overflow: hidden; border-radius: var(--fx-radius-lg); }
+.fx-gallery__item { position: relative; display: block; padding: 0; border: 0; overflow: hidden; background: var(--fx-primary-soft); }
+.fx-gallery__item img { position: relative; display: block; width: 100%; height: 100%; object-fit: cover; }
+.fx-gallery__item.is-broken img { visibility: hidden; }
+.fx-gallery__fallback { position: absolute; inset: 0; display: grid; place-content: center; color: var(--fx-on-primary-soft); }
+.fx-gallery__more { position: absolute; bottom: .75rem; right: .75rem; padding: .5rem; border-radius: var(--fx-radius-sm); background: var(--fx-surface); color: var(--fx-ink); }
+@media (min-width: 768px) {
+  .fx-gallery { grid-template-columns: 2fr 1fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); height: clamp(20rem, 42vw, 30rem); }
+  .fx-gallery__item:first-child { grid-row: span 2; }
+  .fx-gallery[data-count="1"] { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+  .fx-gallery[data-count="2"] { grid-template-columns: 2fr 1fr; grid-template-rows: 1fr; }
+  .fx-gallery[data-count="2"] .fx-gallery__item:first-child { grid-row: auto; }
+  .fx-gallery[data-count="3"] { grid-template-columns: 2fr 1fr; }
+  .fx-gallery[data-count="4"] .fx-gallery__item:last-child { grid-column: span 2; }
+}
+@media (max-width: 767.98px) {
+  .fx-gallery { grid-auto-flow: column; grid-auto-columns: 86%; overflow-x: auto; scroll-snap-type: x mandatory; }
+  .fx-gallery__item { aspect-ratio: 3 / 2; scroll-snap-align: start; border-radius: var(--fx-radius); }
+}
+.lightbox .modal-content { background: var(--fx-on-paper); color: var(--fx-paper); border: 0; }
+.lightbox .modal-header { border: 0; }
+.lightbox .btn-close { filter: invert(1) grayscale(1) brightness(2); }
+.lightbox .modal-body { position: relative; padding: 0; display: flex; align-items: center; justify-content: center; min-height: 60vh; }
+.lightbox img { max-width: 100%; max-height: 80vh; object-fit: contain; }
+.lightbox-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 0; background: color-mix(in srgb, var(--fx-paper) 90%, transparent); color: var(--fx-on-paper); }
+.lightbox-nav.prev { left: .75rem; } .lightbox-nav.next { right: .75rem; }
+/* ---------- Báo giá sticky và tiến trình chỉ đọc ---------- */
+.fx-booking-panel { position: sticky; top: 5rem; padding: 1.25rem; border-radius: var(--fx-radius); background: var(--fx-surface); border: 1px solid var(--fx-border); }
+.fx-stepper { list-style: none; display: flex; flex-wrap: wrap; gap: .75rem; padding: 0; margin: 0; }
+.fx-stepper li { display: flex; align-items: center; gap: .5rem; color: var(--fx-muted); font-size: .875rem; }
+.fx-stepper [aria-current="step"] { color: var(--fx-primary); font-weight: 600; }
+.fx-stepper__number { display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border: 1px solid var(--fx-border-strong); border-radius: 50%; }
+.fx-stepper .is-complete .fx-stepper__number, .fx-stepper [aria-current="step"] .fx-stepper__number { background: var(--fx-primary-soft); color: var(--fx-on-primary-soft); border-color: var(--fx-primary); }
+/* ---------- QR luôn trắng; vùng thông tin theo theme ---------- */
+.fx-payment-qr { display: grid; grid-template-columns: minmax(0, 18rem) minmax(0, 1fr); align-items: start; gap: 1.25rem; }
+.fx-payment-qr__frame { background: var(--fx-paper); color: var(--fx-on-paper); padding: .75rem; border: 1px solid var(--fx-border); border-radius: var(--fx-radius); }
+.qr-image { display: block; max-width: 100%; height: auto; margin-inline: auto; background: var(--fx-paper); border-radius: var(--fx-radius-sm); }
+.fx-payment-qr__fallback { font-size: .875rem; margin-block: .75rem 0; }
+.fx-payment-qr__info { min-width: 0; overflow-wrap: anywhere; }
+.fx-payment-qr__info dd { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin-bottom: .75rem; }
+.fx-payment-qr__info dt { color: var(--fx-muted); font-size: .875rem; }
+.countdown { display: inline-flex; align-items: center; flex-wrap: wrap; gap: .4rem; padding: .5rem .75rem; border-radius: var(--fx-radius-full); background: var(--tone-bg); color: var(--tone-fg); font-variant-numeric: tabular-nums; }
+.countdown.is-urgent { background: color-mix(in srgb, var(--fx-danger) 15%, var(--fx-surface)); color: var(--fx-danger); }
+@media (max-width: 575.98px) { .fx-payment-qr { grid-template-columns: minmax(0, 1fr); } .fx-payment-qr__frame { max-width: 19rem; } }
+/* ---------- Lịch tháng mỗi phòng × từng đêm ---------- */
+.fx-room-calendar { background: var(--fx-surface); border: 1px solid var(--fx-border); border-radius: var(--fx-radius); overflow: hidden; }
+.fx-room-calendar__head { display: flex; justify-content: space-between; align-items: center; padding: .75rem; }
+.fx-room-calendar__legend { list-style: none; display: flex; flex-wrap: wrap; gap: .5rem; padding: .5rem; margin: 0; }
+.fx-room-calendar__legend li { padding: .25rem .5rem; border-radius: var(--fx-radius-sm); color: var(--tone-fg); background: var(--tone-bg); font-size: .8125rem; }
+.fx-room-calendar__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; padding: .5rem; }
+.fx-room-calendar__weekday { text-align: center; font-size: .75rem; padding-block: .5rem; color: var(--fx-muted); }
+.fx-room-calendar__night { display: grid; gap: .25rem; place-content: center; min-width: 0; min-height: 4.5rem; padding: .25rem 0; border: 1px solid var(--fx-border); border-radius: var(--fx-radius-sm); color: var(--tone-fg); background: var(--tone-bg); font-variant-numeric: tabular-nums; }
+.fx-room-calendar__night small { font-size: .75rem; overflow-wrap: anywhere; }
+.fx-room-calendar__night:disabled { opacity: .45; }
+.fx-room-calendar__night[aria-pressed="true"] { outline: 2px solid var(--fx-focus); outline-offset: -2px; }
+/* Ngày trong Flatpickr là vùng bấm >=44px ở viewport 375px; không đổi file thư viện. */
+[data-bs-theme] .flatpickr-calendar { width: 20rem; font-family: var(--fx-font-sans); }
+[data-bs-theme] .flatpickr-days { width: 100%; }
+[data-bs-theme] .flatpickr-days .dayContainer { width: 100%; min-width: 0; max-width: none; }
+[data-bs-theme] .flatpickr-day { max-width: none; height: 2.75rem; line-height: 2.75rem; }
+[data-bs-theme] .flatpickr-day.today { border-color: var(--fx-primary); }

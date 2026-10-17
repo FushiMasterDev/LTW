@@ -1,6 +1,7 @@
 @using Microsoft.AspNetCore.Html
 @using HomestayBooking.Web.TagHelpers
 @using HomestayBooking.Web.Services
+@inject VietQrService VietQr
 @model UiKitViewModel
 @{
     // Trang công cụ cho nhóm phát triển (giống SimulateBank): chữ mô tả không đưa vào resource; component bên trong vẫn tự dịch.
@@ -10,7 +11,7 @@
     var sections = new (string Id, string Title)[]
     {
         ("colors", "Màu"), ("type", "Chữ"), ("buttons", "Nút"), ("badges", "Badge trạng thái"), ("money", "Tiền và ngày"),
-        ("icons", "Icon"), ("forms", "Form"), ("alerts", "Thông báo"), ("lists", "Trang danh sách"), ("empty", "Trạng thái rỗng"), ("layout", "Khung trang"), ("rating", "Điểm đánh giá"), ("stats", "Ô số liệu"), ("data-table", "Bảng dùng chung"), ("descriptions", "Mô tả"), ("timeline", "Dòng thời gian"), ("prices", "Bảng giá"), ("skeleton", "Khung chờ tải"), ("filters", "Thanh lọc"), ("date-picker", "Bộ chọn ngày"), ("guest-picker", "Số khách"), ("uploads", "Vùng tải file"), ("feedback", "Xác nhận và toast"), ("navigation", "Tabs, đường dẫn, đầu trang"), ("notifications", "Chuông thông báo"),
+        ("icons", "Icon"), ("forms", "Form"), ("alerts", "Thông báo"), ("lists", "Trang danh sách"), ("empty", "Trạng thái rỗng"), ("layout", "Khung trang"), ("rating", "Điểm đánh giá"), ("stats", "Ô số liệu"), ("data-table", "Bảng dùng chung"), ("descriptions", "Mô tả"), ("timeline", "Dòng thời gian"), ("prices", "Bảng giá"), ("skeleton", "Khung chờ tải"), ("filters", "Thanh lọc"), ("date-picker", "Bộ chọn ngày"), ("guest-picker", "Số khách"), ("uploads", "Vùng tải file"), ("feedback", "Xác nhận và toast"), ("navigation", "Tabs, đường dẫn, đầu trang"), ("notifications", "Chuông thông báo"), ("booking-search", "Thanh tìm phòng"), ("homestay-cards", "Thẻ homestay"), ("gallery", "Gallery"), ("booking-panel", "Ô báo giá"), ("booking-stepper", "Tiến trình đơn"), ("payment-qr", "Thanh toán QR"), ("room-calendar", "Lịch tháng"),
     };
     var tokens = new[] { "bg", "surface", "surface-2", "surface-3", "border", "border-strong", "ink", "muted", "primary", "primary-hover",
         "primary-soft", "focus", "success", "warning", "danger", "info" };
@@ -327,7 +328,53 @@
     <a class="btn btn-outline-secondary mt-3" asp-area="" asp-controller="Notifications" asp-action="Index">@L["Xem tất cả thông báo"]</a>
 </section>
 
+<section id="booking-search" class="uikit-section" aria-labelledby="booking-search-title">
+    <h2 id="booking-search-title" class="section-title">Thanh tìm phòng</h2>
+    <partial name="_SearchBar" model='new SearchBarModel("kit-search-hero", Model.Areas, Variant: "hero")' />
+    <div class="mt-4"><partial name="_SearchBar" model='new SearchBarModel("kit-search-compact", Model.Areas, new HomestaySearchQuery { CheckIn = today.AddDays(1), CheckOut = today.AddDays(3), Guests = 4 })' /></div>
+</section>
+<section id="homestay-cards" class="uikit-section" aria-labelledby="homestay-cards-title">
+    <h2 id="homestay-cards-title" class="section-title">Thẻ homestay</h2>
+    <div class="fx-homestay-grid">
+        <partial name="_HomestayCard" model='new HomestayCardModel(1, "Homestay mẫu", "Tây Hồ", "/images/demo/bright-living.webp", 800000, 4.8, 12)' />
+        <partial name="_HomestayCard" model='new HomestayCardModel(1, "Tên homestay rất dài để kiểm tra xuống dòng trên màn hình nhỏ và không làm tràn thẻ", "Khu vực rất dài", null, 999999999999, Badge: "Được khách đánh giá cao")' />
+        <partial name="_HomestayCard" model='new HomestayCardModel(1, "Khung ảnh lỗi có chủ ý để kiểm tra fallback", "Ba Vì", "/images/demo/ui-kit-missing.webp", null)' />
+    </div>
+</section>
+<section id="gallery" class="uikit-section" aria-labelledby="gallery-title">
+    <h2 id="gallery-title" class="section-title">Ảnh homestay</h2>
+    <partial name="_Gallery" model='new GalleryModel("Homestay mẫu", new[] { "/images/demo/bright-living.webp", "/images/demo/room-bright.webp", "/images/demo/wooden-dining.webp" })' />
+    <partial name="_Gallery" model='new GalleryModel("Homestay mẫu", Array.Empty<string>())' />
+</section>
+<section id="booking-panel" class="uikit-section" aria-labelledby="booking-panel-title">
+    <h2 id="booking-panel-title" class="section-title">Ô báo giá mẫu</h2>
+    <div class="row"><div class="col-lg-5">
+        <partial name="_BookingPanel" model='new BookingPanelModel("kit-booking-panel", new DateRangePickerModel("kit-panel-dates", today.AddDays(1), today.AddDays(3)), new GuestPickerModel("kit-panel-guests", Max: 4), new PriceBreakdownModel(new[] { new PriceLine("Tổng tiền", 1600000), new PriceLine("Tiền cọc", 480000), new PriceLine("Còn lại", 1120000) }), Url.Action("Index", "Homestays")!)' />
+    </div></div>
+</section>
+<section id="booking-stepper" class="uikit-section" aria-labelledby="booking-stepper-title">
+    <h2 id="booking-stepper-title" class="section-title">Tiến trình chỉ đọc: mọi trạng thái đơn</h2>
+    @foreach (var state in Enum.GetValues<BookingStatus>()) { <p class="fw-semibold mt-3">@L[state.DisplayName()]</p><partial name="_BookingStepper" model="@(new BookingStepperModel(state))" /> }
+</section>
+<section id="payment-qr" class="uikit-section" aria-labelledby="payment-qr-title">
+    <h2 id="payment-qr-title" class="section-title">QR thanh toán mẫu</h2>
+    <partial name="_PaymentQr" model='new PaymentQrModel(VietQr.BuildImageUrl(300000, "DEMO-UIKIT"), 300000, "DEMO-UIKIT", DateTime.UtcNow.AddMinutes(15), VietQr.Account)' />
+    <div class="mt-4"><partial name="_PaymentQr" model='new PaymentQrModel(null, 999999999999, "DEMO-UIKIT-NOI-DUNG-RAT-DAI-DE-KIEM-TRA-XUONG-DONG", DateTime.UtcNow.AddMinutes(-1), Additional: true)' /></div>
+</section>
+<section id="room-calendar" class="uikit-section" aria-labelledby="room-calendar-title">
+    <h2 id="room-calendar-title" class="section-title">Lịch phòng theo đêm</h2>
+    <p class="text-muted">Dành cho Chủ, Quản lý và Quản trị. Tư vấn dùng bảng phòng trống.</p>
+    @{
+        var month = RoomCalendarModel.ParseMonth(Context.Request.Query["month"], today);
+        var nightsForKit = new[] { new CalendarNight(1, "101", month.AddDays(3), CalendarNightState.Booked, "FJ-DEMO"), new CalendarNight(1, "101", month.AddDays(4), CalendarNightState.Blocked, "BL1", BlockReason: RoomBlockReason.Maintenance), new CalendarNight(1, "101", month.AddDays(5), CalendarNightState.Blocked, "BL2", BlockReason: RoomBlockReason.OtherChannel), new CalendarNight(1, "101", month.AddDays(6), CalendarNightState.ChangeRequestHeld, "CR12") };
+    }
+    <partial name="_RoomCalendar" model='new RoomCalendarModel(month, nightsForKit, new[] { new CalendarRoom(1, "101"), new CalendarRoom(2, "102") })' />
+    <div class="mt-4"><partial name="_RoomCalendar" model='new RoomCalendarModel(month, Array.Empty<CalendarNight>())' /></div>
+</section>
+
 @section Scripts {
+    <script src="~/js/components/payment-qr.js" asp-append-version="true"></script>
+    <script src="~/js/components/room-calendar.js" asp-append-version="true"></script>
     <script src="~/lib/flatpickr/flatpickr.min.js"></script>
     <script src="~/lib/flatpickr/l10n/vn.min.js"></script>
     <script src="~/js/components/date-range-picker.js" asp-append-version="true"></script>

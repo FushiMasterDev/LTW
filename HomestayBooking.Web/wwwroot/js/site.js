@@ -1,7 +1,20 @@
+// Đóng modal bằng Esc/Hủy kể cả trong transition; callback khôi phục focus đúng nơi mở.
+const fxBindModalDismiss = (element, onHidden) => {
+    if (!element) return;
+    let cancelOnShown = false;
+    const cancel = () => { cancelOnShown = true; bootstrap.Modal.getOrCreateInstance(element).hide(); };
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && element.classList.contains('show')) { event.preventDefault(); cancel(); }
+    }, true);
+    element.addEventListener('click', event => { if (event.target.closest('[data-bs-dismiss="modal"]')) cancel(); });
+    element.addEventListener('shown.bs.modal', () => { if (cancelOnShown) bootstrap.Modal.getOrCreateInstance(element).hide(); });
+    element.addEventListener('hidden.bs.modal', () => { cancelOnShown = false; onHidden?.(); });
+};
+
 // Modal xác nhận dùng chung, giữ data-confirm và giữ nguyên nút submit/name/value gốc.
 (() => {
     const element = document.getElementById('fx-confirm-dialog');
-    let pending = null, cancelOnShown = false;
+    let pending = null;
     $(document).on('submit', 'form[data-confirm]', function (event) {
         if (this.dataset.fxConfirmed === 'true') { delete this.dataset.fxConfirmed; return; }
         if (event.isDefaultPrevented() || ($.fn.valid && $(this).data('validator') && !$(this).valid())) return;
@@ -19,14 +32,7 @@
         const button = action.submitter?.form === action.form && action.submitter.type === 'submit' ? action.submitter : undefined;
         action.form.requestSubmit(button);
     });
-    // Bootstrap bỏ qua hide() khi đang transition; vẫn tiếp nhận Esc/Hủy trong khoảng mở ngắn này.
-    const cancel = () => { cancelOnShown = true; bootstrap.Modal.getOrCreateInstance(element).hide(); };
-    document.addEventListener('keydown', event => {
-        if (event.key === 'Escape' && pending && element?.classList.contains('show')) { event.preventDefault(); cancel(); }
-    }, true);
-    element?.addEventListener('click', event => { if (pending && event.target.closest('[data-bs-dismiss="modal"]')) cancel(); });
-    element?.addEventListener('shown.bs.modal', () => { if (cancelOnShown) bootstrap.Modal.getOrCreateInstance(element).hide(); });
-    element?.addEventListener('hidden.bs.modal', () => { pending?.submitter?.focus(); pending = null; cancelOnShown = false; });
+    fxBindModalDismiss(element, () => { pending?.submitter?.focus(); pending = null; });
 })();
 
 // Toast chỉ dành cho phản hồi AJAX/background; mọi nội dung được gán bằng textContent.
@@ -112,8 +118,8 @@ document.querySelectorAll('[data-sidebar-collapse]').forEach(btn =>
 
 // Ảnh homestay không tải được: ẩn ảnh để hiện khung thay thế bên dưới
 (() => {
-    const markBroken = img => img.closest('.stay-media, .gallery-item')?.classList.add('is-broken');
-    document.querySelectorAll('.stay-media > img, .gallery-item img').forEach(img => {
+    const markBroken = img => img.closest('.fx-homestay-card__media, .fx-gallery__item')?.classList.add('is-broken');
+    document.querySelectorAll('.fx-homestay-card__media > img, .fx-gallery__item img').forEach(img => {
         if (img.complete && img.naturalWidth === 0 && img.getAttribute('src')) markBroken(img);
         else img.addEventListener('error', () => markBroken(img), { once: true });
     });
@@ -127,7 +133,8 @@ document.querySelectorAll('[data-sidebar-collapse]').forEach(btn =>
     const view = modalEl.querySelector('[data-lightbox-view]');
     const counter = modalEl.querySelector('[data-lightbox-counter]');
     const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-    let index = 0;
+    let index = 0, opener = null;
+    fxBindModalDismiss(modalEl, () => opener?.focus());
     const show = n => {
         index = (n + items.length) % items.length;
         view.src = items[index].dataset.lightboxSrc;
@@ -137,8 +144,9 @@ document.querySelectorAll('[data-sidebar-collapse]').forEach(btn =>
     document.addEventListener('click', e => {
         const item = e.target.closest('[data-lightbox-src]');
         if (item) {
+            opener = item;
             show(Number(item.dataset.lightboxIndex));
-            modal.show();
+            modal.show(item);
             return;
         }
         const step = e.target.closest('[data-lightbox-step]');
@@ -174,7 +182,7 @@ $(document).on('change', 'form[data-date-range] input[name="CheckIn"]', function
     }, true);
 
     // Ảnh lazy chưa tải: ẩn tới khi tải xong rồi mờ dần vào (lỗi tải thì hiện khung thay thế như cũ)
-    document.querySelectorAll('.stay-media > img[loading="lazy"], .gallery-item img[loading="lazy"]').forEach(img => {
+    document.querySelectorAll('.fx-homestay-card__media > img[loading="lazy"], .fx-gallery__item img[loading="lazy"]').forEach(img => {
         if (img.complete) return;
         img.classList.add('is-loading');
         const done = () => img.classList.remove('is-loading');
@@ -198,3 +206,11 @@ $(document).on('change', 'form[data-date-range] input[name="CheckIn"]', function
     }
 })();
 // [/motion]
+
+// Chỉ các trang có gallery mới nhận hành vi này.
+document.querySelectorAll('[data-gallery]').forEach(gallery => gallery.addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    const buttons = [...gallery.querySelectorAll('button[data-lightbox-src]')], index = buttons.indexOf(document.activeElement);
+    if (index < 0) return; event.preventDefault();
+    buttons[(index + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length].focus();
+}));

@@ -88,37 +88,10 @@ else
         </span>
     </div>
 
-    <div class="stay-grid">
+    <div class="fx-homestay-grid">
         @foreach (var h in Model.Results)
         {
-            <a class="stay-card" asp-action="Details" asp-route-id="@h.Id"
-               asp-route-checkIn="@q.CheckIn?.ToString("yyyy-MM-dd")" asp-route-checkOut="@q.CheckOut?.ToString("yyyy-MM-dd")" asp-route-guests="@q.Guests">
-                <div class="stay-media">
-                    <span class="stay-fallback" aria-hidden="true">
-                        <i class="bi bi-house-heart"></i>
-                        <small>@L["Chưa có ảnh"]</small>
-                    </span>
-                    @if (h.CoverUrl is not null)
-                    {
-                        <img src="@h.CoverUrl.Thumbnail()" alt="" loading="lazy" width="640" height="427" />
-                    }
-                </div>
-                <div class="stay-body">
-                    <div class="d-flex justify-content-between align-items-start gap-2">
-                        <h2 class="stay-title">@h.Name</h2>
-                        <span class="badge-tone tone-slate flex-shrink-0">@L["≤ {0} khách", h.MaxGuests]</span>
-                    </div>
-                    <p class="stay-meta"><i class="bi bi-geo-alt" aria-hidden="true"></i> @h.AreaName</p>
-                    @if (h.Amenities.Count > 0)
-                    {
-                        <p class="stay-meta small">@string.Join(", ", h.Amenities)</p>
-                    }
-                    @if (h.FromPrice is decimal price)
-                    {
-                        <p class="stay-price"><span class="text-muted small">@L["Từ"]</span> <span class="price">@price.ToString("N0")đ</span><span class="text-muted small"> / @L["đêm"]</span></p>
-                    }
-                </div>
-            </a>
+            <partial name="_HomestayCard" model="@HomestayCardModel.From(h, q)" />
         }
     </div>
     <partial name="_Pager" model="Model.Results" />
