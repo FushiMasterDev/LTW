@@ -161,11 +161,11 @@ else
         <h2 class="section-title"><i class="bi bi-shield-check" aria-hidden="true"></i> @L["Chính sách hủy"]</h2>
         <div class="card-soft p-3 p-md-4">
             <p class="small text-muted">@L["Tiền cọc {0:P0} tổng tiền phòng. Số tiền hoàn tính theo số ngày còn lại trước ngày nhận phòng.", Model.DepositRate]</p>
-            <partial name="_PolicyRules" model="Model.GeneralPolicy" />
+            <partial name="_PriceBreakdown" model="@(new PriceBreakdownModel(Rules: Model.GeneralPolicy))" />
             @if (Model.HolidayPolicy is not null)
             {
                 <p class="small fw-semibold mt-3 mb-1">@L["Đơn có đêm ngày lễ"]</p>
-                <partial name="_PolicyRules" model="Model.HolidayPolicy" />
+                <partial name="_PriceBreakdown" model="@(new PriceBreakdownModel(Rules: Model.HolidayPolicy))" />
             }
         </div>
     </div>

@@ -1,13 +1,16 @@
+@using Microsoft.AspNetCore.Html
+@using HomestayBooking.Web.TagHelpers
+@using HomestayBooking.Web.Services
 @model UiKitViewModel
 @{
     // Trang công cụ cho nhóm phát triển (giống SimulateBank): chữ mô tả không đưa vào resource; component bên trong vẫn tự dịch.
     Layout = "_DashboardLayout";
     ViewData["Title"] = "UI Kit";
-    var today = DateOnly.FromDateTime(DateTime.Today);
+    var today = VietnamTime.Today(TimeProvider.System);
     var sections = new (string Id, string Title)[]
     {
         ("colors", "Màu"), ("type", "Chữ"), ("buttons", "Nút"), ("badges", "Badge trạng thái"), ("money", "Tiền và ngày"),
-        ("icons", "Icon"), ("forms", "Form"), ("alerts", "Thông báo"), ("lists", "Trang danh sách"), ("empty", "Trạng thái rỗng"), ("layout", "Khung trang"),
+        ("icons", "Icon"), ("forms", "Form"), ("alerts", "Thông báo"), ("lists", "Trang danh sách"), ("empty", "Trạng thái rỗng"), ("layout", "Khung trang"), ("rating", "Điểm đánh giá"), ("stats", "Ô số liệu"), ("data-table", "Bảng dùng chung"), ("descriptions", "Mô tả"), ("timeline", "Dòng thời gian"), ("prices", "Bảng giá"), ("skeleton", "Khung chờ tải"),
     };
     var tokens = new[] { "bg", "surface", "surface-2", "surface-3", "border", "border-strong", "ink", "muted", "primary", "primary-hover",
         "primary-soft", "focus", "success", "warning", "danger", "info" };
@@ -222,6 +225,53 @@
         <li><code>_Layout</code>: trang khách, header <code>_SiteHeader</code> (lối vào khu làm việc là View Component <code>WorkspaceSwitcher</code>) và footer <code>_SiteFooter</code>. Xem ở <a asp-controller="Home" asp-action="Index">trang chủ</a>.</li>
         <li><code>_AuthLayout</code>: đăng nhập, đăng ký, trang lỗi. Xem ở <a href="~/Home/StatusCode/404">trang 404</a>.</li>
     </ul>
+</section>
+
+<section id="rating" class="uikit-section" aria-labelledby="rating-title">
+    <h2 id="rating-title" class="section-title">Điểm đánh giá</h2>
+    <div class="d-flex flex-wrap gap-4"><rating value="4.75" count="12" /><rating value="null" count="0" /><rating value="5" count="123456" /></div>
+</section>
+<section id="stats" class="uikit-section" aria-labelledby="stats-title">
+    <h2 id="stats-title" class="section-title">Ô số liệu: thường, trạng thái cần xử lý, số lớn và chữ dài</h2>
+    <div class="row g-3">
+        <div class="col-md-4"><partial name="_StatCard" model='new StatCardModel("Đơn đặt phòng", "24", "journal-check", Url.Action("Index", "Home"))' /></div>
+        <div class="col-md-4"><partial name="_StatCard" model='new StatCardModel("Đơn chờ xác nhận", "0", "hourglass-split", Tone: "tone-amber")' /></div>
+        <div class="col-md-4"><partial name="_StatCard" model='new StatCardModel("Số lượng rất lớn và nhãn dài để kiểm tra khả năng xuống dòng trên điện thoại", "999.999.999.999", "graph-up")' /></div>
+    </div>
+</section>
+<section id="data-table" class="uikit-section" aria-labelledby="data-table-title">
+    <h2 id="data-table-title" class="section-title">Bảng dùng chung: sắp xếp giữ bộ lọc, ô có nhãn trên điện thoại</h2>
+    @{
+        var columns = new TableColumn[] { new("Mã đơn", "code"), new("Khách", "guest"), new("Tổng tiền", "amount", true) };
+        var tableRows = sampleRows.Select(r => new TableRow(new IHtmlContent[] {
+            new HtmlContentBuilder().Append(r.Code), new HtmlContentBuilder().Append(r.Guest), new HtmlContentBuilder().Append(MoneyTagHelper.Format(r.Total)),
+        })).ToArray();
+    }
+    <partial name="_DataTable" model='new DataTableModel("Đơn đặt phòng", columns, tableRows, new PaginatedList<int>(Enumerable.Range(11, 10), 47, 2, 10))' />
+    <h3 class="h6 mt-4">Bảng rỗng</h3>
+    <partial name="_DataTable" model='new DataTableModel("Đơn đặt phòng", columns, Array.Empty<TableRow>())' />
+</section>
+<section id="descriptions" class="uikit-section" aria-labelledby="descriptions-title">
+    <h2 id="descriptions-title" class="section-title">Danh sách mô tả</h2>
+    <partial name="_DescriptionList" model='new DescriptionItem[] { new("Homestay", new HtmlContentBuilder().Append("Tên homestay rất dài để kiểm tra việc xuống dòng mà không đẩy rộng màn hình điện thoại")), new("Khách", new HtmlContentBuilder().Append("Nguyễn Văn A <văn bản được encode>")) }' />
+</section>
+<section id="timeline" class="uikit-section" aria-labelledby="timeline-title">
+    <h2 id="timeline-title" class="section-title">Dòng thời gian: lịch sử trạng thái, yêu cầu đổi và rỗng</h2>
+    <partial name="_Timeline" model='new TimelineModel(Events: new[] { new TimelineItem(DateTime.UtcNow, "Đã xác nhận", "Chủ homestay đã xác nhận đơn."), new TimelineItem(DateTime.UtcNow.AddMinutes(-30), "Đã đặt cọc", "Ghi chú rất dài để kiểm tra khả năng xuống dòng và văn bản thuần: <script> không được thực thi.") })' />
+    <partial name="_Timeline" model='new TimelineModel(Changes: new[] { new ChangeRequestHistoryRow(new BookingChangeRequest { Id = 12, RequestType = ChangeRequestType.ChangeDates, Status = ChangeRequestStatus.Pending, NewCheckIn = today.AddDays(7), NewCheckOut = today.AddDays(9) }, today.AddDays(3), today.AddDays(5), "Phòng đôi", "Phòng đôi") })' />
+    <partial name="_Timeline" model="@(new TimelineModel())" />
+</section>
+<section id="prices" class="uikit-section" aria-labelledby="prices-title">
+    <h2 id="prices-title" class="section-title">Bảng giá, hoàn tiền và chính sách hủy</h2>
+    <partial name="_PriceBreakdown" model='new PriceBreakdownModel(new[] { new PriceLine("Giá từng đêm", 800000), new PriceLine("Giảm giá", -36000), new PriceLine("Tiền cọc", 600000), new PriceLine("Còn lại", 1400000), new PriceLine("Phí đổi", 300000), new PriceLine("Tiền hoàn khi hủy", 0), new PriceLine("Tổng tiền", 999999999999) })' />
+    <partial name="_PriceBreakdown" model='new PriceBreakdownModel(Rules: new[] { new PolicyRuleView(7, 100), new PolicyRuleView(3, 50), new PolicyRuleView(0, 0) })' />
+    <div class="mt-4"><partial name="_EmptyState" model='new EmptyStateModel("Không có dữ liệu.", "Chọn ngày để xem báo giá.", "calendar")' /></div>
+    <div class="mt-4"><partial name="_EmptyState" model='new EmptyStateModel("Đã xảy ra lỗi", "Vui lòng thử lại sau hoặc liên hệ Fuji để được hỗ trợ.", "exclamation-triangle", "Về trang chủ", Url.Action("Index", "Home"))' /></div>
+</section>
+<section id="skeleton" class="uikit-section" aria-labelledby="skeleton-title">
+    <h2 id="skeleton-title" class="section-title">Khung chờ tải: dòng và thẻ, tôn trọng reduced-motion</h2>
+    <partial name="_Skeleton" model="@(new SkeletonModel())" />
+    <div class="mt-4"><partial name="_Skeleton" model="@(new SkeletonModel(Cards: true))" /></div>
 </section>
 
 @section Scripts {

@@ -2015,4 +2015,10 @@
   <data name="Bạn không có quyền gửi yêu cầu cho đơn này." xml:space="preserve">
     <value>You cannot submit a request for this booking.</value>
   </data>
+  <data name="Chưa có đánh giá" xml:space="preserve"><value>No reviews yet</value></data>
+  <data name="Điểm {0} trên 5, từ {1} đánh giá" xml:space="preserve"><value>Rated {0} out of 5 from {1} reviews</value></data>
+  <data name="Đang tải…" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Đã xảy ra lỗi" xml:space="preserve"><value>Something went wrong</value></data>
+  <data name="Vui lòng thử lại sau hoặc liên hệ Fuji để được hỗ trợ." xml:space="preserve"><value>Please try again later or contact Fuji for help.</value></data>
+  <data name="Mã đối chiếu" xml:space="preserve"><value>Reference ID</value></data>
 </root>

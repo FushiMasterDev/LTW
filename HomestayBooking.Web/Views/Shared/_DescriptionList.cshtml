@@ -1,0 +1,4 @@
+@model IReadOnlyList<DescriptionItem>
+<dl class="fx-description">
+    @foreach (var item in Model) { <div><dt>@L[item.Label]</dt><dd>@item.Value</dd></div> }
+</dl>

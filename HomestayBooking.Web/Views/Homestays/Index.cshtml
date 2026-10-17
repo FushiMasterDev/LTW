@@ -71,12 +71,7 @@
 
 @if (Model.Results.TotalCount == 0)
 {
-    <div class="card-soft empty-state">
-        <span class="icon-chip icon-chip-lg tone-slate" aria-hidden="true"><i class="bi bi-house-x"></i></span>
-        <p class="fw-semibold text-body mb-1">@L["Không có homestay phù hợp."]</p>
-        <p class="mb-3">@L["Hãy thử đổi ngày, bớt số khách hoặc chọn khu vực khác."]</p>
-        <a class="btn btn-outline-secondary" asp-action="Index">@L["Xóa bộ lọc"]</a>
-    </div>
+    <div class="card-soft"><partial name="_EmptyState" model='new EmptyStateModel("Không có homestay phù hợp.", "Hãy thử đổi ngày, bớt số khách hoặc chọn khu vực khác.", "house-x", "Xóa bộ lọc", Url.Action("Index"))' /></div>
 }
 else
 {

@@ -1,0 +1,5 @@
+@model SkeletonModel
+<div class="fx-skeleton-group @(Model.Cards ? "fx-skeleton-group--cards" : null)" role="status" aria-busy="true">
+    <span class="visually-hidden">@L["Đang tải…"]</span>
+    @for (var i = 0; i < Math.Clamp(Model.Count, 1, 12); i++) { <div class="fx-skeleton @(Model.Cards ? "fx-skeleton--card" : "fx-skeleton--line")" aria-hidden="true"></div> }
+</div>

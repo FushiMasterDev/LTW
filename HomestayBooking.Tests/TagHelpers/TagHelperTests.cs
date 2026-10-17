@@ -122,7 +122,7 @@ public sealed class TagHelperTests
         Assert.True(check.IndexOf("type=\"checkbox\"", StringComparison.Ordinal) < check.IndexOf("<label", StringComparison.Ordinal));
     }
 
-    private static IStringLocalizer<SharedResource> Localizer()
+    internal static IStringLocalizer<SharedResource> Localizer()
     {
         var mock = new Mock<IStringLocalizer<SharedResource>>();
         mock.Setup(l => l[It.IsAny<string>()]).Returns((string k) => new LocalizedString(k, "[en] " + k));
@@ -131,7 +131,7 @@ public sealed class TagHelperTests
         return mock.Object;
     }
 
-    private static (IHtmlGenerator, ViewContext, ModelExpressionProvider) Mvc()
+    internal static (IHtmlGenerator, ViewContext, ModelExpressionProvider) Mvc()
     {
         var listener = new System.Diagnostics.DiagnosticListener("tests");
         var sp = new ServiceCollection().AddLogging().AddSingleton(listener).AddSingleton<System.Diagnostics.DiagnosticSource>(listener)
@@ -144,7 +144,7 @@ public sealed class TagHelperTests
         return (sp.GetRequiredService<IHtmlGenerator>(), viewContext, new ModelExpressionProvider(metadata));
     }
 
-    private static async Task<string> RenderAsync(TagHelper helper, string tag)
+    internal static async Task<string> RenderAsync(TagHelper helper, string tag)
     {
         var context = new TagHelperContext(new TagHelperAttributeList(), new Dictionary<object, object>(), Guid.NewGuid().ToString("N"));
         var output = new TagHelperOutput(tag, new TagHelperAttributeList(), (_, _) => Task.FromResult<TagHelperContent>(new DefaultTagHelperContent()));

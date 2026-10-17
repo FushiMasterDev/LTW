@@ -14,3 +14,8 @@ Mỗi quyết định ghi một dòng: ngày, bước, nội dung, lý do. Dùng
 | 17/10/2026 | 01 | Đăng nhập, đăng ký, đổi mật khẩu, AccessDenied, StatusCode, Error dùng `_AuthLayout` | Khung gọn theo `ui-rebuild.md`; các view vốn đã tự dựng thẻ 2 cột |
 | 17/10/2026 | 01 | `<money>` luôn định dạng VND theo vi-VN (`1.500.000đ`) kể cả khi giao diện tiếng Anh | Theo `ui-rebuild.md`; đơn vị là đồng, dấu nhóm kiểu Việt Nam tránh đọc nhầm |
 | 17/10/2026 | 01 | Chữ mô tả trên `Dev/UiKit` không đưa vào resource; trang dùng `_DashboardLayout` | Trang công cụ cho nhóm phát triển như `SimulateBank`; component bên trong vẫn tự dịch |
+
+| 17/10/2026 | 02-A | Component hiển thị dùng record trong Models/ViewModels/Ui; Timeline/PriceBreakdown thay toàn bộ lời gọi ChangeHistory/ChangeQuote/PolicyRules, giữ hook tích hợp | Một mẫu hiển thị, không đổi dữ liệu hoặc nghiệp vụ |
+| 17/10/2026 | 02-A | EmptyState nhận object ở ranh giới tương thích, chỉ đọc EmptyStateModel; model trang cũ bị bỏ qua | Partial không truyền model sẽ kế thừa model trang; giữ lời gọi cũ mà không dùng dynamic |
+| 17/10/2026 | 02-A | Flatpickr 4.6.13 (JS/CSS, vi), Chart.js 4.4.1 từ cdnjs, kèm LICENSE.md từ tag chính thức; Chart.js chưa nạp ở bước 02 | Phiên bản cố định theo prompt, không dùng npm/bundler; CSS thư viện không sửa, chỉ theme qua token |
+| 17/10/2026 | 02-A | Kiểm tra trình duyệt bằng app Release cổng 5012 trên DeployTest, AutoMigrate=false, snapshot từng bảng trước/sau | Không tác động app 5011 hoặc ghi vào v5 |

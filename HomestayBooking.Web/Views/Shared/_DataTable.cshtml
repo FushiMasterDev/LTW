@@ -1,0 +1,37 @@
+@model DataTableModel
+@{
+    var actions = Model.Rows.Any(r => r.Actions is not null);
+}
+<div class="fx-table-wrap">
+    <table class="table table-modern fx-table">
+        <caption class="visually-hidden">@L[Model.Caption]</caption>
+        <thead><tr>
+            @foreach (var column in Model.Columns)
+            {
+                var selected = column.SortKey is not null && string.Equals(Context.Request.Query["sort"], column.SortKey, StringComparison.OrdinalIgnoreCase);
+                <th scope="col" class="@(column.Numeric ? "text-end" : null)" aria-sort="@(selected ? (Context.Request.Query["dir"] == "desc" ? "descending" : "ascending") : null)">
+                    @if (column.SortKey is { } key)
+                    {
+                        <a href="@TableSortLink.Build(Context.Request.Path, Context.Request.Query, key)">@L[column.Label] <icon name="arrow-down-up" /></a>
+                    }
+                    else { @L[column.Label] }
+                </th>
+            }
+            @if (actions) { <th scope="col">@L["Thao tác"]</th> }
+        </tr></thead>
+        <tbody>
+            @foreach (var row in Model.Rows)
+            {
+                <tr>
+                    @for (var i = 0; i < Model.Columns.Count; i++)
+                    {
+                        <td data-label="@L[Model.Columns[i].Label]" class="@(Model.Columns[i].Numeric ? "text-end" : null)">@(i < row.Cells.Count ? row.Cells[i] : null)</td>
+                    }
+                    @if (actions) { <td data-label="@L["Thao tác"]">@if (row.Actions is not null) { <partial name="_RowActions" model="row.Actions" /> }</td> }
+                </tr>
+            }
+        </tbody>
+    </table>
+    @if (Model.Rows.Count == 0) { <partial name="_EmptyState" model="@(Model.Empty ?? new EmptyStateModel())" /> }
+</div>
+@if (Model.Pager is not null) { <partial name="_Pager" model="Model.Pager" /> }

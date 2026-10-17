@@ -27,11 +27,7 @@
 
 @if (Model.TotalCount == 0)
 {
-    <div class="card-soft empty-state">
-        <span class="icon-chip icon-chip-lg tone-slate" aria-hidden="true"><i class="bi bi-inbox"></i></span>
-        <p class="mb-3">@L["Bạn chưa có đơn đặt phòng nào."]</p>
-        <a class="btn btn-brand" asp-controller="Homestays" asp-action="Index"><i class="bi bi-search" aria-hidden="true"></i> @L["Tìm homestay"]</a>
-    </div>
+    <div class="card-soft"><partial name="_EmptyState" model='new EmptyStateModel("Bạn chưa có đơn đặt phòng nào.", ActionLabel: "Tìm homestay", ActionUrl: Url.Action("Index", "Homestays"))' /></div>
 }
 else
 {

@@ -36,7 +36,7 @@
     @if (Model.Quote is { } quote)
     {
         <section class="border-top pt-3 mt-3" aria-label="@L["Báo giá yêu cầu"]" data-quote>
-            <partial name="_ChangeQuote" model="quote" />
+            <partial name="_PriceBreakdown" model="@PriceBreakdownModel.From(quote)" />
             <button class="btn btn-brand" type="submit" formaction="@Url.Action(submitAction, new { id })" data-confirm="@L["Xác nhận gửi yêu cầu này?"]">@L["Xác nhận gửi yêu cầu"]</button>
         </section>
     }

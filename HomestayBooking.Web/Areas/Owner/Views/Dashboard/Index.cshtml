@@ -29,22 +29,13 @@
 
 <div class="row g-3 mb-4">
     <div class="col-sm-4">
-        <div class="card-soft stat-card tone-emerald">
-            <span class="icon-chip" aria-hidden="true"><i class="bi bi-houses"></i></span>
-            <div><div class="stat-value">@homestays.Count</div><div class="stat-label">@L["Homestay"]</div></div>
-        </div>
+        <partial name="_StatCard" model='new StatCardModel("Homestay", homestays.Count.ToString(), "houses")' />
     </div>
     <div class="col-sm-4">
-        <div class="card-soft stat-card tone-teal">
-            <span class="icon-chip" aria-hidden="true"><i class="bi bi-toggle-on"></i></span>
-            <div><div class="stat-value">@activeCount</div><div class="stat-label">@L["Đang hoạt động"]</div></div>
-        </div>
+        <partial name="_StatCard" model='new StatCardModel("Đang hoạt động", activeCount.ToString(), "toggle-on")' />
     </div>
     <div class="col-sm-4">
-        <div class="card-soft stat-card tone-sky">
-            <span class="icon-chip" aria-hidden="true"><i class="bi bi-door-closed"></i></span>
-            <div><div class="stat-value">@roomCount</div><div class="stat-label">@L["Phòng"]</div></div>
-        </div>
+        <partial name="_StatCard" model='new StatCardModel("Phòng", roomCount.ToString(), "door-closed")' />
     </div>
 </div>
 

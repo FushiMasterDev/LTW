@@ -26,13 +26,7 @@
     @foreach (var s in stats)
     {
         <div class="col-6 col-md-4 col-xl">
-            <div class="card-soft stat-card @s.Tone">
-                <span class="icon-chip" aria-hidden="true"><i class="bi @s.Icon"></i></span>
-                <div>
-                    <div class="stat-value">@s.Value</div>
-                    <div class="stat-label">@s.Label</div>
-                </div>
-            </div>
+            <partial name="_StatCard" model="@(new StatCardModel(s.Label, Convert.ToString(s.Value) ?? "0", s.Icon))" />
         </div>
     }
 </div>

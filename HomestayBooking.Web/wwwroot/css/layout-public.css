@@ -561,23 +561,6 @@ a.area-tile:focus-visible {
   font-size: 1.05rem;
 }
 
-.stay-rating {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-weight: 600;
-  font-size: 0.9rem;
-  white-space: nowrap;
-}
-
-.stay-rating .bi {
-  color: #b7791f;
-}
-
-[data-bs-theme="dark"] .stay-rating .bi {
-  color: #e0b45c;
-}
-
 /* ---------- Bộ lọc trang tìm kiếm ---------- */
 .search-summary {
   display: flex;
@@ -838,18 +821,6 @@ a.area-tile:focus-visible {
 .amenity-list .bi {
   color: var(--fx-primary);
   font-size: 1.15rem;
-}
-
-.policy-rules li {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.35rem 0;
-}
-
-.policy-rules .badge-tone {
-  min-width: 4.2rem;
-  justify-content: center;
 }
 
 .booking-panel {

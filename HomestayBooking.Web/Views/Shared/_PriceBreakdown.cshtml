@@ -1,0 +1,24 @@
+@using System.Globalization
+@model PriceBreakdownModel
+@if (Model.Lines is { } lines)
+{
+    <dl class="fx-price-breakdown">
+        @foreach (var line in lines)
+        {
+            <div><dt>@L[line.Label]</dt><dd data-quote-total="@(line.QuotedTotal ? line.Amount.ToString(CultureInfo.InvariantCulture) : null)" data-additional-payment="@(line.Additional ? line.Amount.ToString(CultureInfo.InvariantCulture) : null)"><money value="line.Amount" /></dd></div>
+        }
+    </dl>
+}
+@if (Model.Rules is { } rules)
+{
+    var threshold = rules.Where(r => r.MinDaysBefore > 0).Select(r => (int?)r.MinDaysBefore).Min();
+    <ul class="list-unstyled small mb-0 fx-policy-rules">
+        @foreach (var rule in rules)
+        {
+            <li><span class="badge-tone @(rule.RefundPercent == 100 ? "tone-emerald" : rule.RefundPercent > 0 ? "tone-amber" : "tone-rose")">@rule.RefundPercent%</span>
+            @if (rule.MinDaysBefore > 0) { @L["Hủy trước ngày nhận phòng từ {0} ngày trở lên: hoàn {1}% tiền cọc", rule.MinDaysBefore, rule.RefundPercent] }
+            else if (threshold is int days) { @L["Hủy khi còn dưới {0} ngày: hoàn {1}% tiền cọc", days, rule.RefundPercent] }
+            else { @L["Hủy bất cứ lúc nào: hoàn {0}% tiền cọc", rule.RefundPercent] }</li>
+        }
+    </ul>
+}

@@ -12,7 +12,7 @@
     { <a class="btn btn-outline-primary mb-3" asp-action="Change" asp-route-id="@b.Code">@L["Đổi ngày / loại phòng"]</a> }
     @if (changes is not null)
     {
-        <partial name="_ChangeHistory" model="changes.History" />
+        <partial name="_Timeline" model="@(new TimelineModel(Changes: changes.History))" />
         @if (changes.QrUrl is { } qr && changes.PaymentRequestId is { } requestId)
         {
             var content = $"CR{requestId} {b.Code}";

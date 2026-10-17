@@ -366,21 +366,6 @@
 }
 
 /* ---------- Empty state ---------- */
-.empty-state {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: var(--fx-muted);
-}
-
-.empty-state .icon-chip {
-  margin-bottom: 0.9rem;
-}
-
-.empty-state p {
-  max-width: 32rem;
-  margin-inline: auto;
-}
-
 /* ---------- Pager ---------- */
 .pagination {
   --bs-pagination-color: var(--fx-ink);
@@ -531,3 +516,50 @@
 .fx-field .form-text {
   margin-top: 0.35rem;
 }
+
+/* ---------- Điểm đánh giá ---------- */
+.fx-rating { display: inline-flex; align-items: center; gap: .3rem; color: var(--fx-ink); font-size: .875rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+/* ---------- Ô số liệu ---------- */
+.fx-stat { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: .75rem; height: 100%; padding: 1.25rem; background: var(--fx-surface); border: 1px solid var(--fx-border); border-radius: var(--fx-radius); box-shadow: var(--fx-shadow); overflow-wrap: anywhere; }
+.fx-stat__icon { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: var(--fx-radius-sm); background: var(--tone-bg, var(--fx-primary-soft)); color: var(--tone-fg, var(--fx-on-primary-soft)); }
+.fx-stat__value { font-size: clamp(1.4rem, 2.5vw, 1.75rem); line-height: 1.2; font-variant-numeric: tabular-nums; }
+.fx-stat__label { color: var(--fx-muted); text-decoration: none; }
+.fx-stat--linked:focus-within { outline: 2px solid var(--fx-focus); outline-offset: 3px; }
+/* ---------- Danh sách mô tả và bảng giá ---------- */
+.fx-description, .fx-price-breakdown { margin: 0; }
+.fx-description > div, .fx-price-breakdown > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; padding: .75rem 0; border-bottom: 1px solid var(--fx-border); overflow-wrap: anywhere; }
+.fx-description dt, .fx-price-breakdown dt { font-weight: 500; color: var(--fx-muted); }
+.fx-description dd, .fx-price-breakdown dd { margin: 0; }
+.fx-price-breakdown dd { text-align: right; }
+.fx-policy-rules li { display: flex; align-items: baseline; gap: .75rem; padding-block: .5rem; }
+/* ---------- Trạng thái rỗng ---------- */
+.fx-empty { display: flex; flex-direction: column; align-items: center; gap: .75rem; padding: 2.5rem 1rem; text-align: center; }
+.fx-empty__icon { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; border-radius: var(--fx-radius); background: var(--fx-primary-soft); color: var(--fx-on-primary-soft); font-size: 1.5rem; }
+.fx-empty p { max-width: 32rem; overflow-wrap: anywhere; }
+/* ---------- Bảng dữ liệu chuyển thành thẻ trên điện thoại ---------- */
+.fx-table-wrap { border: 1px solid var(--fx-border); border-radius: var(--fx-radius); background: var(--fx-surface); overflow: hidden; }
+.fx-table th a { color: inherit; display: inline-flex; gap: .5rem; align-items: center; min-height: 2.75rem; }
+.fx-table td { overflow-wrap: anywhere; }
+@media (max-width: 767.98px) {
+  .fx-table, .fx-table tbody { display: block; width: 100%; }
+  .fx-table thead { display: block; }
+  .fx-table thead tr { display: flex; flex-wrap: wrap; gap: .5rem; background: var(--fx-surface-2); }
+  .fx-table thead th { display: block; border: 0; padding: .25rem; }
+  .fx-table thead th:not(:has(a)) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .fx-table tr { display: block; padding: .75rem; border-bottom: 1px solid var(--fx-border); }
+  .fx-table td { display: grid; grid-template-columns: minmax(5rem, 1fr) minmax(0, 2fr); gap: .75rem; border: 0; padding: .5rem !important; text-align: left !important; }
+  .fx-table td::before { content: attr(data-label); color: var(--fx-muted); font-weight: 500; }
+  .fx-price-breakdown > div { grid-template-columns: minmax(0, 1fr) auto; }
+}
+/* ---------- Dòng thời gian ---------- */
+.fx-timeline { display: grid; gap: 1rem; }
+.fx-timeline__item { border-inline-start: 2px solid var(--fx-border-strong); padding: .5rem 0 .5rem 1.25rem; overflow-wrap: anywhere; }
+.fx-timeline__item time { color: var(--fx-muted); font-size: .875rem; }
+/* ---------- Khung chờ tải ---------- */
+.fx-skeleton-group { display: grid; gap: .75rem; }
+.fx-skeleton-group--cards { grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr)); }
+.fx-skeleton { background: var(--fx-surface-3); border-radius: var(--fx-radius-sm); animation: fx-skeleton-pulse .45s var(--fx-ease) infinite alternate; }
+.fx-skeleton--line { height: 1.25rem; }
+.fx-skeleton--card { aspect-ratio: 4 / 3; }
+@keyframes fx-skeleton-pulse { to { opacity: .5; } }
+@media (prefers-reduced-motion: reduce) { .fx-skeleton { animation: none; } }

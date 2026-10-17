@@ -20,14 +20,7 @@
     @foreach (var card in cards.Where(c => c.Controller != "AdditionalDeposits" || (User.IsInRole(AppRoles.Employee) && User.EmployeePosition() == EmployeePosition.Accountant)))
     {
         <div class="col-md-4">
-            <a class="card-soft stat-card stat-link @card.Tone h-100" asp-controller="@card.Controller" asp-action="Index">
-                <span class="icon-chip" aria-hidden="true"><i class="bi @card.Icon"></i></span>
-                <div>
-                    <div class="stat-value">@card.Value</div>
-                    <div class="stat-label fw-semibold">@card.Label</div>
-                    <div class="small text-muted">@card.Hint</div>
-                </div>
-            </a>
+            <partial name="_StatCard" model="@(new StatCardModel(card.Label, card.Value, card.Icon, Url.Action("Index", card.Controller), card.Hint))" />
         </div>
     }
 </div>

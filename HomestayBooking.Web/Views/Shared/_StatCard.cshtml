@@ -1,0 +1,8 @@
+@model StatCardModel
+<div class="fx-stat @(Model.Tone) @(Model.Href is not null ? "fx-stat--linked" : null)">
+    <span class="fx-stat__icon" aria-hidden="true"><icon name="@Model.Icon" /></span>
+    <strong class="fx-stat__value">@Model.Value</strong>
+    @if (Model.Href is { } href) { <a class="fx-stat__label stretched-link" href="@href">@L[Model.Label]</a> }
+    else { <span class="fx-stat__label">@L[Model.Label]</span> }
+    @if (Model.Hint is { } hint) { <small class="text-muted">@L[hint]</small> }
+</div>
