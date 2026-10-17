@@ -255,6 +255,15 @@ Khi cập nhật database thật, giữ `Database:AutoMigrate=false`: ứng dụ
 - Đối chiếu trước/sau deploy bằng `COUNT_BIG(*)` và `CHECKSUM_AGG(BINARY_CHECKSUM(...))` theo danh sách **368 cột cũ**: 44 bảng nghiệp vụ giữ số dòng; 43 bảng giữ checksum. `BookingChangeRequests` chỉ đổi `Status` của **Id 3: Approved → Applied**, các trường khác giữ nguyên; ba Pending **Id 1/4/5** giữ nguyên. `Bookings.ChangeFeeAmount` toàn `0`, 13 cột mới còn lại toàn `NULL`.
 - `__EFMigrationsHistory` được đối chiếu riêng: giữ 7 dòng cũ và thêm đúng dòng `ChangeRequestWorkflow`, thành 8 dòng. Kết quả snapshot này được ghi nhận **trước khi người dùng bật lại app**, không dùng để khẳng định dữ liệu sau khi app seed/job đã chạy.
 
+### Đã triển khai `EnumAndReviewChecks` và dữ liệu mẫu 2028 lên v5 — 17/10/2026
+
+- **Diễn tập trước:** backup v5 `COPY_ONLY, CHECKSUM` → `RESTORE VERIFYONLY` → restore sang **`HomestayBooking_v5_Rehearsal_20261017`** (MDF/LDF riêng, không `REPLACE`), `DBCC CHECKDB` không lỗi → `deploy.sql` → `verify.sql` 128 dòng OK → `seed_topup_2028.sql` hai lần (35/9/35 rồi 0/0/0) → `data_consistency.sql` 35/35 OK. Giữ nguyên database diễn tập này.
+- **Triển khai thật khi app đã tắt** (0 phiên kết nối v5). Backup ngay trước deploy: `HomestayBooking_v5_20261017_pre-EnumAndReviewChecks.bak` (`COPY_ONLY, CHECKSUM`, qua `RESTORE VERIFYONLY WITH CHECKSUM`), chép về `~/Backups/HomestayBooking/` kèm `.sha256`; SHA-256 khớp bản trong container: `ea4bd3fb3517b5e7049eab49034f42f4281df241ca90e8ecfab165439432d6db`.
+- `deploy.sql` mã thoát `0`; `verify.sql` **128 dòng OK**: **9 migration, 45 bảng, 382 cột, 76 FK, 60 CHECK** đều bật và được tin cậy, 93 index ngoài PK. Đối chiếu `COUNT_BIG(*)` + `CHECKSUM_AGG(BINARY_CHECKSUM(*))` 45 bảng trước/sau deploy: chỉ `__EFMigrationsHistory` đổi (8 → 9 dòng), dữ liệu nghiệp vụ giữ nguyên.
+- `seed_topup_2028.sql` lần 1: gia hạn **35** hợp đồng mẫu `HD-2026-*` tới **2028-05-31**, thêm **9** ngày lễ 2028, **35** PropertyPhoto mẫu, **79** AuditLog actor System. Chỉ Contracts/Holidays/VerificationDocuments/AuditLogs đổi. Lần 2: 0/0/0, snapshot 45 bảng không đổi. `data_consistency.sql` sau cùng 35/35 OK; `verify.sql` chạy lại vẫn 128 OK.
+- File giấy tờ mẫu: các PropertyPhoto mới trỏ tới `sample-document.png`; app Development tự chép file này từ `Data/SampleFiles` vào `App_Data/receipts` khi khởi động. Môi trường không phải Development cần tự chép file đó vào `App_Data/receipts` (ngoài wwwroot).
+- Bản app Debug cũ (trước B1) không biết migration 9 nên sẽ dừng khi khởi động với `Database:AutoMigrate=false`; chạy bản build từ code hiện tại.
+
 ### `EnumAndReviewChecks` — migration thứ 9, chỉ triển khai trên database thử
 
 Migration `20261015200521_EnumAndReviewChecks` chỉ thêm **16 CHECK**: 13 whitelist từ enum, `CK_Reviews_Reply`, `CK_Settlements_Year` (2020–2100), `CK_OwnerRegistrations_Decision`. Schema sau migration có **60 CHECK**; giữ nguyên 45 bảng, 382 cột, 76 FK và 93 index ngoài PK. Không UPDATE dữ liệu trong migration; Down chỉ gỡ đúng 16 CHECK.
@@ -263,7 +272,7 @@ Migration `20261015200521_EnumAndReviewChecks` chỉ thêm **16 CHECK**: 13 whit
 - `NeedsRevision`, `Approved`, `Rejected` cần `ReviewedByEmployeeId` và `ReviewedAt`; `NeedsRevision`/`Rejected` cần `ReviewNote` có nội dung. Các trạng thái còn lại không buộc xóa dấu duyệt cũ khi gửi lại hồ sơ.
 - `OwnerReply` và `RepliedAt` cùng NULL, hoặc cùng có giá trị với nội dung trả lời khác rỗng. Chuỗi trắng có khác biệt giữa collation SQL Server và SQLite; service vẫn kiểm tra chuỗi trắng.
 - Triển khai/thử bằng `deploy.sql` và `verify.sql` **chỉ trên ConstraintTest và DeployTest**. `constraints.sql` giữ đủ 35 ca cũ, thêm 52 ca, tổng 87; các script seeded giữ 28/42/65 ca.
-- **CHƯA áp `EnumAndReviewChecks` lên v5**. v5 đang ở 8 migration/44 CHECK sau đợt triển khai `ChangeRequestWorkflow` ngày 16/10/2026; cần quy trình duyệt, backup và kiểm tra riêng trước lần triển khai tiếp theo.
+- **Đã áp `EnumAndReviewChecks` lên v5 ngày 17/10/2026** — xem mục "Đã triển khai `EnumAndReviewChecks` và dữ liệu mẫu 2028 lên v5" bên dưới.
 - Quyết định backend đã chốt: chủ xác nhận đối soát tùy chọn, Paid đi từ Sent hoặc Confirmed; ghi actor vào AuditLog trực tiếp ở service. Không thêm cột actor/liên kết hồ sơ, không thêm CHECK `Settlements.ConfirmedAt`; xem 10 quyết định ngày 16/10 trong tài liệu database.
 
 B3 giữ nguyên 19 mục B1/B2, thêm 4 mục: đơn có ReplacedByBookingId phải Cancelled; đơn thay thế giữ CustomerId/CheckIn/CheckOut; Payment Compensation gắn đơn được thay thế tới; AssignedEmployeeId chỉ trỏ Consultant/Manager/Administrator. Script không sửa dữ liệu; có LỆCH thì dừng báo lại, không tự sửa seed hoặc nới điều kiện.
@@ -357,7 +366,7 @@ Test SQL Server dùng chung ConstraintTest được xếp cùng một collection
 **Database demo đã có dữ liệu — `data/seed_topup_2028.sql`:**
 
 - Không tự chạy lúc khởi động. Guard TargetDb phải khớp DB_NAME, chặn database hệ thống và RestoreCheck. Chỉ gia hạn hợp đồng mẫu `HD-2026-####` còn Active/ngắn hơn 2028-05-31 (không rút ngắn hợp đồng dài hơn), thêm 9 ngày lễ 2028 còn thiếu và PropertyPhoto gắn homestay mẫu còn thiếu. Không sửa giấy tờ cũ gắn OwnerRegistrationId; không tạo tài khoản hay mật khẩu.
-- Mọi thay đổi ghi AuditLog actor System, Id thật, thời gian UTC; XACT_ABORT/transaction, lỗi thì rollback. File mẫu phải có tại `App_Data/documents/sample-document.png`; Seed Development tự chép từ Data/SampleFiles, triển khai môi trường demo riêng cần chuẩn bị bản sao đó (ngoài wwwroot).
+- Mọi thay đổi ghi AuditLog actor System, Id thật, thời gian UTC; XACT_ABORT/transaction, lỗi thì rollback. File mẫu phải có tại `App_Data/receipts/sample-document.png` (thư mục `ReceiptFileStore` đọc khi mở giấy tờ); Seed Development tự chép từ Data/SampleFiles, triển khai môi trường demo riêng cần chuẩn bị bản sao đó (ngoài wwwroot).
 - Trước/sau **mỗi** lần chạy, lưu COUNT_BIG(*) và CHECKSUM_AGG(BINARY_CHECKSUM(*)) của từng bảng. Thử trên DeployTest, chạy lại lần 2 và so snapshot; đủ dữ liệu thì lần 2 trả 0/0/0, không có audit mới. Dùng PW đã lấy vào bộ nhớ theo hướng dẫn user-secrets, không in giá trị:
 
 ```bash

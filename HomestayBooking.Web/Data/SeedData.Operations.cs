@@ -11,14 +11,14 @@ namespace HomestayBooking.Web.Data;
 /// </summary>
 public static partial class SeedData
 {
-    /// <summary>Ảnh giấy tờ mẫu (ghi rõ "giấy tờ mẫu"), chép vào App_Data/documents khi seed chạy trong ứng dụng.</summary>
+    /// <summary>Ảnh giấy tờ mẫu (ghi rõ "giấy tờ mẫu"), chép vào App_Data/receipts — thư mục ReceiptFileStore đọc khi mở giấy tờ.</summary>
     public const string SampleDocumentFile = "sample-document.png";
 
     public const int SampleRoomBlockCount = 6;
 
     private static async Task SeedOperationsAsync(ApplicationDbContext db, IServiceProvider services)
     {
-        CopySampleFile(services, SampleDocumentFile, "documents");
+        CopySampleFile(services, SampleDocumentFile, "receipts");
         var nowUtc = DateTime.UtcNow;
         var today = DateOnly.FromDateTime(VietnamTime.ToLocal(nowUtc));
         var accountant = await db.Employees.Include(e => e.Person).ThenInclude(p => p.Account)

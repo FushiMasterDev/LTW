@@ -1,6 +1,6 @@
 # Fuji Homestay — Thiết kế Database v1.10
 
-> **Phiên bản:** 1.10 — 2026-10-16 (`EnumAndReviewChecks`: thêm 16 CHECK, schema code/database thử có 9 migration và 60 CHECK; CHƯA áp migration này lên v5)\
+> **Phiên bản:** 1.10 — 2026-10-16 (`EnumAndReviewChecks`: thêm 16 CHECK, schema code/database thử có 9 migration và 60 CHECK; đã áp lên v5 ngày 17/10/2026 cùng dữ liệu mẫu 2028 — xem database/README.md mục 7)\
 > 1.9 — 2026-10-16 (`ChangeRequestWorkflow` đã áp lên `HomestayBooking_v5`: 14 cột mới, 12 CHECK trong phạm vi, 5 FK, 6 index; toàn schema có 8 migration, 44 CHECK)\
 > 1.8 — 2026-10-13 (nhất quán trạng thái: 4 CHECK — `ConfirmedAt` của đơn theo trạng thái; yêu cầu đổi/hủy: người gửi `Customer`/`Employee`, trường bắt buộc theo loại, `DecidedAt` theo trạng thái — migration `StatusConsistency`)\
 > 1.7 — 2026-10-13 (siết ràng buộc: 7 CHECK — tỷ lệ cọc, hoa hồng của đơn và mục đối soát, bill tay phải có ảnh, đối soát đã gửi phải có `SentAt`, loại/trạng thái yêu cầu đổi/hủy; DEFAULT 0 cho `HomestayImages.SortOrder` — migration `DatabaseHardening`; tài liệu sửa `Notifications.AccountId` → `UserId` cho khớp schema sẵn có, không đổi database)  
@@ -9,7 +9,7 @@
 > 1.4 — 2026-10-11 (thêm **voucher** — Q4, D14, migration `Vouchers`)  
 > 1.3 — 2026-10-11 (giữ phòng 15 phút khi đặt; cọc qua QR **MB Bank** tự đối soát, ảnh bill làm dự phòng; **đã áp vào code**, migration `Init`)
 > **Backend B7 — 17/10/2026:** khách đặt không cần tài khoản (GuestCustomerService, FR-03/07), tra cứu hồ sơ đối tác (FR-25/26), Quản trị viên đầu tiên từ cấu hình (FR-21), đo NFR-02; không thêm schema/migration, chưa thêm giao diện mới.\
-> **Backend B6 — 17/10/2026:** ReportService, AccountAdminService, kiểm xóa danh mục và dữ liệu mẫu 2028; không thêm schema/migration, chưa thêm giao diện B6. Top-up đã thử CHỈ trên DeployTest, chưa chạy trên v5.\
+> **Backend B6 — 17/10/2026:** ReportService, AccountAdminService, kiểm xóa danh mục và dữ liệu mẫu 2028; không thêm schema/migration, chưa thêm giao diện B6. Top-up đã chạy trên DeployTest và v5 (17/10/2026, sau khi áp migration 9).\
 > **Trạng thái:** Đã chốt các quyết định ở mục 1; dùng làm cơ sở viết ERD và sửa code (EF Core Code First).
 > **Cập nhật triển khai 16/10/2026:** Nghiệp vụ đổi/hủy đã chốt 14–15/10 ở mục 5.E, Q11 và `docs/change-request-design.md`; migration `20261015092139_ChangeRequestWorkflow`, service và giao diện đã được triển khai trong code. Migration đã áp lên `HomestayBooking_v5` ngày **16/10/2026** bằng `deploy.sql`; `verify.sql` đạt 96 dòng OK, toàn schema có 45 bảng, 382 cột, 76 FK, 44 CHECK bật và được tin cậy, 93 index ngoài khóa chính.
 > **Backup và restore thử:** `HomestayBooking_v5_20261016_pre-ChangeRequestWorkflow.bak` (`COPY_ONLY, CHECKSUM`), lưu tại `~/Backups/HomestayBooking/`, kèm `.sha256`; đã qua `RESTORE VERIFYONLY WITH CHECKSUM` và restore thử sang database mới **`HomestayBooking_v5_RestoreCheck3`** với file riêng, không `REPLACE`. CHECKDB không lỗi; bản restore có 7 migration, cuối `StatusConsistency`, và snapshot 45 bảng khớp v5 trước deploy. SHA-256: `9fe5e8a769229b19b2cddb010cd6d2cb2dcb292fabe90dc564c5ae5bd6fc87bc`.
