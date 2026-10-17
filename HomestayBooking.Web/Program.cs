@@ -107,6 +107,9 @@ builder.Services.AddScoped<ReminderService>();
 builder.Services.AddScoped<OwnerScheduleService>();
 builder.Services.AddScoped<SettlementService>();
 builder.Services.AddScoped<CompensationService>();
+builder.Services.AddScoped<ReportService>();
+builder.Services.AddScoped<AccountAdminService>();
+builder.Services.AddScoped<CatalogDeletionService>();
 builder.Services.AddOptions<SettlementOptions>()
     .Bind(builder.Configuration.GetSection(SettlementOptions.Section))
     .ValidateDataAnnotations()

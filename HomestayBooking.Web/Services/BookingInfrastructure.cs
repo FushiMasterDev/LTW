@@ -10,6 +10,9 @@ public static class VietnamTime
 
     public static DateTime ToLocal(DateTime utc) => TimeZoneInfo.ConvertTimeFromUtc(utc, Zone);
 
+    // Việt Nam không có giờ mùa hè; dùng offset của cùng múi giờ khi GroupBy tháng tại CSDL.
+    public static double OffsetHours => Zone.BaseUtcOffset.TotalHours;
+
     /// <summary>Số phút giờ hành chính (thứ Hai–thứ Sáu, [startHour, endHour) giờ Việt Nam) nằm trong khoảng [fromUtc, toUtc).</summary>
     public static double OfficeMinutesBetween(DateTime fromUtc, DateTime toUtc, int startHour, int endHour)
     {
