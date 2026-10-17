@@ -1,0 +1,28 @@
+@model List<WorkspaceLink>
+@if (Model.Count == 1)
+{
+    var w = Model[0];
+    <li class="nav-item">
+        <a class="nav-link" asp-area="@w.Area" asp-controller="Dashboard" asp-action="Index">
+            <icon name="@w.Icon" /> @L[w.Label]
+        </a>
+    </li>
+}
+else if (Model.Count > 1)
+{
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <icon name="grid" /> @L["Trang quản lý"]
+        </a>
+        <ul class="dropdown-menu">
+            @foreach (var w in Model)
+            {
+                <li>
+                    <a class="dropdown-item" asp-area="@w.Area" asp-controller="Dashboard" asp-action="Index">
+                        <icon name="@w.Icon" /> @L[w.Label]
+                    </a>
+                </li>
+            }
+        </ul>
+    </li>
+}

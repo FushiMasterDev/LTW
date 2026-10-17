@@ -1,0 +1,48 @@
+@using HomestayBooking.Web.Identity
+@* Header trang khách: logo, điều hướng chính, lối vào khu làm việc, ngôn ngữ, sáng/tối, tài khoản. *@
+@{
+    var area = ViewContext.RouteData.Values["area"]?.ToString();
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    string Active(string? a, string c) => area == a && controller == c ? "active" : "";
+    string? Current(string? a, string c) => area == a && controller == c ? "page" : null;
+    var signedIn = User.Identity?.IsAuthenticated == true;
+}
+<header class="site-header sticky-top">
+    <nav class="navbar navbar-expand-xl site-nav py-2" aria-label="@L["Điều hướng chính"]">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center gap-2 me-xl-4" asp-area="" asp-controller="Home" asp-action="Index">
+                <span class="brand-mark" aria-hidden="true"><icon name="house-heart-fill" /></span>
+                <span class="brand-name">Fuji <span>Homestay</span></span>
+            </a>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+                    aria-controls="mainNav" aria-expanded="false" aria-label="@L["Mở menu"]">
+                <icon name="list" class="fs-3" />
+            </button>
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav me-auto gap-xl-1 mt-2 mt-xl-0">
+                    <li class="nav-item">
+                        <a class="nav-link @Active(null, "Home")" aria-current="@Current(null, "Home")" asp-area="" asp-controller="Home" asp-action="Index">@L["Trang chủ"]</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @Active(null, "Homestays")" aria-current="@Current(null, "Homestays")" asp-area="" asp-controller="Homestays" asp-action="Index">@L["Tìm homestay"]</a>
+                    </li>
+                    @if (!User.IsActiveEmployee())
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link @Active(null, "Bookings")" aria-current="@Current(null, "Bookings")"
+                               asp-area="" asp-controller="Bookings" asp-action="@(signedIn ? "Mine" : "Lookup")">
+                                @(signedIn ? L["Đơn của tôi"] : L["Tra cứu đơn"])
+                            </a>
+                        </li>
+                    }
+                    @await Component.InvokeAsync("WorkspaceSwitcher")
+                </ul>
+                <div class="d-flex flex-wrap flex-xl-nowrap align-items-center gap-2 py-2 py-xl-0">
+                    <partial name="_LanguageSwitch" />
+                    <partial name="_ThemeToggle" />
+                    <partial name="_LoginPartial" />
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>

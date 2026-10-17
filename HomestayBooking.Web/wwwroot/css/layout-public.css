@@ -2,9 +2,9 @@
    Website khách hàng: header, banner, tìm kiếm, thẻ homestay, chi tiết, đặt phòng,
    thanh toán, tài khoản, trang lỗi. Tiêu đề dùng Lora, nội dung dùng Be Vietnam Pro.
    ========================================================================= */
+/* Class không có tiền tố fx- là class cũ chuyển nguyên từ CSS trước bước 01: bước 02–04 thay bằng component mới rồi xóa. */
 .site-public h1, .site-public .h1,
-.site-public h2, .site-public .h2,
-.site-public .display-title {
+.site-public h2, .site-public .h2 {
   font-family: var(--fx-font-serif);
   font-weight: 600;
   letter-spacing: -0.005em;
@@ -135,6 +135,33 @@
   --footer-bg: #0d110f;
   --footer-muted: #8f9c94;
   border-top: 1px solid var(--fx-border);
+}
+
+.site-footer-rule {
+  border-color: color-mix(in srgb, var(--footer-ink) 15%, transparent);
+  opacity: 1;
+}
+
+/* ---------- Khung trang đăng nhập/lỗi (_AuthLayout) ---------- */
+.auth-header,
+.auth-footer {
+  background: var(--fx-surface);
+}
+
+.auth-header {
+  border-bottom: 1px solid var(--fx-border);
+}
+
+.auth-footer {
+  border-top: 1px solid var(--fx-border);
+  color: var(--fx-muted);
+}
+
+.auth-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-block: clamp(1.5rem, 1rem + 3vw, 4rem);
 }
 
 .site-footer h2 {
@@ -551,22 +578,6 @@ a.area-tile:focus-visible {
   color: #e0b45c;
 }
 
-/* Tên cũ, vẫn còn ở vài chỗ */
-.stay-cover {
-  width: 100%;
-  aspect-ratio: 3 / 2;
-  object-fit: cover;
-}
-
-.stay-cover-empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--fx-primary-soft);
-  color: var(--fx-on-primary-soft);
-  font-size: 2.5rem;
-}
-
 /* ---------- Bộ lọc trang tìm kiếm ---------- */
 .search-summary {
   display: flex;
@@ -893,23 +904,6 @@ a.area-tile:focus-visible {
   padding-top: 0.6rem;
   margin-top: 0.4rem;
   font-weight: 700;
-}
-
-.summary-due {
-  margin-top: 0.75rem;
-  padding: 0.75rem 0.9rem;
-  border-radius: var(--fx-radius-sm);
-  background: var(--fx-primary-soft);
-  color: var(--fx-on-primary-soft);
-  font-weight: 700;
-}
-
-.summary-thumb {
-  width: 100%;
-  aspect-ratio: 3 / 2;
-  object-fit: cover;
-  border-radius: var(--fx-radius);
-  margin-bottom: 1rem;
 }
 
 .order-head {

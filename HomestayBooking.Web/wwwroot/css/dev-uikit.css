@@ -1,0 +1,51 @@
+/* Chỉ nạp ở Dev/UiKit: ô mẫu màu đọc thẳng từ token để đổi theo sáng/tối. */
+.uikit-toc {
+  columns: 2 12rem;
+}
+
+.uikit-section {
+  scroll-margin-top: calc(var(--fx-topbar-h) + 1rem);
+  padding-block: 1.5rem;
+  border-top: 1px solid var(--fx-border);
+}
+
+.uikit-swatch {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.uikit-swatch::before {
+  content: "";
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--fx-radius-sm);
+  border: 1px solid var(--fx-border);
+  background: var(--swatch);
+}
+
+.uikit-swatch[data-token="bg"] { --swatch: var(--fx-bg); }
+.uikit-swatch[data-token="surface"] { --swatch: var(--fx-surface); }
+.uikit-swatch[data-token="surface-2"] { --swatch: var(--fx-surface-2); }
+.uikit-swatch[data-token="surface-3"] { --swatch: var(--fx-surface-3); }
+.uikit-swatch[data-token="border"] { --swatch: var(--fx-border); }
+.uikit-swatch[data-token="border-strong"] { --swatch: var(--fx-border-strong); }
+.uikit-swatch[data-token="ink"] { --swatch: var(--fx-ink); }
+.uikit-swatch[data-token="muted"] { --swatch: var(--fx-muted); }
+.uikit-swatch[data-token="primary"] { --swatch: var(--fx-primary); }
+.uikit-swatch[data-token="primary-hover"] { --swatch: var(--fx-primary-hover); }
+.uikit-swatch[data-token="primary-soft"] { --swatch: var(--fx-primary-soft); }
+.uikit-swatch[data-token="focus"] { --swatch: var(--fx-focus); }
+.uikit-swatch[data-token="success"] { --swatch: var(--fx-success); }
+.uikit-swatch[data-token="warning"] { --swatch: var(--fx-warning); }
+.uikit-swatch[data-token="danger"] { --swatch: var(--fx-danger); }
+.uikit-swatch[data-token="info"] { --swatch: var(--fx-info); }
+.uikit-swatch[class*="tone-"] { --swatch: var(--tone-solid); }
+
+.uikit-dark-band {
+  background: var(--fx-primary);
+  border-radius: var(--fx-radius);
+  padding: 1rem;
+}

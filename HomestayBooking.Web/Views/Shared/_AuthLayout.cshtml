@@ -1,0 +1,48 @@
+@using Microsoft.AspNetCore.Localization
+@* Khung gọn cho đăng nhập, đăng ký, đổi mật khẩu và trang lỗi: logo, ngôn ngữ, sáng/tối; nội dung căn giữa, không menu chính. *@
+@{
+    var culture = Context.Features.Get<IRequestCultureFeature>()?.RequestCulture.UICulture.Name ?? "vi-VN";
+}
+<!DOCTYPE html>
+<html lang="@culture[..2]">
+<head>
+    <partial name="_HeadAssets" />
+    <link rel="stylesheet" href="~/css/layout-public.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/motion.css" asp-append-version="true" />
+    @await RenderSectionAsync("Head", required: false)
+</head>
+<body class="site-public site-auth d-flex flex-column min-vh-100">
+    <a class="skip-link visually-hidden-focusable btn btn-brand" href="#main">@L["Bỏ qua đến nội dung chính"]</a>
+    <header class="auth-header">
+        <div class="container d-flex align-items-center gap-2 py-3">
+            <a class="navbar-brand d-flex align-items-center gap-2 me-auto" asp-area="" asp-controller="Home" asp-action="Index">
+                <span class="brand-mark" aria-hidden="true"><icon name="house-heart-fill" /></span>
+                <span class="brand-name">Fuji <span>Homestay</span></span>
+            </a>
+            <partial name="_LanguageSwitch" />
+            <partial name="_ThemeToggle" />
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <partial name="_LoginPartial" view-data='new ViewDataDictionary(ViewData) { ["UserMenuCompact"] = true }' />
+            }
+        </div>
+    </header>
+
+    <main role="main" id="main" class="container flex-grow-1 auth-main" tabindex="-1">
+        <partial name="_Alerts" />
+        @RenderBody()
+    </main>
+
+    <footer class="auth-footer">
+        <div class="container py-3 d-flex flex-wrap gap-3 justify-content-between">
+            <small>&copy; @DateTime.Now.Year Fuji Homestay</small>
+            <a class="small" asp-area="" asp-controller="Home" asp-action="Index">@L["Về trang khách"]</a>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,28 @@
+@model HomestayBooking.Web.ViewComponents.SidebarModel
+<nav class="app-sidebar-nav" aria-label="@L["Menu quản lý"]">
+    @foreach (var group in Model.Groups)
+    {
+        var workspace = group.Workspace;
+        <div class="sidebar-group">
+            <div class="sidebar-group-title" id="nav-@workspace.Area">@L[workspace.Label]</div>
+            <ul aria-labelledby="nav-@workspace.Area">
+                @foreach (var link in group.Links)
+                {
+                    var active = Model.Area == link.Area && Model.Controller == link.Controller;
+                    var label = L[link.Label].Value;
+                    <li>
+                        <a class="sidebar-link @(active ? "active" : "")" asp-area="@link.Area" asp-controller="@link.Controller" asp-action="Index"
+                           aria-current="@(active ? "page" : null)" title="@L[workspace.Label]: @label">
+                            <icon name="@link.Icon" />
+                            <span class="sidebar-label">@label</span>
+                            @if (link.Count > 0)
+                            {
+                                <span class="sidebar-count" aria-label="@L["{0} việc đang chờ", link.Count]">@link.Count</span>
+                            }
+                        </a>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+</nav>

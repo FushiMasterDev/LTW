@@ -81,7 +81,7 @@ spacing:
 - Thứ tự nền: `bg` < `surface` (thẻ) < `surface-2` (đầu bảng, ô phụ). Viền 1px bằng `border`.
 - Lớp phủ modal dùng `--fx-overlay`.
 
-## Component – trang khách (`_Layout`, `public.css`)
+## Component – trang khách (`_Layout`, `layout-public.css`)
 
 - **Header:** mục đang xem có một gạch dưới xanh rêu, không đổi màu nền.
 - **Thanh tìm kiếm** (`_SearchBar`): bo tròn hoàn toàn, chia ô Khu vực / Ngày nhận–trả / Số khách bằng viền mảnh, kết thúc bằng nút tìm màu chính. Ở trang chủ, thanh này đè lên mép dưới banner. Chọn ngày bằng Flatpickr, tính theo đêm.
@@ -89,7 +89,7 @@ spacing:
 - **Chi tiết homestay:** desktop dùng lưới ảnh, điện thoại dùng dải ảnh vuốt ngang. Có modal xem ảnh lớn. Ô báo giá/đặt phòng dính bên phải trên desktop.
 - **Đặt phòng và đơn:** tiến trình đơn chỉ để đọc, không trông giống nút. Mã QR thanh toán luôn nằm trên nền trắng, kể cả ở chế độ tối.
 
-## Component – dashboard (`_DashboardLayout`, `dashboard.css`)
+## Component – dashboard (`_DashboardLayout`, `layout-dashboard.css`)
 
 - Sidebar rộng 16rem, thu gọn còn 4.5rem. Topbar cao 4rem. Dưới 992px, sidebar thành ngăn kéo có lớp phủ.
 - Đầu trang: tiêu đề yên tĩnh trên nền trang (`_PageHead`), không dùng dải gradient.

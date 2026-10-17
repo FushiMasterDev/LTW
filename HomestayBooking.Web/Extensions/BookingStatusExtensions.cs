@@ -20,7 +20,7 @@ public static class BookingStatusExtensions
         _ => status.ToString(),
     };
 
-    /// <summary>Class màu (tone-*) trong site.css cho badge trạng thái.</summary>
+    /// <summary>Class màu (tone-*) trong tokens.css cho badge trạng thái.</summary>
     public static string ToneClass(this BookingStatus status) => status switch
     {
         BookingStatus.AwaitingPayment => "tone-amber",

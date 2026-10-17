@@ -1,0 +1,123 @@
+/* =========================================================================
+   Fuji Homestay – nền: chữ, màu nền, tiêu đề, link, utility ghi đè Bootstrap.
+   Thứ tự tải: bootstrap → bootstrap-icons → tokens.css → base.css → components.css
+   → layout-public.css | layout-dashboard.css → motion.css
+   ========================================================================= */
+
+/* ---------- Base ---------- */
+html {
+  font-size: 16px;
+}
+
+body {
+  background: var(--fx-bg);
+  color: var(--fx-ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: var(--fx-ink);
+  text-wrap: balance;
+}
+
+p, li, dd {
+  text-wrap: pretty;
+}
+
+a {
+  text-underline-offset: 0.18em;
+}
+
+a, button, .btn, [role="button"], summary, label[for], select {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 3px solid var(--fx-focus);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--fx-primary-soft);
+  color: var(--fx-on-primary-soft);
+}
+
+.text-muted,
+.text-body-secondary {
+  color: var(--fx-muted) !important;
+}
+
+.text-brand {
+  color: var(--fx-primary) !important;
+}
+
+.text-accent {
+  color: var(--fx-primary) !important;
+}
+
+.text-danger {
+  color: var(--fx-danger) !important;
+}
+
+.text-success {
+  color: var(--fx-success) !important;
+}
+
+hr {
+  border-color: var(--fx-border);
+  opacity: 1;
+}
+
+.booking-code {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.price {
+  color: var(--fx-ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.breadcrumb {
+  --bs-breadcrumb-divider-color: var(--fx-muted);
+  --bs-breadcrumb-item-active-color: var(--fx-muted);
+}
+
+.breadcrumb a {
+  color: var(--fx-muted);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  color: var(--fx-primary);
+  text-decoration: underline;
+}
+
+/* ---------- Motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Link "Bỏ qua đến nội dung chính": nằm trên mọi lớp khi được focus bằng bàn phím */
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0.5rem;
+  z-index: 1100;
+}
+
+/* Mã/token trong nội dung: dùng màu chữ của nền sage thay cho hồng mặc định của Bootstrap */
+code {
+  color: var(--fx-on-primary-soft);
+}

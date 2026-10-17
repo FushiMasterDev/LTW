@@ -3,6 +3,7 @@
    Sidebar trái: offcanvas-lg của Bootstrap (≥ 992px nằm cố định, nhỏ hơn thành ngăn kéo).
    Thu gọn trên desktop: class "sidebar-collapsed" trên <html>, lưu trong localStorage.
    ========================================================================= */
+/* Class không có tiền tố fx- là class cũ chuyển nguyên từ CSS trước bước 01: bước 02–04 thay bằng component mới rồi xóa. */
 .app-body {
   background: var(--fx-bg);
 }
@@ -442,5 +443,171 @@
 
   .page-banner h1 {
     font-size: 1.4rem;
+  }
+}
+
+/* =========================================================================
+   Kế toán: tab, thẻ số liệu, thẻ ảnh bill, gợi ý khớp đơn
+   Gộp từ accounting.css cũ, giữ sau phần dashboard để thứ tự cascade như trước.
+   ========================================================================= */
+.accounting-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.accounting-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  min-height: 2.75rem;
+  padding: .45rem .9rem;
+  border-radius: 999px;
+  border: 1px solid var(--fx-border);
+  background: var(--fx-surface);
+  color: var(--fx-muted);
+  font-weight: 600;
+  font-size: .9rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.accounting-tab:hover {
+  color: var(--fx-primary);
+  border-color: var(--fx-primary);
+}
+
+.accounting-tab.active {
+  background: var(--fx-primary);
+  border-color: var(--fx-primary);
+  color: var(--fx-on-primary);
+}
+
+.accounting-count {
+  min-width: 1.4rem;
+  padding: 0 .4rem;
+  border-radius: 999px;
+  background: #b42318;
+  color: #fff;
+  font-size: .75rem;
+  line-height: 1.4rem;
+  text-align: center;
+}
+
+.accounting-tab.active .accounting-count {
+  background: var(--fx-on-primary);
+  color: var(--fx-primary);
+}
+
+a.stat-link {
+  color: inherit;
+  text-decoration: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+a.stat-link:hover {
+  border-color: var(--fx-border-strong);
+  box-shadow: var(--fx-shadow-raised);
+}
+
+.receipt-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.receipt-card.is-overdue {
+  border-left: 4px solid var(--fx-danger);
+}
+
+.receipt-thumb {
+  flex: 0 0 120px;
+  align-self: flex-start;
+  border-radius: .5rem;
+  overflow: hidden;
+  border: 1px solid var(--fx-border);
+  background: var(--fx-surface-2);
+}
+
+.receipt-thumb img {
+  display: block;
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  object-position: top;
+}
+
+.receipt-body {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.receipt-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: .15rem .75rem;
+  margin: 0;
+  font-size: .875rem;
+}
+
+.receipt-facts dt {
+  font-weight: 500;
+  color: var(--fx-muted);
+}
+
+.receipt-facts dd {
+  margin: 0;
+  min-width: 0;
+}
+
+.suggestion-list {
+  display: grid;
+  gap: .4rem;
+}
+
+.suggestion {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem .75rem;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: .5rem .75rem;
+  border: 1px dashed var(--fx-border-strong);
+  border-radius: .5rem;
+  background: var(--fx-surface);
+  color: var(--fx-ink);
+  text-align: left;
+  font-size: .875rem;
+}
+
+.suggestion:hover,
+.suggestion:focus-visible {
+  border-color: var(--fx-primary);
+  background: var(--fx-primary-soft);
+}
+
+.refund-ref {
+  width: 9rem;
+}
+
+.tx-ref {
+  max-width: 11rem;
+}
+
+@media (max-width: 575.98px) {
+  .receipt-card {
+    flex-direction: column;
+  }
+
+  .receipt-thumb {
+    flex-basis: auto;
+    width: 100%;
+  }
+
+  .refund-ref {
+    width: 100%;
   }
 }

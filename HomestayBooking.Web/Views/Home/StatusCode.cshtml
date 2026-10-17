@@ -1,5 +1,6 @@
 @model int
 @{
+    Layout = "_AuthLayout";
     var (title, message, _, _) = Model switch
     {
         403 => (L["Không có quyền truy cập"], L["Bạn không có quyền xem trang này."], "bi-shield-lock", "tone-rose"),

@@ -1,89 +1,18 @@
-@using HomestayBooking.Web.Identity
 @using Microsoft.AspNetCore.Localization
 @{
     var culture = Context.Features.Get<IRequestCultureFeature>()?.RequestCulture.UICulture.Name ?? "vi-VN";
-    var area = ViewContext.RouteData.Values["area"]?.ToString();
-    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
-    string Active(string? a, string c) => area == a && controller == c ? "active" : "";
-    string? Current(string? a, string c) => area == a && controller == c ? "page" : null;
-    var signedIn = User.Identity?.IsAuthenticated == true;
-    var workspaces = Workspaces.For(User);
 }
 <!DOCTYPE html>
 <html lang="@culture[..2]">
 <head>
     <partial name="_HeadAssets" />
-    <link rel="stylesheet" href="~/css/public.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/layout-public.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/motion.css" asp-append-version="true" />
     @await RenderSectionAsync("Head", required: false)
 </head>
 <body class="site-public d-flex flex-column min-vh-100">
-    <a class="visually-hidden-focusable position-absolute top-0 start-0 m-2 btn btn-brand" style="z-index:1100" href="#main">@L["Bỏ qua đến nội dung chính"]</a>
-    <header class="site-header sticky-top">
-        <nav class="navbar navbar-expand-xl site-nav py-2" aria-label="@L["Điều hướng chính"]">
-            <div class="container">
-                <a class="navbar-brand d-flex align-items-center gap-2 me-xl-4" asp-area="" asp-controller="Home" asp-action="Index">
-                    <span class="brand-mark" aria-hidden="true"><i class="bi bi-house-heart-fill"></i></span>
-                    <span class="brand-name">Fuji <span>Homestay</span></span>
-                </a>
-                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
-                        aria-controls="mainNav" aria-expanded="false" aria-label="@L["Mở menu"]">
-                    <i class="bi bi-list fs-3" aria-hidden="true"></i>
-                </button>
-                <div class="collapse navbar-collapse" id="mainNav">
-                    <ul class="navbar-nav me-auto gap-xl-1 mt-2 mt-xl-0">
-                        <li class="nav-item">
-                            <a class="nav-link @Active(null, "Home")" aria-current="@Current(null, "Home")" asp-area="" asp-controller="Home" asp-action="Index">@L["Trang chủ"]</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link @Active(null, "Homestays")" aria-current="@Current(null, "Homestays")" asp-area="" asp-controller="Homestays" asp-action="Index">@L["Tìm homestay"]</a>
-                        </li>
-                        @if (!User.IsActiveEmployee())
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link @Active(null, "Bookings")" aria-current="@Current(null, "Bookings")"
-                                   asp-area="" asp-controller="Bookings" asp-action="@(signedIn ? "Mine" : "Lookup")">
-                                    @(signedIn ? L["Đơn của tôi"] : L["Tra cứu đơn"])
-                                </a>
-                            </li>
-                        }
-                        @if (workspaces.Count == 1)
-                        {
-                            var w = workspaces[0];
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="@w.Area" asp-controller="Dashboard" asp-action="Index">
-                                    <i class="bi @w.Icon" aria-hidden="true"></i> @L[w.Label]
-                                </a>
-                            </li>
-                        }
-                        else if (workspaces.Count > 1)
-                        {
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="bi bi-grid" aria-hidden="true"></i> @L["Trang quản lý"]
-                                </a>
-                                <ul class="dropdown-menu">
-                                    @foreach (var w in workspaces)
-                                    {
-                                        <li>
-                                            <a class="dropdown-item" asp-area="@w.Area" asp-controller="Dashboard" asp-action="Index">
-                                                <i class="bi @w.Icon" aria-hidden="true"></i> @L[w.Label]
-                                            </a>
-                                        </li>
-                                    }
-                                </ul>
-                            </li>
-                        }
-                    </ul>
-                    <div class="d-flex flex-wrap flex-xl-nowrap align-items-center gap-2 py-2 py-xl-0">
-                        <partial name="_LanguageSwitch" />
-                        <partial name="_ThemeToggle" />
-                        <partial name="_LoginPartial" />
-                    </div>
-                </div>
-            </div>
-        </nav>
-    </header>
+    <a class="skip-link visually-hidden-focusable btn btn-brand" href="#main">@L["Bỏ qua đến nội dung chính"]</a>
+    <partial name="_SiteHeader" />
 
     @await RenderSectionAsync("Hero", required: false)
 
@@ -92,43 +21,7 @@
         @RenderBody()
     </main>
 
-    <footer class="site-footer mt-5">
-        <div class="container py-5">
-            <div class="row g-4">
-                <div class="col-md-5">
-                    <div class="d-flex align-items-center gap-2 mb-2">
-                        <span class="brand-mark" aria-hidden="true"><i class="bi bi-house-heart-fill"></i></span>
-                        <strong class="fs-5">Fuji Homestay</strong>
-                    </div>
-                    <p class="footer-muted mb-0">@L["Công ty Fuji – Hệ thống đặt phòng homestay"]</p>
-                </div>
-                <div class="col-sm-6 col-md-4">
-                    <h2 class="h6">@L["Liên hệ"]</h2>
-                    <ul class="list-unstyled footer-muted mb-0">
-                        <li><i class="bi bi-telephone me-2" aria-hidden="true"></i>@L["Hotline"]: <a href="tel:19000000">1900 0000</a></li>
-                        <li><i class="bi bi-envelope me-2" aria-hidden="true"></i><a href="mailto:hotro@fuji.vn">hotro@fuji.vn</a></li>
-                        <li><i class="bi bi-geo-alt me-2" aria-hidden="true"></i>@L["Hà Nội, Việt Nam"]</li>
-                    </ul>
-                </div>
-                @if (!signedIn)
-                {
-                    <div class="col-sm-6 col-md-3">
-                        <h2 class="h6">@L["Tài khoản"]</h2>
-                        <a class="btn btn-light-glass mb-2" asp-area="" asp-controller="Account" asp-action="Login">
-                            <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i> @L["Đăng nhập"]
-                        </a>
-                        <div>
-                            <a class="footer-muted small" asp-area="" asp-controller="Account" asp-action="EmployeeLogin">
-                                <i class="bi bi-person-badge me-1" aria-hidden="true"></i>@L["Cổng nhân viên Fuji"]
-                            </a>
-                        </div>
-                    </div>
-                }
-            </div>
-            <hr class="my-4" style="border-color:rgba(255,255,255,.15)" />
-            <small class="footer-muted">&copy; @DateTime.Now.Year Fuji Homestay</small>
-        </div>
-    </footer>
+    <partial name="_SiteFooter" />
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

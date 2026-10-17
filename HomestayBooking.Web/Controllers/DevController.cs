@@ -28,6 +28,26 @@ public class DevController : Controller
         _clock = clock;
     }
 
+    /// <summary>Danh mục component giao diện để xem và chụp so sánh; ?errors=true hiện trạng thái lỗi validation của form mẫu.</summary>
+    [HttpGet]
+    public IActionResult UiKit(bool errors = false)
+    {
+        if (!_env.IsDevelopment())
+        {
+            return NotFound();
+        }
+        var model = new UiKitViewModel();
+        if (errors)
+        {
+            TryValidateModel(model);
+        }
+        else
+        {
+            ModelState.Clear();
+        }
+        return View(model);
+    }
+
     [HttpGet]
     public IActionResult SimulateBank(string? code, decimal? amount)
     {

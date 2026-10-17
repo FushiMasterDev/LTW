@@ -1,6 +1,6 @@
 /* =========================================================================
    Fuji Homestay – chuyển động & micro-interaction
-   Nạp sau cùng (sau public.css / dashboard.css). Chỉ animate transform, translate,
+   Nạp sau cùng (sau layout-public.css / layout-dashboard.css). Chỉ animate transform, translate,
    scale, opacity, box-shadow; không dùng "transition: all", không animate kích thước.
    Gỡ animation: xóa file này + dòng <link> tới nó trong _Layout/_DashboardLayout.
    ========================================================================= */
@@ -27,7 +27,7 @@
 /* ---------- Nút: phản hồi khi nhấn ---------- */
 .btn {
   touch-action: manipulation;
-  /* Giữ nguyên danh sách transition của site.css, thêm scale cho lúc nhấn */
+  /* Giữ nguyên danh sách transition của components.css, thêm scale cho lúc nhấn */
   transition: background-color 0.18s var(--fx-ease), border-color 0.18s var(--fx-ease),
               color 0.18s var(--fx-ease), box-shadow 0.18s var(--fx-ease),
               scale 0.1s var(--fx-ease-press);

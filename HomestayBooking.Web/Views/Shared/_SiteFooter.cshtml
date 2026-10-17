@@ -1,0 +1,41 @@
+@* Footer trang khách: thông tin liên hệ, lối vào đăng nhập khi chưa đăng nhập. *@
+@{
+    var signedIn = User.Identity?.IsAuthenticated == true;
+}
+<footer class="site-footer mt-5">
+    <div class="container py-5">
+        <div class="row g-4">
+            <div class="col-md-5">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="brand-mark" aria-hidden="true"><icon name="house-heart-fill" /></span>
+                    <strong class="fs-5">Fuji Homestay</strong>
+                </div>
+                <p class="footer-muted mb-0">@L["Công ty Fuji – Hệ thống đặt phòng homestay"]</p>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <h2 class="h6">@L["Liên hệ"]</h2>
+                <ul class="list-unstyled footer-muted mb-0">
+                    <li><i class="bi bi-telephone me-2" aria-hidden="true"></i>@L["Hotline"]: <a href="tel:19000000">1900 0000</a></li>
+                    <li><i class="bi bi-envelope me-2" aria-hidden="true"></i><a href="mailto:hotro@fuji.vn">hotro@fuji.vn</a></li>
+                    <li><i class="bi bi-geo-alt me-2" aria-hidden="true"></i>@L["Hà Nội, Việt Nam"]</li>
+                </ul>
+            </div>
+            @if (!signedIn)
+            {
+                <div class="col-sm-6 col-md-3">
+                    <h2 class="h6">@L["Tài khoản"]</h2>
+                    <a class="btn btn-light-glass mb-2" asp-area="" asp-controller="Account" asp-action="Login">
+                        <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i> @L["Đăng nhập"]
+                    </a>
+                    <div>
+                        <a class="footer-muted small" asp-area="" asp-controller="Account" asp-action="EmployeeLogin">
+                            <i class="bi bi-person-badge me-1" aria-hidden="true"></i>@L["Cổng nhân viên Fuji"]
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+        <hr class="site-footer-rule my-4" />
+        <small class="footer-muted">&copy; @DateTime.Now.Year Fuji Homestay</small>
+    </div>
+</footer>

@@ -1,115 +1,35 @@
-@using HomestayBooking.Web.Data
-@using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Authorization
-@inject ApplicationDbContext NavigationDb
-@inject IAuthorizationService NavigationAuthorization
 @using HomestayBooking.Web.Identity
 @using Microsoft.AspNetCore.Localization
 @{
     var culture = Context.Features.Get<IRequestCultureFeature>()?.RequestCulture.UICulture.Name ?? "vi-VN";
     var area = ViewContext.RouteData.Values["area"]?.ToString();
-    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
-    var counts = ViewData["Counts"] as AccountingCounts;
-    var canApproveChange = (await NavigationAuthorization.AuthorizeAsync(User, AppPolicies.ChangeRequestApprove)).Succeeded;
-    var canConfirmChange = (await NavigationAuthorization.AuthorizeAsync(User, AppPolicies.ChangeRequestFinance)).Succeeded;
-    var pendingChanges = canApproveChange ? await NavigationDb.BookingChangeRequests.CountAsync(r => r.Status == ChangeRequestStatus.Pending) : 0;
-    var additionalCount = canConfirmChange ? await NavigationDb.Payments.CountAsync(p => p.Type == PaymentType.AdditionalDeposit
-        && p.Status == PaymentStatus.Submitted && p.ChangeRequest!.Status == ChangeRequestStatus.AwaitingPayment) : 0;
-    var workspaces = Workspaces.For(User);
-    var currentWorkspace = workspaces.FirstOrDefault(w => w.Area == area);
-
-    // Menu theo quyền: chỉ các trang đã có controller/action tương ứng
-    var groups = new List<(WorkspaceLink Workspace, SidebarLink[] Links)>();
-    foreach (var w in workspaces)
-    {
-        SidebarLink[] links = w.Area switch
-        {
-            "Admin" =>
-            [
-                new("Admin", "Dashboard", "Tổng quan", "bi-speedometer2"),
-                new("Admin", "Areas", "Khu vực", "bi-geo-alt"),
-                new("Admin", "RoomCategories", "Loại phòng", "bi-grid-3x3-gap"),
-                new("Admin", "Amenities", "Tiện nghi", "bi-stars"),
-                new("Admin", "Holidays", "Ngày lễ", "bi-calendar-heart"),
-                new("Admin", "Vouchers", "Voucher", "bi-ticket-perforated"),
-            ],
-            "Accounting" =>
-            [
-                new("Accounting", "Dashboard", "Tổng quan", "bi-speedometer2"),
-                new("Accounting", "AdditionalDeposits", "Cọc bổ sung", "bi-wallet2", additionalCount),
-                new("Accounting", "Receipts", "Bill chờ duyệt", "bi-receipt", counts?.PendingReceipts),
-                new("Accounting", "Transactions", "Giao dịch cần xử lý", "bi-bank", counts?.OpenTransactions),
-                new("Accounting", "Refunds", "Chờ hoàn tiền", "bi-arrow-counterclockwise", counts?.PendingRefunds),
-            ],
-            "Staff" =>
-            [
-                new("Staff", "Dashboard", "Tổng quan", "bi-speedometer2"),
-                new("Staff", "ChangeRequests", "Gửi yêu cầu thay khách", "bi-arrow-repeat"),
-                new("Staff", "ChangeApprovals", "Duyệt yêu cầu đổi/hủy", "bi-calendar-check", pendingChanges),
-            ],
-            // Đơn đặt phòng cần policy ApprovedOwner
-            "Owner" when User.IsApprovedOwner() =>
-            [
-                new("Owner", "Dashboard", "Tổng quan", "bi-speedometer2"),
-                new("Owner", "Bookings", "Đơn đặt phòng", "bi-journal-check"),
-            ],
-            _ => [new(w.Area, "Dashboard", "Tổng quan", "bi-speedometer2")],
-        };
-        groups.Add((w, links.Where(l => (l.Controller != "ChangeApprovals" || canApproveChange)
-            && (l.Controller != "AdditionalDeposits" || canConfirmChange)).ToArray()));
-    }
+    var currentWorkspace = Workspaces.For(User).FirstOrDefault(w => w.Area == area);
 }
 <!DOCTYPE html>
 <html lang="@culture[..2]">
 <head>
     <partial name="_HeadAssets" />
-    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/accounting.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/layout-dashboard.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/motion.css" asp-append-version="true" />
     @await RenderSectionAsync("Head", required: false)
 </head>
 <body class="app-body">
-    <a class="visually-hidden-focusable position-absolute top-0 start-0 m-2 btn btn-brand" style="z-index:1100" href="#main">@L["Bỏ qua đến nội dung chính"]</a>
+    <a class="skip-link visually-hidden-focusable btn btn-brand" href="#main">@L["Bỏ qua đến nội dung chính"]</a>
     <div class="app-shell">
         <aside class="app-sidebar offcanvas-lg offcanvas-start" id="appSidebar" tabindex="-1" aria-label="@L["Menu quản lý"]">
             <div class="app-sidebar-head d-flex align-items-center">
                 <a class="app-sidebar-brand flex-grow-1" asp-area="@(currentWorkspace?.Area ?? "")" asp-controller="@(currentWorkspace is null ? "Home" : "Dashboard")" asp-action="Index">
-                    <span class="brand-mark" aria-hidden="true"><i class="bi bi-house-heart-fill"></i></span>
+                    <span class="brand-mark" aria-hidden="true"><icon name="house-heart-fill" /></span>
                     <span class="brand-name">Fuji <span>Homestay</span></span>
                 </a>
                 <button type="button" class="btn btn-ghost d-lg-none me-2" data-bs-dismiss="offcanvas" data-bs-target="#appSidebar" aria-label="@L["Đóng menu"]">
-                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                    <icon name="x-lg" />
                 </button>
             </div>
-            <nav class="app-sidebar-nav" aria-label="@L["Menu quản lý"]">
-                @foreach (var (workspace, links) in groups)
-                {
-                    <div class="sidebar-group">
-                        <div class="sidebar-group-title" id="nav-@workspace.Area">@L[workspace.Label]</div>
-                        <ul aria-labelledby="nav-@workspace.Area">
-                            @foreach (var link in links)
-                            {
-                                var active = area == link.Area && controller == link.Controller;
-                                var label = L[link.Label].Value;
-                                <li>
-                                    <a class="sidebar-link @(active ? "active" : "")" asp-area="@link.Area" asp-controller="@link.Controller" asp-action="Index"
-                                       aria-current="@(active ? "page" : null)" title="@L[workspace.Label]: @label">
-                                        <i class="bi @link.Icon" aria-hidden="true"></i>
-                                        <span class="sidebar-label">@label</span>
-                                        @if (link.Count > 0)
-                                        {
-                                            <span class="sidebar-count" aria-label="@L["{0} việc đang chờ", link.Count]">@link.Count</span>
-                                        }
-                                    </a>
-                                </li>
-                            }
-                        </ul>
-                    </div>
-                }
-            </nav>
+            @await Component.InvokeAsync("Sidebar", new { counts = ViewData["Counts"] as AccountingCounts })
             <div class="app-sidebar-foot">
                 <a class="sidebar-link" asp-area="" asp-controller="Home" asp-action="Index" title="@L["Về trang khách"]">
-                    <i class="bi bi-house-door" aria-hidden="true"></i>
+                    <icon name="house-door" />
                     <span class="sidebar-label">@L["Về trang khách"]</span>
                 </a>
                 <div class="d-md-none px-2 pt-2"><partial name="_LanguageSwitch" /></div>
@@ -120,11 +40,11 @@
             <header class="app-topbar">
                 <button type="button" class="btn btn-ghost d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#appSidebar"
                         aria-controls="appSidebar" aria-label="@L["Mở menu"]">
-                    <i class="bi bi-list" aria-hidden="true"></i>
+                    <icon name="list" />
                 </button>
                 <button type="button" class="btn btn-ghost d-none d-lg-inline-flex" data-sidebar-collapse aria-controls="appSidebar"
                         aria-label="@L["Thu gọn hoặc mở rộng menu"]" title="@L["Thu gọn hoặc mở rộng menu"]">
-                    <i class="bi bi-layout-sidebar" aria-hidden="true"></i>
+                    <icon name="layout-sidebar" />
                 </button>
                 <nav aria-label="breadcrumb" class="min-w-0 overflow-hidden">
                     <ol class="breadcrumb">
