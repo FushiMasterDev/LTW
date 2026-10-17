@@ -5,7 +5,7 @@
     var all = (bool)ViewData["All"]!;
 }
 <partial name="_PageHead" model="@(new PageHeadModel(L["Giao dịch ngân hàng"], "bi-bank", "tone-rose", L["Tiền vào tài khoản MB của Fuji. Mặc định chỉ hiện các khoản cần xử lý tay."], ShowCreate: false))" />
-<partial name="_AccountingTabs" />
+<partial name="_Tabs" model="@TabsModel.Accounting(User, ViewData["Counts"] as AccountingCounts, ViewContext.RouteData.Values["controller"]?.ToString())" />
 
 <form method="get" class="card-soft filter-bar row g-2 mx-0" role="search">
     <div class="col-sm-4 col-md-3">

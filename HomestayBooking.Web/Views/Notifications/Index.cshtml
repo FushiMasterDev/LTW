@@ -1,0 +1,23 @@
+@using HomestayBooking.Web.Identity
+@using HomestayBooking.Web.Services
+@model PaginatedList<Notification>
+@{
+    Layout = User.IsInRole(AppRoles.Employee) || User.IsInRole(AppRoles.Owner) ? "_DashboardLayout" : "_Layout";
+    ViewData["Title"] = L["Thông báo"];
+}
+<partial name="_PageHead" model='new PageHeadModel("Thông báo", "bell", "", ShowCreate: false)' />
+@if (Model.TotalCount > 0)
+{
+    <form class="mb-3" asp-action="MarkAllRead" method="post"><button class="btn btn-outline-secondary" type="submit">@L["Đánh dấu tất cả đã đọc"]</button></form>
+    <div class="fx-notification-list">
+        @foreach (var notice in Model)
+        {
+            <article class="fx-notification-list__item @(notice.IsRead ? "is-read" : null)">
+                <div><span class="small text-muted">@VietnamTime.ToLocal(notice.CreatedAt).ToString("HH:mm dd/MM/yyyy") · @L[notice.IsRead ? "Đã đọc" : "Chưa đọc"]</span><p>@notice.Message</p></div>
+                <form asp-action="MarkRead" asp-route-id="@notice.Id" method="post"><input type="hidden" name="returnUrl" value="@notice.Url" /><button type="submit" class="btn btn-outline-secondary">@L[notice.Url is null ? "Đánh dấu đã đọc" : "Xem chi tiết"]</button></form>
+            </article>
+        }
+    </div>
+    <partial name="_Pager" model="Model" />
+}
+else { <partial name="_EmptyState" model='new EmptyStateModel("Chưa có thông báo", "Các cập nhật mới sẽ xuất hiện ở đây.", "bell")' /> }

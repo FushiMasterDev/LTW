@@ -68,6 +68,7 @@
   --fx-radius-lg: 1rem;      /* khối lớn: banner, ảnh bìa */
   --fx-radius: 0.75rem;      /* thẻ, bảng */
   --fx-radius-sm: 0.5rem;    /* nút, ô nhập */
+  --fx-radius-full: 9999px; /* thanh tìm kiếm và bộ đếm */
   --fx-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --fx-sidebar-w: 16rem;
   --fx-sidebar-w-collapsed: 4.5rem;

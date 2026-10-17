@@ -23,3 +23,7 @@ Mỗi quyết định ghi một dòng: ngày, bước, nội dung, lý do. Dùng
 | 17/10/2026 | 02-B | Hộp xác nhận và toast nằm ở FeedbackHost trong ba layout; site.js dùng requestSubmit với submitter gốc | Giữ antiforgery, giá trị nút và data-confirm cũ; Esc/Hủy không submit |
 | 17/10/2026 | 02-B | Alerts đọc Success/Error/Info và ghép Alert kiểu rõ; UI Kit dùng cùng partial Alert | Không lặp mẫu HTML hoặc chèn HTML vào thông báo |
 | 17/10/2026 | 02-B | Thêm token paper/on-paper cho nền trắng cố định; chuyển màu nút cũ sang token hiện có | QR bước D giữ trắng cả dark mode; giảm mã hex ngoài tokens mà giữ nhận diện |
+| 17/10/2026 | 02-C | Tabs dùng nav/aria-current cho liên kết sang trang, không giả role=tab của widget đổi panel | Tab/Enter theo hành vi trình duyệt; giữ nguyên quyền Cọc bổ sung chỉ Kế toán |
+| 17/10/2026 | 02-C | MarkRead dùng returnUrl từ form sau khi service xác nhận thông báo thuộc tài khoản, chỉ LocalRedirect khi Url.IsLocalUrl | Dùng service B8 hiện có, không tự truy vấn DbContext; chặn open redirect và thao tác người khác |
+| 17/10/2026 | 02-C | Giữ Icon/Tone/ShowCreate của PageHead để tương thích; Tone không còn tô màu module, thêm Action/Controller/Area/RouteValues/ActionLabel | Các lời gọi cũ vẫn hoạt động; bỏ page-banner ở cả bốn dashboard |
+| 17/10/2026 | 02-C | Nội dung Notification do service lưu bằng tiếng Việt được hiển thị nguyên văn và encode; nhãn điều khiển được dịch | Không dịch dữ liệu người dùng hoặc sửa Services trong giai đoạn giao diện |

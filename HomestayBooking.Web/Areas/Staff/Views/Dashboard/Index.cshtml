@@ -12,10 +12,7 @@
     };
     var waitingConfirm = Model.GetValueOrDefault(BookingStatus.Deposited);
 }
-<section class="page-banner banner-staff mb-4">
-    <h1 class="h3">@L["Tổng quan nhân viên"]</h1>
-    <p>@L["Hệ thống đang có {0} homestay hoạt động.", ViewBag.ActiveHomestayCount]</p>
-</section>
+<partial name="_PageHead" model='new PageHeadModel("Tổng quan nhân viên", "", "", L["Hệ thống đang có {0} homestay hoạt động.", (object)ViewBag.ActiveHomestayCount], ShowCreate: false)' />
 
 @if (waitingConfirm > 0)
 {

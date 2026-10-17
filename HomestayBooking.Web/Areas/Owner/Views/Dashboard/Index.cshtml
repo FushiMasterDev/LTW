@@ -6,10 +6,7 @@
     var activeCount = homestays.Count(h => h.Status == HomestayStatus.Active);
     var roomCount = homestays.Sum(h => h.RoomCount);
 }
-<section class="page-banner banner-owner mb-4">
-    <h1 class="h3">@L["Tổng quan chủ homestay"]</h1>
-    <p>@L["Bạn đang quản lý {0} homestay.", homestays.Count]</p>
-</section>
+<partial name="_PageHead" model='new PageHeadModel("Tổng quan chủ homestay", "", "", L["Bạn đang quản lý {0} homestay.", homestays.Count], ShowCreate: false)' />
 
 @if (Model.RegistrationStatus is { } status && status != OwnerRegistrationStatus.Approved)
 {

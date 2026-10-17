@@ -1,0 +1,11 @@
+@model BreadcrumbModel
+<nav class="fx-breadcrumb" aria-label="@L["Đường dẫn"]">
+    <ol class="breadcrumb mb-0">
+        @foreach (var item in Model.Items)
+        {
+            <li class="breadcrumb-item @(item.Href is null ? "active" : null) @(item.HideOnMobile ? "d-none d-sm-block" : null)" aria-current="@(item.Href is null ? "page" : null)">
+                @if (item.Href is { } href) { <a href="@href">@L[item.Label]</a> } else { @L[item.Label] }
+            </li>
+        }
+    </ol>
+</nav>

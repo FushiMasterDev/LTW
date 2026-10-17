@@ -4,7 +4,7 @@
     var done = (bool)ViewData["Done"]!;
 }
 <partial name="_PageHead" model="@(new PageHeadModel(L["Hoàn tiền"], "bi-arrow-counterclockwise", "tone-sky", L["Đơn hủy hoặc bị homestay từ chối đã chốt số tiền hoàn. Chuyển khoản cho khách rồi ghi lại mã giao dịch."], ShowCreate: false))" />
-<partial name="_AccountingTabs" />
+<partial name="_Tabs" model="@TabsModel.Accounting(User, ViewData["Counts"] as AccountingCounts, ViewContext.RouteData.Values["controller"]?.ToString())" />
 
 <form method="get" class="card-soft filter-bar row g-2 mx-0" role="search">
     <div class="col-sm-4 col-md-3">

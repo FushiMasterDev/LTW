@@ -17,10 +17,7 @@
         ("Holidays", L["Ngày lễ"], L["Ngày áp giá lễ"], "bi-calendar-heart", "tone-rose"),
     };
 }
-<section class="page-banner banner-admin mb-4">
-    <h1 class="h3">@L["Tổng quan quản trị"]</h1>
-    <p>@L["Theo dõi nhanh hệ thống và quản lý danh mục dùng chung."]</p>
-</section>
+<partial name="_PageHead" model='new PageHeadModel("Tổng quan quản trị", "", "", L["Theo dõi nhanh hệ thống và quản lý danh mục dùng chung."], ShowCreate: false)' />
 
 <div class="row g-3 mb-2">
     @foreach (var s in stats)

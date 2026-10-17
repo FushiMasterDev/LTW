@@ -2043,4 +2043,15 @@
   <data name="Không lưu được: số điện thoại đã được dùng." xml:space="preserve"><value>Could not save: this phone number is already in use.</value></data>
   <data name="Đơn đang chờ homestay xác nhận, tối đa 30 phút." xml:space="preserve"><value>Awaiting homestay confirmation, within 30 minutes.</value></data>
   <data name="Địa chỉ chi tiết hiện sau khi đơn được xác nhận." xml:space="preserve"><value>The full address is available after confirmation.</value></data>
+  <data name="Đường dẫn" xml:space="preserve"><value>Breadcrumb</value></data>
+  <data name="Thông báo, {0} chưa đọc" xml:space="preserve"><value>Notifications, {0} unread</value></data>
+  <data name="Chưa có thông báo" xml:space="preserve"><value>No notifications yet</value></data>
+  <data name="Đã đọc" xml:space="preserve"><value>Read</value></data>
+  <data name="Chưa đọc" xml:space="preserve"><value>Unread</value></data>
+  <data name="Đánh dấu tất cả đã đọc" xml:space="preserve"><value>Mark all as read</value></data>
+  <data name="Đánh dấu đã đọc" xml:space="preserve"><value>Mark as read</value></data>
+  <data name="Các cập nhật mới sẽ xuất hiện ở đây." xml:space="preserve"><value>New updates will appear here.</value></data>
+  <data name="Không tìm thấy thông báo của bạn." xml:space="preserve"><value>Your notification was not found.</value></data>
+  <data name="Đã đánh dấu tất cả thông báo là đã đọc." xml:space="preserve"><value>All notifications have been marked as read.</value></data>
+  <data name="Xem tất cả thông báo" xml:space="preserve"><value>View all notifications</value></data>
 </root>

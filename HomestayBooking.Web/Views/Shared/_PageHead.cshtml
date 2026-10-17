@@ -1,18 +1,19 @@
 @model PageHeadModel
-@* Tiêu đề trang danh sách: biểu tượng màu + tiêu đề + mô tả + nút "Thêm mới" *@
-<div class="page-head">
-    <div class="d-flex align-items-center gap-3">
-        <span class="icon-chip icon-chip-lg @Model.Tone" aria-hidden="true"><i class="bi @Model.Icon"></i></span>
-        <div>
-            <h1>@Model.Title</h1>
+@{
+    var routes = new Microsoft.AspNetCore.Routing.RouteValueDictionary();
+    if (Model.RouteValues is not null) { foreach (var pair in Model.RouteValues) { routes[pair.Key] = pair.Value; } }
+    if (Model.Area is not null) { routes["area"] = Model.Area; }
+}
+<div class="fx-page-head">
+    <div>
+            <h1>@if (!string.IsNullOrEmpty(Model.Icon)) { <icon name="@Model.Icon" /> } @L[Model.Title]</h1>
             @if (!string.IsNullOrEmpty(Model.Subtitle))
             {
-                <p class="text-muted mb-0">@Model.Subtitle</p>
+                    <p class="text-muted mb-0">@L[Model.Subtitle]</p>
             }
-        </div>
     </div>
     @if (Model.ShowCreate)
     {
-        <a class="btn btn-brand" asp-action="Create"><i class="bi bi-plus-lg" aria-hidden="true"></i> @L["Thêm mới"]</a>
+        <a class="btn btn-brand" href="@Url.Action(Model.Action, Model.Controller, routes)"><icon name="plus-lg" /> @L[Model.ActionLabel]</a>
     }
 </div>

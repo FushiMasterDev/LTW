@@ -1,0 +1,24 @@
+@using HomestayBooking.Web.Services
+@model NotificationBellModel
+<div class="dropdown fx-notifications">
+    <button type="button" class="btn btn-ghost fx-notifications__toggle" id="@Model.Id" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="@(Model.Id)-menu" aria-label="@L["Thông báo, {0} chưa đọc", Model.UnreadCount]">
+        <icon name="bell" />
+        @if (Model.UnreadCount > 0) { <span class="fx-notifications__count" aria-hidden="true">@(Model.UnreadCount > 99 ? "99+" : Model.UnreadCount.ToString())</span> }
+    </button>
+    <div class="dropdown-menu dropdown-menu-end fx-notifications__menu" id="@(Model.Id)-menu" aria-labelledby="@Model.Id">
+        <div class="px-3 py-2"><strong>@L["Thông báo"]</strong></div>
+        @if (Model.Items.Count == 0) { <partial name="_EmptyState" model='new EmptyStateModel("Chưa có thông báo", Icon: "bell")' /> }
+        @foreach (var notice in Model.Items)
+        {
+            <form asp-area="" asp-controller="Notifications" asp-action="MarkRead" asp-route-id="@notice.Id" method="post">
+                <input type="hidden" name="returnUrl" value="@notice.Url" />
+                <button class="dropdown-item fx-notifications__item" type="submit">
+                    <span>@if (!notice.IsRead) { <span class="fx-notifications__dot" aria-hidden="true"></span> }@notice.Message</span>
+                    <small>@VietnamTime.ToLocal(notice.CreatedAt).ToString("HH:mm dd/MM/yyyy") · @L[notice.IsRead ? "Đã đọc" : "Chưa đọc"]</small>
+                </button>
+            </form>
+        }
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" asp-area="" asp-controller="Notifications" asp-action="Index">@L["Xem tất cả"] <icon name="arrow-right" /></a>
+    </div>
+</div>

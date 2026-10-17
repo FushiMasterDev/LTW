@@ -13,7 +13,7 @@
     string[] reasons = ["Ảnh mờ, không đọc được", "Sai số tiền", "Không thấy giao dịch trong sao kê", "Nội dung không có mã đơn"];
 }
 <partial name="_PageHead" model="@(new PageHeadModel(L["Bill chờ duyệt"], "bi-receipt", "tone-amber", L["Đối chiếu ảnh bill với sao kê MB rồi duyệt hoặc từ chối. Từ chối lần {0} thì đơn hết hạn.", maxRejections], ShowCreate: false))" />
-<partial name="_AccountingTabs" />
+<partial name="_Tabs" model="@TabsModel.Accounting(User, ViewData["Counts"] as AccountingCounts, ViewContext.RouteData.Values["controller"]?.ToString())" />
 
 <div class="d-flex flex-wrap gap-2 mb-3" role="group" aria-label="@L["Lọc theo trạng thái"]">
     @foreach (var f in filters)

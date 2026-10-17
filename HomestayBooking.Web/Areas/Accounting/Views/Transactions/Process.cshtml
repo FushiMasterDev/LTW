@@ -4,7 +4,7 @@
     ViewData["Title"] = L["Xử lý giao dịch"];
     var suggestedCode = t.BookingCode ?? Model.Suggestions.FirstOrDefault()?.Code;
 }
-<partial name="_AccountingTabs" />
+<partial name="_Tabs" model="@TabsModel.Accounting(User, ViewData["Counts"] as AccountingCounts, ViewContext.RouteData.Values["controller"]?.ToString())" />
 <div class="row g-4">
     <div class="col-lg-5">
         <div class="card-soft p-4 h-100">

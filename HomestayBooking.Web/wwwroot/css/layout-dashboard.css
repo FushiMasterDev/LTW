@@ -287,29 +287,7 @@
 }
 
 /* Đầu trang tổng quan: trước là dải gradient, nay là tiêu đề yên tĩnh trên nền trang */
-.page-banner {
-  padding: 0 0 1.25rem;
-  margin-bottom: 1.5rem !important;
-  border-bottom: 1px solid var(--fx-border);
-  background: none;
-  color: var(--fx-ink);
-}
-
-.page-banner h1 {
-  margin: 0;
-  color: var(--fx-ink);
-  font-size: 1.625rem;
-}
-
-.page-banner p {
-  margin: 0.35rem 0 0;
-  color: var(--fx-muted);
-  max-width: 48rem;
-}
-
 /* Các biến thể cũ giữ tên, không còn mang màu riêng */
-.banner-admin, .banner-owner, .banner-staff, .banner-accounting { --banner: none; }
-
 .app-content .page-head h1 {
   font-size: 1.5rem;
 }
@@ -322,7 +300,6 @@
 
 /* Icon trang/thẻ không mang nghĩa trạng thái: dùng chung màu sage, không tô mỗi module một màu.
    Trạng thái vẫn có màu riêng qua .badge-tone. */
-.page-head .icon-chip,
 .tile-link .icon-chip,
 .status-group .icon-chip {
   --tone-bg: var(--fx-primary-soft);
@@ -402,64 +379,12 @@
     padding: 0.6rem 0.6rem;
   }
 
-  .page-banner h1 {
-    font-size: 1.4rem;
   }
-}
 
 /* =========================================================================
    Kế toán: tab, thẻ số liệu, thẻ ảnh bill, gợi ý khớp đơn
    Gộp từ accounting.css cũ, giữ sau phần dashboard để thứ tự cascade như trước.
    ========================================================================= */
-.accounting-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .5rem;
-}
-
-.accounting-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: .4rem;
-  min-height: 2.75rem;
-  padding: .45rem .9rem;
-  border-radius: 999px;
-  border: 1px solid var(--fx-border);
-  background: var(--fx-surface);
-  color: var(--fx-muted);
-  font-weight: 600;
-  font-size: .9rem;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.accounting-tab:hover {
-  color: var(--fx-primary);
-  border-color: var(--fx-primary);
-}
-
-.accounting-tab.active {
-  background: var(--fx-primary);
-  border-color: var(--fx-primary);
-  color: var(--fx-on-primary);
-}
-
-.accounting-count {
-  min-width: 1.4rem;
-  padding: 0 .4rem;
-  border-radius: 999px;
-  background: #b42318;
-  color: #fff;
-  font-size: .75rem;
-  line-height: 1.4rem;
-  text-align: center;
-}
-
-.accounting-tab.active .accounting-count {
-  background: var(--fx-on-primary);
-  color: var(--fx-primary);
-}
-
 .receipt-card {
   display: flex;
   gap: 1rem;

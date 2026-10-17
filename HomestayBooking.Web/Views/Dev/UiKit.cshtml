@@ -10,7 +10,7 @@
     var sections = new (string Id, string Title)[]
     {
         ("colors", "Màu"), ("type", "Chữ"), ("buttons", "Nút"), ("badges", "Badge trạng thái"), ("money", "Tiền và ngày"),
-        ("icons", "Icon"), ("forms", "Form"), ("alerts", "Thông báo"), ("lists", "Trang danh sách"), ("empty", "Trạng thái rỗng"), ("layout", "Khung trang"), ("rating", "Điểm đánh giá"), ("stats", "Ô số liệu"), ("data-table", "Bảng dùng chung"), ("descriptions", "Mô tả"), ("timeline", "Dòng thời gian"), ("prices", "Bảng giá"), ("skeleton", "Khung chờ tải"), ("filters", "Thanh lọc"), ("date-picker", "Bộ chọn ngày"), ("guest-picker", "Số khách"), ("uploads", "Vùng tải file"), ("feedback", "Xác nhận và toast"),
+        ("icons", "Icon"), ("forms", "Form"), ("alerts", "Thông báo"), ("lists", "Trang danh sách"), ("empty", "Trạng thái rỗng"), ("layout", "Khung trang"), ("rating", "Điểm đánh giá"), ("stats", "Ô số liệu"), ("data-table", "Bảng dùng chung"), ("descriptions", "Mô tả"), ("timeline", "Dòng thời gian"), ("prices", "Bảng giá"), ("skeleton", "Khung chờ tải"), ("filters", "Thanh lọc"), ("date-picker", "Bộ chọn ngày"), ("guest-picker", "Số khách"), ("uploads", "Vùng tải file"), ("feedback", "Xác nhận và toast"), ("navigation", "Tabs, đường dẫn, đầu trang"), ("notifications", "Chuông thông báo"),
     };
     var tokens = new[] { "bg", "surface", "surface-2", "surface-3", "border", "border-strong", "ink", "muted", "primary", "primary-hover",
         "primary-soft", "focus", "success", "warning", "danger", "info" };
@@ -310,6 +310,21 @@
         <button type="submit" class="btn btn-outline-danger">@L["Xác nhận thao tác"]</button>
     </form>
     <button type="button" class="btn btn-outline-secondary mt-3" data-toast-demo data-toast-message="@L["Đã lưu thay đổi."]">@L["Xem thông báo mẫu"]</button>
+</section>
+
+<section id="navigation" class="uikit-section" aria-labelledby="navigation-title">
+    <h2 id="navigation-title" class="section-title">Tabs, breadcrumb, đầu trang</h2>
+    <partial name="_Tabs" model='new TabsModel("Kế toán", new[] { new TabItem("Tổng quan", "/Accounting/Dashboard", Active: true), new TabItem("Bill chờ duyệt", "/Accounting/Receipts", Count: 12345), new TabItem("Cọc bổ sung", "/Accounting/AdditionalDeposits", Visible: false) })' />
+    <partial name="_Breadcrumb" model='new BreadcrumbModel(new[] { new BreadcrumbItem("Trang chủ", Url.Action("Index", "Home", new {area = ""})), new BreadcrumbItem("Thông báo") })' />
+    <partial name="_PageHead" model='new PageHeadModel("Đơn đặt phòng", "journal-check", "", "Hành động chính nối qua model, không viết cứng Create.", Action: "Index", Controller: "Homestays", Area: "", ActionLabel: "Tìm homestay")' />
+</section>
+<section id="notifications" class="uikit-section" aria-labelledby="notifications-title">
+    <h2 id="notifications-title" class="section-title">Chuông thông báo: rỗng và tin dài, số lớn</h2>
+    <div class="d-flex gap-4">
+        <partial name="~/Views/Shared/Components/NotificationBell/Default.cshtml" model='new NotificationBellModel(0, Array.Empty<Notification>(), "kit-bell-empty")' />
+        <partial name="~/Views/Shared/Components/NotificationBell/Default.cshtml" model='new NotificationBellModel(123, new[] { new Notification { Message = new string((char)65, 500), CreatedAt = DateTime.UtcNow } }, "kit-bell-long")' />
+    </div>
+    <a class="btn btn-outline-secondary mt-3" asp-area="" asp-controller="Notifications" asp-action="Index">@L["Xem tất cả thông báo"]</a>
 </section>
 
 @section Scripts {

@@ -46,18 +46,11 @@
                         aria-label="@L["Thu gọn hoặc mở rộng menu"]" title="@L["Thu gọn hoặc mở rộng menu"]">
                     <icon name="layout-sidebar" />
                 </button>
-                <nav aria-label="breadcrumb" class="min-w-0 overflow-hidden">
-                    <ol class="breadcrumb">
-                        @if (currentWorkspace is not null)
-                        {
-                            <li class="breadcrumb-item d-none d-sm-block">
-                                <a asp-area="@currentWorkspace.Area" asp-controller="Dashboard" asp-action="Index">@L[currentWorkspace.Label]</a>
-                            </li>
-                        }
-                        <li class="breadcrumb-item active" aria-current="page">@ViewData["Title"]</li>
-                    </ol>
-                </nav>
+                <partial name="_Breadcrumb" model="@(new BreadcrumbModel(currentWorkspace is null
+                    ? new[] { new BreadcrumbItem(ViewData["Title"]?.ToString() ?? "") }
+                    : new[] { new BreadcrumbItem(currentWorkspace.Label, Url.Action("Index", "Dashboard", new { area = currentWorkspace.Area }), HideOnMobile: true), new BreadcrumbItem(ViewData["Title"]?.ToString() ?? "") }))" />
                 <div class="topbar-actions">
+                    @await Component.InvokeAsync("NotificationBell")
                     <div class="d-none d-md-block"><partial name="_LanguageSwitch" /></div>
                     <partial name="_ThemeToggle" view-data='new ViewDataDictionary(ViewData) { ["ThemeToggleClass"] = "btn-ghost" }' />
                     <partial name="_LoginPartial" view-data='new ViewDataDictionary(ViewData) { ["UserMenuCompact"] = true }' />
