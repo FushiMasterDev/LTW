@@ -50,7 +50,23 @@ public class AccountAdminService(ApplicationDbContext db, UserManager<Applicatio
         { throw new BookingException("Số điện thoại hoặc mã nhân viên đã được sử dụng."); }
     }
 
-    public Task<ApplicationUser> CreateEmployeeAsync(EmployeeAccountInput input, Actor actor) => WriteAsync(actor, async () =>
+    public Task<ApplicationUser> CreateEmployeeAsync(EmployeeAccountInput input, Actor actor) =>
+        WriteAsync(actor, () => CreateEmployeeCoreAsync(input, actor));
+
+    /// <summary>FR-21: Quản trị viên đầu tiên khi triển khai thật; chỉ tạo khi chưa có Administrator nào (kiểm lại trong transaction).</summary>
+    internal async Task<ApplicationUser?> BootstrapAdministratorAsync(EmployeeAccountInput input)
+    {
+        try
+        {
+            return await HomestayWrite.RunAsync(db, async () =>
+                await db.Employees.AnyAsync(e => e.Position == EmployeePosition.Administrator) ? null
+                    : await CreateEmployeeCoreAsync(input with { Position = EmployeePosition.Administrator }, Actor.System));
+        }
+        catch (DbUpdateException e) when (e.IsUniqueConstraintViolation() || e.GetBaseException().Message.Contains("UNIQUE constraint failed", StringComparison.Ordinal))
+        { throw new BookingException("Số điện thoại hoặc mã nhân viên đã được sử dụng."); }
+    }
+
+    private async Task<ApplicationUser> CreateEmployeeCoreAsync(EmployeeAccountInput input, Actor actor)
     {
         var phone = PhoneNumberNormalizer.ToE164(input.Phone) ?? throw new BookingException("Số điện thoại không hợp lệ.");
         var name = input.FullName?.Trim() ?? ""; var code = input.EmployeeCode?.Trim().ToUpperInvariant() ?? ""; var email = string.IsNullOrWhiteSpace(input.Email) ? null : input.Email.Trim();
@@ -71,10 +87,10 @@ public class AccountAdminService(ApplicationDbContext db, UserManager<Applicatio
         PartnerServiceSupport.Audit(db, clock, actor, "PersonProfiles", person.Id.ToString(), null, new { person.FullName, person.PhoneNumber, person.Email }, AuditAction.Insert);
         PartnerServiceSupport.Audit(db, clock, actor, "Employees", employee.Id.ToString(), null, EmployeeState(employee), AuditAction.Insert);
         PartnerServiceSupport.Audit(db, clock, actor, "AspNetUsers", user.Id, null, State(user), AuditAction.Insert);
-        Activity(user, AccountEventType.AccountCreated, actor, "Quản trị viên tạo tài khoản nhân viên.");
+        Activity(user, AccountEventType.AccountCreated, actor, actor.Type == ActorType.System ? "Tạo Quản trị viên đầu tiên từ cấu hình triển khai." : "Quản trị viên tạo tài khoản nhân viên.");
         Activity(user, AccountEventType.RoleAssigned, actor, AppRoles.Employee);
         return user;
-    });
+    }
 
     private async Task<ApplicationUser> AccountAsync(string id)
     {

@@ -326,7 +326,31 @@ ASPNETCORE_ENVIRONMENT=Development Database__AutoMigrate=false dotnet run --proj
 | 0987000012 | Customer | Tạ Quang Vinh |
 | 0987000013 | Customer | Đinh Thị Yến |
 
-Khách trong CustomerData có HasAccount=false là hồ sơ đặt hộ/tra cứu bằng mã + SĐT, không có thông tin đăng nhập. Chủ PendingReview chỉ xem dashboard/trạng thái, chưa được thao tác như chủ đã duyệt. AccountAdminService cần sẵn Administrator Active; bootstrap Administrator đầu tiên Production vẫn là việc riêng đã hoãn, không tạo bằng DefaultPassword.
+Khách trong CustomerData có HasAccount=false là hồ sơ đặt hộ/tra cứu bằng mã + SĐT, không có thông tin đăng nhập. Chủ PendingReview chỉ xem dashboard/trạng thái, chưa được thao tác như chủ đã duyệt. AccountAdminService cần sẵn Administrator Active. Development có AD001 từ seed; môi trường khác dùng bootstrap ở mục B7 bên dưới, không tạo bằng DefaultPassword.
+
+### B7: khách không tài khoản, Quản trị viên đầu tiên, đo hiệu năng
+
+B7 không thêm bảng/cột/index/migration và không đổi `data_consistency.sql` (vẫn 35 mục).
+
+**Quản trị viên đầu tiên (FR-21).** Khi app khởi động ngoài Development và CSDL chưa có Employee chức vụ Administrator nào (kể cả đang khóa/nghỉ), `AdminBootstrapService` tạo đúng một người từ cấu hình `Bootstrap:Administrator`. Đặt qua user-secrets hoặc biến môi trường, **không** ghi vào appsettings.json:
+
+```bash
+dotnet user-secrets set "Bootstrap:Administrator:EmployeeCode" "QT001" --project HomestayBooking.Web
+dotnet user-secrets set "Bootstrap:Administrator:FullName" "Quản trị viên Fuji" --project HomestayBooking.Web
+dotnet user-secrets set "Bootstrap:Administrator:Phone" "09xxxxxxxx" --project HomestayBooking.Web
+dotnet user-secrets set "Bootstrap:Administrator:Password" "<mật khẩu mạnh>" --project HomestayBooking.Web
+# hoặc biến môi trường: Bootstrap__Administrator__EmployeeCode, ..., Bootstrap__Administrator__Password
+```
+
+Tạo xong, log cảnh báo nhắc xóa `Password` khỏi cấu hình; mật khẩu không vào log/audit. Đã có Administrator thì không làm gì. Thiếu cấu hình thì chỉ log lỗi, không tự tạo.
+
+**Đo hiệu năng FR-08/NFR-02 (tùy chọn).** `AvailabilityPerformanceTests` chỉ chạy khi đặt `RUN_PERF_TESTS=1`; mặc định bị Skip. Test dựng 150 homestay, 1.500 phòng và ~327 nghìn đêm bận trong một năm (lấp đầy ~60%) trên `HomestayBooking_ConstraintTest` bằng SqlBulkCopy trong transaction rồi ROLLBACK; không đụng v5. Kết quả đo ngày 17/10/2026 (Docker cục bộ): tra phòng trống 31 đêm chậm nhất **3,4 giây** (≤ 5 giây), tìm kiếm có ngày **0,3 giây** (≤ 3 giây).
+
+```bash
+RUN_PERF_TESTS=1 dotnet test HomestayBooking.Tests -c Release --filter "FullyQualifiedName~AvailabilityPerformanceTests"
+```
+
+Test SQL Server dùng chung ConstraintTest được xếp cùng một collection xUnit để chạy tuần tự; không chạy hai lệnh `dotnet test` song song trên cùng database thử.
 
 **Mô phỏng tiền về:** Development, đăng nhập QL001 hoặc AD001 vào `/Dev/SimulateBank` (môi trường khác trả 404). Nhập nội dung chứa Booking.Code và số tiền **AmountDue** của đơn (cọc trừ voucher), chọn tài khoản nhận theo QR rồi gửi. Action đi qua BankMatchingService với provider Simulator, không ghi Payment bằng tay. Cọc bổ sung dùng `CR<RequestId> <Booking.Code>` và đúng AdditionalDeposit; vẫn chờ Accountant, không tự áp yêu cầu. Kế toán xem các hàng chờ như luồng thật; không có lệnh chuyển tiền ngân hàng thật. Zalo/SMS hiện là LoggingMessageSender giả lập, chờ dịch vụ/mẫu tin được duyệt.
 

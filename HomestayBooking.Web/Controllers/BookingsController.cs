@@ -129,7 +129,7 @@ public partial class BookingsController : Controller
 
     // ---------------------------------------------------------------- Đặt phòng
 
-    [Authorize]
+    // FR-03: khách không bắt buộc đăng nhập; đã đăng nhập thì điền sẵn liên hệ và cho chọn voucher.
     [HttpGet]
     public async Task<IActionResult> Create(int roomTypeId, DateOnly? checkIn, DateOnly? checkOut, int guests = 2)
     {
@@ -152,9 +152,8 @@ public partial class BookingsController : Controller
         return View(model);
     }
 
-    [Authorize]
     [HttpPost]
-    public async Task<IActionResult> Create(BookingCreateViewModel model)
+    public async Task<IActionResult> Create(BookingCreateViewModel model, [FromServices] GuestCustomerService guests)
     {
         if (User.IsActiveEmployee())
         {
@@ -166,19 +165,38 @@ public partial class BookingsController : Controller
             return View(model);
         }
 
-        var user = await _userManager.GetUserAsync(User);
-        var customer = user is null ? null : await _customers.EnsureCustomerAsync(user);
-        if (customer is null)
-        {
-            return Forbid();
-        }
-
         try
         {
+            Customer? customer;
+            Actor actor;
+            var signedIn = User.Identity?.IsAuthenticated == true;
+            if (signedIn)
+            {
+                var user = await _userManager.GetUserAsync(User);
+                customer = user is null ? null : await _customers.EnsureCustomerAsync(user);
+                actor = new Actor(ActorType.Customer, user?.Id);
+            }
+            else
+            {
+                // Voucher gắn với tài khoản; khách chưa đăng nhập không được dùng.
+                if (model.VoucherId is not null) throw new BookingException("Vui lòng đăng nhập để dùng voucher.");
+                actor = new Actor(ActorType.Customer);
+                customer = await guests.FindOrCreateAsync(model.ContactPhone, model.ContactName, null, actor);
+            }
+            if (customer is null)
+            {
+                return Forbid();
+            }
+
             var booking = await _bookings.CreateAsync(new CreateBookingRequest(
                 customer.Id, model.RoomTypeId, model.CheckIn!.Value, model.CheckOut!.Value, model.Guests,
                 model.ContactName, PhoneNumberNormalizer.ToE164(model.ContactPhone)!, model.SpecialRequests,
-                SourceChannel.Web, new Actor(ActorType.Customer, user!.Id), model.VoucherId));
+                SourceChannel.Web, actor, signedIn ? model.VoucherId : null));
+            if (!signedIn)
+            {
+                // Cùng cơ chế với tra cứu mã đơn + SĐT để khách xem đơn, nộp cọc ngay trong phiên này.
+                RememberLookup(booking.Code);
+            }
             return RedirectToAction(nameof(Details), new { id = booking.Code });
         }
         catch (BookingException ex)
@@ -400,10 +418,15 @@ public partial class BookingsController : Controller
             return View(model);
         }
 
+        RememberLookup(code);
+        return RedirectToAction(nameof(Details), new { id = code });
+    }
+
+    private void RememberLookup(string code)
+    {
         var codes = LookupCodes();
         codes.Add(code);
         HttpContext.Session.SetString(LookupSessionKey, JsonSerializer.Serialize(codes));
-        return RedirectToAction(nameof(Details), new { id = code });
     }
 
     private HashSet<string> LookupCodes()

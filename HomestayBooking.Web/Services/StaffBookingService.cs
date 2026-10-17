@@ -18,11 +18,15 @@ public class StaffBookingQuery
     public int? Page { get; set; }
 }
 
+public record StaffBookingInput(string Phone, string FullName, string? Email, int RoomTypeId, DateOnly CheckIn, DateOnly CheckOut,
+    int Guests, string? SpecialRequests, SourceChannel Channel);
+
 public record StaffBookingDetails(Booking Booking, IReadOnlyList<BookingStatusHistory> History,
     IReadOnlyList<BookingChangeRequest> Changes, IReadOnlyList<Payment> Payments, IReadOnlyList<AuditLog> Audit);
 
 /// <summary>FR-09: nhân viên thao tác qua luật đặt phòng chung, không có đường duyệt tiền hoặc hủy trực tiếp.</summary>
-public class StaffBookingService(ApplicationDbContext db, BookingService bookings, NotificationService notifications, TimeProvider clock)
+public class StaffBookingService(ApplicationDbContext db, BookingService bookings, NotificationService notifications, TimeProvider clock,
+    GuestCustomerService guests)
 {
     internal static Task<Employee> EmployeeAsync(ApplicationDbContext db, Actor actor) =>
         PartnerServiceSupport.EmployeeAsync(db, actor, EmployeePosition.Consultant, EmployeePosition.Manager, EmployeePosition.Administrator);
@@ -32,6 +36,19 @@ public class StaffBookingService(ApplicationDbContext db, BookingService booking
         if (string.IsNullOrWhiteSpace(note) || note.Trim().Length > 500)
             throw new BookingException("Vui lòng nhập ghi chú từ 1 đến 500 ký tự.");
         return note.Trim();
+    }
+
+    /// <summary>FR-07: đặt hộ khách gọi điện/Zalo, kể cả khách chưa có hồ sơ; người tạo và phụ trách theo D23 như CreateAsync.</summary>
+    public async Task<Booking> CreateForCustomerAsync(StaffBookingInput input, Actor actor)
+    {
+        await EmployeeAsync(db, actor);
+        if (input.Channel == SourceChannel.Web || !Enum.IsDefined(input.Channel))
+            throw new BookingException("Đơn nhân viên tạo phải ghi kênh khách liên hệ (điện thoại, Zalo, Messenger hoặc khác).");
+        var name = input.FullName?.Trim();
+        if (string.IsNullOrEmpty(name) || name.Length > 100) throw new BookingException("Vui lòng nhập họ tên khách từ 1 đến 100 ký tự.");
+        var customer = await guests.FindOrCreateAsync(input.Phone, name, input.Email, actor);
+        return await bookings.CreateAsync(new CreateBookingRequest(customer.Id, input.RoomTypeId, input.CheckIn, input.CheckOut,
+            input.Guests, name, PhoneNumberNormalizer.ToE164(input.Phone)!, input.SpecialRequests, input.Channel, actor));
     }
 
     public async Task<PaginatedList<Booking>> SearchAsync(StaffBookingQuery query, Actor actor)

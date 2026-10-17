@@ -12,6 +12,7 @@ using Xunit.Abstractions;
 namespace HomestayBooking.Tests.Services;
 
 /// <summary>Kiểm tra bản dịch truy vấn thật trên SQL Server; không migrate/seed và luôn rollback dữ liệu thử.</summary>
+[Collection(ConstraintTestDatabaseCollection.Name)]
 public sealed class ReportServiceSqlServerTests(ITestOutputHelper output)
 {
     private const string TestDatabase = "HomestayBooking_ConstraintTest";
