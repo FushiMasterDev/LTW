@@ -1,0 +1,8 @@
+@model UploadZoneModel
+<div class="fx-upload" data-upload-zone data-max-bytes="5242880" data-type-error="@L[Model.AllowPdf ? "Chỉ nhận JPG, PNG, WEBP hoặc PDF." : "Chỉ nhận JPG, PNG hoặc WEBP."]" data-size-error="@L["File phải có dung lượng từ 1 byte đến 5MB."]" data-remove-label="@L["Xóa file"]">
+    <label class="form-label" for="@Model.Id">@L["Chọn hoặc kéo thả file vào đây"]</label>
+    <p class="form-text" id="@(Model.Id)-hint">@L[Model.AllowPdf ? "JPG, PNG, WEBP hoặc PDF; tối đa 5MB mỗi file." : "JPG, PNG hoặc WEBP; tối đa 5MB mỗi file."]</p>
+    <input class="form-control" type="file" id="@Model.Id" name="@Model.Name" accept="@(Model.AllowPdf ? ".jpg,.jpeg,.png,.webp,.pdf" : ".jpg,.jpeg,.png,.webp")" multiple="@Model.Multiple" aria-describedby="@(Model.Id)-hint @(Model.Id)-error" />
+    <div class="fx-upload__preview" data-upload-preview></div>
+    <p class="text-danger small mb-0" role="status" aria-live="polite" data-upload-error id="@(Model.Id)-error">@if (Model.Error is { } error) { @L[error] }</p>
+</div>

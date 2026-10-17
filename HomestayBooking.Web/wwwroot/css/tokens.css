@@ -10,6 +10,8 @@
 
   --fx-bg: #f8f6f1;             /* ivory */
   --fx-surface: #ffffff;
+  --fx-paper: #ffffff;          /* nền trắng cố định cho QR và nút trên ảnh */
+  --fx-on-paper: #1e2320;       /* chữ tối trên nền trắng cố định */
   --fx-surface-2: #f2efe8;      /* nền chìm: đầu bảng, ô nhập phụ */
   --fx-surface-3: #e9e5dc;
   --fx-border: #e4dfd5;

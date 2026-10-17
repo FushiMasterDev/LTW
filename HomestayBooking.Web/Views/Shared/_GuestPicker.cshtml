@@ -1,0 +1,10 @@
+@model GuestPickerModel
+<div class="fx-guests" data-guest-picker>
+    <label class="form-label" for="@Model.Id">@L["Số khách"]</label>
+    <div class="fx-guests__control">
+        <button class="btn btn-outline-secondary" type="button" data-guest-step="-1" aria-label="@L["Giảm số khách"]" disabled="@(Model.Disabled || Model.Value <= Model.Min)"><icon name="dash" /></button>
+        <input class="form-control" id="@Model.Id" name="@Model.Name" type="number" min="@Model.Min" max="@Model.Max" step="1" value="@Model.Value" inputmode="numeric" disabled="@Model.Disabled" aria-describedby="@(Model.Error is not null ? Model.Id + "-error" : null)" />
+        <button class="btn btn-outline-secondary" type="button" data-guest-step="1" aria-label="@L["Tăng số khách"]" disabled="@(Model.Disabled || Model.Value >= Model.Max)"><icon name="plus" /></button>
+    </div>
+    @if (Model.Error is { } error) { <p class="text-danger small" id="@(Model.Id)-error">@L[error]</p> }
+</div>

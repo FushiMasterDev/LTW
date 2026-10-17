@@ -19,3 +19,7 @@ Mỗi quyết định ghi một dòng: ngày, bước, nội dung, lý do. Dùng
 | 17/10/2026 | 02-A | EmptyState nhận object ở ranh giới tương thích, chỉ đọc EmptyStateModel; model trang cũ bị bỏ qua | Partial không truyền model sẽ kế thừa model trang; giữ lời gọi cũ mà không dùng dynamic |
 | 17/10/2026 | 02-A | Flatpickr 4.6.13 (JS/CSS, vi), Chart.js 4.4.1 từ cdnjs, kèm LICENSE.md từ tag chính thức; Chart.js chưa nạp ở bước 02 | Phiên bản cố định theo prompt, không dùng npm/bundler; CSS thư viện không sửa, chỉ theme qua token |
 | 17/10/2026 | 02-A | Kiểm tra trình duyệt bằng app Release cổng 5012 trên DeployTest, AutoMigrate=false, snapshot từng bảng trước/sau | Không tác động app 5011 hoặc ghi vào v5 |
+| 17/10/2026 | 02-B | DateRangePicker giữ hai input date thật, chỉ ẩn sau khi Flatpickr khởi tạo; checkout không tính đêm, cho trả đúng ngày bắt đầu bị khóa | Giữ model binding/no-JS và mô hình đặt phòng theo đêm |
+| 17/10/2026 | 02-B | Hộp xác nhận và toast nằm ở FeedbackHost trong ba layout; site.js dùng requestSubmit với submitter gốc | Giữ antiforgery, giá trị nút và data-confirm cũ; Esc/Hủy không submit |
+| 17/10/2026 | 02-B | Alerts đọc Success/Error/Info và ghép Alert kiểu rõ; UI Kit dùng cùng partial Alert | Không lặp mẫu HTML hoặc chèn HTML vào thông báo |
+| 17/10/2026 | 02-B | Thêm token paper/on-paper cho nền trắng cố định; chuyển màu nút cũ sang token hiện có | QR bước D giữ trắng cả dark mode; giảm mã hex ngoài tokens mà giữ nhận diện |

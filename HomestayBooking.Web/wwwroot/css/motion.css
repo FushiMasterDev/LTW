@@ -118,16 +118,19 @@
 }
 
 /* ---------- Modal xem ảnh: phóng nhẹ từ giữa, nền tối cùng nhịp ---------- */
-.lightbox.modal.fade {
+.lightbox.modal.fade,
+#fx-confirm-dialog.modal.fade {
   transition: opacity 0.22s var(--fx-ease-enter);
 }
 
-.lightbox.modal.fade .modal-dialog {
+.lightbox.modal.fade .modal-dialog,
+#fx-confirm-dialog.modal.fade .modal-dialog {
   transform: scale(0.96);
   transition: transform 0.22s var(--fx-ease-enter);
 }
 
-.lightbox.modal.show .modal-dialog {
+.lightbox.modal.show .modal-dialog,
+#fx-confirm-dialog.modal.show .modal-dialog {
   transform: none;
 }
 
@@ -207,7 +210,8 @@
     animation: none;
   }
 
-  .lightbox.modal.fade .modal-dialog {
+  .lightbox.modal.fade .modal-dialog,
+#fx-confirm-dialog.modal.fade .modal-dialog {
     transform: none;
   }
 }

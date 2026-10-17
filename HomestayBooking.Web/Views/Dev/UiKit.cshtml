@@ -10,7 +10,7 @@
     var sections = new (string Id, string Title)[]
     {
         ("colors", "Màu"), ("type", "Chữ"), ("buttons", "Nút"), ("badges", "Badge trạng thái"), ("money", "Tiền và ngày"),
-        ("icons", "Icon"), ("forms", "Form"), ("alerts", "Thông báo"), ("lists", "Trang danh sách"), ("empty", "Trạng thái rỗng"), ("layout", "Khung trang"), ("rating", "Điểm đánh giá"), ("stats", "Ô số liệu"), ("data-table", "Bảng dùng chung"), ("descriptions", "Mô tả"), ("timeline", "Dòng thời gian"), ("prices", "Bảng giá"), ("skeleton", "Khung chờ tải"),
+        ("icons", "Icon"), ("forms", "Form"), ("alerts", "Thông báo"), ("lists", "Trang danh sách"), ("empty", "Trạng thái rỗng"), ("layout", "Khung trang"), ("rating", "Điểm đánh giá"), ("stats", "Ô số liệu"), ("data-table", "Bảng dùng chung"), ("descriptions", "Mô tả"), ("timeline", "Dòng thời gian"), ("prices", "Bảng giá"), ("skeleton", "Khung chờ tải"), ("filters", "Thanh lọc"), ("date-picker", "Bộ chọn ngày"), ("guest-picker", "Số khách"), ("uploads", "Vùng tải file"), ("feedback", "Xác nhận và toast"),
     };
     var tokens = new[] { "bg", "surface", "surface-2", "surface-3", "border", "border-strong", "ink", "muted", "primary", "primary-hover",
         "primary-soft", "focus", "success", "warning", "danger", "info" };
@@ -32,6 +32,7 @@
     };
 }
 @section Head {
+    <link rel="stylesheet" href="~/lib/flatpickr/flatpickr.min.css" />
     <link rel="stylesheet" href="~/css/dev-uikit.css" asp-append-version="true" />
 }
 
@@ -181,10 +182,10 @@
 
 <section id="alerts" class="uikit-section" aria-labelledby="alerts-title">
     <h2 id="alerts-title" class="section-title">Thông báo</h2>
-    <div class="alert tone-emerald" role="status"><icon name="check-circle-fill" /><div class="flex-grow-1">Đã lưu thay đổi.</div></div>
-    <div class="alert tone-rose" role="alert"><icon name="exclamation-triangle-fill" /><div class="flex-grow-1">Không lưu được: số điện thoại đã được dùng.</div></div>
-    <div class="alert tone-amber" role="status"><icon name="hourglass-split" /><div class="flex-grow-1">Đơn đang chờ homestay xác nhận, tối đa 30 phút.</div></div>
-    <div class="alert tone-sky" role="status"><icon name="info-circle-fill" /><div class="flex-grow-1">Địa chỉ chi tiết hiện sau khi đơn được xác nhận.</div></div>
+    <partial name="_Alert" model='new AlertModel("Đã lưu thay đổi.", "success")' />
+    <partial name="_Alert" model='new AlertModel("Không lưu được: số điện thoại đã được dùng.", "danger")' />
+    <partial name="_Alert" model='new AlertModel("Đơn đang chờ homestay xác nhận, tối đa 30 phút.", "warning")' />
+    <partial name="_Alert" model='new AlertModel("Địa chỉ chi tiết hiện sau khi đơn được xác nhận.", "info")' />
 </section>
 
 <section id="lists" class="uikit-section" aria-labelledby="lists-title">
@@ -274,6 +275,49 @@
     <div class="mt-4"><partial name="_Skeleton" model="@(new SkeletonModel(Cards: true))" /></div>
 </section>
 
+<section id="filters" class="uikit-section" aria-labelledby="filters-title">
+    <h2 id="filters-title" class="section-title">Thanh lọc: GET, giữ query, ngăn kéo trên điện thoại</h2>
+    <partial name="_FilterBar" model='new FilterBarModel("kit-filter", new[] { new FilterField("Q", "Từ khóa"), new FilterField("Guests", "Số khách", "2", "number"), new FilterField("AreaId", "Khu vực", Options: Model.Areas) })' />
+</section>
+<section id="date-picker" class="uikit-section" aria-labelledby="date-picker-title">
+    <h2 id="date-picker-title" class="section-title">Ngày theo đêm: thường, rỗng, lỗi, đang tải</h2>
+    <div class="row g-4">
+        <div class="col-md-6"><partial name="_DateRangePicker" model='new DateRangePickerModel("kit-dates", today.AddDays(1), today.AddDays(3))' /></div>
+        <div class="col-md-6"><partial name="_DateRangePicker" model='new DateRangePickerModel("kit-dates-empty")' /></div>
+        <div class="col-md-6"><partial name="_DateRangePicker" model='new DateRangePickerModel("kit-dates-error", Error: "Vui lòng chọn ngày nhận và trả phòng.")' /></div>
+        <div class="col-md-6"><partial name="_DateRangePicker" model='new DateRangePickerModel("kit-dates-loading", Disabled: true)' /></div>
+    </div>
+</section>
+<section id="guest-picker" class="uikit-section" aria-labelledby="guest-picker-title">
+    <h2 id="guest-picker-title" class="section-title">Số khách: biên nhỏ/lớn và không cho thao tác</h2>
+    <div class="row g-4">
+        <div class="col-md-4"><partial name="_GuestPicker" model='new GuestPickerModel("kit-guests", Value: 1, Max: 4)' /></div>
+        <div class="col-md-4"><partial name="_GuestPicker" model='new GuestPickerModel("kit-guests-max", Value: 20)' /></div>
+        <div class="col-md-4"><partial name="_GuestPicker" model='new GuestPickerModel("kit-guests-loading", Disabled: true)' /></div>
+    </div>
+</section>
+<section id="uploads" class="uikit-section" aria-labelledby="uploads-title">
+    <h2 id="uploads-title" class="section-title">Tải file: nhiều ảnh/giấy tờ, chỉ ảnh, trạng thái lỗi</h2>
+    <div class="row g-4">
+        <div class="col-md-6"><partial name="_UploadZone" model='new UploadZoneModel("kit-files", Multiple: true)' /></div>
+        <div class="col-md-6"><partial name="_UploadZone" model='new UploadZoneModel("kit-images", AllowPdf: false, Error: "File phải có dung lượng từ 1 byte đến 5MB.")' /></div>
+    </div>
+</section>
+<section id="feedback" class="uikit-section" aria-labelledby="feedback-title">
+    <h2 id="feedback-title" class="section-title">Modal xác nhận tương thích data-confirm và toast AJAX</h2>
+    <form method="get" asp-action="UiKit" data-confirm="@L["Bạn có chắc muốn tiếp tục?"]" data-confirm-title="@L["Xác nhận thao tác"]" data-confirm-variant="danger">
+        <input type="hidden" name="confirmed" value="true" />
+        <button type="submit" class="btn btn-outline-danger">@L["Xác nhận thao tác"]</button>
+    </form>
+    <button type="button" class="btn btn-outline-secondary mt-3" data-toast-demo data-toast-message="@L["Đã lưu thay đổi."]">@L["Xem thông báo mẫu"]</button>
+</section>
+
 @section Scripts {
+    <script src="~/lib/flatpickr/flatpickr.min.js"></script>
+    <script src="~/lib/flatpickr/l10n/vn.min.js"></script>
+    <script src="~/js/components/date-range-picker.js" asp-append-version="true"></script>
+    <script src="~/js/components/guest-picker.js" asp-append-version="true"></script>
+    <script src="~/js/components/upload-zone.js" asp-append-version="true"></script>
+    <script src="~/js/components/uikit.js" asp-append-version="true"></script>
     <partial name="_ValidationScriptsPartial" />
 }

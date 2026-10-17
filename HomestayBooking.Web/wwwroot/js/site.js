@@ -1,9 +1,47 @@
-// Xác nhận trước khi gửi form có data-confirm (ví dụ nút Xóa)
-$(document).on('submit', 'form[data-confirm]', function (e) {
-    if (!window.confirm($(this).data('confirm'))) {
-        e.preventDefault();
-    }
-});
+// Modal xác nhận dùng chung, giữ data-confirm và giữ nguyên nút submit/name/value gốc.
+(() => {
+    const element = document.getElementById('fx-confirm-dialog');
+    let pending = null, cancelOnShown = false;
+    $(document).on('submit', 'form[data-confirm]', function (event) {
+        if (this.dataset.fxConfirmed === 'true') { delete this.dataset.fxConfirmed; return; }
+        if (event.isDefaultPrevented() || ($.fn.valid && $(this).data('validator') && !$(this).valid())) return;
+        if (!element || !window.bootstrap) { if (!window.confirm(this.dataset.confirm)) event.preventDefault(); return; }
+        event.preventDefault();
+        pending = { form: this, submitter: event.originalEvent?.submitter || document.activeElement };
+        element.querySelector('#fx-confirm-title').textContent = this.dataset.confirmTitle || element.dataset.defaultTitle;
+        element.querySelector('#fx-confirm-message').textContent = this.dataset.confirm;
+        element.querySelector('[data-confirm-accept]').className = 'btn ' + (this.dataset.confirmVariant === 'danger' ? 'btn-outline-danger' : 'btn-brand');
+        bootstrap.Modal.getOrCreateInstance(element).show(pending.submitter);
+    });
+    element?.querySelector('[data-confirm-accept]').addEventListener('click', () => {
+        const action = pending; if (!action) return; pending = null;
+        action.form.dataset.fxConfirmed = 'true'; bootstrap.Modal.getOrCreateInstance(element).hide();
+        const button = action.submitter?.form === action.form && action.submitter.type === 'submit' ? action.submitter : undefined;
+        action.form.requestSubmit(button);
+    });
+    // Bootstrap bỏ qua hide() khi đang transition; vẫn tiếp nhận Esc/Hủy trong khoảng mở ngắn này.
+    const cancel = () => { cancelOnShown = true; bootstrap.Modal.getOrCreateInstance(element).hide(); };
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && pending && element?.classList.contains('show')) { event.preventDefault(); cancel(); }
+    }, true);
+    element?.addEventListener('click', event => { if (pending && event.target.closest('[data-bs-dismiss="modal"]')) cancel(); });
+    element?.addEventListener('shown.bs.modal', () => { if (cancelOnShown) bootstrap.Modal.getOrCreateInstance(element).hide(); });
+    element?.addEventListener('hidden.bs.modal', () => { pending?.submitter?.focus(); pending = null; cancelOnShown = false; });
+})();
+
+// Toast chỉ dành cho phản hồi AJAX/background; mọi nội dung được gán bằng textContent.
+window.fxToast = (message, tone = 'info') => {
+    const host = document.getElementById('fx-toast-host'); if (!host || !window.bootstrap) return;
+    const colors = { success: 'tone-emerald', danger: 'tone-rose', info: 'tone-sky', warning: 'tone-amber' };
+    const toast = document.createElement('div'); toast.className = 'toast ' + (colors[tone] || colors.info); toast.setAttribute('role', 'status');
+    const header = document.createElement('div'); header.className = 'toast-header';
+    const title = document.createElement('strong'); title.className = 'me-auto'; title.textContent = host.dataset.title;
+    const close = document.createElement('button'); close.type = 'button'; close.className = 'btn-close'; close.setAttribute('data-bs-dismiss', 'toast'); close.setAttribute('aria-label', host.dataset.closeLabel);
+    const body = document.createElement('div'); body.className = 'toast-body'; body.textContent = String(message);
+    header.append(title, close); toast.append(header, body); host.append(toast);
+    toast.addEventListener('hidden.bs.toast', () => toast.remove(), { once: true });
+    bootstrap.Toast.getOrCreateInstance(toast, { delay: 5000 }).show();
+};
 
 // Trạng thái "đang xử lý" cho nút submit có data-loading-text, chặn bấm hai lần.
 // Chỉ bật khi form hợp lệ (jQuery Validation) và submit không bị hủy.

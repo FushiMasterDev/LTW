@@ -1,0 +1,8 @@
+@model AlertModel
+@{
+    var (tone, icon) = Model.Tone switch { "success" => ("tone-emerald", "check-circle-fill"), "danger" => ("tone-rose", "exclamation-triangle-fill"), "warning" => ("tone-amber", "hourglass-split"), _ => ("tone-sky", "info-circle-fill") };
+}
+<div class="alert @tone @(Model.Dismissible ? "alert-dismissible fade show" : null)" role="@(Model.Tone == "danger" ? "alert" : "status")">
+    <icon name="@icon" /><div class="flex-grow-1">@L[Model.Message]</div>
+    @if (Model.Dismissible) { <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="@L["Đóng"]"></button> }
+</div>

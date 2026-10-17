@@ -47,14 +47,14 @@
 
 /* Nút trên nền ảnh tối (banner, trang đăng nhập) */
 .btn-light-glass {
-  --bs-btn-color: #fff;
-  --bs-btn-bg: rgba(255, 255, 255, 0.08);
-  --bs-btn-border-color: rgba(255, 255, 255, 0.7);
-  --bs-btn-hover-color: #1e2320;
-  --bs-btn-hover-bg: #fff;
-  --bs-btn-hover-border-color: #fff;
-  --bs-btn-active-color: #1e2320;
-  --bs-btn-active-bg: #fff;
+  --bs-btn-color: var(--fx-paper);
+  --bs-btn-bg: color-mix(in srgb, var(--fx-paper) 8%, transparent);
+  --bs-btn-border-color: color-mix(in srgb, var(--fx-paper) 70%, transparent);
+  --bs-btn-hover-color: var(--fx-on-paper);
+  --bs-btn-hover-bg: var(--fx-paper);
+  --bs-btn-hover-border-color: var(--fx-paper);
+  --bs-btn-active-color: var(--fx-on-paper);
+  --bs-btn-active-bg: var(--fx-paper);
 }
 
 .btn-outline-secondary {
@@ -83,23 +83,22 @@
 .btn-outline-danger {
   --bs-btn-color: var(--fx-danger);
   --bs-btn-border-color: color-mix(in srgb, var(--fx-danger) 55%, transparent);
-  --bs-btn-hover-color: #fff;
-  --bs-btn-hover-bg: #b42318;
-  --bs-btn-hover-border-color: #b42318;
-  --bs-btn-active-color: #fff;
-  --bs-btn-active-bg: #912018;
-  --bs-btn-active-border-color: #912018;
+  --bs-btn-hover-color: var(--fx-on-primary);
+  --bs-btn-hover-bg: var(--fx-danger);
+  --bs-btn-hover-border-color: var(--fx-danger);
+  --bs-btn-active-color: var(--fx-on-primary);
+  --bs-btn-active-bg: color-mix(in srgb, var(--fx-danger) 80%, var(--fx-ink));
+  --bs-btn-active-border-color: var(--fx-danger);
 }
-
 .btn-success {
-  --bs-btn-color: #fff;
-  --bs-btn-bg: #2e7d4f;
-  --bs-btn-border-color: #2e7d4f;
-  --bs-btn-hover-color: #fff;
-  --bs-btn-hover-bg: #256641;
-  --bs-btn-hover-border-color: #256641;
-  --bs-btn-active-bg: #1f5a36;
-  --bs-btn-active-border-color: #1f5a36;
+  --bs-btn-color: var(--fx-on-primary);
+  --bs-btn-bg: var(--fx-success);
+  --bs-btn-border-color: var(--fx-success);
+  --bs-btn-hover-color: var(--fx-on-primary);
+  --bs-btn-hover-bg: color-mix(in srgb, var(--fx-success) 90%, var(--fx-ink));
+  --bs-btn-hover-border-color: var(--fx-success);
+  --bs-btn-active-bg: color-mix(in srgb, var(--fx-success) 80%, var(--fx-ink));
+  --bs-btn-active-border-color: var(--fx-success);
 }
 
 /* Nút biểu tượng (sửa/xóa) – vùng bấm 44×44px, màu theo tone */
@@ -563,3 +562,42 @@
 .fx-skeleton--card { aspect-ratio: 4 / 3; }
 @keyframes fx-skeleton-pulse { to { opacity: .5; } }
 @media (prefers-reduced-motion: reduce) { .fx-skeleton { animation: none; } }
+
+/* ---------- Thanh lọc GET và ngăn kéo điện thoại ---------- */
+.fx-filter { padding: 1rem; margin-bottom: 1.25rem; background: var(--fx-surface); border: 1px solid var(--fx-border); border-radius: var(--fx-radius); }
+.fx-filter .offcanvas-body { display: flex; align-items: end; flex-wrap: wrap; gap: 1rem; }
+.fx-filter__fields { display: flex; flex: 1; flex-wrap: wrap; gap: 1rem; }
+.fx-filter__fields > div { flex: 1 1 9rem; min-width: 0; }
+.fx-filter__actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+@media (max-width: 767.98px) {
+  .fx-filter .offcanvas-md { background: var(--fx-surface); color: var(--fx-ink); }
+  .fx-filter .offcanvas-body, .fx-filter__fields { display: flex; flex-direction: column; align-items: stretch; }
+  .fx-filter__fields > div { flex: 0 0 auto; }
+}
+/* ---------- Bộ chọn ngày theo đêm ---------- */
+.fx-dates__native { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+[data-bs-theme] .flatpickr-calendar { background: var(--fx-surface); color: var(--fx-ink); border: 1px solid var(--fx-border); box-shadow: var(--fx-shadow-raised); }
+[data-bs-theme] .flatpickr-months .flatpickr-month, [data-bs-theme] .flatpickr-weekdays, [data-bs-theme] span.flatpickr-weekday,
+[data-bs-theme] .flatpickr-current-month .flatpickr-monthDropdown-months { background: var(--fx-surface); color: var(--fx-ink); }
+[data-bs-theme] .flatpickr-day { color: var(--fx-ink); }
+[data-bs-theme] .flatpickr-day:hover, [data-bs-theme] .flatpickr-day:focus { background: var(--fx-primary-soft); border-color: var(--fx-primary); }
+[data-bs-theme] .flatpickr-day.selected, [data-bs-theme] .flatpickr-day.startRange, [data-bs-theme] .flatpickr-day.endRange { background: var(--fx-primary); border-color: var(--fx-primary); color: var(--fx-on-primary); box-shadow: none; }
+[data-bs-theme] .flatpickr-day.inRange { background: var(--fx-primary-soft); border-color: var(--fx-primary-soft); box-shadow: -5px 0 0 var(--fx-primary-soft), 5px 0 0 var(--fx-primary-soft); }
+[data-bs-theme] .flatpickr-day.flatpickr-disabled, [data-bs-theme] .flatpickr-day.prevMonthDay, [data-bs-theme] .flatpickr-day.nextMonthDay { color: var(--fx-muted); opacity: .55; }
+[data-bs-theme] .flatpickr-prev-month svg, [data-bs-theme] .flatpickr-next-month svg { fill: var(--fx-ink); }
+/* ---------- Số khách ---------- */
+.fx-guests__control { display: flex; gap: .5rem; align-items: center; }
+.fx-guests__control input { text-align: center; min-width: 3rem; font-variant-numeric: tabular-nums; }
+.fx-guests__control button { flex: 0 0 2.75rem; padding: 0; }
+/* ---------- Tải ảnh và giấy tờ ---------- */
+.fx-upload { padding: 1.25rem; border: 1px dashed var(--fx-border-strong); border-radius: var(--fx-radius); background: var(--fx-surface); }
+.fx-upload.is-dragging, .fx-upload:focus-within { border-color: var(--fx-primary); background: var(--fx-primary-soft); }
+.fx-upload__preview { display: grid; gap: .75rem; margin-block: .75rem; }
+.fx-upload__file { display: flex; align-items: center; gap: .75rem; }
+.fx-upload__file img { width: 4rem; height: 4rem; object-fit: cover; border-radius: var(--fx-radius-sm); }
+.fx-upload__file span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+/* ---------- Modal xác nhận và toast ---------- */
+#fx-confirm-dialog .modal-body { overflow-wrap: anywhere; }
+.fx-toasts { z-index: 1090; max-width: 100%; }
+.fx-toasts .toast { --bs-toast-bg: var(--fx-surface); --bs-toast-color: var(--fx-ink); --bs-toast-header-bg: var(--tone-bg); --bs-toast-header-color: var(--tone-fg); }
+.fx-toasts .toast-body { overflow-wrap: anywhere; }

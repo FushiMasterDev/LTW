@@ -1,0 +1,14 @@
+@using HomestayBooking.Web.Services
+@using System.Globalization
+@inject TimeProvider Clock
+@model DateRangePickerModel
+@{ var today = VietnamTime.Today(Clock); }
+<div class="fx-dates" data-date-picker data-min-date="@today.ToString("yyyy-MM-dd")" data-locale="@(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)" data-blocked-url="@Model.BlockedUrl" data-range-error="@L["Khoảng ngày có đêm hết phòng."]" data-load-error="@L["Chưa tải được lịch phòng. Vui lòng thử lại."]">
+    <div class="fx-dates__native" data-date-native>
+        <div><label for="@(Model.Id)-in" class="form-label">@L["Nhận phòng"]</label><input class="form-control" type="date" id="@(Model.Id)-in" name="@Model.CheckInName" value="@Model.CheckIn?.ToString("yyyy-MM-dd")" min="@today.ToString("yyyy-MM-dd")" disabled="@Model.Disabled" data-date-in /></div>
+        <div><label for="@(Model.Id)-out" class="form-label">@L["Trả phòng"]</label><input class="form-control" type="date" id="@(Model.Id)-out" name="@Model.CheckOutName" value="@Model.CheckOut?.ToString("yyyy-MM-dd")" min="@today.AddDays(1).ToString("yyyy-MM-dd")" disabled="@Model.Disabled" data-date-out /></div>
+    </div>
+    <div data-date-enhanced hidden><label class="form-label" for="@(Model.Id)-range">@L["Ngày nhận – trả phòng"]</label><input class="form-control" id="@(Model.Id)-range" type="text" data-date-range-input disabled="@Model.Disabled" aria-describedby="@(Model.Id)-hint @(Model.Id)-error" /></div>
+    <small id="@(Model.Id)-hint" class="form-text">@L["Tính theo đêm, không gồm ngày trả phòng."]</small>
+    <p class="text-danger small mb-0" role="status" aria-live="polite" id="@(Model.Id)-error" data-date-error>@if (Model.Error is { } error) { @L[error] }</p>
+</div>

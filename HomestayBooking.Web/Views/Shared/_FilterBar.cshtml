@@ -1,0 +1,31 @@
+@model FilterBarModel
+@{ var action = Model.Action ?? Context.Request.PathBase + Context.Request.Path; var names = Model.Fields.Select(f => f.Name).Append("page").ToHashSet(StringComparer.OrdinalIgnoreCase); }
+<div class="fx-filter">
+    <button type="button" class="btn btn-outline-secondary d-md-none" data-bs-toggle="offcanvas" data-bs-target="#@Model.Id" aria-controls="@Model.Id"><icon name="sliders" /> @L["Bộ lọc"]</button>
+    <form method="get" action="@action">
+        @foreach (var query in Context.Request.Query.Where(q => !names.Contains(q.Key)))
+        { @foreach (var value in query.Value) { <input type="hidden" name="@query.Key" value="@value" /> } }
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="@Model.Id" aria-labelledby="@(Model.Id)-title">
+            <div class="offcanvas-header"><h2 class="h5" id="@(Model.Id)-title">@L["Bộ lọc"]</h2><button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#@Model.Id" aria-label="@L["Đóng"]"></button></div>
+            <div class="offcanvas-body">
+                <div class="fx-filter__fields">
+                    @foreach (var field in Model.Fields)
+                    {
+                        var id = Model.Id + "-" + field.Name;
+                        <div><label class="form-label" for="@id">@L[field.Label]</label>
+                        @if (field.Options is { } options)
+                        {
+                            <select id="@id" name="@field.Name" class="form-select" multiple="@field.Multiple">
+                                @foreach (var option in options)
+                                { <option value="@option.Value" selected="@(Context.Request.Query.TryGetValue(field.Name, out var values) ? values.Contains(option.Value) : option.Selected)">@L[option.Text]</option> }
+                            </select>
+                        }
+                        else { <input class="form-control" id="@id" name="@field.Name" type="@field.Type" value="@(Context.Request.Query[field.Name].FirstOrDefault() ?? field.Value)" /> }
+                        </div>
+                    }
+                </div>
+                <div class="fx-filter__actions"><button class="btn btn-brand" type="submit">@L["Áp dụng"]</button><a class="btn btn-outline-secondary" href="@action">@L["Xóa bộ lọc"]</a></div>
+            </div>
+        </div>
+    </form>
+</div>
