@@ -87,6 +87,24 @@ public sealed class OverbookingServiceTests
         Assert.DoesNotContain("Địa chỉ riêng", JsonSerializer.Serialize(result)); Assert.DoesNotContain("+84912000999", JsonSerializer.Serialize(result));
     }
 
+    [Theory]
+    [InlineData("move")] [InlineData("replace")] [InlineData("refund")]
+    public async Task IncidentNotificationsLinkCustomerByCodeAndOwnerToOwnerArea(string step)
+    {
+        using var h = await BackofficeTestHost.CreateAsync(); var b = await h.BookingAsync();
+        var customer = h.Db.Users.Single(u => u.PersonId == h.H.Customer.PersonId).Id;
+        var code = step switch
+        {
+            "move" => (await h.Overbooking().MoveRoomAsync(b.Id, (await h.H.Bookings().FreeRoomIdsAsync(b.RoomTypeId, b.CheckIn, b.CheckOut)).Single(), "Đổi phòng", h.Consultant)).Code,
+            "replace" => (await h.Overbooking().ReplaceAsync(b.Id, (await h.TypeAsync(800000)).Id, "Thay phòng", h.Manager)).Code,
+            _ => (await h.Overbooking().RefundAsync(b.Id, "Không tìm được", h.Manager)).Booking.Code
+        };
+        var notes = await h.Db.Notifications.ToListAsync();
+        Assert.Contains(notes, n => n.UserId == customer && n.Url == $"/Bookings/Details/{code}");
+        Assert.DoesNotContain(notes, n => n.Url == $"/Bookings/Details/{b.Id}");
+        if (step == "move") Assert.Contains(notes, n => n.UserId == h.Owner.AccountId && n.Url == $"/Owner/Bookings/Details/{b.Id}");
+    }
+
     [Fact]
     public async Task SameTypeRoomMovePreservesMoneyCodeAndWritesIncidentHistory()
     {

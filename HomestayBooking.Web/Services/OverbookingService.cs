@@ -69,8 +69,9 @@ public class OverbookingService(ApplicationDbContext db, BookingService bookings
         db.BookingStatusHistories.Add(new() { BookingId = id, FromStatus = booking.Status, ToStatus = booking.Status,
             ActorType = actor.Type, ActorAccountId = actor.AccountId, Note = historyNote, ChangedAt = Now });
         PartnerServiceSupport.Audit(db, clock, actor, "Bookings", id.ToString(), old, new { Step = "OverbookingRoomMoved", Note = note, Booking = State(booking) });
-        PartnerServiceSupport.Notify(db, notifications, clock, [booking.Customer.Person.Account?.Id, booking.Homestay.Owner.Person.Account?.Id],
-            $"Đơn {booking.Code} đã được chuyển sang phòng khác cùng loại do trùng phòng; giá và tiền cọc giữ nguyên.", $"/Bookings/Details/{id}");
+        var moved = $"Đơn {booking.Code} đã được chuyển sang phòng khác cùng loại do trùng phòng; giá và tiền cọc giữ nguyên.";
+        PartnerServiceSupport.Notify(db, notifications, clock, [booking.Customer.Person.Account?.Id], moved, $"/Bookings/Details/{booking.Code}");
+        PartnerServiceSupport.Notify(db, notifications, clock, [booking.Homestay.Owner.Person.Account?.Id], moved, $"/Owner/Bookings/Details/{id}");
         return booking;
     });
 
@@ -105,7 +106,7 @@ public class OverbookingService(ApplicationDbContext db, BookingService bookings
                 new { compensation.BookingId, Type = compensation.Type.ToString(), compensation.Amount, Status = compensation.Status.ToString() }, AuditAction.Insert);
         }
         PartnerServiceSupport.Notify(db, notifications, clock, [oldBooking.Customer.Person.Account?.Id],
-            $"Đơn {oldBooking.Code} được thay bằng {replacement.Code}; cọc đã chuyển sang, không cần nộp thêm. Đang chờ homestay xác nhận.", $"/Bookings/Details/{replacement.Id}");
+            $"Đơn {oldBooking.Code} được thay bằng {replacement.Code}; cọc đã chuyển sang, không cần nộp thêm. Đang chờ homestay xác nhận.", $"/Bookings/Details/{replacement.Code}");
         return replacement;
     });
 
@@ -120,7 +121,7 @@ public class OverbookingService(ApplicationDbContext db, BookingService bookings
         PartnerServiceSupport.Audit(db, clock, actor, "Vouchers", voucher.Id.ToString(), null,
             new { voucher.Code, voucher.CustomerId, voucher.SourceBookingId, voucher.Amount, voucher.Balance, voucher.ExpiresOn }, AuditAction.Insert);
         PartnerServiceSupport.Notify(db, notifications, clock, [booking.Customer.Person.Account?.Id],
-            $"Fuji xin lỗi vì sự cố đơn {booking.Code}. Tiền cọc được hoàn 100%, khoản hoàn đang chờ kế toán chuyển trả.", $"/Bookings/Details/{id}");
+            $"Fuji xin lỗi vì sự cố đơn {booking.Code}. Tiền cọc được hoàn 100%, khoản hoàn đang chờ kế toán chuyển trả.", $"/Bookings/Details/{booking.Code}");
         return new OverbookingRefund(booking, voucher);
     });
 }
