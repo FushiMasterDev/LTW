@@ -118,7 +118,7 @@ DeployTest, ConstraintTest hoặc database đã deploy khác, không có guard t
 sqlcmd -S localhost,1433 -U sa -C -b -d HomestayBooking_DeployTest -i tests/data_consistency.sql
 ```
 
-Mỗi mục in tên tiếng Việt, số dòng lệch và `OK`/`LỆCH`, cuối có tổng 33 mục.
+Mỗi mục in tên tiếng Việt, số dòng lệch và `OK`/`LỆCH`, cuối có tổng 35 mục.
 Mã thoát 0 khi tất cả OK; có LỆCH thì THROW để `sqlcmd -b` thoát khác 0.
 Tổng là tổng lượt vi phạm; một bản ghi có thể lệch nhiều mục. Script dùng đúng trạng thái
 `HoldsRoom()` (kể cả Completed), ngày Việt Nam cho hợp đồng hết hạn. Nếu đổi enum hoặc
@@ -280,3 +280,64 @@ Thông báo app của khách/chủ tạo và commit ngay bước Reserve, không
 B5 giữ nguyên 26 mục B1–B4, thêm 7 mục: dòng đối soát đúng homestay/kỳ CheckOut và không là đơn đã được thay; tổng RoomAmount/Retained/Commission khớp dòng; Paid có tiền cần PaidBankRef/PaidBy; Confirmed cần ConfirmedAt; Compensation Approved phải Completed và có BankRef. Tổng 33 mục chỉ SELECT; không nới CHECK hay sửa seed/dữ liệu khi có lệch.
 
 Backend B5 không thêm schema/migration. `Settlements:GraceDays` mặc định 2 (0–30), `Settlements:LookbackPeriods` 4 (1–48), `Settlements:GenerateEveryMinutes` 60 (5–1440), validate khi khởi động; chỉ lập kỳ khi End + GraceDays < hôm nay VN. Job lập kỳ giữ mốc lần thành công trong instance và chỉ lập lại sau GenerateEveryMinutes; lỗi được thử lại ở phút sau, khởi động lại chạy lượt đầu ngay. Draft được so sánh chỉ đọc trước, chỉ khi cần thay đổi mới khóa homestay rồi kiểm tra lại/tính lại; không đổi hoặc bảng không Draft thì không khóa/ghi. Bảng đã gửi giữ snapshot; đơn chưa chốt chặn gửi. Khoản Compensation chi riêng sau Completed, không cộng tổng bảng vì CHECK Payout = Retained − Commission; job vẫn kiểm khoản bù treo mỗi phút khi N kết thúc không ở hoặc bị thay tiếp. Chi khoản bù cũng bắt buộc chủ homestay đơn thay thế đủ ba trường ngân hàng, cùng kiểm tra với chi đối soát. Chỉ ghi nhận kế toán đã chuyển, không gọi ngân hàng thật. Không khởi động app để thử trên database thật: các job có thể ghi dữ liệu.
+
+### B6: báo cáo, quản trị tài khoản và đối chiếu 35 mục
+
+B6 không thêm bảng/cột/index/migration. ReportService dùng SettlementCalculator.ItemFor/FujiNetRevenue, số tạm tính theo CheckOut; ReviewRatings.Summaries bỏ đánh giá ẩn. Consultant chỉ đọc hiệu suất mình, Accountant chỉ tài chính, Manager/Administrator toàn bộ. AccountAdminService chỉ Administrator sửa tài khoản, cập nhật security stamp và audit + AccountActivityLog; Manager chỉ đọc. CatalogDeletionService chặn xóa danh mục đang dùng, kể cả tiện nghi cascade. Chưa thêm giao diện B6.
+
+`tests/data_consistency.sql` giữ 33 mục B1–B5, thêm 34 (nhân viên Suspended/Resigned nhưng tài khoản Active) và 35 (thiếu Administrator Employment Active có Account Active). Mục 35 chỉ xét khi EXISTS Employees; **không áp dụng cho database rỗng như ConstraintTest**. Tổng 35 mục, chỉ SELECT; có LỆCH thì dừng, không tự sửa dữ liệu. Bỏ kiểm hạn hợp đồng trước ngày lễ cuối theo duyệt B6, giữ nguyên mục 13 hợp đồng Active quá hạn và ContractEligibility/D20.
+
+Pkcs tham chiếu trực tiếp `System.Security.Cryptography.Pkcs` **10.0.13** ở Web, Tests nhận qua project reference; EF Core 10.0.12/SqlClient 6.1.6 giữ nguyên. Kiểm tra lại với `dotnet list package --vulnerable --include-transitive`. Nguồn: [advisory .NET về bản vá](https://github.com/dotnet/runtime/security/advisories/GHSA-846f-f764-76mx).
+
+### Môi trường chạy thử (FR-24)
+
+1. Người vận hành dựng **database demo mới có tên riêng**, áp `deploy.sql` theo mục triển khai (hoặc `dotnet ef database update` có cấu hình trỏ đúng DB demo). Không dùng v5/RestoreCheck làm nơi thử. Cấu hình chung và Development đều `Database:AutoMigrate=false`.
+2. Đặt `ConnectionStrings__Default` ở terminal trỏ tới database demo vừa deploy, giữ giá trị trong user-secrets/biến môi trường, không đưa vào git hoặc in log. Không dùng launch profile đang trỏ v5. Sau đó mới bật Development ở cổng riêng, ví dụ 5012:
+
+```bash
+: "${ConnectionStrings__Default:?Hãy cấu hình database demo riêng trước}"
+ASPNETCORE_ENVIRONMENT=Development Database__AutoMigrate=false dotnet run --project HomestayBooking.Web --no-launch-profile --urls http://localhost:5012
+```
+
+Đây là hướng dẫn cho người vận hành, B6 không chạy lệnh khởi động app. Seed chỉ thêm khi bảng tương ứng còn rỗng; chạy lại không cập nhật đè dữ liệu cũ. Role/danh mục/ngày lễ/chính sách chung có ở mọi môi trường; tài khoản và nghiệp vụ demo chỉ Development. Hợp đồng demo mới tới **2028-05-31**, thêm lịch 2028: 01/01, Tết 25–29/01 (mùng 1 = 26/01), 30/04, 01/05, 02/09. Giỗ Tổ để Admin bổ sung. Mỗi homestay mới có PropertyPhoto từ `Data/SampleFiles/sample-document.png`.
+
+**Tài khoản mẫu đọc từ SeedData.cs:** mật khẩu demo là hằng công khai `SeedData.DefaultPassword`, xem source; không lấy mật khẩu tài khoản thật từ cấu hình để ghi vào tài liệu. Nhân viên đăng nhập mã nhân viên, chủ/khách đăng nhập SĐT (chuẩn hóa E.164). Không dùng dữ liệu/mật khẩu demo làm tài khoản Production.
+
+| Đăng nhập | Vai trò/chức vụ | Tên / ghi chú |
+|---|---|---|
+| AD001 | Employee / Administrator | Quản trị viên Fuji |
+| QL001 | Employee / Manager | Nguyễn Thị Hương |
+| KT001 | Employee / Accountant | Phạm Thu Trang |
+| NV001 | Employee / Consultant | Nguyễn Thị Lan |
+| NV002 | Employee / Consultant | Trần Văn Minh |
+| 0912000001 | Owner | Lê Văn Hùng; Approved; cũng có vai trò Customer |
+| 0912000002 | Owner | Phạm Thu Hà; Approved |
+| 0912000003 | Owner | Đỗ Quang Huy; Approved |
+| 0912000004 | Owner | Vũ Minh Anh; Approved |
+| 0912000005 | Owner | Hoàng Thị Mai; Approved |
+| 0912000006 | Owner | Ngô Đức Thắng; PendingReview |
+| 0987000001 | Customer | Nguyễn Văn Minh |
+| 0987000003 | Customer | Đặng Thị Thu |
+| 0987000004 | Customer | Bùi Quốc Bảo |
+| 0987000005 | Customer | Phan Ngọc Ánh |
+| 0987000007 | Customer | Võ Thị Hồng |
+| 0987000009 | Customer | Lý Thanh Tâm |
+| 0987000010 | Customer | Mai Đức Anh |
+| 0987000012 | Customer | Tạ Quang Vinh |
+| 0987000013 | Customer | Đinh Thị Yến |
+
+Khách trong CustomerData có HasAccount=false là hồ sơ đặt hộ/tra cứu bằng mã + SĐT, không có thông tin đăng nhập. Chủ PendingReview chỉ xem dashboard/trạng thái, chưa được thao tác như chủ đã duyệt. AccountAdminService cần sẵn Administrator Active; bootstrap Administrator đầu tiên Production vẫn là việc riêng đã hoãn, không tạo bằng DefaultPassword.
+
+**Mô phỏng tiền về:** Development, đăng nhập QL001 hoặc AD001 vào `/Dev/SimulateBank` (môi trường khác trả 404). Nhập nội dung chứa Booking.Code và số tiền **AmountDue** của đơn (cọc trừ voucher), chọn tài khoản nhận theo QR rồi gửi. Action đi qua BankMatchingService với provider Simulator, không ghi Payment bằng tay. Cọc bổ sung dùng `CR<RequestId> <Booking.Code>` và đúng AdditionalDeposit; vẫn chờ Accountant, không tự áp yêu cầu. Kế toán xem các hàng chờ như luồng thật; không có lệnh chuyển tiền ngân hàng thật. Zalo/SMS hiện là LoggingMessageSender giả lập, chờ dịch vụ/mẫu tin được duyệt.
+
+**Database demo đã có dữ liệu — `data/seed_topup_2028.sql`:**
+
+- Không tự chạy lúc khởi động. Guard TargetDb phải khớp DB_NAME, chặn database hệ thống và RestoreCheck. Chỉ gia hạn hợp đồng mẫu `HD-2026-####` còn Active/ngắn hơn 2028-05-31 (không rút ngắn hợp đồng dài hơn), thêm 9 ngày lễ 2028 còn thiếu và PropertyPhoto gắn homestay mẫu còn thiếu. Không sửa giấy tờ cũ gắn OwnerRegistrationId; không tạo tài khoản hay mật khẩu.
+- Mọi thay đổi ghi AuditLog actor System, Id thật, thời gian UTC; XACT_ABORT/transaction, lỗi thì rollback. File mẫu phải có tại `App_Data/documents/sample-document.png`; Seed Development tự chép từ Data/SampleFiles, triển khai môi trường demo riêng cần chuẩn bị bản sao đó (ngoài wwwroot).
+- Trước/sau **mỗi** lần chạy, lưu COUNT_BIG(*) và CHECKSUM_AGG(BINARY_CHECKSUM(*)) của từng bảng. Thử trên DeployTest, chạy lại lần 2 và so snapshot; đủ dữ liệu thì lần 2 trả 0/0/0, không có audit mới. Dùng PW đã lấy vào bộ nhớ theo hướng dẫn user-secrets, không in giá trị:
+
+```bash
+SQLCMDPASSWORD="$PW" docker exec -i -e SQLCMDPASSWORD sql-homestay /opt/mssql-tools18/bin/sqlcmd -S localhost,1433 -U sa -C -b -d HomestayBooking_DeployTest -v TargetDb=HomestayBooking_DeployTest -i /dev/stdin < database/data/seed_topup_2028.sql
+```
+
+Lệnh trên chạy từ thư mục repo. Đã thử ngày 17/10/2026 trên DeployTest: lần 1 35/9/35, chỉ Contracts/Holidays/VerificationDocuments/AuditLogs đổi (79 audit); lần 2 0/0/0, snapshot đủ 45 bảng khớp. `data_consistency.sql` sau đó đạt 35/35 trên DeployTest, ConstraintTest và v5. **CHƯA chạy top-up trên v5**; giữ để đợt duyệt triển khai migration 9 có backup trước.

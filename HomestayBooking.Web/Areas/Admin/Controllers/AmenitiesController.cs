@@ -1,3 +1,4 @@
+using HomestayBooking.Web.Services;
 using HomestayBooking.Web.Data;
 using HomestayBooking.Web.Extensions;
 using HomestayBooking.Web.Models.Entities;
@@ -11,11 +12,13 @@ namespace HomestayBooking.Web.Areas.Admin.Controllers;
 public class AmenitiesController : AdminController
 {
     private readonly ApplicationDbContext _db;
+    private readonly CatalogDeletionService _deletion;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public AmenitiesController(ApplicationDbContext db, IStringLocalizer<SharedResource> localizer)
+    public AmenitiesController(ApplicationDbContext db, IStringLocalizer<SharedResource> localizer, CatalogDeletionService deletion)
     {
         _db = db;
+        _deletion = deletion;
         _localizer = localizer;
     }
 
@@ -104,7 +107,7 @@ public class AmenitiesController : AdminController
         return RedirectToAction(nameof(Index));
     }
 
-    /// <summary>Xóa tiện nghi; liên kết với homestay (HomestayAmenities) bị xóa theo (cascade).</summary>
+    /// <summary>Chỉ xóa tiện nghi chưa được homestay dùng; không xóa liên kết cascade ngoài ý muốn.</summary>
     [HttpPost]
     public async Task<IActionResult> Delete(int id)
     {
@@ -114,8 +117,12 @@ public class AmenitiesController : AdminController
             return NotFound();
         }
 
-        _db.Amenities.Remove(amenity);
-        await _db.SaveChangesAsync();
+        try { await _deletion.DeleteAsync(CatalogKind.Amenity, id, User); }
+        catch (BookingException ex)
+        {
+            TempData["Error"] = _localizer[ex.ResourceKey, ex.Arguments].Value;
+            return RedirectToAction(nameof(Index));
+        }
         TempData["Success"] = _localizer["Đã xóa \"{0}\".", amenity.Name].Value;
         return RedirectToAction(nameof(Index));
     }

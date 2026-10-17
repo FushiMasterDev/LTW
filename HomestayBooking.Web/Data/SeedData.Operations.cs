@@ -142,7 +142,7 @@ public static partial class SeedData
     }
 
     /// <summary>
-    /// Giấy tờ (BR-12): mỗi homestay có giấy phép kinh doanh lưu trú và giấy chứng nhận PCCC (một giấy sắp hết hạn để demo cảnh báo);
+    /// Giấy tờ (BR-12): mỗi homestay có giấy phép kinh doanh, PCCC và ảnh thực tế (một giấy sắp hết hạn để demo cảnh báo);
     /// hồ sơ Owner có bản chụp CCCD, hồ sơ đang chờ duyệt có đủ bộ giấy tờ để nhân viên thẩm định.
     /// </summary>
     private static async Task SeedVerificationDocumentsAsync(ApplicationDbContext db, DateOnly today)
@@ -171,6 +171,14 @@ public static partial class SeedData
                 FileUrl = SampleDocumentFile,
                 OriginalFileName = $"chung-nhan-pccc-{i + 1:00}.png",
                 ExpiryDate = i == 0 ? today.AddDays(20) : ContractStart.AddYears(2),
+                CreatedAt = homestay.CreatedAt,
+            });
+            db.VerificationDocuments.Add(new VerificationDocument
+            {
+                HomestayId = homestay.Id,
+                DocumentType = DocumentType.PropertyPhoto,
+                FileUrl = SampleDocumentFile,
+                OriginalFileName = $"anh-thuc-te-{i + 1:00}.png",
                 CreatedAt = homestay.CreatedAt,
             });
         }

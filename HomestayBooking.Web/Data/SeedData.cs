@@ -97,7 +97,7 @@ public static partial class SeedData
         ("Máy giặt", "bi-droplet"),
     ];
 
-    // Ngày lễ dương lịch và Tết Nguyên đán. Admin kiểm tra và bổ sung (ví dụ Giỗ Tổ 2027) trong trang Ngày lễ.
+    // Ngày lễ dương lịch và Tết Nguyên đán. Admin kiểm tra và bổ sung Giỗ Tổ 2027/2028, không tự đoán lịch âm.
     private static readonly (DateOnly Date, string Name)[] HolidayData =
     [
         (new(2026, 1, 1), "Tết Dương lịch"),
@@ -120,6 +120,15 @@ public static partial class SeedData
         (new(2027, 4, 30), "Ngày Giải phóng miền Nam"),
         (new(2027, 5, 1), "Quốc tế Lao động"),
         (new(2027, 9, 2), "Quốc khánh"),
+        (new(2028, 1, 1), "Tết Dương lịch"),
+        (new(2028, 1, 25), "Tết Nguyên đán"),
+        (new(2028, 1, 26), "Tết Nguyên đán"),
+        (new(2028, 1, 27), "Tết Nguyên đán"),
+        (new(2028, 1, 28), "Tết Nguyên đán"),
+        (new(2028, 1, 29), "Tết Nguyên đán"),
+        (new(2028, 4, 30), "Ngày Giải phóng miền Nam"),
+        (new(2028, 5, 1), "Quốc tế Lao động"),
+        (new(2028, 9, 2), "Quốc khánh"),
     ];
 
     // 5 homestay cho mỗi khu vực, theo thứ tự AreaData
@@ -418,7 +427,7 @@ public static partial class SeedData
             {
                 ContractNo = $"HD-2026-{i + 1:0000}",
                 StartDate = ContractStart,
-                EndDate = ContractStart.AddYears(1).AddDays(-1),
+                EndDate = new DateOnly(2028, 5, 31),
                 CommissionRate = commissionRates[i % commissionRates.Length],
                 Status = ContractStatus.Active,
                 SignedByEmployeeId = manager.Id,

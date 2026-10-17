@@ -8,6 +8,7 @@
 > 1.5 — 2026-10-12 (rà soát: thêm CHECK cho đơn, đối soát, giao dịch hoàn; mốc gửi/xác nhận/chuyển tiền đối soát; tiền hoàn giao dịch không khớp — migration `ReviewFixes`)  
 > 1.4 — 2026-10-11 (thêm **voucher** — Q4, D14, migration `Vouchers`)  
 > 1.3 — 2026-10-11 (giữ phòng 15 phút khi đặt; cọc qua QR **MB Bank** tự đối soát, ảnh bill làm dự phòng; **đã áp vào code**, migration `Init`)
+> **Backend B6 — 17/10/2026:** ReportService, AccountAdminService, kiểm xóa danh mục và dữ liệu mẫu 2028; không thêm schema/migration, chưa thêm giao diện B6. Top-up đã thử CHỈ trên DeployTest, chưa chạy trên v5.\
 > **Trạng thái:** Đã chốt các quyết định ở mục 1; dùng làm cơ sở viết ERD và sửa code (EF Core Code First).
 > **Cập nhật triển khai 16/10/2026:** Nghiệp vụ đổi/hủy đã chốt 14–15/10 ở mục 5.E, Q11 và `docs/change-request-design.md`; migration `20261015092139_ChangeRequestWorkflow`, service và giao diện đã được triển khai trong code. Migration đã áp lên `HomestayBooking_v5` ngày **16/10/2026** bằng `deploy.sql`; `verify.sql` đạt 96 dòng OK, toàn schema có 45 bảng, 382 cột, 76 FK, 44 CHECK bật và được tin cậy, 93 index ngoài khóa chính.
 > **Backup và restore thử:** `HomestayBooking_v5_20261016_pre-ChangeRequestWorkflow.bak` (`COPY_ONLY, CHECKSUM`), lưu tại `~/Backups/HomestayBooking/`, kèm `.sha256`; đã qua `RESTORE VERIFYONLY WITH CHECKSUM` và restore thử sang database mới **`HomestayBooking_v5_RestoreCheck3`** với file riêng, không `REPLACE`. CHECKDB không lỗi; bản restore có 7 migration, cuối `StatusConsistency`, và snapshot 45 bảng khớp v5 trước deploy. SHA-256: `9fe5e8a769229b19b2cddb010cd6d2cb2dcb292fabe90dc564c5ae5bd6fc87bc`.
@@ -68,7 +69,7 @@
 | D20 | Hợp đồng phải Active và EndDate >= CheckOut của đơn | Backend kiểm khi báo giá/đặt/đổi; không chỉ kiểm ngày đặt |
 | D21 | Chưa hỗ trợ hợp đồng tương lai | Giữ enum/index một hợp đồng Active, chưa thêm trạng thái chờ hiệu lực |
 | D22 | Tắt phòng chặn bán mới, giữ các đơn đã nhận | Không xóa lịch hoặc hủy đơn khi đổi IsActive |
-| D23 | Doanh số nhân viên theo CreatedByEmployeeId; công việc xử lý theo AssignedEmployeeId | Backend/báo cáo dùng đúng hai cột, giao lại không đổi người tạo |
+| D23 | Doanh số nhân viên theo CreatedByEmployeeId; công việc xử lý theo AssignedEmployeeId | Backend/báo cáo dùng đúng hai cột, giao lại không đổi người tạo; tỷ lệ chốt = số đơn mình tạo có ConfirmedAt / tổng số đơn mình tạo (chốt 17/10/2026), không theo lượt hỏi |
 | D24 | Chủ từ chối lịch mới sau đổi không tự hoàn phí; Manager có thể cấp voucher | Dùng Vouchers hiện có, không thêm khoản hoàn phí tự động |
 
 AuditLog được ghi **trực tiếp trong service**, cùng transaction với nghiệp vụ; không làm `SaveChangesInterceptor`. Các quyết định D15–D24 là đầu vào cho backend, không khẳng định toàn bộ backend đã được triển khai trong Prompt 10.
@@ -470,7 +471,7 @@ Trạng thái theo ngày (trống / đã đặt / bảo trì) **không lưu ở 
 
 #### `Holidays`
 
-Giữ như code: `Date` (PK), `Name`. Fuji khai báo chung cho mọi homestay.
+Giữ như code: `Date` (PK), `Name`. Fuji khai báo chung cho mọi homestay. Seed CSDL mới có lịch 2028: 01/01; 25–29/01 (Tết, mùng 1 = 26/01); 30/04; 01/05; 02/09. Giỗ Tổ để Admin bổ sung, không tự đoán lịch âm. Vẫn chỉ seed vào bảng ngày lễ rỗng; database cũ bổ sung qua script riêng, không tự top-up lúc khởi động.
 
 #### `CancellationPolicies`, `CancellationRules` — chính sách hủy (**mới**)
 
@@ -973,6 +974,39 @@ Ví dụ: tổng 2.000.000đ, cọc 600.000đ, hoa hồng 12%.
 
 ---
 
+### 7.4. Báo cáo và quản trị tài khoản B6 (FR-20/21/24, X6)
+
+**ReportService** trả DTO đã tính sẵn, không có controller/view mới. Khoảng ngày gồm cả hai đầu theo giờ VN, tối đa 366 ngày; lọc thêm HomestayId/AreaId. Mọi đường đọc kiểm lại Actor + Employee.Position và Account/Employment Active: Manager/Administrator đọc toàn bộ; Accountant chỉ FinancialAsync; Consultant chỉ EmployeesAsync của mình, không được truyền Id người khác. Chủ/khách không vào báo cáo công ty.
+
+| Chỉ tiêu | Ngày dùng / cách tính |
+|---|---|
+| Số đơn theo trạng thái, SourceChannel | CreatedAt UTC đổi biên ngày VN; GroupBy trong CSDL |
+| Tiền phòng Completed | CheckOut trong khoảng, bỏ đơn bị thay thế; tổng TotalAmount |
+| Giữ lại / hoa hồng / Fuji thực thu | Chỉ nạp đơn CheckOut trong khoảng, gọi SettlementCalculator.ItemFor/FujiNetRevenue; **tạm tính**, có thể khác bảng đã gửi |
+| Khoản bù đã chi | Compensation Approved, ReviewedAt trong khoảng; tách riêng, không cộng đối soát |
+| Tỷ lệ khách hủy | Cancelled / nhóm đơn tạo trong khoảng đã có DepositedAt; bỏ ReplacedByBookingId khác NULL |
+| Tỷ lệ chủ từ chối / hết hạn | Rejected / tổng đơn tạo; Expired báo số lượng riêng |
+| Hiệu suất tạo / tỷ lệ chốt | CreatedByEmployeeId; nhóm CreatedAt trong khoảng; ConfirmedAt khác NULL / tổng nhóm (chốt 17/10) |
+| Doanh số nhân viên | Completed theo CheckOut, CreatedByEmployeeId, không đổi khi giao lại |
+| Công việc nhân viên | AssignedEmployeeId trên nhóm đơn tạo trong khoảng; xong = Completed/Cancelled/Rejected/Expired/NoShow, còn lại đang phụ trách |
+| Điểm homestay | ReviewRatings.Summaries của Review.CreatedAt trong khoảng, bỏ IsHidden |
+| Tốc độ xác nhận | Nhóm DepositedAt trong khoảng có ConfirmedAt: trung bình phút và % <= 30 phút |
+| Trùng phòng theo tháng | AuditLog Step OverbookingReported theo CreatedAt; đơn bị thay theo CancelledAt/ReplacedByBookingId; tháng giờ VN |
+
+Trừ phần gọi ItemFor, các thống kê đơn/nhân viên/homestay được GroupBy tại CSDL, chỉ nạp kết quả gộp. Không tạo công thức tiền thứ hai. Mẫu số 0 trả 0; thời gian/điểm không có dữ liệu trả NULL. Nhân viên Consultant/Manager đang thuộc hai chức vụ này được liệt kê, kể cả ngừng việc để đọc số liệu lịch sử theo người tạo; tài khoản đọc báo cáo vẫn phải Active.
+
+**AccountAdminService** dùng UserManager, không tự băm/đọc mật khẩu. Administrator tạo PersonProfile + Employee + Account Active, role Employee; SĐT E.164/mã nhân viên unique, không tự ghép SĐT đã có Person. Mật khẩu ban đầu tuân chính sách Identity; shortcut chưa bắt đổi lần đầu, chờ luồng kích hoạt nhân viên. AccountActivityLog AccountCreated/RoleAssigned, metadata cấp role đúng actor/thời gian.
+
+Đổi chức vụ/trạng thái làm việc cập nhật security stamp. Suspended/Resigned -> Account Disabled; chuyển lại Active -> Account Active. Chỉ đổi chức vụ không tự mở Account Locked. Khóa/mở tài khoản bất kỳ Active <-> Locked phải có lý do; không dùng mở khóa để kích hoạt nhân viên ngừng việc. Reset mật khẩu chỉ nhân viên, qua UserManager, ghi PasswordReset. Manager chỉ đọc danh sách tìm theo tên/SĐT/mã, role/status, không được sửa/nâng quyền.
+
+Không tự khóa/hạ chức vụ/cho nghỉ chính mình; luôn còn Administrator Employment Active có Account Active. Transaction mặc định khóa các dòng Administrator hiện có rồi kiểm lại actor/trạng thái trước thao tác; không Serializable, không thêm schema. AuditLog trực tiếp cùng transaction với Identity và AccountActivityLog, Id thật và Old/New JSON; không log mật khẩu/hash/stamp/token. CatalogDeletionService dùng chung bốn action xóa cũ: khu vực/loại phòng/tiện nghi đang dùng bị chặn, kể cả quan hệ tiện nghi cascade; FK do tranh chấp được dịch tiếng Việt. Holidays không có FK; BookingNights giữ giá/DayType snapshot.
+
+**Dữ liệu mẫu:** Seed mới giữ guard bảng rỗng/Development như trước, hợp đồng mẫu HD-2026-* tới 2028-05-31; mỗi homestay có PropertyPhoto gắn HomestayId từ Data/SampleFiles/sample-document.png. Không đổi giấy tờ cũ gắn OwnerRegistrationId. Database cũ dùng database/data/seed_topup_2028.sql (guard TargetDb, không database hệ thống/RestoreCheck, XACT_ABORT/transaction). Chỉ gia hạn hợp đồng mẫu Active ngắn hơn mốc, không rút ngắn hợp đồng dài hơn; thêm ngày lễ/ảnh mẫu thiếu và AuditLog System. Mật khẩu demo chỉ ở Development; tài khoản Administrator đầu tiên Production vẫn cần cơ chế bootstrap riêng, không dùng DefaultPassword (việc đã hoãn từ Bước 7).
+
+Đã thử top-up hai lần trên DeployTest ngày 17/10/2026: lần 1 35 hợp đồng/9 ngày lễ/35 ảnh, 79 audit mới; chỉ Contracts/Holidays/VerificationDocuments/AuditLogs đổi. Lần 2 0/0/0; COUNT_BIG + CHECKSUM_AGG(BINARY_CHECKSUM(*)) của đủ 45 bảng khớp trước/sau. **Chưa chạy script trên v5**, chờ duyệt/backup cùng triển khai migration 9. Đối chiếu dữ liệu nay có 35 mục: thêm nhân viên ngừng việc còn Account Active và thiếu Administrator chỉ khi có Employees (database rỗng như ConstraintTest = 0/OK). Không so hạn hợp đồng với ngày lễ cuối; giữ kiểm hợp đồng quá hạn ở mục 13 và D20 tại service.
+
+Pkcs ghim 10.0.13 ở Web, transitive tới Tests; không nâng EF/SqlClient. [Advisory .NET chính thức](https://github.com/dotnet/runtime/security/advisories/GHSA-846f-f764-76mx) xác nhận bản vá. Đối chiếu FR-01…27 và các phần còn thiếu xem QUY_TRINH_BTL.md mục 3.3; không suy từ entity/test thành đã có mọi giao diện hay connector thật.
+
 ## 8. Quy tắc nghiệp vụ được thực thi ở đâu
 
 | Quy tắc | Database | Service (ứng dụng) |
@@ -1016,9 +1050,9 @@ Ví dụ: tổng 2.000.000đ, cọc 600.000đ, hoa hồng 12%.
 | Giao dịch ngân hàng (`BankTransactions`) | — | Xem giao dịch của đơn mình phụ trách | **Xem tất cả, khớp tay, đánh dấu hoàn / bỏ qua** | Xem; giả lập tiền vào (Development) | — |
 | Đối soát | — | — | Lập, đánh dấu đã trả | Xem | **Của mình**: xem |
 | Hợp đồng, hoa hồng | — | — | Xem | Thêm, sửa | Của mình: xem |
-| Báo cáo doanh thu | — | Chỉ thống kê đơn của mình | Xem | Xem | Của mình |
+| Báo cáo (X6) | — | Chỉ hiệu suất của mình, không tài chính công ty | Chỉ tài chính | Toàn bộ | — (đọc đối soát riêng) |
 | Hồ sơ Owner, giấy tờ | — | Nhập hộ, thẩm định | — | Duyệt | Của mình |
-| Tài khoản, nhân viên | — | — | — | Quản trị | — |
+| Tài khoản, nhân viên | — | — | — | Manager chỉ xem; Administrator tạo/sửa/khóa/reset | — |
 
 Chủ homestay chỉ truy vấn dữ liệu có `Homestay.OwnerId` = chính mình; lọc ở service, kiểm tra cả ở API.
 

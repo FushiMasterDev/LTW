@@ -1,3 +1,4 @@
+using HomestayBooking.Web.Services;
 using HomestayBooking.Web.Data;
 using HomestayBooking.Web.Extensions;
 using HomestayBooking.Web.Models.Entities;
@@ -11,11 +12,13 @@ namespace HomestayBooking.Web.Areas.Admin.Controllers;
 public class AreasController : AdminController
 {
     private readonly ApplicationDbContext _db;
+    private readonly CatalogDeletionService _deletion;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public AreasController(ApplicationDbContext db, IStringLocalizer<SharedResource> localizer)
+    public AreasController(ApplicationDbContext db, IStringLocalizer<SharedResource> localizer, CatalogDeletionService deletion)
     {
         _db = db;
+        _deletion = deletion;
         _localizer = localizer;
     }
 
@@ -114,14 +117,12 @@ public class AreasController : AdminController
             return NotFound();
         }
 
-        if (await _db.Homestays.AnyAsync(h => h.AreaId == id))
+        try { await _deletion.DeleteAsync(CatalogKind.Area, id, User); }
+        catch (BookingException ex)
         {
-            TempData["Error"] = _localizer["Không thể xóa \"{0}\" vì đang có homestay thuộc khu vực này.", area.Name].Value;
+            TempData["Error"] = _localizer[ex.ResourceKey, ex.Arguments].Value;
             return RedirectToAction(nameof(Index));
         }
-
-        _db.Areas.Remove(area);
-        await _db.SaveChangesAsync();
         TempData["Success"] = _localizer["Đã xóa \"{0}\".", area.Name].Value;
         return RedirectToAction(nameof(Index));
     }

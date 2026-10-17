@@ -54,6 +54,12 @@ public class SeedDataSqliteTests
             Assert.True(await db.Payments.AnyAsync());
             Assert.True(await db.Settlements.AnyAsync());
             Assert.True(await db.BookingChangeRequests.AnyAsync());
+            Assert.All(await db.Contracts.ToListAsync(), c => Assert.Equal(new DateOnly(2028, 5, 31), c.EndDate));
+            var holidays2028 = await db.Holidays.Where(h => h.Date.Year == 2028).Select(h => h.Date).ToListAsync();
+            Assert.Equal(new DateOnly[] { new(2028, 1, 1), new(2028, 1, 25), new(2028, 1, 26), new(2028, 1, 27), new(2028, 1, 28),
+                new(2028, 1, 29), new(2028, 4, 30), new(2028, 5, 1), new(2028, 9, 2) }, holidays2028.Order().ToArray());
+            Assert.False(await db.Homestays.AnyAsync(h => !db.VerificationDocuments.Any(d => d.HomestayId == h.Id
+                && d.DocumentType == HomestayBooking.Web.Models.Entities.DocumentType.PropertyPhoto && d.FileUrl == SeedData.SampleDocumentFile)));
             // Tin nhắc ngắn vẫn giữ đủ tên cơ sở dài nhất trong dữ liệu seed và liên kết chi tiết.
             var longest = (await db.Homestays.AsNoTracking().ToListAsync()).MaxBy(h => h.Name.Length)!;
             var sample = new HomestayBooking.Web.Models.Entities.Booking {

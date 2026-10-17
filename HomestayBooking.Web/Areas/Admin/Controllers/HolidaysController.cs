@@ -1,3 +1,4 @@
+using HomestayBooking.Web.Services;
 using System.Globalization;
 using HomestayBooking.Web.Data;
 using HomestayBooking.Web.Extensions;
@@ -15,11 +16,13 @@ public class HolidaysController : AdminController
     private const string DateFormat = "yyyy-MM-dd";
 
     private readonly ApplicationDbContext _db;
+    private readonly CatalogDeletionService _deletion;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public HolidaysController(ApplicationDbContext db, IStringLocalizer<SharedResource> localizer)
+    public HolidaysController(ApplicationDbContext db, IStringLocalizer<SharedResource> localizer, CatalogDeletionService deletion)
     {
         _db = db;
+        _deletion = deletion;
         _localizer = localizer;
     }
 
@@ -123,8 +126,12 @@ public class HolidaysController : AdminController
             return NotFound();
         }
 
-        _db.Holidays.Remove(holiday);
-        await _db.SaveChangesAsync();
+        try { await _deletion.DeleteAsync(CatalogKind.Holiday, holiday.Date, User); }
+        catch (BookingException ex)
+        {
+            TempData["Error"] = _localizer[ex.ResourceKey, ex.Arguments].Value;
+            return RedirectToAction(nameof(Index));
+        }
         TempData["Success"] = _localizer["Đã xóa \"{0}\".", holiday.Name].Value;
         return RedirectToAction(nameof(Index), new { year = holiday.Date.Year });
     }

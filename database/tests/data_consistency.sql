@@ -5,6 +5,7 @@
 -- Không kiểm giấy tờ mới trên toàn bộ homestay cũ (D17, mục H của B1).
 -- Ba loại giá Weekday/Weekend/Holiday theo DayType; sửa enum thì sửa script.
 -- Ngày hợp đồng tính theo giờ Việt Nam; mỗi mục đếm dòng vi phạm trong bảng được nêu.
+-- Mục 35 không áp dụng cho database rỗng như ConstraintTest (không có nhân viên).
 ;WITH KiemTra AS (
     SELECT 1 AS STT, N'Đơn khác homestay của loại phòng' AS Muc, COUNT_BIG(*) AS SoDongLech
     FROM Bookings b JOIN RoomTypes t ON t.Id = b.RoomTypeId WHERE b.HomestayId <> t.HomestayId
@@ -121,9 +122,20 @@
     SELECT 33 AS STT, N'Khoản bù Approved sai trạng thái hoặc thiếu mã' AS Muc, COUNT_BIG(*) AS SoDongLech
     FROM Payments p JOIN Bookings b ON b.Id = p.BookingId WHERE p.Type = 'Compensation' AND p.Status = 'Approved'
        AND (b.Status <> 'Completed' OR p.BankRef IS NULL OR LTRIM(RTRIM(p.BankRef)) = '')
+    UNION ALL
+    SELECT 34 AS STT, N'Nhân viên ngừng việc còn tài khoản Active' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Employees e JOIN AspNetUsers a ON a.PersonId = e.PersonId
+    WHERE e.EmploymentStatus IN ('Suspended','Resigned') AND a.Status = 'Active'
+    UNION ALL
+    SELECT 35 AS STT, N'Không còn Administrator Active' AS Muc,
+       CASE WHEN EXISTS (SELECT 1 FROM Employees) AND NOT EXISTS (
+           SELECT 1 FROM Employees e JOIN AspNetUsers a ON a.PersonId = e.PersonId
+           WHERE e.Position = 'Administrator' AND e.EmploymentStatus = 'Active' AND a.Status = 'Active'
+       ) THEN CAST(1 AS bigint) ELSE CAST(0 AS bigint) END AS SoDongLech
+
 )
 SELECT CASE WHEN GROUPING(STT) = 1 THEN 99 ELSE STT END AS STT,
-       CASE WHEN GROUPING(STT) = 1 THEN N'TỔNG (33 mục)' ELSE Muc END AS Muc,
+       CASE WHEN GROUPING(STT) = 1 THEN N'TỔNG (35 mục)' ELSE Muc END AS Muc,
        SUM(SoDongLech) AS SoDongLech,
        CASE WHEN SUM(SoDongLech) = 0 THEN N'OK' ELSE N'LỆCH' END AS KetQua
 FROM KiemTra
@@ -249,6 +261,17 @@ IF EXISTS (
     SELECT 33 AS STT, N'Khoản bù Approved sai trạng thái hoặc thiếu mã' AS Muc, COUNT_BIG(*) AS SoDongLech
     FROM Payments p JOIN Bookings b ON b.Id = p.BookingId WHERE p.Type = 'Compensation' AND p.Status = 'Approved'
        AND (b.Status <> 'Completed' OR p.BankRef IS NULL OR LTRIM(RTRIM(p.BankRef)) = '')
+    UNION ALL
+    SELECT 34 AS STT, N'Nhân viên ngừng việc còn tài khoản Active' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Employees e JOIN AspNetUsers a ON a.PersonId = e.PersonId
+    WHERE e.EmploymentStatus IN ('Suspended','Resigned') AND a.Status = 'Active'
+    UNION ALL
+    SELECT 35 AS STT, N'Không còn Administrator Active' AS Muc,
+       CASE WHEN EXISTS (SELECT 1 FROM Employees) AND NOT EXISTS (
+           SELECT 1 FROM Employees e JOIN AspNetUsers a ON a.PersonId = e.PersonId
+           WHERE e.Position = 'Administrator' AND e.EmploymentStatus = 'Active' AND a.Status = 'Active'
+       ) THEN CAST(1 AS bigint) ELSE CAST(0 AS bigint) END AS SoDongLech
+
     ) AS KiemTra WHERE SoDongLech > 0
 )
     THROW 50020, N'Đối chiếu dữ liệu có mục LỆCH; không tự sửa dữ liệu.', 1;
