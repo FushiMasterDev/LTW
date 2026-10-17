@@ -1,6 +1,7 @@
 using HomestayBooking.Web.Data;
 using HomestayBooking.Web.Models.Entities;
 using HomestayBooking.Web.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -15,7 +16,9 @@ internal sealed class BackofficeTestHost : IDisposable
     public Actor Manager => P.Manager;
     public Actor Consultant => P.Consultant;
     public AvailabilityService Availability(ApplicationDbContext? db = null) => new(db ?? Db, H.Clock, Options.Create(H.Options));
-    public StaffBookingService Staff(ApplicationDbContext? db = null) => new(db ?? Db, H.Bookings(db), new(db ?? Db), H.Clock);
+    public StaffBookingService Staff(ApplicationDbContext? db = null) => new(db ?? Db, H.Bookings(db), new(db ?? Db), H.Clock, Guests(db));
+    public GuestCustomerService Guests(ApplicationDbContext? db = null) =>
+        new(db ?? Db, new CustomerAccountService(db ?? Db, P.Users, new AccountActivityLogger(db ?? Db, new HttpContextAccessor())), H.Clock);
     public CustomerService Customers(ApplicationDbContext? db = null) => new(db ?? Db, H.Vouchers(db), H.Clock);
     public OverbookingService Overbooking(ApplicationDbContext? db = null) => new(db ?? Db, H.Bookings(db), Availability(db), H.Vouchers(db), new(db ?? Db), H.Clock);
     public Actor Owner => new(ActorType.Owner, Db.Users.Single(u => u.PersonId == H.Homestay.Owner.PersonId).Id);

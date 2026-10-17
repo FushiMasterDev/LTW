@@ -110,6 +110,10 @@ builder.Services.AddScoped<CompensationService>();
 builder.Services.AddScoped<ReportService>();
 builder.Services.AddScoped<AccountAdminService>();
 builder.Services.AddScoped<CatalogDeletionService>();
+builder.Services.AddScoped<GuestCustomerService>();
+builder.Services.AddScoped<OwnerRegistrationQueryService>();
+builder.Services.AddScoped<AdminBootstrapService>();
+builder.Services.Configure<AdminBootstrapOptions>(builder.Configuration.GetSection(AdminBootstrapOptions.Section));
 builder.Services.AddOptions<SettlementOptions>()
     .Bind(builder.Configuration.GetSection(SettlementOptions.Section))
     .ValidateDataAnnotations()
@@ -218,5 +222,10 @@ app.MapControllerRoute(
 app.MapControllers(); // Web API (attribute routing)
 
 await SeedData.InitializeAsync(app.Services);
+using (var bootstrapScope = app.Services.CreateScope())
+{
+    // FR-21: ngoài Development, tạo Quản trị viên đầu tiên từ cấu hình bí mật nếu CSDL chưa có ai.
+    await bootstrapScope.ServiceProvider.GetRequiredService<AdminBootstrapService>().RunAsync();
+}
 
 app.Run();
