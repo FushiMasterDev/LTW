@@ -1,6 +1,8 @@
+using HomestayBooking.Web.Models.Entities;
+
 namespace HomestayBooking.Web.Models.ViewModels;
 
-public record AreaSummary(int Id, string Name, int HomestayCount);
+public record AreaSummary(int Id, string Name, int HomestayCount, AreaGroup Group = AreaGroup.InnerCity);
 
 /// <summary>Thẻ homestay nổi bật ở trang chủ: điểm đánh giá thật (đánh giá không bị ẩn) và giá ngày thường thấp nhất.</summary>
 public record FeaturedHomestay(int Id, string Name, string AreaName, string? CoverUrl, decimal? FromPrice, double? Rating, int ReviewCount);

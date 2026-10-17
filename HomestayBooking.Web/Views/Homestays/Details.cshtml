@@ -1,143 +1,197 @@
+@using HomestayBooking.Web.TagHelpers
+@using HomestayBooking.Web.Services
+@inject TimeProvider Clock
 @model HomestayDetailsViewModel
 @{
     ViewData["Title"] = Model.Name;
     var q = Model.Query;
-    var today = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
+    var today = VietnamTime.Today(Clock);
     var nights = q.HasDates ? q.CheckOut!.Value.DayNumber - q.CheckIn!.Value.DayNumber : 0;
-    string Money(decimal? v) => v is decimal d ? d.ToString("N0") + "đ" : "—";
+    var reviews = Model.Reviews;
+    // Bộ chọn ngày ở cấp homestay chỉ khóa đêm hết phòng khi homestay bán đúng một loại phòng (endpoint tính theo loại phòng).
+    var blockedUrl = Model.RoomTypes.Count == 1
+        ? Url.Action("BlockedDates", new { roomTypeId = Model.RoomTypes[0].Id, from = today.ToString("yyyy-MM-dd"), to = today.AddDays(92).ToString("yyyy-MM-dd") })
+        : null;
+    var cheapest = Model.RoomTypes.Where(t => t.Quote is not null && t.FreeRooms > 0 && t.MaxGuests >= q.Guests).MinBy(t => t.Quote!.Total);
+    var price = new PriceBreakdownModel(cheapest?.Quote is { } quote
+        ? [new PriceLine("Tổng tiền thấp nhất", quote.Total), new PriceLine("Tiền cọc", quote.Deposit), new PriceLine("Thanh toán tại homestay", quote.Total - quote.Deposit)]
+        : null);
+    var panelEmpty = !q.HasDates ? "Chọn ngày nhận và trả phòng để xem phòng trống và tổng tiền."
+        : cheapest is null ? "Không còn loại phòng phù hợp trong những ngày này." : null;
+    var panel = new BookingPanelModel("stay-panel", new DateRangePickerModel("stay-dates", q.CheckIn, q.CheckOut, BlockedUrl: blockedUrl),
+        new GuestPickerModel("stay-guests", Value: q.Guests), price, Url.Action("Details", new { id = Model.Id })!,
+        Title: "Chọn ngày", SubmitLabel: "Xem phòng trống", Empty: panelEmpty,
+        Note: "Địa chỉ chính xác và số điện thoại homestay được gửi sau khi đơn được xác nhận.");
 }
 
-<nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb small mb-0">
-        <li class="breadcrumb-item"><a asp-action="Index">@L["Tìm homestay"]</a></li>
-        <li class="breadcrumb-item active" aria-current="page">@Model.Name</li>
-    </ol>
-</nav>
+@section Head {
+    <link rel="stylesheet" href="~/lib/flatpickr/flatpickr.min.css" />
+}
 
-<div class="stay-heading mb-4">
-    <h1 class="mb-2">@Model.Name</h1>
-    <ul class="stay-facts">
-        <li><i class="bi bi-geo-alt" aria-hidden="true"></i>@Model.AreaName, @L["Hà Nội"]</li>
-        <li><i class="bi bi-clock" aria-hidden="true"></i>@L["Nhận phòng từ {0}, trả phòng trước {1}", Model.CheckinTime.ToString("HH:mm"), Model.CheckoutTime.ToString("HH:mm")]</li>
+<partial name="_Breadcrumb" model="@(new BreadcrumbModel([new BreadcrumbItem("Tìm homestay", Url.Action("Index")), new BreadcrumbItem(Model.Name)]))" />
+
+<header class="stay-head">
+    <h1>@Model.Name</h1>
+    <ul class="stay-head__facts">
+        <li><icon name="geo-alt" />@Model.AreaName, @L["Hà Nội"]</li>
+        @if (reviews?.Average is not null)
+        {
+            <li><a href="#reviews"><rating value="reviews.Average" count="reviews.Count" /></a></li>
+        }
+        <li><icon name="clock" />@L["Nhận phòng từ {0}, trả phòng trước {1}", Model.CheckinTime.ToString("HH:mm"), Model.CheckoutTime.ToString("HH:mm")]</li>
     </ul>
-</div>
+</header>
 
 <partial name="_Gallery" model="@(new GalleryModel(Model.Name, Model.Images))" />
 
-<div class="row g-4 g-xl-5">
-    <div class="col-lg-8 order-2 order-lg-1">
-        <h2 class="section-title mt-0"><i class="bi bi-door-open" aria-hidden="true"></i> @L["Loại phòng"]</h2>
-        @if (!q.HasDates)
-        {
-            <div class="alert tone-sky" role="status">
-                <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
-                <div>@L["Chọn ngày nhận và trả phòng để xem phòng trống và tổng tiền."]</div>
-            </div>
-        }
-        <div class="d-grid gap-3">
-            @foreach (var t in Model.RoomTypes)
+<div class="stay-layout">
+    <div class="stay-layout__panel">
+        <partial name="_BookingPanel" model="panel" />
+    </div>
+
+    <div class="stay-layout__main">
+        <section class="stay-section" id="rooms" aria-labelledby="roomsTitle">
+            <h2 id="roomsTitle">@L["Loại phòng"]</h2>
+            @if (q.HasDates)
             {
-                var fits = t.MaxGuests >= q.Guests;
-                var soldOut = t.FreeRooms == 0;
-                <article class="card-soft room-offer @(fits && !soldOut ? "" : "is-muted")">
-                    <div class="row g-3">
-                        <div class="col-md-7">
-                            <h3 class="mb-1">@t.Name</h3>
-                            <p class="small text-muted mb-2">
-                                @t.CategoryName · @L["Tối đa {0} khách", t.MaxGuests]@(t.AreaM2 is int m2 ? $" · {m2} m²" : "")
-                            </p>
+                <p class="stay-section__lead">@L["{0} đêm, từ {1} đến {2}, cho {3} khách.", nights, q.CheckIn!.Value.ToString("dd/MM"), q.CheckOut!.Value.ToString("dd/MM/yyyy"), q.Guests]</p>
+            }
+            else
+            {
+                <p class="stay-section__lead">@L["Chọn ngày nhận và trả phòng để xem phòng trống và tổng tiền."]</p>
+            }
+            @if (Model.RoomTypes.Count == 0)
+            {
+                <partial name="_EmptyState" model='new EmptyStateModel("Chưa có loại phòng đang mở bán.", "Vui lòng chọn homestay khác hoặc gọi 1900 0000 để được tư vấn.", "door-closed")' />
+            }
+            <ul class="stay-rooms">
+                @foreach (var t in Model.RoomTypes)
+                {
+                    var fits = t.MaxGuests >= q.Guests;
+                    var soldOut = t.FreeRooms == 0;
+                    <li class="stay-room @(fits && !soldOut ? null : "is-unavailable")">
+                        <div class="stay-room__info">
+                            <h3>@t.Name</h3>
+                            <p class="stay-room__meta">@t.CategoryName · @L["Tối đa {0} khách", t.MaxGuests]@(t.AreaM2 is int m2 ? $" · {m2} m²" : "")</p>
                             @if (!string.IsNullOrEmpty(t.Description))
                             {
-                                <p class="small mb-3">@t.Description</p>
+                                <p class="stay-room__desc">@t.Description</p>
                             }
-                            <dl class="price-table small mb-0">
-                                <div><dt>@L["Ngày thường"]</dt><dd>@Money(t.WeekdayPrice)</dd></div>
-                                <div><dt>@L["Cuối tuần"]</dt><dd>@Money(t.WeekendPrice)</dd></div>
-                                <div><dt>@L["Ngày lễ"]</dt><dd>@Money(t.HolidayPrice)</dd></div>
+                            <dl class="stay-room__prices">
+                                <div><dt>@L["Ngày thường"]</dt><dd><money value="t.WeekdayPrice" /></dd></div>
+                                <div><dt>@L["Cuối tuần"]</dt><dd><money value="t.WeekendPrice" /></dd></div>
+                                <div><dt>@L["Ngày lễ"]</dt><dd><money value="t.HolidayPrice" /></dd></div>
                             </dl>
                         </div>
-                        <div class="col-md-5">
-                            <div class="room-quote">
-                                @if (t.Quote is not null)
+                        <div class="stay-room__action">
+                            @if (t.Quote is not null)
+                            {
+                                <p class="stay-room__total"><money value="t.Quote.Total" /></p>
+                                <p class="stay-room__deposit">@L["{0} đêm", nights] · @L["Cọc {0}", MoneyTagHelper.Format(t.Quote.Deposit)]</p>
+                            }
+                            @if (!fits)
+                            {
+                                <span class="badge-tone tone-amber">@L["Không đủ chỗ cho {0} khách", q.Guests]</span>
+                            }
+                            else if (soldOut)
+                            {
+                                <span class="badge-tone tone-rose">@L["Hết phòng"]</span>
+                            }
+                            else
+                            {
+                                @if (t.FreeRooms is int free)
                                 {
-                                    <div class="small text-muted">@L["{0} đêm", nights]</div>
-                                    <div class="fs-4 price">@Money(t.Quote.Total)</div>
-                                    <div class="small text-muted mb-2">@L["Cọc {0}", Money(t.Quote.Deposit)]</div>
+                                    <span class="badge-tone tone-emerald">@L["Còn {0} phòng", free]</span>
                                 }
-                                @if (!fits)
-                                {
-                                    <span class="badge-tone tone-amber">@L["Không đủ chỗ cho {0} khách", q.Guests]</span>
-                                }
-                                else if (soldOut)
-                                {
-                                    <span class="badge-tone tone-rose">@L["Hết phòng"]</span>
-                                }
-                                else
-                                {
-                                    @if (t.FreeRooms is int free)
-                                    {
-                                        <div class="small mb-2"><span class="badge-tone tone-emerald">@L["Còn {0} phòng", free]</span></div>
-                                    }
-                                    <a class="btn btn-accent" asp-controller="Bookings" asp-action="Create" asp-route-roomTypeId="@t.Id"
-                                       asp-route-checkIn="@q.CheckIn?.ToString("yyyy-MM-dd")" asp-route-checkOut="@q.CheckOut?.ToString("yyyy-MM-dd")" asp-route-guests="@q.Guests">
-                                        <i class="bi bi-calendar-check" aria-hidden="true"></i> @L["Đặt phòng"]
-                                    </a>
-                                }
-                            </div>
+                                <a class="btn btn-brand" asp-controller="Bookings" asp-action="Create" asp-route-roomTypeId="@t.Id"
+                                   asp-route-checkIn="@q.CheckIn?.ToString("yyyy-MM-dd")" asp-route-checkOut="@q.CheckOut?.ToString("yyyy-MM-dd")" asp-route-guests="@q.Guests">
+                                    @L["Đặt phòng"]
+                                </a>
+                            }
                         </div>
-                    </div>
-                </article>
-            }
-        </div>
+                    </li>
+                }
+            </ul>
+        </section>
 
         @if (!string.IsNullOrEmpty(Model.DescriptionHtml))
         {
-            <h2 class="section-title"><i class="bi bi-card-text" aria-hidden="true"></i> @L["Giới thiệu"]</h2>
-            <div class="rich-text">@Html.Raw(Model.DescriptionHtml)</div>
+            <section class="stay-section" aria-labelledby="aboutTitle">
+                <h2 id="aboutTitle">@L["Giới thiệu"]</h2>
+                <div class="rich-text">@Html.Raw(Model.DescriptionHtml)</div>
+            </section>
         }
 
         @if (Model.Amenities.Count > 0)
         {
-            <h2 class="section-title"><i class="bi bi-stars" aria-hidden="true"></i> @L["Tiện nghi"]</h2>
-            <ul class="amenity-list list-unstyled mb-0">
-                @foreach (var (name, icon) in Model.Amenities)
-                {
-                    <li><i class="bi @(icon ?? "bi-check2")" aria-hidden="true"></i> @name</li>
-                }
-            </ul>
+            <section class="stay-section" aria-labelledby="amenitiesTitle">
+                <h2 id="amenitiesTitle">@L["Tiện nghi"]</h2>
+                <ul class="stay-amenities">
+                    @foreach (var (name, icon) in Model.Amenities)
+                    {
+                        <li><i class="bi @(icon ?? "bi-check2")" aria-hidden="true"></i>@name</li>
+                    }
+                </ul>
+            </section>
         }
 
-        <h2 class="section-title"><i class="bi bi-shield-check" aria-hidden="true"></i> @L["Chính sách hủy"]</h2>
-        <div class="card-soft p-3 p-md-4">
-            <p class="small text-muted">@L["Tiền cọc {0:P0} tổng tiền phòng. Số tiền hoàn tính theo số ngày còn lại trước ngày nhận phòng.", Model.DepositRate]</p>
+        @if (reviews is not null)
+        {
+            <section class="stay-section" id="reviews" aria-labelledby="reviewsTitle">
+                <h2 id="reviewsTitle">@L["Đánh giá của khách"]</h2>
+                @if (reviews.Count == 0)
+                {
+                    <p class="stay-section__lead">@L["Chưa có đánh giá. Khách đã ở có thể đánh giá sau khi trả phòng."]</p>
+                }
+                else
+                {
+                    <div class="stay-score">
+                        <p class="stay-score__value">@reviews.Average!.Value.ToString("0.0")</p>
+                        <p class="stay-score__label">@L["trên 5, từ {0} đánh giá", reviews.Count]</p>
+                    </div>
+                    <ul class="stay-reviews">
+                        @foreach (var r in reviews.Reviews)
+                        {
+                            <li>
+                                <div class="stay-reviews__head">
+                                    <rating value="r.Rating" single="true" />
+                                    <time datetime="@r.CreatedAt.ToString("yyyy-MM-dd")">@VietnamTime.ToLocal(DateTime.SpecifyKind(r.CreatedAt, DateTimeKind.Utc)).ToString("dd/MM/yyyy")</time>
+                                </div>
+                                @if (!string.IsNullOrEmpty(r.Comment))
+                                {
+                                    <p>@r.Comment</p>
+                                }
+                                @if (!string.IsNullOrEmpty(r.OwnerReply))
+                                {
+                                    <div class="stay-reviews__reply">
+                                        <p class="fw-semibold mb-1">@L["Chủ homestay trả lời"]</p>
+                                        <p>@r.OwnerReply</p>
+                                    </div>
+                                }
+                            </li>
+                        }
+                    </ul>
+                    @if (reviews.Reviews.TotalPages > 1) { <partial name="_Pager" model="reviews.Reviews" /> }
+                }
+            </section>
+        }
+
+        <section class="stay-section" aria-labelledby="policyTitle">
+            <h2 id="policyTitle">@L["Chính sách hủy"]</h2>
+            <p class="stay-section__lead">@L["Tiền cọc {0:P0} tổng tiền phòng. Số tiền hoàn tính theo số ngày còn lại trước ngày nhận phòng.", Model.DepositRate]</p>
             <partial name="_PriceBreakdown" model="@(new PriceBreakdownModel(Rules: Model.GeneralPolicy))" />
             @if (Model.HolidayPolicy is not null)
             {
-                <p class="small fw-semibold mt-3 mb-1">@L["Đơn có đêm ngày lễ"]</p>
+                <h3 class="stay-section__sub">@L["Đơn có đêm ngày lễ"]</h3>
                 <partial name="_PriceBreakdown" model="@(new PriceBreakdownModel(Rules: Model.HolidayPolicy))" />
             }
-        </div>
+        </section>
     </div>
-
-    <aside class="col-lg-4 order-1 order-lg-2">
-        <form method="get" class="card-soft booking-panel sticky-lg-top" aria-labelledby="pickDatesTitle" data-date-range>
-            <h2 class="h6 mb-3" id="pickDatesTitle"><i class="bi bi-calendar-range text-brand" aria-hidden="true"></i> @L["Chọn ngày"]</h2>
-            <div class="row g-2">
-                <div class="col-6">
-                    <label class="form-label small" for="CheckIn">@L["Nhận phòng"]</label>
-                    <input class="form-control" type="date" id="CheckIn" name="CheckIn" min="@today" value="@q.CheckIn?.ToString("yyyy-MM-dd")" required />
-                </div>
-                <div class="col-6">
-                    <label class="form-label small" for="CheckOut">@L["Trả phòng"]</label>
-                    <input class="form-control" type="date" id="CheckOut" name="CheckOut" min="@today" value="@q.CheckOut?.ToString("yyyy-MM-dd")" required />
-                </div>
-                <div class="col-12">
-                    <label class="form-label small" for="Guests">@L["Số khách"]</label>
-                    <input class="form-control" type="number" id="Guests" name="Guests" min="1" max="20" value="@q.Guests" inputmode="numeric" />
-                </div>
-            </div>
-            <button type="submit" class="btn btn-brand w-100 mt-3"><i class="bi bi-search" aria-hidden="true"></i> @L["Xem phòng trống"]</button>
-            <p class="small text-muted mt-3 mb-0"><i class="bi bi-lock" aria-hidden="true"></i> @L["Địa chỉ chính xác và số điện thoại homestay được gửi sau khi đơn được xác nhận."]</p>
-        </form>
-    </aside>
 </div>
+
+@section Scripts {
+    <script src="~/lib/flatpickr/flatpickr.min.js"></script>
+    <script src="~/lib/flatpickr/l10n/vn.min.js"></script>
+    <script src="~/js/components/date-range-picker.js" asp-append-version="true"></script>
+    <script src="~/js/components/guest-picker.js" asp-append-version="true"></script>
+}

@@ -30,7 +30,7 @@ public class HomeController : Controller
                 r.IsActive && r.RoomType.IsActive && r.RoomType.Homestay.Status == HomestayStatus.Active),
             Areas = await _db.Areas
                 .OrderBy(a => a.Name)
-                .Select(a => new AreaSummary(a.Id, a.Name, a.Homestays.Count(h => h.Status == HomestayStatus.Active)))
+                .Select(a => new AreaSummary(a.Id, a.Name, a.Homestays.Count(h => h.Status == HomestayStatus.Active), a.AreaGroup))
                 .ToListAsync(),
             Featured = await _availability.FeaturedAsync(),
         };

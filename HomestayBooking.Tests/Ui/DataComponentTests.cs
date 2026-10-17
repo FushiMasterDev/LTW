@@ -34,6 +34,14 @@ public class DataComponentTests
         Assert.Contains("[en] Chưa có đánh giá", html); Assert.DoesNotContain("4.8", html);
     }
 
+    [Fact]
+    public async Task SingleReviewShowsScoreOutOfFiveWithoutCount()
+    {
+        var html = await TagHelperTests.RenderAsync(new RatingTagHelper(TagHelperTests.Localizer()) { Value = 4, Single = true }, "rating");
+        Assert.Contains("4/5", html); Assert.Contains("[en] Điểm 4 trên 5", html);
+        Assert.Contains("role=\"img\"", html); Assert.DoesNotContain("Chưa có đánh giá", html);
+    }
+
     [Theory]
     [InlineData("asc", "desc")] [InlineData("desc", "asc")] [InlineData("", "desc")]
     public void SortLinkKeepsRepeatedFiltersAndResetsPagination(string direction, string expected)

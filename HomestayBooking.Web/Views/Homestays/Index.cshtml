@@ -1,92 +1,68 @@
+@using System.Globalization
 @model HomestaySearchViewModel
 @{
     ViewData["Title"] = L["Tìm homestay"];
     var q = Model.Query;
-    var today = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
-    var hasFilter = q.AreaId is not null || q.HasDates || q.MaxPrice is not null || !string.IsNullOrWhiteSpace(q.Q) || q.Guests != 2;
+    string Invariant(decimal value) => value.ToString(CultureInfo.InvariantCulture);
+    var areas = Model.Areas.Select(a => new SelectListItem(a.Name, a.Id.ToString())).ToList();
+    var minPrices = new[] { 300_000m, 500_000m, 800_000m };
+    var maxPrices = new[] { 400_000m, 600_000m, 800_000m, 1_200_000m };
+    var sorts = new (HomestaySort Value, string Label)[]
+    {
+        (HomestaySort.Default, "Phù hợp nhất"), (HomestaySort.PriceAscending, "Giá thấp đến cao"),
+        (HomestaySort.PriceDescending, "Giá cao đến thấp"), (HomestaySort.Rating, "Điểm đánh giá cao"),
+    };
+    var fields = new List<FilterField>
+    {
+        new("Q", "Tên homestay", q.Q),
+        new("MinPrice", "Giá từ / đêm", Options: minPrices.Select(p => new SelectListItem(p.ToString("N0", CultureInfo.GetCultureInfo("vi-VN")) + "đ", Invariant(p), q.MinPrice == p))
+            .Prepend(new SelectListItem("Bất kỳ", "", q.MinPrice is null)).ToList()),
+        new("MaxPrice", "Giá đến / đêm", Options: maxPrices.Select(p => new SelectListItem(p.ToString("N0", CultureInfo.GetCultureInfo("vi-VN")) + "đ", Invariant(p), q.MaxPrice == p))
+            .Prepend(new SelectListItem("Bất kỳ", "", q.MaxPrice is null)).ToList()),
+        new("CategoryId", "Loại phòng", Options: Model.Categories.Select(c => new SelectListItem(c.Name, c.Id.ToString(), q.CategoryId == c.Id))
+            .Prepend(new SelectListItem("Tất cả", "", q.CategoryId is null)).ToList()),
+        new("Sort", "Sắp xếp", Options: sorts.Select(s => new SelectListItem(s.Label, s.Value.ToString(), q.Sort == s.Value)).ToList()),
+    };
+    if (Model.Amenities.Count > 0)
+    {
+        fields.Add(new("AmenityIds", "Tiện nghi", Type: "checkbox",
+            Options: Model.Amenities.Select(a => new SelectListItem(a.Name, a.Id.ToString(), q.AmenityIds.Contains(a.Id))).ToList()));
+    }
 }
 
-<div class="page-head">
-    <div>
-        <h1>@L["Tìm homestay"]</h1>
-        <p class="text-muted mb-0">@L["Chọn ngày để chỉ xem homestay còn phòng trống."]</p>
-    </div>
+@section Head {
+    <link rel="stylesheet" href="~/lib/flatpickr/flatpickr.min.css" />
+}
+
+<div class="stays-head">
+    <h1>@L["Tìm homestay"]</h1>
+    <p>@L["Chọn ngày để chỉ xem homestay còn phòng trống."]</p>
 </div>
 
-<form method="get" class="card-soft filter-bar" role="search" aria-label="@L["Bộ lọc tìm kiếm"]" data-date-range>
-    <div class="row g-3 align-items-end">
-        <div class="col-md-6 col-lg-3">
-            <label class="form-label" for="Q">@L["Tên homestay"]</label>
-            <div class="input-group">
-                <span class="input-group-text" aria-hidden="true"><i class="bi bi-search"></i></span>
-                <input class="form-control" id="Q" name="Q" value="@q.Q" placeholder="@L["Ví dụ: Tây Hồ"]" />
-            </div>
-        </div>
-        <div class="col-md-6 col-lg-2">
-            <label class="form-label" for="AreaId">@L["Khu vực"]</label>
-            <select class="form-select" id="AreaId" name="AreaId">
-                <option value="">@L["Tất cả"]</option>
-                @foreach (var group in Model.Areas.GroupBy(a => a.Group))
-                {
-                    <optgroup label="@L[group.Key.DisplayName()]">
-                        @foreach (var a in group)
-                        {
-                            <option value="@a.Id" selected="@(q.AreaId == a.Id)">@a.Name</option>
-                        }
-                    </optgroup>
-                }
-            </select>
-        </div>
-        <div class="col-6 col-lg-2">
-            <label class="form-label" for="CheckIn">@L["Nhận phòng"]</label>
-            <input class="form-control" type="date" id="CheckIn" name="CheckIn" min="@today" value="@q.CheckIn?.ToString("yyyy-MM-dd")" />
-        </div>
-        <div class="col-6 col-lg-2">
-            <label class="form-label" for="CheckOut">@L["Trả phòng"]</label>
-            <input class="form-control" type="date" id="CheckOut" name="CheckOut" min="@today" value="@q.CheckOut?.ToString("yyyy-MM-dd")" />
-        </div>
-        <div class="col-6 col-lg-1">
-            <label class="form-label" for="Guests">@L["Số khách"]</label>
-            <input class="form-control" type="number" id="Guests" name="Guests" min="1" max="20" value="@q.Guests" inputmode="numeric" />
-        </div>
-        <div class="col-6 col-lg-2">
-            <label class="form-label" for="MaxPrice">@L["Giá tối đa / đêm"]</label>
-            <select class="form-select" id="MaxPrice" name="MaxPrice">
-                <option value="">@L["Không giới hạn"]</option>
-                @foreach (var price in new[] { 400_000m, 600_000m, 800_000m, 1_200_000m })
-                {
-                    <option value="@price" selected="@(q.MaxPrice == price)">@price.ToString("N0")đ</option>
-                }
-            </select>
-        </div>
-    </div>
-    <div class="d-flex flex-wrap gap-2 mt-3">
-        <button type="submit" class="btn btn-brand"><i class="bi bi-search" aria-hidden="true"></i> @L["Tìm"]</button>
-        @if (hasFilter)
-        {
-            <a class="btn btn-outline-secondary" asp-action="Index">@L["Xóa bộ lọc"]</a>
-        }
-    </div>
-</form>
+<partial name="_SearchBar" model="@(new SearchBarModel("stays-search", areas, q))" />
+<partial name="_FilterBar" model="@(new FilterBarModel("stays-filter", fields))" />
+
+@if (ViewData["SearchError"] is string error)
+{
+    <partial name="_Alert" model="@(new AlertModel(error, "danger", Dismissible: false))" />
+}
 
 @if (Model.Results.TotalCount == 0)
 {
-    <div class="card-soft"><partial name="_EmptyState" model='new EmptyStateModel("Không có homestay phù hợp.", "Hãy thử đổi ngày, bớt số khách hoặc chọn khu vực khác.", "house-x", "Xóa bộ lọc", Url.Action("Index"))' /></div>
+    <partial name="_EmptyState" model='new EmptyStateModel("Không có homestay phù hợp.", "Hãy thử đổi ngày, bớt số khách hoặc chọn khu vực khác.", "house-x", "Xóa bộ lọc", Url.Action("Index"))' />
 }
 else
 {
-    <div class="search-summary" role="status">
-        <span>
-            @if (q.HasDates)
-            {
-                @L["{0} homestay còn phòng từ {1} đến {2}", Model.Results.TotalCount, q.CheckIn!.Value.ToString("dd/MM"), q.CheckOut!.Value.ToString("dd/MM/yyyy")]
-            }
-            else
-            {
-                @L["{0} homestay phù hợp. Chọn ngày để xem phòng trống.", Model.Results.TotalCount]
-            }
-        </span>
-    </div>
+    <p class="stays-summary" role="status">
+        @if (q.HasDates)
+        {
+            @L["{0} homestay còn phòng từ {1} đến {2}", Model.Results.TotalCount, q.CheckIn!.Value.ToString("dd/MM"), q.CheckOut!.Value.ToString("dd/MM/yyyy")]
+        }
+        else
+        {
+            @L["{0} homestay phù hợp. Chọn ngày để xem phòng trống.", Model.Results.TotalCount]
+        }
+    </p>
 
     <div class="fx-homestay-grid">
         @foreach (var h in Model.Results)
@@ -95,4 +71,11 @@ else
         }
     </div>
     <partial name="_Pager" model="Model.Results" />
+}
+
+@section Scripts {
+    <script src="~/lib/flatpickr/flatpickr.min.js"></script>
+    <script src="~/lib/flatpickr/l10n/vn.min.js"></script>
+    <script src="~/js/components/date-range-picker.js" asp-append-version="true"></script>
+    <script src="~/js/components/guest-picker.js" asp-append-version="true"></script>
 }

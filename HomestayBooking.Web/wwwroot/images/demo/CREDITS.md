@@ -1,12 +1,11 @@
 # Ảnh mẫu (demo)
 
-Ảnh dùng cho dữ liệu mẫu ở môi trường Development và ảnh banner trang chủ.
+Ảnh dùng cho dữ liệu mẫu ở môi trường Development. Ảnh trang trí (banner, trang đăng nhập) ghi ở `docs/ui/credits.md`.
 Đã cắt về tỉ lệ 3:2, nén WebP: `<tên>.webp` (≤1600px) và `<tên>-sm.webp` (≤640px, cho thẻ danh sách).
 Tìm qua [Openverse](https://openverse.org). Đây là ảnh minh họa, không phải ảnh thật của các homestay trong dữ liệu mẫu.
 
 | File | Nguồn | Tác giả | Giấy phép |
 |---|---|---|---|
-| `hero-wooden-cabin.webp` | [Wikimedia Commons](https://commons.wikimedia.org/w/index.php?curid=193969735) | Shixart1985 | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/) — bắt buộc ghi tên tác giả (đã ghi trên banner) |
 | `bathroom-white.webp` | [rawpixel](https://www.rawpixel.com/image/5921891/photo-image-light-public-domain-shadow) | — | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |
 | `breakfast-table.webp` | [rawpixel](https://www.rawpixel.com/image/3300949/free-photo-image-bookcase-office-food-desk) | — | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |
 | `bright-living.webp` | [rawpixel](https://www.rawpixel.com/image/3286851/free-photo-image-bedroom-living-room-interior) | — | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |

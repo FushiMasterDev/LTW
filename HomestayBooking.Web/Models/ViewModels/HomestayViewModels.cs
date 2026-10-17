@@ -81,4 +81,6 @@ public class HomestayDetailsViewModel
     public IReadOnlyList<PolicyRuleView>? HolidayPolicy { get; init; }
     public HomestaySearchQuery Query { get; init; } = new();
     public decimal DepositRate { get; init; }
+    /// <summary>Đánh giá công khai (không gồm đánh giá ẩn) và điểm tổng; null khi controller được gọi không qua DI.</summary>
+    public ReviewPage? Reviews { get; init; }
 }

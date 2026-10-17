@@ -5,7 +5,7 @@ namespace HomestayBooking.Web.Models.ViewModels.Ui;
 /// <param name="Name">Tên trường query string hiện có.</param>
 /// <param name="Label">Khóa resource của nhãn.</param>
 /// <param name="Value">Giá trị ban đầu nếu query chưa có trường này.</param>
-/// <param name="Type">Loại input HTML.</param>
+/// <param name="Type">Loại input HTML; "checkbox" kèm Options dựng nhóm ô chọn nhiều (tiện nghi).</param>
 /// <param name="Options">Có giá trị thì dựng select thay input.</param>
 /// <param name="Multiple">Cho chọn nhiều giá trị trong select.</param>
 public record FilterField(string Name, string Label, string? Value = null, string Type = "text", IReadOnlyList<SelectListItem>? Options = null, bool Multiple = false);

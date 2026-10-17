@@ -12,6 +12,19 @@
                     @foreach (var field in Model.Fields)
                     {
                         var id = Model.Id + "-" + field.Name;
+                        @if (field.Type == "checkbox" && field.Options is { } choices)
+                        {
+                            var chosen = Context.Request.Query[field.Name];
+                            <fieldset class="fx-filter__choices"><legend class="form-label">@L[field.Label]</legend>
+                            @for (var i = 0; i < choices.Count; i++)
+                            {
+                                var option = choices[i];
+                                <input class="btn-check" type="checkbox" id="@(id)-@i" name="@field.Name" value="@option.Value" checked="@(chosen.Count > 0 ? chosen.Contains(option.Value) : option.Selected)" />
+                                <label class="btn fx-filter__choice" for="@(id)-@i">@L[option.Text]</label>
+                            }
+                            </fieldset>
+                            continue;
+                        }
                         <div><label class="form-label" for="@id">@L[field.Label]</label>
                         @if (field.Options is { } options)
                         {

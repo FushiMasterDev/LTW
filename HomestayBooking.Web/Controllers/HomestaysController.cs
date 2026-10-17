@@ -26,9 +26,43 @@ public class HomestaysController : Controller
         _options = options.Value;
     }
 
-    public async Task<IActionResult> Index(HomestaySearchQuery query) => View(await _availability.SearchAsync(query));
+    public async Task<IActionResult> Index(HomestaySearchQuery query)
+    {
+        try
+        {
+            return View(await _availability.SearchAsync(query));
+        }
+        catch (BookingException ex)
+        {
+            // Bộ lọc sai (khoảng giá, ngày quá dài, cách sắp xếp): báo lỗi và tìm lại theo phần lọc còn hợp lệ, không trả 500.
+            ViewData["SearchError"] = ex.ResourceKey;
+            return View(await _availability.SearchAsync(new HomestaySearchQuery
+            {
+                AreaId = query.AreaId, Guests = query.Guests, CategoryId = query.CategoryId, AmenityIds = query.AmenityIds, Q = query.Q,
+            }));
+        }
+    }
 
-    public async Task<IActionResult> Details(int id, HomestaySearchQuery query)
+    /// <summary>Đêm hết phòng của một loại phòng cho bộ chọn ngày; khoảng [from, to) tối đa 92 đêm. Tham số sai trả 400.</summary>
+    [HttpGet]
+    public async Task<IActionResult> BlockedDates(int roomTypeId, DateOnly? from, DateOnly? to)
+    {
+        if (!ModelState.IsValid || roomTypeId <= 0 || from is null || to is null)
+        {
+            return BadRequest();
+        }
+        try
+        {
+            var nights = await _availability.BlockedDatesAsync(roomTypeId, from.Value, to.Value);
+            return Json(nights.Select(n => n.ToString("yyyy-MM-dd")));
+        }
+        catch (BookingException ex)
+        {
+            return BadRequest(ex.ResourceKey);
+        }
+    }
+
+    public async Task<IActionResult> Details(int id, HomestaySearchQuery query, [FromServices] ReviewService? reviews = null)
     {
         var today = VietnamTime.Today(_clock);
         if (query.CheckIn < today) query.CheckIn = today;
@@ -106,6 +140,7 @@ public class HomestaysController : Controller
             HolidayPolicy = RulesOf(PolicyScope.Holiday),
             Query = query,
             DepositRate = _options.DepositRate,
+            Reviews = reviews is null ? null : await reviews.ListAsync(id, query.Page),
         });
     }
 }

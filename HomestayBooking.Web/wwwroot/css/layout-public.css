@@ -123,22 +123,15 @@
 
 /* ---------- Footer ---------- */
 .site-footer {
-  --footer-bg: #1d2b25;
-  --footer-ink: #e4ebe6;
-  --footer-muted: #a9b9b0;
+  --footer-bg: var(--fx-footer-bg);
+  --footer-ink: var(--fx-footer-ink);
+  --footer-muted: var(--fx-footer-muted);
   background: var(--footer-bg);
   color: var(--footer-ink);
 }
 
 [data-bs-theme="dark"] .site-footer {
-  --footer-bg: #0d110f;
-  --footer-muted: #8f9c94;
   border-top: 1px solid var(--fx-border);
-}
-
-.site-footer-rule {
-  border-color: color-mix(in srgb, var(--footer-ink) 15%, transparent);
-  opacity: 1;
 }
 
 /* ---------- Khung trang đăng nhập/lỗi (_AuthLayout) ---------- */
@@ -185,373 +178,583 @@
   margin-top: 0.35rem;
 }
 
-/* ---------- Banner trang chủ ---------- */
-.hero-photo {
+/* ---------- Trang chủ: banner ảnh, thanh tìm đè mép dưới ---------- */
+.home-hero {
   position: relative;
   isolation: isolate;
-  min-height: clamp(30rem, 74vh, 42rem);
-  display: flex;
-  align-items: flex-end;
-  color: #fff;
-  background: #24332c; /* hiện khi ảnh chưa tải */
+  display: grid;
+  align-content: end;
+  min-height: clamp(28rem, 70vh, 40rem);
+  color: var(--fx-paper);
+  background: var(--fx-photo-fallback);
 }
 
-.hero-photo > img {
+.home-hero__photo {
   position: absolute;
   inset: 0;
   z-index: -2;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 40%;
+  object-position: center 62%;
 }
 
-.hero-photo::before {
+/* Lớp phủ trung tính dưới chữ trắng: ngoại lệ duy nhất cho dải chuyển màu */
+.home-hero::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: -1;
-  background:
-    linear-gradient(to top, rgba(14, 20, 17, 0.82) 0%, rgba(14, 20, 17, 0.45) 42%, rgba(14, 20, 17, 0.12) 75%),
-    linear-gradient(to right, rgba(14, 20, 17, 0.45) 0%, rgba(14, 20, 17, 0) 60%);
+  background: linear-gradient(to top,
+    color-mix(in srgb, var(--fx-scrim) 84%, transparent) 0%,
+    color-mix(in srgb, var(--fx-scrim) 52%, transparent) 45%,
+    color-mix(in srgb, var(--fx-scrim) 10%, transparent) 85%);
 }
 
-.hero-copy {
-  padding-block: 6rem 7.5rem;
-  max-width: 40rem;
+.home-hero__copy {
+  padding-block: 7rem 6.5rem;
 }
 
-.hero-photo h1 {
-  color: #fff;
-  font-size: clamp(2.25rem, 1.5rem + 3.2vw, 3.75rem);
-  line-height: 1.08;
-  letter-spacing: -0.015em;
+.site-public .home-hero h1 {
+  max-width: 18ch;
   margin-bottom: 1rem;
-  max-width: 16ch;
+  color: var(--fx-paper);
+  font-size: clamp(2.125rem, 1.35rem + 3.3vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
 }
 
-.hero-photo .lead {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: clamp(1.05rem, 1rem + 0.3vw, 1.2rem);
+.home-hero__copy p {
   max-width: 34rem;
-  margin-bottom: 0;
+  margin: 0;
+  color: color-mix(in srgb, var(--fx-paper) 92%, transparent);
+  font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+  line-height: 1.5;
 }
 
-.hero-credit {
+/* Nguồn ảnh nằm trên nền trời sáng: cần nền tối riêng để đọc được */
+.home-hero__credit {
   position: absolute;
-  right: 1rem;
   top: 0.75rem;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.72);
+  right: 1rem;
+  margin: 0;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--fx-radius-full);
+  background: color-mix(in srgb, var(--fx-scrim) 62%, transparent);
+  color: var(--fx-paper);
+  font-size: 0.8125rem;
 }
 
-.hero-credit a {
+.home-hero__credit a {
   color: inherit;
 }
 
-/* Ô tìm kiếm đè lên mép dưới banner */
-.hero-search {
+.home-search {
   position: relative;
   z-index: 2;
-  margin-top: -4.5rem;
-  padding: 1.25rem;
-  border-radius: var(--fx-radius-lg);
+  margin-top: -3.75rem;
 }
 
-@media (min-width: 992px) {
-  .hero-search {
-    padding: 1.25rem 1.5rem;
-  }
+.home-search .fx-search {
+  margin-bottom: 2.75rem;
 }
 
-.hero-search .form-label {
-  font-size: 0.875rem;
-}
-
-.hero-search .form-control,
-.hero-search .form-select {
-  min-height: 3rem;
-}
-
-.hero-search .btn {
-  min-height: 3rem;
-}
-
-.hero-search-note {
-  margin: 0.85rem 0 0;
+.home-search__note {
+  max-width: 40rem;
+  margin: 0;
   color: var(--fx-muted);
-  font-size: 0.9rem;
 }
 
-/* ---------- Các khối trang chủ ---------- */
+/* ---------- Trang chủ: khu vực, homestay nổi bật, ba bước, cam kết, đối tác ---------- */
 .home-section {
-  margin-top: 4rem;
+  margin-top: clamp(4rem, 2.5rem + 5vw, 7rem);
 }
 
-.section-head {
+.home-section h2,
+.home-areas h2 {
+  margin-bottom: 0.5rem;
+}
+
+.home-section__head {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 0.5rem 1.5rem;
-  margin-bottom: 1.5rem;
+  gap: 1rem 1.5rem;
+  margin-bottom: 1.75rem;
 }
 
-.section-head h2 {
-  margin: 0;
-}
-
-.section-head p {
-  margin: 0.35rem 0 0;
-  color: var(--fx-muted);
-  max-width: 40rem;
-}
-
-/* Cam kết: ba ý ngắn, không đóng khung thẻ */
-.promise-list {
-  display: grid;
-  gap: 1.5rem;
-  margin: 3rem 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-@media (min-width: 768px) {
-  .promise-list {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2rem;
-  }
-}
-
-.promise-list li {
-  display: flex;
-  gap: 0.9rem;
-  align-items: flex-start;
-}
-
-.promise-list .bi {
-  color: var(--fx-primary);
-  font-size: 1.5rem;
-  line-height: 1.2;
-}
-
-.promise-list strong {
-  display: block;
-  margin-bottom: 0.2rem;
-}
-
-.promise-list p {
+.home-section__head p,
+.home-areas__intro p {
+  max-width: 36rem;
   margin: 0;
   color: var(--fx-muted);
-  font-size: 0.95rem;
 }
 
-/* Khu vực: danh sách link, chia nội thành / ngoại thành */
-.area-grid {
+.home-areas {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
-  gap: 0.75rem;
+  gap: 2rem;
+  margin-top: clamp(3rem, 2rem + 4vw, 5.5rem);
 }
 
-/* Desktop: 4 cột cố định để 7–8 khu vực không bị lẻ một ô ở hàng cuối */
-@media (min-width: 992px) {
-  .area-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
+.home-areas__groups {
+  display: grid;
+  gap: 2rem;
 }
 
-.area-tile,
-a.area-tile {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  min-height: 3.75rem;
-  padding: 0.85rem 1.1rem;
-  border: 1px solid var(--fx-border);
-  border-radius: var(--fx-radius);
-  background: var(--fx-surface);
-  color: var(--fx-ink);
-  text-decoration: none;
-  transition: border-color 0.18s var(--fx-ease), background-color 0.18s var(--fx-ease);
-}
-
-a.area-tile:hover,
-a.area-tile:focus-visible {
-  border-color: var(--fx-primary);
-  background: var(--fx-primary-soft);
-  color: var(--fx-ink);
-}
-
-.area-tile strong {
-  display: block;
+.site-public .home-areas h3 {
+  margin-bottom: 0.25rem;
+  color: var(--fx-muted);
+  font-size: 0.9375rem;
   font-weight: 600;
 }
 
-.area-tile small {
-  color: var(--fx-muted);
-}
-
-.area-tile .bi {
-  color: var(--fx-muted);
-}
-
-/* Ba bước đặt phòng: là một trình tự thật nên có số */
-.steps {
-  display: grid;
-  gap: 1.25rem;
+.home-areas__list {
   margin: 0;
   padding: 0;
   list-style: none;
-  counter-reset: step;
+}
+
+.home-areas__list a {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 3.25rem;
+  margin-inline: -0.75rem;
+  padding: 0.7rem 0.75rem;
+  border-radius: var(--fx-radius-sm);
+  color: var(--fx-ink);
+  font-size: 1.1875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.18s var(--fx-ease), background-color 0.18s var(--fx-ease);
+}
+
+.home-areas__list a:hover,
+.home-areas__list a:focus-visible {
+  background: var(--fx-surface-2);
+  color: var(--fx-primary);
+}
+
+.home-areas__list small {
+  flex-shrink: 0;
+  color: var(--fx-muted);
+  font-size: 0.875rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
 }
 
 @media (min-width: 768px) {
-  .steps {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0;
-  }
-
-  .steps li + li {
-    border-left: 1px solid var(--fx-border);
-  }
-
-  .steps li {
-    padding-inline: 1.5rem;
-  }
-
-  .steps li:first-child {
-    padding-left: 0;
+  .home-areas__groups {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3rem;
   }
 }
 
-.step-number {
-  font-family: var(--fx-font-serif);
-  font-size: 2.25rem;
-  line-height: 1;
-  color: var(--fx-primary);
+@media (min-width: 992px) {
+  .home-areas {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: 3rem;
+  }
+}
+
+/* Ba bước là trình tự thật: số thứ tự do <ol> sinh ra */
+.home-steps__list {
+  display: grid;
+  gap: 2rem;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: home-step;
+}
+
+.home-steps__list li {
+  counter-increment: home-step;
+}
+
+.home-steps__list li::before {
+  content: counter(home-step);
+  display: block;
   margin-bottom: 0.75rem;
+  color: var(--fx-primary);
+  font-family: var(--fx-font-serif);
+  font-size: 3rem;
+  font-weight: 600;
+  line-height: 1;
 }
 
-.steps h3 {
-  font-size: 1.1rem;
+.site-public .home-steps h3,
+.site-public .home-promises h3 {
   margin-bottom: 0.35rem;
+  font-size: 1.125rem;
 }
 
-.steps p {
+.home-steps p,
+.home-promises p {
+  max-width: 24rem;
   margin: 0;
-  color: var(--fx-muted);
 }
 
-/* ---------- Bộ lọc trang tìm kiếm ---------- */
-.search-summary {
+@media (min-width: 768px) {
+  .home-steps__list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2.5rem;
+  }
+}
+
+.home-promises {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.home-promises__list {
+  display: grid;
+  gap: 1.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-promises__list li {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.home-promises__list .bi {
+  display: grid;
+  place-items: center;
+  flex: 0 0 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--fx-radius-full);
+  background: var(--fx-primary-soft);
+  color: var(--fx-on-primary-soft);
+  font-size: 1.25rem;
+}
+
+@media (min-width: 992px) {
+  .home-promises {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: 3rem;
+  }
+}
+
+.home-partner {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem 1rem;
+  gap: 1.5rem 2rem;
+  margin-top: clamp(4rem, 2.5rem + 5vw, 7rem);
+  padding: clamp(1.75rem, 1rem + 3vw, 3.5rem);
+  border-radius: var(--fx-radius-lg);
+  background: var(--fx-primary-soft);
+  color: var(--fx-on-primary-soft);
+}
+
+.site-public .home-partner h2 {
+  margin-bottom: 0.5rem;
+  color: var(--fx-on-primary-soft);
+  font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2.25rem);
+}
+
+.home-partner p {
+  max-width: 34rem;
+  margin: 0;
+}
+
+@media (max-width: 767.98px) {
+  .home-hero__copy {
+    padding-block: 5rem 5rem;
+  }
+
+  .home-search {
+    margin-top: -2.5rem;
+  }
+
+  .home-search .fx-search {
+    margin-bottom: 0.75rem;
+  }
+
+  .home-partner .btn {
+    width: 100%;
+  }
+}
+
+/* ---------- Tìm homestay ---------- */
+.stays-head {
+  margin-bottom: 1.5rem;
+}
+
+.stays-head h1 {
+  margin-bottom: 0.35rem;
+}
+
+.stays-head p,
+.stays-summary {
+  margin: 0;
+  color: var(--fx-muted);
+}
+
+.stays-summary {
+  margin-bottom: 1.25rem;
+}
+
+/* ---------- Chi tiết homestay ---------- */
+.stay-head {
+  margin: 1rem 0 1.5rem;
+}
+
+.site-public .stay-head h1 {
+  margin-bottom: 0.5rem;
+  font-size: clamp(1.875rem, 1.4rem + 1.8vw, 2.75rem);
+  line-height: 1.15;
+}
+
+.stay-head__facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--fx-muted);
+}
+
+.stay-head__facts .bi {
+  margin-right: 0.4rem;
+}
+
+.stay-head__facts a {
+  color: inherit;
+}
+
+.stay-layout {
+  display: grid;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.stay-layout__main {
+  min-width: 0;
+}
+
+@media (min-width: 992px) {
+  .stay-layout {
+    grid-template-columns: minmax(0, 1fr) 22rem;
+    grid-template-areas: "main panel";
+    gap: 3rem;
+    align-items: start;
+  }
+
+  .stay-layout__main {
+    grid-area: main;
+  }
+
+  .stay-layout__panel {
+    grid-area: panel;
+    position: sticky;
+    top: 5.5rem;
+  }
+
+  .stay-layout__panel .fx-booking-panel {
+    position: static;
+  }
+}
+
+.stay-section + .stay-section {
+  margin-top: 3rem;
+}
+
+.stay-section .rich-text {
+  max-width: 40rem;
+}
+
+.stay-section h2 {
+  margin-bottom: 0.5rem;
+}
+
+.stay-section__lead {
+  max-width: 40rem;
   margin-bottom: 1.25rem;
   color: var(--fx-muted);
 }
 
-.search-summary strong {
-  color: var(--fx-ink);
+.site-public .stay-section__sub {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 1rem;
 }
 
-/* ---------- Chi tiết homestay ---------- */
-.stay-heading p {
-  color: var(--fx-muted);
-}
-
-.stay-facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem 1.25rem;
+.stay-rooms,
+.stay-amenities,
+.stay-reviews {
   margin: 0;
   padding: 0;
   list-style: none;
-  color: var(--fx-muted);
 }
 
-.stay-facts .bi {
-  margin-right: 0.3rem;
+.stay-rooms {
+  display: grid;
+  gap: 0.75rem;
 }
 
-.room-offer {
+/* Mỗi loại phòng là một nền surface, tách nhau bằng khoảng trống thay cho đường kẻ */
+.stay-room {
+  display: grid;
+  gap: 1rem 2rem;
   padding: 1.25rem;
+  border-radius: var(--fx-radius);
+  background: var(--fx-surface);
 }
 
-.room-offer h3 {
-  font-size: 1.15rem;
-}
-
-.room-offer.is-muted {
+.stay-room.is-unavailable {
   background: var(--fx-surface-2);
 }
 
-.room-offer.is-muted h3,
-.room-offer.is-muted .price-table {
-  opacity: 0.75;
+.site-public .stay-room h3 {
+  margin-bottom: 0.25rem;
+  font-size: 1.1875rem;
 }
 
-.room-quote {
-  border-top: 1px solid var(--fx-border);
-  padding-top: 1rem;
+.stay-room__meta,
+.stay-room__deposit {
+  margin-bottom: 0.5rem;
+  color: var(--fx-muted);
+  font-size: 0.9375rem;
+}
+
+.stay-room__desc {
+  max-width: 40rem;
+  margin-bottom: 0.75rem;
+}
+
+.stay-room__prices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.75rem;
+  margin: 0;
+}
+
+.stay-room__prices dt {
+  color: var(--fx-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.stay-room__prices dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.stay-room__action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.stay-room__total {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.stay-room__deposit {
+  margin: 0;
+}
+
+.stay-room.is-unavailable .stay-room__info {
+  color: var(--fx-muted);
 }
 
 @media (min-width: 768px) {
-  .room-quote {
-    border-top: 0;
-    border-left: 1px solid var(--fx-border);
-    padding: 0 0 0 1.25rem;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+  .stay-room {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .stay-room__action {
     align-items: flex-end;
     text-align: right;
   }
 }
 
-.price-table {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1.5rem;
-}
-
-.price-table > div {
-  display: flex;
-  flex-direction: column;
-}
-
-.price-table dt {
-  font-weight: 500;
-  color: var(--fx-muted);
-}
-
-.price-table dd {
-  margin: 0;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.amenity-list {
+.stay-amenities {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
-  gap: 0.75rem 1.25rem;
+  gap: 0.85rem 1.5rem;
 }
 
-.amenity-list li {
+.stay-amenities li {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.65rem;
 }
 
-.amenity-list .bi {
+.stay-amenities .bi {
   color: var(--fx-primary);
   font-size: 1.15rem;
 }
 
+/* Điểm tổng là con số lớn nhất của trang chi tiết (DESIGN.md) */
+.stay-score {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.stay-score__value {
+  margin: 0;
+  font-family: var(--fx-font-serif);
+  font-size: clamp(3rem, 2.4rem + 2.5vw, 4.5rem);
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stay-score__label {
+  margin: 0;
+  color: var(--fx-muted);
+}
+
+.stay-reviews {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.stay-reviews li {
+  max-width: 44rem;
+  overflow-wrap: anywhere;
+}
+
+.stay-reviews li p {
+  margin: 0.4rem 0 0;
+}
+
+.stay-reviews__head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--fx-muted);
+  font-size: 0.875rem;
+}
+
+.stay-reviews__reply {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--fx-radius-sm);
+  background: var(--fx-surface-2);
+}
+
+.stay-reviews__reply p {
+  margin: 0;
+}
+
+/* ---------- Cũ: Bookings dùng tới bước 03 nhóm 2 ---------- */
 .booking-panel {
   padding: 1.25rem;
 }
@@ -803,15 +1006,7 @@ a.area-tile:focus-visible {
 
 /* ---------- Điện thoại ---------- */
 @media (max-width: 575.98px) {
-  .hero-copy {
-    padding-block: 4.5rem 6.5rem;
-  }
-
   .page-head h1 {
     font-size: 1.5rem;
-  }
-
-  .home-section {
-    margin-top: 3rem;
   }
 }

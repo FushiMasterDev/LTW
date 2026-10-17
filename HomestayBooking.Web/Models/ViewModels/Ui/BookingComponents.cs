@@ -41,8 +41,13 @@ public record GalleryModel(string Name, IReadOnlyList<string> Images);
 /// <param name="Dates">Ngày đã chọn.</param>
 /// <param name="Guests">Số khách và sức chứa.</param>
 /// <param name="Price">Báo giá đã tính ở service.</param>
-/// <param name="Action">Đường dẫn GET nhận lựa chọn, chưa gắn vào trang thật ở bước 02.</param>
-public record BookingPanelModel(string Id, DateRangePickerModel Dates, GuestPickerModel Guests, PriceBreakdownModel Price, string Action);
+/// <param name="Action">Đường dẫn GET nhận lựa chọn (trang chi tiết homestay).</param>
+/// <param name="Title">Khóa resource của tiêu đề ô, bỏ trống thì không có tiêu đề.</param>
+/// <param name="SubmitLabel">Khóa resource của nút gửi.</param>
+/// <param name="Empty">Gợi ý khi chưa có dòng giá (chưa chọn ngày).</param>
+/// <param name="Note">Ghi chú dưới form, ví dụ quy tắc hiện địa chỉ.</param>
+public record BookingPanelModel(string Id, DateRangePickerModel Dates, GuestPickerModel Guests, PriceBreakdownModel Price, string Action,
+    string? Title = null, string SubmitLabel = "Xem báo giá", string? Empty = null, string? Note = null);
 
 /// <param name="Status">Trạng thái đơn hiện tại; component chỉ đọc.</param>
 public record BookingStepperModel(BookingStatus Status)

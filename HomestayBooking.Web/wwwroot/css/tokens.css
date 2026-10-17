@@ -32,6 +32,11 @@
   --fx-warning: #a15c00;
   --fx-danger: #b42318;
   --fx-info: #2f6690;
+
+  /* Footer trang khách: khối xanh rêu đậm ở cả hai chế độ */
+  --fx-footer-bg: #1d2b25;
+  --fx-footer-ink: #e4ebe6;
+  --fx-footer-muted: #a9b9b0;
 }
 
 [data-bs-theme="dark"] {
@@ -59,6 +64,9 @@
   --fx-warning: #e2a85a;
   --fx-danger: #f0928a;
   --fx-info: #8fb9da;
+
+  --fx-footer-bg: #0d110f;
+  --fx-footer-muted: #8f9c94;
 }
 
 /* Hằng số không đổi theo chế độ */
@@ -73,6 +81,10 @@
   --fx-sidebar-w: 16rem;
   --fx-sidebar-w-collapsed: 4.5rem;
   --fx-topbar-h: 4rem;
+
+  /* Ảnh trang trí: nền khi ảnh chưa tải và lớp phủ trung tính dưới chữ trắng (chữ dùng --fx-paper) */
+  --fx-photo-fallback: #24332c;
+  --fx-scrim: #0e1411;
 
   /* Tên cũ vẫn được các view và CSS kế toán dùng */
   --fx-card: var(--fx-surface);

@@ -167,15 +167,15 @@
   }
 }
 
-.fx-intro .hero-copy > h1 {
+.fx-intro .home-hero__copy > h1 {
   animation: fx-rise 0.45s var(--fx-ease) both;
 }
 
-.fx-intro .hero-copy > .lead {
+.fx-intro .home-hero__copy > p {
   animation: fx-rise 0.45s var(--fx-ease) 0.06s both;
 }
 
-.fx-intro .hero-search {
+.fx-intro .home-search {
   animation: fx-rise 0.45s var(--fx-ease) 0.12s both;
 }
 
@@ -194,9 +194,9 @@
   .flatpickr-calendar.animate.open,
   .dropdown-menu.show,
   .alert-dismissible.fade.show,
-  .fx-intro .hero-copy > h1,
-  .fx-intro .hero-copy > .lead,
-  .fx-intro .hero-search {
+  .fx-intro .home-hero__copy > h1,
+  .fx-intro .home-hero__copy > p,
+  .fx-intro .home-search {
     animation: none;
   }
 

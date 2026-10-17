@@ -216,7 +216,7 @@
 
 <section id="rating" class="uikit-section" aria-labelledby="rating-title">
     <h2 id="rating-title" class="section-title">Điểm đánh giá</h2>
-    <div class="d-flex flex-wrap gap-4"><rating value="4.75" count="12" /><rating value="null" count="0" /><rating value="5" count="123456" /></div>
+    <div class="d-flex flex-wrap gap-4"><rating value="4.75" count="12" /><rating value="null" count="0" /><rating value="5" count="123456" /><rating value="4" single="true" /></div>
 </section>
 <section id="stats" class="uikit-section" aria-labelledby="stats-title">
     <h2 id="stats-title" class="section-title">Ô số liệu: thường, trạng thái cần xử lý, số lớn và chữ dài</h2>
@@ -264,7 +264,7 @@
 
 <section id="filters" class="uikit-section" aria-labelledby="filters-title">
     <h2 id="filters-title" class="section-title">Thanh lọc: GET, giữ query, ngăn kéo trên điện thoại</h2>
-    <partial name="_FilterBar" model='new FilterBarModel("kit-filter", new[] { new FilterField("Q", "Từ khóa"), new FilterField("Guests", "Số khách", "2", "number"), new FilterField("AreaId", "Khu vực", Options: Model.Areas) })' />
+    <partial name="_FilterBar" model='new FilterBarModel("kit-filter", new[] { new FilterField("Q", "Từ khóa"), new FilterField("Guests", "Số khách", "2", "number"), new FilterField("AreaId", "Khu vực", Options: Model.Areas), new FilterField("AmenityIds", "Tiện nghi", Type: "checkbox", Options: new[] { new SelectListItem("Wifi", "1", true), new SelectListItem("Điều hòa", "2"), new SelectListItem("Bếp riêng", "3"), new SelectListItem("Cho phép thú cưng", "4") }) })' />
 </section>
 <section id="date-picker" class="uikit-section" aria-labelledby="date-picker-title">
     <h2 id="date-picker-title" class="section-title">Ngày theo đêm: thường, rỗng, lỗi, đang tải</h2>
@@ -337,9 +337,14 @@
 </section>
 <section id="booking-panel" class="uikit-section" aria-labelledby="booking-panel-title">
     <h2 id="booking-panel-title" class="section-title">Ô báo giá mẫu</h2>
-    <div class="row"><div class="col-lg-5">
-        <partial name="_BookingPanel" model='new BookingPanelModel("kit-booking-panel", new DateRangePickerModel("kit-panel-dates", today.AddDays(1), today.AddDays(3)), new GuestPickerModel("kit-panel-guests", Max: 4), new PriceBreakdownModel(new[] { new PriceLine("Tổng tiền", 1600000), new PriceLine("Tiền cọc", 480000), new PriceLine("Còn lại", 1120000) }), Url.Action("Index", "Homestays")!)' />
-    </div></div>
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <partial name="_BookingPanel" model='new BookingPanelModel("kit-booking-panel", new DateRangePickerModel("kit-panel-dates", today.AddDays(1), today.AddDays(3)), new GuestPickerModel("kit-panel-guests", Max: 4), new PriceBreakdownModel(new[] { new PriceLine("Tổng tiền", 1600000), new PriceLine("Tiền cọc", 480000), new PriceLine("Còn lại", 1120000) }), Url.Action("Index", "Homestays")!)' />
+        </div>
+        <div class="col-lg-5">
+            <partial name="_BookingPanel" model='new BookingPanelModel("kit-booking-panel-empty", new DateRangePickerModel("kit-panel-dates-empty"), new GuestPickerModel("kit-panel-guests-empty"), new PriceBreakdownModel(), Url.Action("Index", "Homestays")!, Title: "Chọn ngày", SubmitLabel: "Xem phòng trống", Empty: "Chọn ngày nhận và trả phòng để xem phòng trống và tổng tiền.", Note: "Địa chỉ chính xác và số điện thoại homestay được gửi sau khi đơn được xác nhận.")' />
+        </div>
+    </div>
 </section>
 <section id="booking-stepper" class="uikit-section" aria-labelledby="booking-stepper-title">
     <h2 id="booking-stepper-title" class="section-title">Tiến trình chỉ đọc: mọi trạng thái đơn</h2>

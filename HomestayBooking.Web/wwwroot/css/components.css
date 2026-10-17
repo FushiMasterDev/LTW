@@ -569,6 +569,14 @@
 .fx-filter__fields { display: flex; flex: 1; flex-wrap: wrap; gap: 1rem; }
 .fx-filter__fields > div { flex: 1 1 9rem; min-width: 0; }
 .fx-filter__actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+/* Điện thoại: chỉ còn nút mở ngăn kéo, không cần khung bao quanh */
+@media (max-width: 767.98px) { .fx-filter { padding: 0; border: 0; background: none; } }
+.fx-filter__choices { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: .5rem; min-width: 0; margin: 0; padding: 0; border: 0; }
+.fx-filter__choices legend { flex: 1 1 100%; float: none; width: auto; margin-bottom: 0; font-size: .875rem; }
+.fx-filter__choice { min-height: 2.75rem; padding-inline: 1rem; border: 1px solid var(--fx-border-strong); border-radius: var(--fx-radius-full); background: var(--fx-surface); color: var(--fx-ink); }
+.fx-filter__choice:hover { border-color: var(--fx-primary); color: var(--fx-ink); }
+.btn-check:checked + .fx-filter__choice { border-color: var(--fx-primary); background: var(--fx-primary-soft); color: var(--fx-on-primary-soft); font-weight: 600; }
+.btn-check:focus-visible + .fx-filter__choice { outline: 2px solid var(--fx-focus); outline-offset: 2px; }
 @media (max-width: 767.98px) {
   .fx-filter .offcanvas-md { background: var(--fx-surface); color: var(--fx-ink); }
   .fx-filter .offcanvas-body, .fx-filter__fields { display: flex; flex-direction: column; align-items: stretch; }
@@ -635,6 +643,8 @@
 .fx-search__dates, .fx-search__guests { border-inline-start: 1px solid var(--fx-border); }
 .fx-search .form-label { display: block; font-size: .8125rem; margin: 0 0 .25rem; white-space: nowrap; }
 .fx-search .form-control, .fx-search .form-select { min-width: 0; padding-inline: .25rem; border: 0; border-radius: var(--fx-radius-sm); background-color: transparent; box-shadow: none; }
+/* Chừa chỗ cho mũi tên của select để "Tất cả khu vực" không bị che ở ~1000px */
+.fx-search .form-select { padding-inline-end: 1.75rem; background-position: right .25rem center; }
 .fx-search .form-control:focus-visible, .fx-search .form-select:focus-visible { outline: 2px solid var(--fx-focus); outline-offset: 0; }
 .fx-search .fx-guests__control { gap: .25rem; }
 .fx-search .fx-guests__control button { flex-basis: 2.75rem; border-color: transparent; }
@@ -654,7 +664,8 @@
   .fx-search__submit { width: 100%; }
 }
 /* ---------- Thẻ homestay ---------- */
-.fx-homestay-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(16rem, 100%), 1fr)); gap: 1.5rem; }
+/* Tối đa ba thẻ mỗi hàng ở desktop: trang 9 kết quả và 6 homestay nổi bật không lẻ thẻ */
+.fx-homestay-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr)); gap: 2rem 1.5rem; }
 .fx-homestay-card { display: block; min-width: 0; color: var(--fx-ink); text-decoration: none; border-radius: var(--fx-radius); }
 .fx-homestay-card:hover { color: var(--fx-ink); }
 .fx-homestay-card__media { position: relative; aspect-ratio: 3 / 2; border-radius: var(--fx-radius); overflow: hidden; background: var(--fx-primary-soft); }
@@ -696,6 +707,10 @@
 .lightbox-nav.prev { left: .75rem; } .lightbox-nav.next { right: .75rem; }
 /* ---------- Báo giá sticky và tiến trình chỉ đọc ---------- */
 .fx-booking-panel { position: sticky; top: 5rem; padding: 1.25rem; border-radius: var(--fx-radius); background: var(--fx-surface); border: 1px solid var(--fx-border); }
+.fx-booking-panel__title, .site-public .fx-booking-panel__title { margin-bottom: 1rem; font-family: var(--fx-font-sans); font-size: 1.125rem; font-weight: 600; }
+.fx-booking-panel .fx-price-breakdown > div { grid-template-columns: minmax(0, 1fr) auto; }
+.fx-booking-panel__empty { margin: 0; color: var(--fx-muted); }
+.fx-booking-panel__note { display: flex; gap: .5rem; margin: 1rem 0 0; color: var(--fx-muted); font-size: .875rem; }
 .fx-stepper { list-style: none; display: flex; flex-wrap: wrap; gap: .75rem; padding: 0; margin: 0; }
 .fx-stepper li { display: flex; align-items: center; gap: .5rem; color: var(--fx-muted); font-size: .875rem; }
 .fx-stepper [aria-current="step"] { color: var(--fx-primary); font-weight: 600; }

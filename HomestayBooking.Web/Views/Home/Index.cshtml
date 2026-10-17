@@ -1,95 +1,78 @@
 @model HomeIndexViewModel
 @{
     ViewData["Title"] = L["Trang chủ"];
-    ViewData["MainClass"] = "pt-0 pb-4";
-    var today = DateOnly.FromDateTime(DateTime.Today);
-    var promises = new (string Icon, string Title, string Text)[]
-    {
-        ("bi-calendar2-check", L["Không lo trùng phòng"], L["Mỗi đêm của mỗi phòng chỉ được giữ cho một đơn đã xác nhận."]),
-        ("bi-cash-coin", L["Cọc 30%, hoàn cọc rõ ràng"], L["Hủy trước 7 ngày hoàn 100% cọc, trước 3–6 ngày hoàn 50%."]),
-        ("bi-headset", L["Nhân viên tư vấn hỗ trợ"], L["Gọi hotline để nhân viên tìm phòng trống và đặt thay bạn."]),
-    };
+    ViewData["MainClass"] = "pt-0 pb-5";
+    var areas = Model.Areas.Select(a => new SelectListItem(a.Name, a.Id.ToString())).ToList();
     var steps = new (string Title, string Text)[]
     {
         (L["Chọn phòng và ngày"], L["Xem phòng trống và báo giá theo từng đêm."]),
         (L["Đặt và giữ phòng"], L["Đăng ký bằng số điện thoại, phòng được giữ 15 phút cho bạn."]),
         (L["Quét QR đặt cọc 30%"], L["Tiền về là đơn tự cập nhật, homestay xác nhận trong khoảng 30 phút."]),
     };
+    var promises = new (string Icon, string Title, string Text)[]
+    {
+        ("calendar2-check", L["Không lo trùng phòng"], L["Mỗi đêm của mỗi phòng chỉ được giữ cho một đơn đã xác nhận."]),
+        ("cash-coin", L["Cọc 30%, hoàn cọc rõ ràng"], L["Hủy trước 7 ngày hoàn 100% cọc, trước 3–6 ngày hoàn 50%."]),
+        ("headset", L["Nhân viên tư vấn hỗ trợ"], L["Gọi hotline để nhân viên tìm phòng trống và đặt thay bạn."]),
+    };
 }
 
 @section Head {
-    <link rel="preload" as="image" href="~/images/demo/hero-wooden-cabin.webp"
-          imagesrcset="/images/demo/hero-wooden-cabin-sm.webp 1080w, /images/demo/hero-wooden-cabin.webp 1920w" imagesizes="100vw" />
+    <link rel="preload" as="image" href="~/images/hero-hoan-kiem.jpg"
+          imagesrcset="/images/hero-hoan-kiem-sm.jpg 1080w, /images/hero-hoan-kiem.jpg 1600w" imagesizes="100vw" />
+    <link rel="stylesheet" href="~/lib/flatpickr/flatpickr.min.css" />
 }
 
 @section Hero {
-    <section class="hero-photo" aria-labelledby="heroTitle">
-        <img src="~/images/demo/hero-wooden-cabin.webp"
-             srcset="/images/demo/hero-wooden-cabin-sm.webp 1080w, /images/demo/hero-wooden-cabin.webp 1920w" sizes="100vw"
-             alt="" width="1920" height="1282" fetchpriority="high" />
-        <div class="container">
-            <div class="hero-copy">
-                <h1 id="heroTitle">@L["Đặt homestay tại Hà Nội, nhanh và rõ ràng"]</h1>
-                <p class="lead">@L["Lịch phòng cập nhật liên tục, báo giá minh bạch theo từng đêm, đặt phòng chỉ cần số điện thoại."]</p>
-            </div>
+    <section class="home-hero" aria-labelledby="heroTitle">
+        <img class="home-hero__photo" src="~/images/hero-hoan-kiem.jpg"
+             srcset="/images/hero-hoan-kiem-sm.jpg 1080w, /images/hero-hoan-kiem.jpg 1600w" sizes="100vw"
+             alt="@L["Hồ Hoàn Kiếm buổi sáng, tháp Rùa giữa hồ"]" width="1600" height="1067" fetchpriority="high" />
+        <div class="container home-hero__copy">
+            <h1 id="heroTitle">@L["Homestay Hà Nội, đặt theo từng đêm"]</h1>
+            <p>@L["Xem phòng trống, giá từng đêm và chính sách hủy trước khi đặt. Chỉ cần số điện thoại."]</p>
         </div>
-        <small class="hero-credit">
-            @L["Ảnh"]: <a href="https://commons.wikimedia.org/w/index.php?curid=193969735" target="_blank" rel="noopener">Shixart1985</a>,
-            <a href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="noopener license">CC BY 2.0</a>
-        </small>
+        <p class="home-hero__credit">
+            @L["Ảnh"]: <a href="https://commons.wikimedia.org/wiki/File:Hoan_Kiem_Lake_in_the_morning,_September_2014.jpeg" target="_blank" rel="noopener">Prof MK</a>, @L["phạm vi công cộng"]
+        </p>
     </section>
 }
 
-<form class="card-soft hero-search" method="get" data-date-range asp-controller="Homestays" asp-action="Index" role="search" aria-label="@L["Tìm homestay"]">
-    <div class="row g-3 align-items-end">
-        <div class="col-12 col-lg-4">
-            <label class="form-label" for="AreaId">@L["Khu vực"]</label>
-            <select class="form-select" id="AreaId" name="AreaId">
-                <option value="">@L["Tất cả khu vực"]</option>
-                @foreach (var a in Model.Areas)
-                {
-                    <option value="@a.Id">@a.Name</option>
-                }
-            </select>
-        </div>
-        <div class="col-6 col-lg-2">
-            <label class="form-label" for="CheckIn">@L["Nhận phòng"]</label>
-            <input class="form-control" type="date" id="CheckIn" name="CheckIn" min="@today.ToString("yyyy-MM-dd")" />
-        </div>
-        <div class="col-6 col-lg-2">
-            <label class="form-label" for="CheckOut">@L["Trả phòng"]</label>
-            <input class="form-control" type="date" id="CheckOut" name="CheckOut" min="@today.AddDays(1).ToString("yyyy-MM-dd")" />
-        </div>
-        <div class="col-5 col-lg-1">
-            <label class="form-label" for="Guests">@L["Số khách"]</label>
-            <input class="form-control" type="number" id="Guests" name="Guests" min="1" max="20" value="2" inputmode="numeric" />
-        </div>
-        <div class="col-7 col-lg-3 d-grid">
-            <button type="submit" class="btn btn-brand"><i class="bi bi-search" aria-hidden="true"></i> @L["Tìm phòng trống"]</button>
-        </div>
-    </div>
-    <p class="hero-search-note">
-        @L["Đang có {0} homestay với {1} phòng ở {2} khu vực của Hà Nội. Không chọn ngày thì hiện mọi homestay.", Model.HomestayCount, Model.RoomCount, Model.Areas.Count]
-    </p>
-</form>
+<div class="home-search">
+    <partial name="_SearchBar" model="@(new SearchBarModel("home-search", areas, Variant: "hero"))" />
+    <p class="home-search__note">@L["Đang có {0} homestay với {1} phòng ở {2} khu vực của Hà Nội. Không chọn ngày thì hiện mọi homestay.", Model.HomestayCount, Model.RoomCount, Model.Areas.Count]</p>
+</div>
 
-<ul class="promise-list" aria-label="@L["Cam kết khi đặt qua Fuji"]">
-    @foreach (var p in promises)
-    {
-        <li>
-            <i class="bi @p.Icon" aria-hidden="true"></i>
+<section class="home-areas" id="areas" aria-labelledby="areasTitle">
+    <div class="home-areas__intro">
+        <h2 id="areasTitle">@L["Khám phá khu vực"]</h2>
+        <p>@L["Phố cổ, hồ Tây hay đồi núi ngoại thành: chọn khu vực để xem homestay ở đó."]</p>
+    </div>
+    <div class="home-areas__groups">
+        @foreach (var group in Model.Areas.GroupBy(a => a.Group).OrderBy(g => g.Key))
+        {
             <div>
-                <strong>@p.Title</strong>
-                <p>@p.Text</p>
+                <h3>@L[group.Key.DisplayName()]</h3>
+                <ul class="home-areas__list">
+                    @foreach (var a in group)
+                    {
+                        <li>
+                            <a asp-controller="Homestays" asp-action="Index" asp-route-areaId="@a.Id">
+                                <span>@a.Name</span>
+                                <small>@L["{0} homestay", a.HomestayCount]</small>
+                            </a>
+                        </li>
+                    }
+                </ul>
             </div>
-        </li>
-    }
-</ul>
+        }
+    </div>
+</section>
 
 @if (Model.Featured.Count > 0)
 {
     <section class="home-section" aria-labelledby="featuredTitle">
-        <div class="section-head">
+        <div class="home-section__head">
             <div>
                 <h2 id="featuredTitle">@L["Được khách đánh giá cao"]</h2>
                 <p>@L["Xếp theo điểm đánh giá của khách đã ở. Giá là giá ngày thường thấp nhất."]</p>
@@ -105,39 +88,46 @@
     </section>
 }
 
-<section class="home-section" id="areas" aria-labelledby="areasTitle">
-    <div class="section-head">
-        <div>
-            <h2 id="areasTitle">@L["Khám phá khu vực"]</h2>
-            <p>@L["Phố cổ, hồ Tây hay đồi núi ngoại thành: chọn khu vực để xem homestay ở đó."]</p>
-        </div>
-    </div>
-    <div class="area-grid">
-        @foreach (var a in Model.Areas)
-        {
-            <a class="area-tile" asp-controller="Homestays" asp-action="Index" asp-route-areaId="@a.Id">
-                <span>
-                    <strong>@a.Name</strong>
-                    <small>@L["{0} homestay", a.HomestayCount]</small>
-                </span>
-                <i class="bi bi-arrow-right" aria-hidden="true"></i>
-            </a>
-        }
-    </div>
-</section>
-
-<section class="home-section" aria-labelledby="stepsTitle">
-    <div class="section-head">
-        <h2 id="stepsTitle">@L["Đặt phòng trong 3 bước"]</h2>
-    </div>
-    <ol class="steps">
-        @for (var i = 0; i < steps.Length; i++)
+<section class="home-section home-steps" aria-labelledby="stepsTitle">
+    <h2 id="stepsTitle">@L["Đặt phòng trong 3 bước"]</h2>
+    <ol class="home-steps__list">
+        @foreach (var step in steps)
         {
             <li>
-                <div class="step-number" aria-hidden="true">@(i + 1)</div>
-                <h3>@steps[i].Title</h3>
-                <p>@steps[i].Text</p>
+                <h3>@step.Title</h3>
+                <p>@step.Text</p>
             </li>
         }
     </ol>
 </section>
+
+<section class="home-section home-promises" aria-labelledby="promisesTitle">
+    <h2 id="promisesTitle">@L["Cam kết khi đặt qua Fuji"]</h2>
+    <ul class="home-promises__list">
+        @foreach (var p in promises)
+        {
+            <li>
+                <icon name="@p.Icon" />
+                <div>
+                    <h3>@p.Title</h3>
+                    <p>@p.Text</p>
+                </div>
+            </li>
+        }
+    </ul>
+</section>
+
+<section class="home-partner" aria-labelledby="partnerTitle">
+    <div>
+        <h2 id="partnerTitle">@L["Có homestay ở Hà Nội?"]</h2>
+        <p>@L["Gửi hồ sơ đối tác trực tuyến. Nhân viên Fuji thẩm định trong 3 ngày làm việc."]</p>
+    </div>
+    <a class="btn btn-brand btn-lg" asp-controller="Partner" asp-action="Index">@L["Trở thành đối tác"]</a>
+</section>
+
+@section Scripts {
+    <script src="~/lib/flatpickr/flatpickr.min.js"></script>
+    <script src="~/lib/flatpickr/l10n/vn.min.js"></script>
+    <script src="~/js/components/date-range-picker.js" asp-append-version="true"></script>
+    <script src="~/js/components/guest-picker.js" asp-append-version="true"></script>
+}

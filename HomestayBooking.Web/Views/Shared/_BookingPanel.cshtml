@@ -1,9 +1,12 @@
 @model BookingPanelModel
-<aside class="fx-booking-panel">
+<aside class="fx-booking-panel" aria-labelledby="@(Model.Title is null ? null : Model.Id + "-title")">
+    @if (Model.Title is { } title) { <h2 class="fx-booking-panel__title" id="@(Model.Id)-title">@L[title]</h2> }
     <form id="@Model.Id" action="@Model.Action" method="get">
         <partial name="_DateRangePicker" model="Model.Dates" />
         <div class="my-3"><partial name="_GuestPicker" model="Model.Guests" /></div>
+        @if (Model.Price.Lines is null && Model.Empty is { } empty) { <p class="fx-booking-panel__empty">@L[empty]</p> }
         <partial name="_PriceBreakdown" model="Model.Price" />
-        <button class="btn btn-brand w-100 mt-3" type="submit">@L["Xem báo giá"]</button>
+        <button class="btn btn-brand w-100 mt-3" type="submit">@L[Model.SubmitLabel]</button>
     </form>
+    @if (Model.Note is { } note) { <p class="fx-booking-panel__note"><icon name="lock" /> @L[note]</p> }
 </aside>
