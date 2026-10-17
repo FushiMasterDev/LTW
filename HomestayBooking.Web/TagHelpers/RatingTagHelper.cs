@@ -21,6 +21,7 @@ public class RatingTagHelper(IStringLocalizer<SharedResource> localizer) : TagHe
             output.Content.SetContent(localizer["Chưa có đánh giá"].Value);
             return;
         }
+        output.Attributes.SetAttribute("role", "img");
         var rating = Math.Round(Value.Value, 1, MidpointRounding.AwayFromZero).ToString("0.0", CultureInfo.CurrentCulture);
         output.Attributes.SetAttribute("aria-label", localizer["Điểm {0} trên 5, từ {1} đánh giá", rating, Count].Value);
         output.Content.AppendHtml("<i class=\"bi bi-star-fill\" aria-hidden=\"true\"></i> ");

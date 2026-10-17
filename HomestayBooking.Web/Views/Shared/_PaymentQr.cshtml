@@ -9,7 +9,7 @@
         <p class="small text-muted">@L["Hạn nộp"]: <time datetime="@DateTime.SpecifyKind(Model.DeadlineUtc, DateTimeKind.Utc).ToString("o")">@VietnamTime.ToLocal(Model.DeadlineUtc).ToString("HH:mm dd/MM/yyyy")</time></p>
         @if (Model.Bank is { } bank)
         {
-            <dl><dt>@L["Ngân hàng"]</dt><dd>@bank.BankCode</dd><dt>@L["Số tài khoản"]</dt><dd>@bank.AccountNumber <button type="button" class="btn btn-outline-secondary" data-copy="@bank.AccountNumber">@L["Sao chép"]</button></dd><dt>@L["Chủ tài khoản"]</dt><dd>@bank.AccountName</dd></dl>
+            <dl><dt>@L["Ngân hàng"]</dt><dd>MB Bank (@L["Ngân hàng Quân đội"])</dd><dt>@L["Số tài khoản"]</dt><dd>@bank.AccountNumber <button type="button" class="btn btn-outline-secondary" data-copy="@bank.AccountNumber">@L["Sao chép"]</button></dd><dt>@L["Chủ tài khoản"]</dt><dd>@bank.AccountName</dd></dl>
         }
         <dl><dt>@L["Số tiền"]</dt><dd><money value="Model.Amount" /> <button type="button" class="btn btn-outline-secondary" data-copy="@decimal.ToInt64(Model.Amount)">@L["Sao chép"]</button></dd><dt>@L["Nội dung chuyển khoản"]</dt><dd><strong class="booking-code">@Model.Content</strong> <button type="button" class="btn btn-outline-secondary" data-copy="@Model.Content">@L["Sao chép"]</button></dd></dl>
         <p class="mb-0 countdown tone-amber" role="timer" aria-live="off">@L[Model.Additional ? "Hạn nộp" : "Giữ phòng còn"]: <strong id="@(Model.Additional ? null : "countdown")" data-payment-countdown data-change-countdown="@(Model.Additional ? "" : null)" data-expires="@DateTime.SpecifyKind(Model.DeadlineUtc, DateTimeKind.Utc).ToString("o")">--:--</strong></p>

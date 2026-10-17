@@ -15,15 +15,20 @@ const fxBindModalDismiss = (element, onHidden) => {
 (() => {
     const element = document.getElementById('fx-confirm-dialog');
     let pending = null;
-    $(document).on('submit', 'form[data-confirm]', function (event) {
+    $(document).on('submit', 'form', function (event) {
         if (this.dataset.fxConfirmed === 'true') { delete this.dataset.fxConfirmed; return; }
+        const submitter = event.originalEvent?.submitter;
+        const message = submitter?.dataset.confirm || this.dataset.confirm;
+        if (!message) return;
+        const title = submitter?.dataset.confirmTitle || this.dataset.confirmTitle;
+        const variant = submitter?.dataset.confirmVariant || this.dataset.confirmVariant;
         if (event.isDefaultPrevented() || ($.fn.valid && $(this).data('validator') && !$(this).valid())) return;
-        if (!element || !window.bootstrap) { if (!window.confirm(this.dataset.confirm)) event.preventDefault(); return; }
+        if (!element || !window.bootstrap) { if (!window.confirm(message)) event.preventDefault(); return; }
         event.preventDefault();
-        pending = { form: this, submitter: event.originalEvent?.submitter || document.activeElement };
-        element.querySelector('#fx-confirm-title').textContent = this.dataset.confirmTitle || element.dataset.defaultTitle;
-        element.querySelector('#fx-confirm-message').textContent = this.dataset.confirm;
-        element.querySelector('[data-confirm-accept]').className = 'btn ' + (this.dataset.confirmVariant === 'danger' ? 'btn-outline-danger' : 'btn-brand');
+        pending = { form: this, submitter };
+        element.querySelector('#fx-confirm-title').textContent = title || element.dataset.defaultTitle;
+        element.querySelector('#fx-confirm-message').textContent = message;
+        element.querySelector('[data-confirm-accept]').className = 'btn ' + (variant === 'danger' ? 'btn-outline-danger' : 'btn-brand');
         bootstrap.Modal.getOrCreateInstance(element).show(pending.submitter);
     });
     element?.querySelector('[data-confirm-accept]').addEventListener('click', () => {

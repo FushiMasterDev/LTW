@@ -12,7 +12,7 @@
                 <th scope="col" class="@(column.Numeric ? "text-end" : null)" aria-sort="@(selected ? (Context.Request.Query["dir"] == "desc" ? "descending" : "ascending") : null)">
                     @if (column.SortKey is { } key)
                     {
-                        <a href="@TableSortLink.Build(Context.Request.Path, Context.Request.Query, key)">@L[column.Label] <icon name="arrow-down-up" /></a>
+                        <a href="@TableSortLink.Build(Context.Request.PathBase + Context.Request.Path, Context.Request.Query, key)">@L[column.Label] <icon name="arrow-down-up" /></a>
                     }
                     else { @L[column.Label] }
                 </th>

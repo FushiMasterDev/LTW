@@ -22,6 +22,7 @@ public class DataComponentTests
             Assert.Contains(expected, html); Assert.Contains("aria-label=", html);
             Assert.Contains($"[en] Điểm {expected} trên 5, từ {count} đánh giá", html);
             Assert.Contains("aria-hidden=\"true\"", html); Assert.Contains("fx-rating", html);
+            Assert.Contains("role=\"img\"", html);
         }
         finally { System.Globalization.CultureInfo.CurrentCulture = previous; }
     }

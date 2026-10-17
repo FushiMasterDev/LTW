@@ -1,11 +1,11 @@
-<div class="fx-timeline">
 @using HomestayBooking.Web.Services
 @model TimelineModel
+<div class="fx-timeline">
 @foreach (var row in Model.Changes ?? [])
 {
     var r = row.Request;
     <article class="fx-timeline__item" data-change-request="@r.Id" data-status="@r.Status">
-        <div class="d-flex justify-content-between gap-2 mb-2"><strong>CR@(r.Id) · @L[r.RequestType.DisplayName()]</strong><span class="badge-tone tone-sky">@L[r.Status.DisplayName()]</span></div>
+        <div class="d-flex justify-content-between gap-2 mb-2"><strong>CR@(r.Id) · @L[r.RequestType.DisplayName()]</strong><status-badge value="r.Status" /></div>
         <p class="small mb-1">@L["Gửi lúc"]: @VietnamTime.ToLocal(r.CreatedAt).ToString("HH:mm dd/MM/yyyy")</p>
         <p class="mb-1">@L["Lịch cũ"]: @if (row.OldCheckIn is { } ci && row.OldCheckOut is { } co) { <span>@ci.ToString("dd/MM/yyyy") – @co.ToString("dd/MM/yyyy") · @row.OldRoomType</span> } else { <span>@L["Không có dữ liệu lịch cũ"]</span> }</p>
         @if (r.RequestType != ChangeRequestType.Cancel)

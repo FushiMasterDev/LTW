@@ -87,10 +87,7 @@
         @if (Model.QrImageUrl is not null)
         {
             <section class="card-soft form-section mb-4 pay-card" aria-labelledby="payTitle">
-                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                    <h2 class="h5 mb-0" id="payTitle"><i class="bi bi-qr-code-scan" aria-hidden="true"></i> @L["Chuyển khoản tiền cọc"]</h2>
-
-                </div>
+                <h2 class="h5 mb-3" id="payTitle"><i class="bi bi-qr-code-scan" aria-hidden="true"></i> @L["Chuyển khoản tiền cọc"]</h2>
 
                 @if (Model.LastRejectedReceipt is not null)
                 {
