@@ -383,10 +383,10 @@ Audit B2 dùng PartnerServiceSupport.Audit, RecordId là Id thật sau SaveChang
 | Cách xử lý trùng phòng | Đơn/phòng | Cọc và voucher | Fuji / khoản tiền |
 |---|---|---|---|
 | 1. Chuyển phòng cùng loại, cùng cơ sở (Consultant/Manager/Administrator) | Giữ mã, trạng thái Confirmed, chuyển RoomNights trong transaction; history “Đổi phòng do trùng phòng” | Giữ nguyên tổng, cọc, giảm voucher, hoa hồng | Không tạo Payment hay khoản bù |
-| 2. Đơn thay thế khác loại/cơ sở (Consultant/Manager/Administrator) | Tạo N bằng đường CreateInTransactionAsync chung; giá đêm, hoa hồng/hủy theo cơ sở mới. Đơn cũ Cancelled → ReplacedByBookingId=N, nhả đêm; N Deposited chờ chủ mới xác nhận BR-06 | Chuyển nguyên DepositRate/DepositAmount/VoucherId/DiscountAmount, không trừ voucher lần hai và không trả voucher ở đơn cũ. Chặn nếu tổng mới < cọc cũ. Giữ khách/người ở/ngày/kênh/người tạo; giao người xử lý | RefundAmount đơn cũ=0; Compensation trên N = max(0, tổng mới − tổng cũ), chỉ tạo khi >0, ManualTransfer/Submitted, chờ B5 cộng vào đối soát; không trừ chủ cũ. SettlementCalculator loại toàn đơn có ReplacedByBookingId |
+| 2. Đơn thay thế khác loại/cơ sở (Consultant/Manager/Administrator) | Tạo N bằng đường CreateInTransactionAsync chung; giá đêm, hoa hồng/hủy theo cơ sở mới. Đơn cũ Cancelled → ReplacedByBookingId=N, nhả đêm; N Deposited chờ chủ mới xác nhận BR-06 | Chuyển nguyên DepositRate/DepositAmount/VoucherId/DiscountAmount, không trừ voucher lần hai và không trả voucher ở đơn cũ. Chặn nếu tổng mới < cọc cũ. Giữ khách/người ở/ngày/kênh/người tạo; giao người xử lý | RefundAmount đơn cũ=0; Compensation trên N = max(0, tổng mới − tổng cũ), chỉ tạo khi >0, ManualTransfer/Submitted, B5 chi chuyển khoản riêng sau Completed, không cộng tổng đối soát; không trừ chủ cũ. SettlementCalculator loại toàn đơn có ReplacedByBookingId |
 | 3. Không có phương án khách chấp nhận (Manager/Administrator) | Hủy, nhả phòng, không tạo N | Hoàn tiền khách thực chuyển = AmountDue; trả voucher 100% theo RestoreAsync hiện có (còn hiệu lực); cấp voucher xin lỗi theo D14 qua IssueAsync | Không tự chuyển tiền hoặc tạo Payment Refund; RefundAmount>0 vào hàng chờ kế toán hiện có |
 
-Ở cách 2, nếu tổng mới cao hơn: phần khách còn trả = tổng mới − cọc chuyển − Compensation = tổng cũ − cọc cũ. Nếu tổng mới thấp hơn nhưng đủ cọc, phần còn trả giảm theo tổng mới. Voucher đã trừ ở cọc được giữ nguyên snapshot. Chủ mới từ chối N thì luồng Rejected hiện có hoàn 100% AmountDue và trả voucher; khoản bù chênh lệch vẫn Submitted, chưa xử lý chi tiền trong B3. Không chuyển thông tin liên hệ mới trước khi N Confirmed. Transaction mặc định chứa đơn/counter/BookingNights/RoomNights/tiền/voucher/history/audit/thông báo; đụng PK đêm phòng thì rollback toàn bộ và trả lỗi tiếng Việt.
+Ở cách 2, nếu tổng mới cao hơn: phần khách còn trả = tổng mới − cọc chuyển − Compensation = tổng cũ − cọc cũ. Nếu tổng mới thấp hơn nhưng đủ cọc, phần còn trả giảm theo tổng mới. Voucher đã trừ ở cọc được giữ nguyên snapshot. Chủ mới từ chối N thì luồng Rejected hiện có hoàn 100% AmountDue và trả voucher; B3 tạo khoản bù Submitted; B5 chỉ chi khi N Completed, tự từ chối khi N kết thúc không ở/được thay tiếp. Không chuyển thông tin liên hệ mới trước khi N Confirmed. Transaction mặc định chứa đơn/counter/BookingNights/RoomNights/tiền/voucher/history/audit/thông báo; đụng PK đêm phòng thì rollback toàn bộ và trả lỗi tiếng Việt.
 
 Dùng chung `BookingService.CreateInTransactionAsync`, `MoveRoomAsync`, `ApplyStatusCoreAsync`/`ApplyFujiCancellationAsync`; không mở đường Cancelled cho nhân viên ngoài service sự cố. Audit trực tiếp bằng PartnerServiceSupport, Id thật; không thêm schema/index/migration. `data_consistency.sql` giữ nguyên 19 mục B1/B2, thêm 4 mục: đơn được thay phải Cancelled; khách/ngày của N khớp; Compensation gắn N; người phụ trách đúng vị trí — tổng 23 mục, chỉ SELECT.
 
@@ -757,6 +757,26 @@ Quy tắc (service `VoucherService`, cấu hình `appsettings: Voucher`):
 
 Chủ xác nhận số liệu là tùy chọn; giữ nguyên CHECK Sent/Paid, không thêm CHECK ConfirmedAt. Người gửi/xác nhận ghi trong AuditLog, không thêm cột (D15–D16).
 
+**Backend B5 (service + test, chưa thêm giao diện):** `SettlementService` chỉ lập khi `period.End + Settlements:GraceDays < hôm nay` giờ VN, mặc định GraceDays = 2. Kỳ theo CheckOut dự kiến của đơn (kỳ 1: 1–15, kỳ 2: 16–cuối tháng), không theo ngày hủy. Chỉ lấy ItemFor != null và đơn chưa nằm ở bảng khác; không tạo bảng mới rỗng, vẫn lập cho homestay Ended còn tiền phải trả. Mọi số tiền lấy từ SettlementCalculator.Build, không có công thức thứ hai trong service. Bảng Draft tính lại/xóa dòng nháp cũ trong cùng transaction; không đổi gì (kể cả audit/UpdatedAt) nếu đầu vào/snapshot không đổi. Nháp đã có nhưng không còn dòng đủ điều kiện được giữ rỗng để lưu lịch sử, chặn gửi; không tự xóa bảng. Sent/Confirmed/Paid luôn giữ nguyên snapshot.
+
+Job tự lập các kỳ đã hết grace gần nhất theo LookbackPeriods, mặc định 4; không quét mọi kỳ lịch sử. Settlements:GenerateEveryMinutes mặc định 60, Range 5–1440 và ValidateOnStart: job chỉ lập khi đã đủ khoảng này từ lần thành công trước, giữ mốc trong instance, khởi động lại chạy lượt đầu ngay; lỗi được thử lại ở phút sau. Đọc và Build so sánh trước, không transaction/khóa/ghi khi Draft không đổi hoặc bảng đã khác Draft; chỉ khi cần ghi mới khóa homestay rồi kiểm tra và Build lại. Lập tay: Accountant/Manager/Administrator; gửi/mở lại/ghi nhận đã trả chỉ Accountant. Đơn chưa chốt trong kỳ gồm Confirmed/CheckedIn/Deposited/PaymentSubmitted/AwaitingPayment; chi tiết Draft trả mã đơn này, gửi bị chặn và nêu các mã cần cập nhật. Gửi kiểm lại và build snapshot mới nhất trước khi Sent; chặn bảng rỗng.
+
+| Từ trạng thái | Được chuyển tới | Ai/thao tác |
+|---|---|---|
+| Draft | Sent | Accountant gửi, SentAt |
+| Sent | Confirmed | Chủ đúng homestay xác nhận tùy chọn, ConfirmedAt |
+| Sent | Paid | Accountant, không buộc chủ xác nhận (D15) |
+| Sent | Draft | Accountant mở lại, bắt buộc lý do |
+| Confirmed | Paid / Draft | Accountant trả hoặc mở lại (cần lý do) |
+| Paid | Không có | Không mở lại/chuyển tiếp |
+
+Mở lại xóa SentAt/ConfirmedAt, audit giữ mốc cũ, rồi tính lại nháp; báo chủ. Chủ phản hồi sai số liệu bằng ghi chú 1–500 ký tự, audit và báo mọi Accountant đang làm việc; không đổi trạng thái, chỉ nhận bảng không Draft. Paid đặt PaidAt/PaidByEmployeeId; PayoutAmount > 0 bắt buộc PaidBankRef trim 1–100 ký tự, số tiền 0 được để NULL. Cả hai trường hợp phải đủ BankName/BankAccountNo/BankAccountName. Người gửi/chủ xác nhận/kế toán trả ghi AccountId thật trong AuditLog JSON cũ/mới theo D16; Insert có Id thật sau SaveChanges, cùng transaction mặc định. Khóa dòng homestay tuần tự hóa thao tác và unique có sẵn chặn cuối, không thêm concurrency token/index/schema.
+
+Kế toán/Manager/Administrator đọc lọc kỳ/trạng thái/homestay, phân trang; Consultant bị chặn. Chủ chỉ đọc bảng không Draft của mình, không đọc/xác nhận bảng của chủ khác; Account phải Active và không phải nhân viên. Chi tiết có snapshot từng dòng, mã đơn, Fuji thực thu từ SettlementCalculator.FujiNetRevenue (= CommissionAmount − DiscountAmount), đơn chưa chốt nếu Draft, khoản bù liên quan các đơn có CheckOut trong kỳ (chỉ hiển thị) và lịch sử AuditLog. Đây là backend, chưa thêm màn hình.
+
+**Khoản bù B5 (BR-11/Q3):** `CompensationService` chỉ đưa Payment Compensation/Submitted của đơn thay thế Completed, chưa bị thay tiếp, vào hàng chờ chi riêng. Accountant ghi nhận đã chuyển bằng BankRef 1–100, bắt buộc chủ homestay của đơn thay thế đủ BankName/BankAccountNo/BankAccountName (cùng hàm kiểm tra khi trả đối soát), Approved + ReviewedBy/At + audit và báo chủ. Dùng chung AccountingService.RecordTransferInTransactionAsync với RecordRefundAsync, không chép logic xác nhận chuyển tiền. Khoản bù KHÔNG cộng vào Settlements/SettlementItems vì CHECK Payout = Retained − Commission và không thêm cột; Fuji chuyển một lần riêng, không trừ homestay cũ. Khi N Rejected/Cancelled/Expired/NoShow hoặc có ReplacedByBookingId, job mỗi phút đổi khoản bù Submitted thành Rejected, lý do rõ, ReviewedAt và audit System, không xóa. Accountant có thể từ chối tay với lý do 1–500 trước Completed. B5 không thực hiện gọi ngân hàng/chuyển tiền thật, chỉ ghi nhận giao dịch kế toán đã làm.
+
+
 #### `SettlementItems` — từng đơn trong bảng đối soát (**mới**)
 
 | Cột | Ràng buộc / ghi chú |
@@ -798,7 +818,7 @@ Giữ như code: `UserId` (FK → AspNetUsers), `Message`, `Url`, `IsRead`, `Cre
 
 **Thông báo chủ B4 (FR-15):** dùng luồng chung `BookingService.NotifyAsync` cho đơn đã cọc chờ xác nhận, nhân viên xác nhận/từ chối thay chủ và hủy (khách tự hủy, trùng phòng); `NotifyChangeRequestResult` dùng chung bước Manager/Accountant cho đổi đã áp dụng và hủy theo yêu cầu nhân viên. Đơn đổi về Deposited ghi rõ “cần xác nhận lại trong 30 phút” (theo Booking:ConfirmMinutes). Đơn thay thế mới dùng luồng Deposited hiện có; ReviewService báo đánh giá mới. Không đưa lý do/ghi chú dài hoặc liên hệ homestay vào thông báo khách trước Confirmed; mỗi thông báo tối đa 500 ký tự.
 
-**Lịch chủ B4 (FR-16):** `OwnerScheduleService` đọc các homestay thuộc chủ, khoảng ngày gồm hai đầu tối đa 31 ngày: nhận phòng là Confirmed theo CheckIn, trả phòng là CheckedIn theo CheckOut. Trả mã đơn, người ở, SĐT, số khách, phòng, ghi chú đặc biệt. Chủ chỉ xem của mình; Manager/Administrator đang làm việc được hỗ trợ, Consultant/Accountant/khách bị chặn. Bảng đối soát chủ để B5.
+**Lịch chủ B4 (FR-16):** `OwnerScheduleService` đọc các homestay thuộc chủ, khoảng ngày gồm hai đầu tối đa 31 ngày: nhận phòng là Confirmed theo CheckIn, trả phòng là CheckedIn theo CheckOut. Trả mã đơn, người ở, SĐT, số khách, phòng, ghi chú đặc biệt. Chủ chỉ xem của mình; Manager/Administrator đang làm việc được hỗ trợ, Consultant/Accountant/khách bị chặn. Bảng đối soát chủ do SettlementService B5 cung cấp, chưa thêm giao diện.
 
 #### `MessageLogs` — tin gửi ra ngoài (○, **mới**)
 
@@ -921,15 +941,24 @@ Mọi lần đổi trạng thái đi qua một hàm duy nhất (`BookingService.
 
 ### 7.3. Khi đối soát (D7, D8)
 
-Áp cho các đơn `Completed`, `Cancelled` có giữ lại tiền cọc, và `NoShow`, có `CheckOut` thuộc kỳ:
+Công thức duy nhất trong code là `SettlementCalculator.ItemFor/Build` (seed và SettlementService dùng chung). Đơn có ReplacedByBookingId bị loại. Nhận Completed, NoShow, Cancelled đã cọc/có phí đổi; Rejected/Expired chỉ nhận phần phí đổi còn giữ. Đơn chưa chốt không vào dòng. Nếu tổng giữ lại sau cộng phí <= 0 thì không có dòng.
 
 ```text
-RetainedAmount   = DepositAmount − RefundAmount            (đơn hoàn thành: RefundAmount = 0)
-CommissionAmount = MIN(TotalAmount × CommissionRate, RetainedAmount)
-PayoutAmount     = RetainedAmount − CommissionAmount        (Fuji chuyển cho homestay)
+refund = RefundAmount ?? 0
+p = AmountDue > 0 ? Round(100 × refund / AmountDue) : 0  // đúng cách lấy % nguyên trong code
+feeOnly = Status là Rejected hoặc Expired
+baseRetained = feeOnly ? 0 : DepositAmount − RoundToThousand(DepositAmount × p / 100)
+baseCommission = MIN(Round(TotalAmount × CommissionRate, 0, AwayFromZero), baseRetained)
+feeCommission = MIN(Round(ChangeFeeAmount × CommissionRate, 0, AwayFromZero), ChangeFeeAmount)
+RetainedAmount = baseRetained + ChangeFeeAmount
+CommissionAmount = baseCommission + feeCommission
+PayoutAmount = RetainedAmount − CommissionAmount
+DiscountAmount (dòng) = feeOnly ? 0 : MAX(0, DiscountAmount (đơn) − RoundToThousand(DiscountAmount (đơn) × p / 100))
+Fuji thực thu = CommissionAmount − DiscountAmount (dòng)
+DepositAmount (dòng) = DepositAmount (đơn) + ChangeFeeAmount
 ```
 
-Có voucher: `RetainedAmount` tính **như đơn không có voucher** = `DepositAmount × (1 − p)`, với `p = RefundAmount / (DepositAmount − DiscountAmount)` là tỷ lệ hoàn đã áp, nên **homestay nhận đủ**. Phần giảm giá do Fuji chịu: Fuji thực thu `CommissionAmount − DiscountAmount × (1 − RefundPercent/100)` ≥ 80% hoa hồng.
+Có voucher, phần cọc giữ lại tính như đơn không dùng voucher theo tỷ lệ hoàn đã chốt; voucher do Fuji chịu nên không giảm tiền chủ. Phí đổi chỉ chia CommissionRate trên phần phí, không tính hoa hồng cả đơn lần hai. Khoản bù trùng phòng chi riêng sau Completed và chỉ hiển thị cạnh đối soát, không cộng vào bất kỳ tổng nào.
 
 Ví dụ voucher: tổng 2.700.000đ, hoa hồng 12% = 324.000đ → giảm tối đa 64.000đ; khách chuyển 810.000 − 64.000 = 746.000đ; Fuji chuyển homestay 486.000đ như bình thường; Fuji còn 260.000đ.
 
@@ -1042,7 +1071,7 @@ Database v5 đã có dữ liệu và migration `ChangeRequestWorkflow` đã áp 
 |---|---|---|---|
 | Q1 | ~~Kế toán chỉ làm giờ hành chính~~ — **đã giải quyết bằng D13**: chuyển khoản qua QR được tự xác nhận 24/7. Chỉ đơn đi đường ảnh bill vào ban đêm mới phải chờ tới giờ làm việc | Thời gian chờ | Giao diện khuyến khích quét QR; báo khách đi đường bill rằng Fuji duyệt trong giờ làm việc |
 | Q2 | ~~Kế toán từ chối bill bao nhiêu lần thì hủy hẳn?~~ — **đã chốt (11/10)**: lần 1 khách được thêm 15'; lần 2 đơn `Expired`, mở lại phòng (`Booking:MaxReceiptRejections` = 2) | `Bookings`, `Payments` | — |
-| Q3 | Khoản Fuji bù chênh lệch khi trùng phòng (BR-11) có trừ vào homestay gây ra không? — **đã chốt (11/10)**: Không trừ; ghi `Payments.Compensation` để thống kê | `SettlementItems` | — |
+| Q3 | Khoản Fuji bù chênh lệch khi trùng phòng (BR-11) có trừ vào homestay gây ra không? — **đã chốt (11/10)**: Không trừ; ghi `Payments.Compensation` để thống kê | `Payments.Compensation` | B5 chi riêng sau Completed, không cộng đối soát |
 | Q4 | ~~Voucher bồi thường: giá trị, thời hạn, điều kiện~~ — **đã chốt (11/10)**: xem D14 và bảng `Vouchers` | Bảng `Vouchers` | — |
 | Q5 | Đơn bị hủy có giữ cọc: xếp kỳ đối soát theo ngày `CheckOut` dự kiến hay ngày hủy? — **đã chốt (11/10)**: Theo `CheckOut` dự kiến (thống nhất D7) | `SettlementItems` | — |
 | Q6 | Một Owner có cần nhiều tài khoản ngân hàng (mỗi homestay một tài khoản) không? — **đã chốt (11/10)**: Một tài khoản / Owner | `Owners` | — |

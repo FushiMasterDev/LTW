@@ -7,7 +7,7 @@ Dựng database SQL Server cho ứng dụng trên một máy hoặc server mới
 | `schema.sql` | Toàn bộ schema (bảng, khóa, CHECK, index) **sinh tự động từ EF Core migrations**, không sửa tay |
 | `deploy.sql` | Chạy `schema.sql` với kiểm tra database đích và `XACT_ABORT` |
 | `verify.sql` | Kiểm tra sau khi dựng: số bảng/khóa/index, migration đã áp, các ràng buộc chính. Chỉ đọc |
-| `tests/data_consistency.sql` | Đối chiếu 26 quy tắc dữ liệu liên bảng, chỉ đọc; dùng được trên mọi database đã deploy, có LỆCH thì mã thoát khác 0 |
+| `tests/data_consistency.sql` | Đối chiếu 33 quy tắc dữ liệu liên bảng, chỉ đọc; dùng được trên mọi database đã deploy, có LỆCH thì mã thoát khác 0 |
 | `tests/constraints.sql` | Thử ràng buộc trên database **mới dựng, chưa seed** (mục 4) |
 | `tests/hardening_seeded.sql` | Thử các ràng buộc của migration `DatabaseHardening` trên database **đã seed** (mục 4) |
 | `tests/change_request_seeded.sql` | Thử 65 ca workflow trên database **đã seed** (mục 4), luôn ROLLBACK |
@@ -118,7 +118,7 @@ DeployTest, ConstraintTest hoặc database đã deploy khác, không có guard t
 sqlcmd -S localhost,1433 -U sa -C -b -d HomestayBooking_DeployTest -i tests/data_consistency.sql
 ```
 
-Mỗi mục in tên tiếng Việt, số dòng lệch và `OK`/`LỆCH`, cuối có tổng 26 mục.
+Mỗi mục in tên tiếng Việt, số dòng lệch và `OK`/`LỆCH`, cuối có tổng 33 mục.
 Mã thoát 0 khi tất cả OK; có LỆCH thì THROW để `sqlcmd -b` thoát khác 0.
 Tổng là tổng lượt vi phạm; một bản ghi có thể lệch nhiều mục. Script dùng đúng trạng thái
 `HoldsRoom()` (kể cả Completed), ngày Việt Nam cho hợp đồng hết hạn. Nếu đổi enum hoặc
@@ -275,3 +275,8 @@ B4 giữ nguyên 23 mục trên, thêm 3 mục: phản hồi đánh giá chỉ c
 Gửi ba bước: transaction ngắn kiểm chống lặp + tạo thông báo app và Pending (nếu số nhận hợp lệ) rồi commit → sender ngoài transaction → transaction ngắn lưu Sent/Failed. Zalo lỗi thì tạo Pending SMS trong cùng transaction lưu lỗi, commit rồi mới gọi SMS. Pending chặn gửi lặp; quá 10 phút đổi Failed với lỗi "Quá thời gian chờ kết quả gửi", rồi được thử lại (khách tối đa 3 lượt Zalo→SMS mỗi lần xác nhận, tối đa 6 dòng Failed). Lỗi lưu kết quả giữ Pending đã commit, không gửi lại ngay ở lượt sau. Kết quả giao tin có thể chưa xác định sau timeout: khi nối Zalo ZNS hoặc SMS brandname thật cần đăng ký mẫu tin, đổi IMessageSender sang mã mẫu + tham số, và chống giao lặp phía nhà cung cấp. Caller phải commit nghiệp vụ trước SendAsync. Không chạy app để thử trên database thật: startup/job có thể ghi dữ liệu.
 
 Thông báo app của khách/chủ tạo và commit ngay bước Reserve, không đợi Sent và vẫn có khi cả Zalo/SMS đều lỗi. Khách chống lặp theo Notification.Url riêng của lời nhắc + CreatedAt >= ConfirmedAt; chủ theo URL lịch/chủ/ngày nhận. Homestay thiếu SĐT hợp lệ vẫn thông báo app cho chủ, không tạo MessageLog. Thông báo app cũng chạy cùng khung [SendHour, QuietFromHour), tránh báo giữa đêm. Lỗi lưu kết quả tin ngoài không rollback thông báo app đã commit.
+
+
+B5 giữ nguyên 26 mục B1–B4, thêm 7 mục: dòng đối soát đúng homestay/kỳ CheckOut và không là đơn đã được thay; tổng RoomAmount/Retained/Commission khớp dòng; Paid có tiền cần PaidBankRef/PaidBy; Confirmed cần ConfirmedAt; Compensation Approved phải Completed và có BankRef. Tổng 33 mục chỉ SELECT; không nới CHECK hay sửa seed/dữ liệu khi có lệch.
+
+Backend B5 không thêm schema/migration. `Settlements:GraceDays` mặc định 2 (0–30), `Settlements:LookbackPeriods` 4 (1–48), `Settlements:GenerateEveryMinutes` 60 (5–1440), validate khi khởi động; chỉ lập kỳ khi End + GraceDays < hôm nay VN. Job lập kỳ giữ mốc lần thành công trong instance và chỉ lập lại sau GenerateEveryMinutes; lỗi được thử lại ở phút sau, khởi động lại chạy lượt đầu ngay. Draft được so sánh chỉ đọc trước, chỉ khi cần thay đổi mới khóa homestay rồi kiểm tra lại/tính lại; không đổi hoặc bảng không Draft thì không khóa/ghi. Bảng đã gửi giữ snapshot; đơn chưa chốt chặn gửi. Khoản Compensation chi riêng sau Completed, không cộng tổng bảng vì CHECK Payout = Retained − Commission; job vẫn kiểm khoản bù treo mỗi phút khi N kết thúc không ở hoặc bị thay tiếp. Chi khoản bù cũng bắt buộc chủ homestay đơn thay thế đủ ba trường ngân hàng, cùng kiểm tra với chi đối soát. Chỉ ghi nhận kế toán đã chuyển, không gọi ngân hàng thật. Không khởi động app để thử trên database thật: các job có thể ghi dữ liệu.

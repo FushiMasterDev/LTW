@@ -1,20 +1,28 @@
 using HomestayBooking.Web.Services;
+using Microsoft.Extensions.Options;
 
 namespace HomestayBooking.Web.BackgroundJobs;
 
 /// <summary>
 /// Chạy mỗi phút: đơn quá 15 phút chưa thanh toán → Hết hạn (D5); đơn đã cọc mà homestay quá 30 phút
-/// chưa xác nhận → cảnh báo nhân viên (BR-06); bill chờ duyệt quá 2 giờ làm việc → báo quản lý. DbContext là scoped nên mỗi lượt tạo một scope mới.
+/// chưa xác nhận → cảnh báo nhân viên (BR-06); bill chờ duyệt quá 2 giờ làm việc → báo quản lý.
+/// Lập đối soát theo khoảng cấu hình riêng; DbContext là scoped nên mỗi tác vụ tạo một scope mới.
 /// </summary>
 public class BookingTimeoutJob : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<BookingTimeoutJob> _logger;
+    private readonly TimeProvider _clock;
+    private readonly IOptions<SettlementOptions> _settlements;
+    private DateTimeOffset? _lastSettlementGenerationSucceededAt;
 
-    public BookingTimeoutJob(IServiceScopeFactory scopeFactory, ILogger<BookingTimeoutJob> logger)
+    public BookingTimeoutJob(IServiceScopeFactory scopeFactory, ILogger<BookingTimeoutJob> logger,
+        TimeProvider clock, IOptions<SettlementOptions> settlements)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _clock = clock;
+        _settlements = settlements;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -39,7 +47,16 @@ public class BookingTimeoutJob : BackgroundService
             ("Hết hạn hợp đồng", async p => { await p.GetRequiredService<ContractService>().ExpireAsync(); }),
             ("Quá hạn hồ sơ chủ", async p => { await p.GetRequiredService<OwnerRegistrationService>().AlertOverdueAsync(); }),
             ("Nhắc khách nhận phòng", async p => { await p.GetRequiredService<ReminderService>().SendCustomersAsync(cancellationToken); }),
-            ("Nhắc chủ đón khách", async p => { await p.GetRequiredService<ReminderService>().SendOwnersAsync(cancellationToken); })
+            ("Nhắc chủ đón khách", async p => { await p.GetRequiredService<ReminderService>().SendOwnersAsync(cancellationToken); }),
+            ("Lập đối soát kỳ đã kết thúc", async p =>
+            {
+                if (_lastSettlementGenerationSucceededAt is { } last
+                    && _clock.GetUtcNow() - last < TimeSpan.FromMinutes(_settlements.Value.GenerateEveryMinutes)) return;
+                await p.GetRequiredService<SettlementService>().GenerateRecentAsync();
+                // Chỉ giữ mốc sau thành công; lỗi thì được thử lại ở lượt kế tiếp.
+                _lastSettlementGenerationSucceededAt = _clock.GetUtcNow();
+            }),
+            ("Từ chối khoản bù treo", async p => { await p.GetRequiredService<CompensationService>().RejectClosedAsync(); })
         ];
         foreach (var job in jobs)
         {

@@ -93,9 +93,37 @@
     SELECT 26 AS STT, N'Tin thiếu cả số điện thoại và email người nhận' AS Muc, COUNT_BIG(*) AS SoDongLech
     FROM MessageLogs m WHERE (m.RecipientPhone IS NULL OR LTRIM(RTRIM(m.RecipientPhone)) = '')
         AND (m.RecipientEmail IS NULL OR LTRIM(RTRIM(m.RecipientEmail)) = '')
+    UNION ALL
+    SELECT 27 AS STT, N'Dòng đối soát khác homestay của bảng' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM SettlementItems i JOIN Settlements s ON s.Id = i.SettlementId JOIN Bookings b ON b.Id = i.BookingId
+    WHERE b.HomestayId <> s.HomestayId
+    UNION ALL
+    SELECT 28 AS STT, N'Ngày trả phòng ngoài kỳ đối soát' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM SettlementItems i JOIN Settlements s ON s.Id = i.SettlementId JOIN Bookings b ON b.Id = i.BookingId
+    WHERE b.CheckOut < DATEFROMPARTS(s.[Year], s.[Month], CASE WHEN s.PeriodNo = 1 THEN 1 ELSE 16 END)
+       OR b.CheckOut > CASE WHEN s.PeriodNo = 1 THEN DATEFROMPARTS(s.[Year], s.[Month], 15) ELSE EOMONTH(DATEFROMPARTS(s.[Year], s.[Month], 1)) END
+    UNION ALL
+    SELECT 29 AS STT, N'Đơn đã thay thế vẫn có dòng đối soát' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM SettlementItems i JOIN Bookings b ON b.Id = i.BookingId WHERE b.ReplacedByBookingId IS NOT NULL
+    UNION ALL
+    SELECT 30 AS STT, N'Tổng tiền phòng, giữ, hoa hồng khác tổng dòng' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Settlements s WHERE s.TotalRoomAmount <> COALESCE((SELECT SUM(i.RoomAmount) FROM SettlementItems i WHERE i.SettlementId = s.Id), 0)
+       OR s.TotalRetained <> COALESCE((SELECT SUM(i.RetainedAmount) FROM SettlementItems i WHERE i.SettlementId = s.Id), 0)
+       OR s.TotalCommission <> COALESCE((SELECT SUM(i.CommissionAmount) FROM SettlementItems i WHERE i.SettlementId = s.Id), 0)
+    UNION ALL
+    SELECT 31 AS STT, N'Đối soát Paid thiếu mã chuyển hoặc người trả' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Settlements s WHERE s.Status = 'Paid' AND s.PayoutAmount > 0
+       AND (s.PaidBankRef IS NULL OR LTRIM(RTRIM(s.PaidBankRef)) = '' OR s.PaidByEmployeeId IS NULL)
+    UNION ALL
+    SELECT 32 AS STT, N'Đối soát Confirmed thiếu giờ xác nhận' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Settlements s WHERE s.Status = 'Confirmed' AND s.ConfirmedAt IS NULL
+    UNION ALL
+    SELECT 33 AS STT, N'Khoản bù Approved sai trạng thái hoặc thiếu mã' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Payments p JOIN Bookings b ON b.Id = p.BookingId WHERE p.Type = 'Compensation' AND p.Status = 'Approved'
+       AND (b.Status <> 'Completed' OR p.BankRef IS NULL OR LTRIM(RTRIM(p.BankRef)) = '')
 )
 SELECT CASE WHEN GROUPING(STT) = 1 THEN 99 ELSE STT END AS STT,
-       CASE WHEN GROUPING(STT) = 1 THEN N'TỔNG (26 mục)' ELSE Muc END AS Muc,
+       CASE WHEN GROUPING(STT) = 1 THEN N'TỔNG (33 mục)' ELSE Muc END AS Muc,
        SUM(SoDongLech) AS SoDongLech,
        CASE WHEN SUM(SoDongLech) = 0 THEN N'OK' ELSE N'LỆCH' END AS KetQua
 FROM KiemTra
@@ -193,6 +221,34 @@ IF EXISTS (
     SELECT 26 AS STT, N'Tin thiếu cả số điện thoại và email người nhận' AS Muc, COUNT_BIG(*) AS SoDongLech
     FROM MessageLogs m WHERE (m.RecipientPhone IS NULL OR LTRIM(RTRIM(m.RecipientPhone)) = '')
         AND (m.RecipientEmail IS NULL OR LTRIM(RTRIM(m.RecipientEmail)) = '')
+    UNION ALL
+    SELECT 27 AS STT, N'Dòng đối soát khác homestay của bảng' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM SettlementItems i JOIN Settlements s ON s.Id = i.SettlementId JOIN Bookings b ON b.Id = i.BookingId
+    WHERE b.HomestayId <> s.HomestayId
+    UNION ALL
+    SELECT 28 AS STT, N'Ngày trả phòng ngoài kỳ đối soát' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM SettlementItems i JOIN Settlements s ON s.Id = i.SettlementId JOIN Bookings b ON b.Id = i.BookingId
+    WHERE b.CheckOut < DATEFROMPARTS(s.[Year], s.[Month], CASE WHEN s.PeriodNo = 1 THEN 1 ELSE 16 END)
+       OR b.CheckOut > CASE WHEN s.PeriodNo = 1 THEN DATEFROMPARTS(s.[Year], s.[Month], 15) ELSE EOMONTH(DATEFROMPARTS(s.[Year], s.[Month], 1)) END
+    UNION ALL
+    SELECT 29 AS STT, N'Đơn đã thay thế vẫn có dòng đối soát' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM SettlementItems i JOIN Bookings b ON b.Id = i.BookingId WHERE b.ReplacedByBookingId IS NOT NULL
+    UNION ALL
+    SELECT 30 AS STT, N'Tổng tiền phòng, giữ, hoa hồng khác tổng dòng' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Settlements s WHERE s.TotalRoomAmount <> COALESCE((SELECT SUM(i.RoomAmount) FROM SettlementItems i WHERE i.SettlementId = s.Id), 0)
+       OR s.TotalRetained <> COALESCE((SELECT SUM(i.RetainedAmount) FROM SettlementItems i WHERE i.SettlementId = s.Id), 0)
+       OR s.TotalCommission <> COALESCE((SELECT SUM(i.CommissionAmount) FROM SettlementItems i WHERE i.SettlementId = s.Id), 0)
+    UNION ALL
+    SELECT 31 AS STT, N'Đối soát Paid thiếu mã chuyển hoặc người trả' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Settlements s WHERE s.Status = 'Paid' AND s.PayoutAmount > 0
+       AND (s.PaidBankRef IS NULL OR LTRIM(RTRIM(s.PaidBankRef)) = '' OR s.PaidByEmployeeId IS NULL)
+    UNION ALL
+    SELECT 32 AS STT, N'Đối soát Confirmed thiếu giờ xác nhận' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Settlements s WHERE s.Status = 'Confirmed' AND s.ConfirmedAt IS NULL
+    UNION ALL
+    SELECT 33 AS STT, N'Khoản bù Approved sai trạng thái hoặc thiếu mã' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Payments p JOIN Bookings b ON b.Id = p.BookingId WHERE p.Type = 'Compensation' AND p.Status = 'Approved'
+       AND (b.Status <> 'Completed' OR p.BankRef IS NULL OR LTRIM(RTRIM(p.BankRef)) = '')
     ) AS KiemTra WHERE SoDongLech > 0
 )
     THROW 50020, N'Đối chiếu dữ liệu có mục LỆCH; không tự sửa dữ liệu.', 1;
