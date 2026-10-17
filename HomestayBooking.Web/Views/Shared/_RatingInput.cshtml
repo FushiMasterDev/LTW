@@ -1,0 +1,13 @@
+@model RatingInputModel
+@* Chọn điểm 1–5 bằng radio thật (bàn phím: mũi tên trong nhóm); sao chỉ trang trí, điểm đọc bằng chữ. *@
+<fieldset class="fx-rating-input" aria-describedby="@(Model.Error is null ? null : Model.Id + "-error")">
+    <legend class="form-label">@L["Điểm đánh giá (1–5)"]</legend>
+    <div class="fx-rating-input__choices">
+        @for (var i = 1; i <= 5; i++)
+        {
+            <input class="btn-check" type="radio" id="@(Model.Id)-@i" name="@Model.Name" value="@i" checked="@(Model.Value == i)" required />
+            <label class="btn fx-chip" for="@(Model.Id)-@i"><icon name="star-fill" /> @i</label>
+        }
+    </div>
+    @if (Model.Error is { } error) { <p class="text-danger small mb-0" id="@(Model.Id)-error">@L[error]</p> }
+</fieldset>

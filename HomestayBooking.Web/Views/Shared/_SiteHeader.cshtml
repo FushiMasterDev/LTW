@@ -12,7 +12,7 @@
         <div class="container">
             <a class="navbar-brand d-flex align-items-center gap-2 me-xl-4" asp-area="" asp-controller="Home" asp-action="Index">
                 <span class="brand-mark" aria-hidden="true"><icon name="house-heart-fill" /></span>
-                <span class="brand-name">Fuji <span>Homestay</span></span>
+                <span class="brand-name" translate="no">Fuji <span>Homestay</span></span>
             </a>
             @if (signedIn) { <div class="ms-auto ms-xl-2 order-xl-3">@await Component.InvokeAsync("NotificationBell")</div> }
             <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"

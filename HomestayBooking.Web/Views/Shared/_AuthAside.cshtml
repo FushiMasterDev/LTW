@@ -1,0 +1,11 @@
+@model AuthAsideModel
+@* Cột ảnh trang trí của trang đăng nhập/đăng ký: ảnh CC0 (docs/ui/credits.md), chữ trắng trên lớp phủ trung tính. Ẩn trên điện thoại. *@
+<div class="auth-aside">
+    <img src="~/images/auth-veranda.webp" alt="" width="960" height="640" loading="lazy" />
+    <div class="auth-aside__copy">
+        <h2>@L[Model.Title]</h2>
+        <ul>
+            @foreach (var point in Model.Points) { <li><icon name="check-circle-fill" /> @L[point]</li> }
+        </ul>
+    </div>
+</div>

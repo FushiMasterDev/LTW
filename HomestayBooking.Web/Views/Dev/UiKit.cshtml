@@ -11,7 +11,7 @@
     var sections = new (string Id, string Title)[]
     {
         ("colors", "Màu"), ("type", "Chữ"), ("buttons", "Nút"), ("badges", "Badge trạng thái"), ("money", "Tiền và ngày"),
-        ("icons", "Icon"), ("forms", "Form"), ("alerts", "Thông báo"), ("lists", "Trang danh sách"), ("empty", "Trạng thái rỗng"), ("layout", "Khung trang"), ("rating", "Điểm đánh giá"), ("stats", "Ô số liệu"), ("data-table", "Bảng dùng chung"), ("descriptions", "Mô tả"), ("timeline", "Dòng thời gian"), ("prices", "Bảng giá"), ("skeleton", "Khung chờ tải"), ("filters", "Thanh lọc"), ("date-picker", "Bộ chọn ngày"), ("guest-picker", "Số khách"), ("uploads", "Vùng tải file"), ("feedback", "Xác nhận và toast"), ("navigation", "Tabs, đường dẫn, đầu trang"), ("notifications", "Chuông thông báo"), ("booking-search", "Thanh tìm phòng"), ("homestay-cards", "Thẻ homestay"), ("gallery", "Gallery"), ("booking-panel", "Ô báo giá"), ("booking-stepper", "Tiến trình đơn"), ("booking-cards", "Thẻ đơn của khách"), ("payment-qr", "Thanh toán QR"), ("room-calendar", "Lịch tháng"),
+        ("icons", "Icon"), ("forms", "Form"), ("alerts", "Thông báo"), ("lists", "Trang danh sách"), ("empty", "Trạng thái rỗng"), ("layout", "Khung trang"), ("rating", "Điểm đánh giá"), ("stats", "Ô số liệu"), ("data-table", "Bảng dùng chung"), ("descriptions", "Mô tả"), ("timeline", "Dòng thời gian"), ("prices", "Bảng giá"), ("skeleton", "Khung chờ tải"), ("filters", "Thanh lọc"), ("date-picker", "Bộ chọn ngày"), ("guest-picker", "Số khách"), ("uploads", "Vùng tải file"), ("feedback", "Xác nhận và toast"), ("navigation", "Tabs, đường dẫn, đầu trang"), ("notifications", "Chuông thông báo"), ("booking-search", "Thanh tìm phòng"), ("homestay-cards", "Thẻ homestay"), ("gallery", "Gallery"), ("booking-panel", "Ô báo giá"), ("booking-stepper", "Tiến trình đơn"), ("booking-cards", "Thẻ đơn của khách"), ("rating-input", "Chọn điểm"), ("steps", "Các bước"), ("auth-aside", "Cột ảnh đăng nhập"), ("status-page", "Trang lỗi"), ("payment-qr", "Thanh toán QR"), ("room-calendar", "Lịch tháng"),
     };
     var tokens = new[] { "bg", "surface", "surface-2", "surface-3", "border", "border-strong", "ink", "muted", "primary", "primary-hover",
         "primary-soft", "focus", "success", "warning", "danger", "info" };
@@ -358,6 +358,28 @@
             <li><partial name="_BookingCard" model="@(new MyBookingRow(row.Code, row.Guest == "Lê Hùng" ? "Ba Vì Mountain Lodge" : "Homestay có tên rất dài để kiểm tra việc xuống dòng trên điện thoại " + row.Code, "Phòng đôi", row.In, row.Out, row.Total, row.Status, DateTime.UtcNow))" /></li>
         }
     </ul>
+</section>
+<section id="rating-input" class="uikit-section" aria-labelledby="rating-input-title">
+    <h2 id="rating-input-title" class="section-title">Chọn điểm đánh giá: chưa chọn, đã chọn, lỗi</h2>
+    <div class="row g-4">
+        <div class="col-md-4"><partial name="_RatingInput" model="@(new RatingInputModel("kit-rating"))" /></div>
+        <div class="col-md-4"><partial name="_RatingInput" model="@(new RatingInputModel("kit-rating-4", "kitRating4", 4))" /></div>
+        <div class="col-md-4"><partial name="_RatingInput" model="@(new RatingInputModel("kit-rating-error", "kitRatingError", Error: "Điểm đánh giá phải từ 1 đến 5."))" /></div>
+    </div>
+</section>
+<section id="steps" class="uikit-section" aria-labelledby="steps-title">
+    <h2 id="steps-title" class="section-title">Các bước: đang ở bước 4 và đã xong hết</h2>
+    <partial name="_Steps" model="@(new StepsModel("Các bước đăng ký đối tác", ["Thông tin cơ sở", "Khu vực và địa chỉ", "Liên hệ và tài khoản", "Ảnh và giấy tờ", "Gửi hồ sơ"], 3))" />
+    <div class="mt-3"><partial name="_Steps" model="@(new StepsModel("Các bước đăng ký đối tác", ["Thông tin cơ sở", "Khu vực và địa chỉ", "Liên hệ và tài khoản", "Ảnh và giấy tờ", "Gửi hồ sơ"], 5))" /></div>
+</section>
+<section id="auth-aside" class="uikit-section" aria-labelledby="auth-aside-title">
+    <h2 id="auth-aside-title" class="section-title">Cột ảnh trang đăng nhập (ẩn dưới 768px)</h2>
+    <div class="row"><div class="col-md-5 uikit-auth-aside"><partial name="_AuthAside" model="@(new AuthAsideModel("Chào mừng đến Fuji Homestay", ["Khách hàng: theo dõi đơn đặt phòng của bạn.", "Chủ homestay: quản lý phòng, lịch và đơn đặt.", "Một tài khoản dùng chung cho cả hai vai trò."]))" /></div></div>
+</section>
+<section id="status-page" class="uikit-section" aria-labelledby="status-page-title">
+    <h2 id="status-page-title" class="section-title">Trang lỗi: 404 và lỗi máy chủ có mã đối chiếu</h2>
+    <partial name="_StatusPage" model="@(new StatusPageModel(404, "Không tìm thấy trang", "Trang bạn tìm không tồn tại hoặc đã bị xóa."))" />
+    <partial name="_StatusPage" model="@(new StatusPageModel(null, "Đã xảy ra lỗi", "Vui lòng thử lại sau hoặc liên hệ Fuji để được hỗ trợ.", "00-demo-uikit-00"))" />
 </section>
 <section id="payment-qr" class="uikit-section" aria-labelledby="payment-qr-title">
     <h2 id="payment-qr-title" class="section-title">QR thanh toán mẫu</h2>

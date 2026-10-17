@@ -44,3 +44,12 @@ public record BreadcrumbModel(IReadOnlyList<BreadcrumbItem> Items);
 /// <param name="Items">Năm thông báo mới nhất, hoặc mẫu để preview trên UI Kit.</param>
 /// <param name="Id">Id duy nhất khi có nhiều bản preview trên một trang.</param>
 public record NotificationBellModel(int UnreadCount, IReadOnlyList<Notification> Items, string Id = "fx-notifications");
+
+/// <param name="Label">Khóa resource đặt tên cho tiến trình (aria-label).</param>
+/// <param name="Steps">Khóa resource của từng bước theo thứ tự.</param>
+/// <param name="Current">Chỉ số bước hiện tại (0 là bước đầu); các bước trước đã xong.</param>
+public record StepsModel(string Label, IReadOnlyList<string> Steps, int Current);
+
+/// <param name="Title">Khóa resource tiêu đề cột ảnh.</param>
+/// <param name="Points">Khóa resource của ba ý ngắn.</param>
+public record AuthAsideModel(string Title, IReadOnlyList<string> Points);

@@ -3,67 +3,29 @@
     Layout = "_AuthLayout";
     ViewData["Title"] = L["Đăng nhập"];
 }
-<div class="row justify-content-center">
-    <div class="col-lg-10 col-xl-9">
-        <div class="card-soft auth-card">
-            <div class="row g-0">
-                <div class="col-md-5 auth-side d-none d-md-block">
-                    <div class="position-relative">
-                        <span class="brand-mark mb-3" aria-hidden="true"><i class="bi bi-house-heart-fill"></i></span>
-                        <h2>@L["Chào mừng đến Fuji Homestay"]</h2>
-                        <ul>
-                            <li><i class="bi bi-check-circle-fill" aria-hidden="true"></i> @L["Khách hàng: theo dõi đơn đặt phòng của bạn."]</li>
-                            <li><i class="bi bi-check-circle-fill" aria-hidden="true"></i> @L["Chủ homestay: quản lý phòng, lịch và đơn đặt."]</li>
-                            <li><i class="bi bi-check-circle-fill" aria-hidden="true"></i> @L["Một tài khoản dùng chung cho cả hai vai trò."]</li>
-                        </ul>
-                    </div>
+<div class="auth-card">
+    <partial name="_AuthAside" model="@(new AuthAsideModel("Chào mừng đến Fuji Homestay", ["Khách hàng: theo dõi đơn đặt phòng của bạn.", "Chủ homestay: quản lý phòng, lịch và đơn đặt.", "Một tài khoản dùng chung cho cả hai vai trò."]))" />
+    <div class="auth-form">
+        <h1>@L["Đăng nhập"]</h1>
+        <p class="auth-form__lead">@L["Dành cho khách hàng và chủ homestay. Đăng nhập bằng số điện thoại đã đăng ký."]</p>
+        <form asp-action="Login" method="post" novalidate>
+            <div asp-validation-summary="ModelOnly" class="alert tone-rose" role="alert"></div>
+            <input type="hidden" asp-for="ReturnUrl" />
+            <form-field asp-for="PhoneNumber" type="tel" autocomplete="username" inputmode="tel" placeholder="09xx xxx xxx" autofocus="true" />
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label"></label>
+                <div class="input-group">
+                    <input asp-for="Password" class="form-control" autocomplete="current-password" />
+                    <button type="button" class="btn btn-outline-secondary" data-toggle-password="#Password"
+                            aria-label="@L["Hiện mật khẩu"]" data-label-show="@L["Hiện mật khẩu"]" data-label-hide="@L["Ẩn mật khẩu"]"><icon name="eye" /></button>
                 </div>
-                <div class="col-md-7 auth-form">
-                    <h1 class="h3 mb-1">@L["Đăng nhập"]</h1>
-                    <p class="text-muted">@L["Dành cho khách hàng và chủ homestay. Đăng nhập bằng số điện thoại đã đăng ký."]</p>
-                    <form asp-action="Login" method="post" novalidate>
-                        <div asp-validation-summary="ModelOnly" class="alert tone-rose" role="alert"></div>
-                        <input type="hidden" asp-for="ReturnUrl" />
-                        <div class="mb-3">
-                            <label asp-for="PhoneNumber" class="form-label"></label>
-                            <div class="input-group">
-                                <span class="input-group-text" aria-hidden="true"><i class="bi bi-phone"></i></span>
-                                <input asp-for="PhoneNumber" class="form-control" type="tel" autocomplete="username" inputmode="tel" placeholder="09xx xxx xxx" autofocus />
-                            </div>
-                            <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="Password" class="form-label"></label>
-                            <div class="input-group">
-                                <span class="input-group-text" aria-hidden="true"><i class="bi bi-lock"></i></span>
-                                <input asp-for="Password" class="form-control" autocomplete="current-password" />
-                                <button type="button" class="btn btn-outline-secondary" data-toggle-password="#Password"
-                                        aria-label="@L["Hiện mật khẩu"]" data-label-show="@L["Hiện mật khẩu"]" data-label-hide="@L["Ẩn mật khẩu"]">
-                                    <i class="bi bi-eye" aria-hidden="true"></i>
-                                </button>
-                            </div>
-                            <span asp-validation-for="Password" class="text-danger small"></span>
-                        </div>
-                        <div class="form-check mb-4">
-                            <input asp-for="RememberMe" class="form-check-input" />
-                            <label asp-for="RememberMe" class="form-check-label"></label>
-                        </div>
-                        <button type="submit" class="btn btn-brand w-100 btn-lg" data-loading-text="@L["Đang đăng nhập..."]">
-                            <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i> @L["Đăng nhập"]
-                        </button>
-                    </form>
-                    <p class="text-center mt-3 mb-0">
-                        @L["Chưa có tài khoản?"]
-                        <a asp-action="Register" asp-route-returnUrl="@Model.ReturnUrl">@L["Đăng ký bằng số điện thoại"]</a>
-                    </p>
-                    <p class="text-center text-muted small mt-4 mb-0">
-                        <i class="bi bi-person-badge" aria-hidden="true"></i>
-                        @L["Nhân viên Fuji?"]
-                        <a asp-action="EmployeeLogin" asp-route-returnUrl="@Model.ReturnUrl">@L["Đăng nhập bằng mã nhân viên"]</a>
-                    </p>
-                </div>
+                <span asp-validation-for="Password" class="text-danger small"></span>
             </div>
-        </div>
+            <form-field asp-for="RememberMe" wrapper="mb-4" />
+            <button type="submit" class="btn btn-brand w-100 btn-lg" data-loading-text="@L["Đang đăng nhập..."]">@L["Đăng nhập"]</button>
+        </form>
+        <p class="auth-form__foot">@L["Chưa có tài khoản?"] <a asp-action="Register" asp-route-returnUrl="@Model.ReturnUrl">@L["Đăng ký bằng số điện thoại"]</a></p>
+        <p class="auth-form__foot">@L["Nhân viên Fuji?"] <a asp-action="EmployeeLogin" asp-route-returnUrl="@Model.ReturnUrl">@L["Đăng nhập bằng mã nhân viên"]</a></p>
     </div>
 </div>
 

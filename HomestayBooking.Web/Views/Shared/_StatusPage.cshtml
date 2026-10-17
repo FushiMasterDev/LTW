@@ -1,0 +1,12 @@
+@model StatusPageModel
+@* Trang lỗi/không có quyền dùng chung; class status-code được test tích hợp đọc. *@
+<div class="status-page">
+    @if (Model.Code is int code) { <p class="status-code" aria-hidden="true">@code</p> }
+    <h1>@L[Model.Title]</h1>
+    <p class="status-page__message">@L[Model.Message]</p>
+    <div class="status-page__actions">
+        <a class="btn btn-brand" asp-area="" asp-controller="Home" asp-action="Index"><icon name="house-door" /> @L["Về trang chủ"]</a>
+        <a class="btn btn-outline-secondary" asp-area="" asp-controller="Homestays" asp-action="Index"><icon name="search" /> @L["Tìm homestay"]</a>
+    </div>
+    @if (Model.Reference is { } reference) { <p class="status-page__reference">@L["Mã đối chiếu"]: <code>@reference</code></p> }
+</div>

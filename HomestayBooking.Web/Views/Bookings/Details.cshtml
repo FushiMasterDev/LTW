@@ -129,6 +129,47 @@
             </section>
         }
 
+        @if (b.Status == BookingStatus.Completed)
+        {
+            <section class="booking-section" id="review" aria-labelledby="reviewTitle">
+                <h2 id="reviewTitle">@L["Đánh giá của bạn"]</h2>
+                @if (Model.Review is { } review)
+                {
+                    <div class="order-review">
+                        <rating value="review.Rating" single="true" />
+                        @if (!string.IsNullOrEmpty(review.Comment)) { <p>@review.Comment</p> }
+                        @if (!string.IsNullOrEmpty(review.OwnerReply))
+                        {
+                            <div class="stay-reviews__reply">
+                                <p class="fw-semibold mb-1">@L["Chủ homestay trả lời"]</p>
+                                <p>@review.OwnerReply</p>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="booking-section__lead">@L["Chia sẻ trải nghiệm để khách sau chọn phòng dễ hơn. Mỗi đơn được đánh giá một lần."]</p>
+                    <form asp-action="Review" asp-route-id="@b.Code" method="post">
+                        <partial name="_RatingInput" model="@(new RatingInputModel("review-rating"))" />
+                        <div class="my-3">
+                            <label class="form-label" for="reviewComment">@L["Nhận xét (không bắt buộc)"]</label>
+                            <textarea class="form-control" id="reviewComment" name="comment" rows="4" maxlength="1000"></textarea>
+                        </div>
+                        @if (!Model.IsOwnAccount)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label" for="reviewPhone">@L["Số điện thoại đặt phòng"]</label>
+                                <input class="form-control" id="reviewPhone" name="phoneNumber" type="tel" inputmode="tel" autocomplete="tel" required />
+                                <p class="form-text">@L["Nhập lại số điện thoại đã dùng khi đặt để xác nhận bạn là khách của đơn."]</p>
+                            </div>
+                        }
+                        <button type="submit" class="btn btn-brand" data-loading-text="@L["Đang gửi..."]">@L["Gửi đánh giá"]</button>
+                    </form>
+                }
+            </section>
+        }
+
         <partial name="_CustomerChanges" model="Model" />
 
         @if (Model.CanCancel && Model.CancelQuote is { } refund)

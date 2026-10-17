@@ -1,20 +1,12 @@
 @model int
 @{
     Layout = "_AuthLayout";
-    var (title, message, _, _) = Model switch
+    var (title, message) = Model switch
     {
-        403 => (L["Không có quyền truy cập"], L["Bạn không có quyền xem trang này."], "bi-shield-lock", "tone-rose"),
-        404 => (L["Không tìm thấy trang"], L["Trang bạn tìm không tồn tại hoặc đã bị xóa."], "bi-signpost-split", "tone-amber"),
-        _ => (L["Đã có lỗi xảy ra"], L["Vui lòng thử lại sau."], "bi-bug", "tone-violet"),
+        403 => ("Không có quyền truy cập", "Bạn không có quyền xem trang này."),
+        404 => ("Không tìm thấy trang", "Trang bạn tìm không tồn tại hoặc đã bị xóa."),
+        _ => ("Đã có lỗi xảy ra", "Vui lòng thử lại sau."),
     };
-    ViewData["Title"] = title;
+    ViewData["Title"] = L[title];
 }
-<div class="status-page">
-    <div class="status-code" aria-hidden="true">@Model</div>
-    <h1 class="h3 mt-2">@title</h1>
-    <p class="text-muted">@message</p>
-    <div class="d-flex flex-wrap justify-content-center gap-2">
-        <a class="btn btn-brand" asp-area="" asp-controller="Home" asp-action="Index"><i class="bi bi-house-door" aria-hidden="true"></i> @L["Về trang chủ"]</a>
-        <a class="btn btn-outline-secondary" asp-area="" asp-controller="Homestays" asp-action="Index"><i class="bi bi-search" aria-hidden="true"></i> @L["Tìm homestay"]</a>
-    </div>
-</div>
+<partial name="_StatusPage" model="@(new StatusPageModel(Model, title, message))" />

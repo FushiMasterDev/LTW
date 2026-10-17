@@ -1,0 +1,132 @@
+@using HomestayBooking.Web.Services
+@model PartnerStatusViewModel
+@{
+    var r = Model.Registration;
+    ViewData["Title"] = L["Hồ sơ đối tác"];
+    string[] steps = ["Thông tin cơ sở", "Khu vực và địa chỉ", "Liên hệ và tài khoản", "Ảnh và giấy tờ", "Gửi hồ sơ"];
+    var current = Model.Editable ? 3 : steps.Length;
+    string DocumentLabel(DocumentType type) => type switch
+    {
+        DocumentType.BusinessLicense => L["Giấy phép kinh doanh"], DocumentType.FireSafety => L["Giấy PCCC"],
+        DocumentType.PropertyPhoto => L["Ảnh thực tế"], _ => L["Giấy tờ khác"],
+    };
+    var types = Enum.GetValues<DocumentType>().Select(t => new SelectListItem(DocumentLabel(t), t.ToString())).ToList();
+}
+
+<header class="order-header">
+    <div>
+        <p>#@r.Id</p>
+        <h1>@L["Hồ sơ đối tác"]</h1>
+    </div>
+    <status-badge value="r.Status" icon="true" />
+</header>
+
+<div class="order-stepper">
+    <partial name="_Steps" model="@(new StepsModel("Các bước đăng ký đối tác", steps, current))" />
+</div>
+
+@if (r.ReviewNote is { } note)
+{
+    <partial name="_Alert" model="@(new AlertModel(L[r.Status == OwnerRegistrationStatus.Rejected ? "Lý do từ chối: {0}" : "Fuji cần bạn bổ sung: {0}", note], r.Status == OwnerRegistrationStatus.Rejected ? "danger" : "warning", Dismissible: false))" />
+}
+@if (Model.Missing.Count > 0)
+{
+    <div class="alert tone-rose" role="alert">
+        <icon name="exclamation-triangle-fill" />
+        <div>
+            <p class="fw-semibold mb-1">@L["Hồ sơ còn thiếu:"]</p>
+            <ul class="mb-0">@foreach (var item in Model.Missing) { <li>@L[item]</li> }</ul>
+        </div>
+    </div>
+}
+@if (r.SubmittedAt is { } submitted && !Model.Editable)
+{
+    <partial name="_Alert" model="@(new AlertModel(L["Đã gửi hồ sơ lúc {0}. Nhân viên Fuji thẩm định trong 3 ngày làm việc.", VietnamTime.ToLocal(DateTime.SpecifyKind(submitted, DateTimeKind.Utc)).ToString("HH:mm dd/MM/yyyy")], "info", Dismissible: false))" />
+}
+
+<div class="booking-layout">
+    <div class="booking-layout__main">
+        @foreach (var home in r.Homestays)
+        {
+            <section class="booking-section" aria-labelledby="home-@home.Id">
+                <div class="partner-home__head">
+                    <h2 id="home-@home.Id">@home.Name</h2>
+                    <status-badge value="home.Status" />
+                </div>
+                <p class="booking-section__lead">@home.Address</p>
+
+                @if (home.Documents.Count == 0)
+                {
+                    <partial name="_EmptyState" model='new EmptyStateModel("Chưa có giấy tờ.", "Cần giấy phép kinh doanh, giấy PCCC và ít nhất một ảnh thực tế còn hạn.", "file-earmark-arrow-up")' />
+                }
+                else
+                {
+                    <ul class="partner-docs">
+                        @foreach (var doc in home.Documents)
+                        {
+                            <li>
+                                <span>
+                                    <strong>@DocumentLabel(doc.Type)</strong>
+                                    <a asp-action="Document" asp-route-id="@doc.Id" target="_blank" rel="noopener">@(doc.OriginalFileName ?? L["Xem file"])</a>
+                                </span>
+                                @if (doc.Expired)
+                                {
+                                    <span class="badge-tone tone-rose">@L["Hết hạn {0}", doc.ExpiryDate!.Value.ToString("dd/MM/yyyy")]</span>
+                                }
+                                else if (doc.ExpiryDate is { } expiry)
+                                {
+                                    <span class="text-muted">@L["Hạn {0}", expiry.ToString("dd/MM/yyyy")]</span>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+
+                @if (Model.Editable && home.Status is HomestayStatus.Draft or HomestayStatus.PendingReview)
+                {
+                    <form asp-action="Upload" method="post" enctype="multipart/form-data" class="partner-upload">
+                        <input type="hidden" name="homestayId" value="@home.Id" />
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label class="form-label" for="type-@home.Id">@L["Loại giấy tờ"]</label>
+                                <select class="form-select" id="type-@home.Id" name="type" asp-items="types"></select>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label" for="expiry-@home.Id">@L["Ngày hết hạn (nếu có)"]</label>
+                                <input class="form-control" type="date" id="expiry-@home.Id" name="expiryDate" />
+                            </div>
+                            <div class="col-12"><partial name="_UploadZone" model="@(new UploadZoneModel("file-" + home.Id))" /></div>
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary mt-3" data-loading-text="@L["Đang tải lên..."]">@L["Tải giấy tờ lên"]</button>
+                    </form>
+                }
+            </section>
+        }
+    </div>
+
+    <aside class="booking-layout__aside">
+        <section class="booking-summary" aria-labelledby="submitTitle">
+            <h2 id="submitTitle">@L["Gửi hồ sơ"]</h2>
+            @if (Model.Editable)
+            {
+                <p>@L["Gửi khi đã có đủ giấy phép kinh doanh, giấy PCCC và ảnh thực tế còn hạn. Sau khi gửi, hồ sơ bị khóa cho tới khi có kết quả."]</p>
+                <form asp-action="Submit" asp-route-id="@r.Id" method="post" data-confirm="@L["Gửi hồ sơ cho Fuji thẩm định?"]">
+                    <button type="submit" class="btn btn-brand w-100">@L["Gửi hồ sơ"]</button>
+                </form>
+            }
+            else
+            {
+                <p class="mb-0">@L[r.Status switch
+                {
+                    OwnerRegistrationStatus.Approved => "Hồ sơ đã được duyệt. Homestay mở bán sau khi Fuji và bạn ký hợp đồng.",
+                    OwnerRegistrationStatus.Rejected => "Hồ sơ không được duyệt. Gọi 1900 0000 nếu bạn cần trao đổi thêm.",
+                    _ => "Hồ sơ đang chờ thẩm định, bạn sẽ nhận thông báo khi có kết quả.",
+                }]</p>
+            }
+        </section>
+    </aside>
+</div>
+
+@section Scripts {
+    <script src="~/js/components/upload-zone.js" asp-append-version="true"></script>
+}

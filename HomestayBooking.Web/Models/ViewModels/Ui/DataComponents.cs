@@ -85,3 +85,9 @@ public record PriceBreakdownModel(IReadOnlyList<PriceLine>? Lines = null, IReadO
 /// <param name="Cards">Hiển thị khung thẻ thay vì dòng.</param>
 /// <param name="Count">Số phần tử chờ tải.</param>
 public record SkeletonModel(bool Cards = false, int Count = 3);
+
+/// <param name="Code">Mã HTTP hiển thị lớn (403, 404...), null khi là lỗi máy chủ chung.</param>
+/// <param name="Title">Khóa resource của tiêu đề.</param>
+/// <param name="Message">Khóa resource của lời giải thích.</param>
+/// <param name="Reference">Mã đối chiếu cho bộ phận hỗ trợ, không dịch.</param>
+public record StatusPageModel(int? Code, string Title, string Message, string? Reference = null);

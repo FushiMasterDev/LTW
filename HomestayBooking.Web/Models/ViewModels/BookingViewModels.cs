@@ -79,7 +79,10 @@ public class BookingDetailsViewModel
     public bool ShowDevSimulator { get; init; }
 
     /// <summary>Đơn đã có đánh giá (mỗi đơn tối đa một, BR-09): ẩn form viết đánh giá.</summary>
-    public bool HasReview { get; init; }
+    public bool HasReview => Review is not null;
+
+    /// <summary>Đánh giá khách đã viết cho đơn này, hiện lại thay cho form.</summary>
+    public Review? Review { get; init; }
 }
 
 public record MyBookingRow(string Code, string HomestayName, string RoomTypeName, DateOnly CheckIn, DateOnly CheckOut,

@@ -1,0 +1,66 @@
+@model PartnerRegisterViewModel
+@{
+    ViewData["Title"] = L["Trở thành đối tác"];
+    string[] steps = ["Thông tin cơ sở", "Khu vực và địa chỉ", "Liên hệ và tài khoản", "Ảnh và giấy tờ", "Gửi hồ sơ"];
+}
+
+<div class="partner-layout">
+    <div class="partner-intro">
+        <h1>@L["Trở thành đối tác Fuji"]</h1>
+        <p>@L["Đưa homestay của bạn lên Fuji: khách đặt theo từng đêm, cọc 30% qua QR, Fuji đối soát và chuyển tiền cho bạn theo kỳ."]</p>
+        <partial name="_Steps" model="@(new StepsModel("Các bước đăng ký đối tác", steps, 0))" />
+        <ul class="partner-intro__notes">
+            <li>@L["Bước 1–3 điền ngay trên trang này. Sau khi tạo hồ sơ, bạn tải giấy phép kinh doanh, giấy PCCC và ảnh thực tế rồi gửi hồ sơ."]</li>
+            <li>@L["Nhân viên Fuji thẩm định trong 3 ngày làm việc và báo kết quả qua thông báo trên tài khoản."]</li>
+            <li>@L["Số phòng, loại phòng và giá được nhập sau khi hồ sơ được duyệt."]</li>
+        </ul>
+    </div>
+
+    <form asp-action="Index" method="post" novalidate class="partner-form">
+        <div asp-validation-summary="ModelOnly" class="alert tone-rose" role="alert"></div>
+
+        <fieldset>
+            <legend>@L["1. Thông tin cơ sở"]</legend>
+            <form-field asp-for="HomestayName" />
+            <form-field asp-for="Description" type="textarea" rows="4" hint="@L["Vài câu về không gian, số phòng và điểm đặc biệt."]" wrapper="mb-0" />
+        </fieldset>
+
+        <fieldset>
+            <legend>@L["2. Khu vực và địa chỉ"]</legend>
+            <form-field asp-for="AreaId" type="select" asp-items="Model.Areas" placeholder="@L["Chọn khu vực"]" />
+            <form-field asp-for="Address" autocomplete="street-address" hint="@L["Địa chỉ chỉ gửi cho khách sau khi đơn được xác nhận."]" wrapper="mb-0" />
+        </fieldset>
+
+        <fieldset>
+            <legend>@L["3. Liên hệ và tài khoản"]</legend>
+            <div class="row g-3">
+                <div class="col-sm-6"><form-field asp-for="FullName" autocomplete="name" wrapper="mb-0" /></div>
+                <div class="col-sm-6"><form-field asp-for="ContactPhone" type="tel" inputmode="tel" wrapper="mb-0" /></div>
+                @if (Model.SignedIn)
+                {
+                    <div class="col-12"><form-field asp-for="PhoneNumber" type="tel" readonly="readonly" hint="@L["Hồ sơ gắn với tài khoản bạn đang đăng nhập."]" wrapper="mb-0" /></div>
+                }
+                else
+                {
+                    <div class="col-12"><form-field asp-for="PhoneNumber" type="tel" inputmode="tel" autocomplete="username" hint="@L["Dùng số này và mật khẩu bên dưới để đăng nhập, tải giấy tờ và theo dõi hồ sơ."]" wrapper="mb-0" /></div>
+                    <div class="col-sm-6"><form-field asp-for="Password" type="password" autocomplete="new-password" wrapper="mb-0" /></div>
+                    <div class="col-sm-6"><form-field asp-for="ConfirmPassword" type="password" autocomplete="new-password" wrapper="mb-0" /></div>
+                }
+                <div class="col-sm-4"><form-field asp-for="BankName" wrapper="mb-0" /></div>
+                <div class="col-sm-4"><form-field asp-for="BankAccountNo" inputmode="numeric" wrapper="mb-0" /></div>
+                <div class="col-sm-4"><form-field asp-for="BankAccountName" wrapper="mb-0" /></div>
+            </div>
+            <p class="form-text mt-2 mb-0">@L["Tài khoản ngân hàng nhận tiền đối soát; Fuji chỉ dùng để chuyển tiền cho bạn."]</p>
+        </fieldset>
+
+        <button type="submit" class="btn btn-brand btn-lg w-100" data-loading-text="@L["Đang tạo hồ sơ..."]">@L["Tạo hồ sơ đối tác"]</button>
+        @if (!Model.SignedIn)
+        {
+            <p class="partner-form__foot">@L["Đã có tài khoản Fuji?"] <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Url.Action("Index")">@L["Đăng nhập để dùng chung tài khoản"]</a></p>
+        }
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

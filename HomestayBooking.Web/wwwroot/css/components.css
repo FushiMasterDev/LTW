@@ -573,10 +573,14 @@
 @media (max-width: 767.98px) { .fx-filter { padding: 0; border: 0; background: none; } }
 .fx-filter__choices { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: .5rem; min-width: 0; margin: 0; padding: 0; border: 0; }
 .fx-filter__choices legend { flex: 1 1 100%; float: none; width: auto; margin-bottom: 0; font-size: .875rem; }
-.fx-filter__choice { min-height: 2.75rem; padding-inline: 1rem; border: 1px solid var(--fx-border-strong); border-radius: var(--fx-radius-full); background: var(--fx-surface); color: var(--fx-ink); }
-.fx-filter__choice:hover { border-color: var(--fx-primary); color: var(--fx-ink); }
-.btn-check:checked + .fx-filter__choice { border-color: var(--fx-primary); background: var(--fx-primary-soft); color: var(--fx-on-primary-soft); font-weight: 600; }
-.btn-check:focus-visible + .fx-filter__choice { outline: 2px solid var(--fx-focus); outline-offset: 2px; }
+.fx-chip { min-height: 2.75rem; padding-inline: 1rem; border: 1px solid var(--fx-border-strong); border-radius: var(--fx-radius-full); background: var(--fx-surface); color: var(--fx-ink); }
+.fx-chip:hover { border-color: var(--fx-primary); color: var(--fx-ink); }
+.btn-check:checked + .fx-chip { border-color: var(--fx-primary); background: var(--fx-primary-soft); color: var(--fx-on-primary-soft); font-weight: 600; }
+.btn-check:focus-visible + .fx-chip { outline: 2px solid var(--fx-focus); outline-offset: 2px; }
+.fx-rating-input { margin: 0; padding: 0; border: 0; min-width: 0; }
+.fx-rating-input legend { float: none; width: auto; }
+.fx-rating-input__choices { display: flex; flex-wrap: wrap; gap: .5rem; }
+.fx-rating-input .fx-chip { min-width: 3.5rem; font-variant-numeric: tabular-nums; }
 @media (max-width: 767.98px) {
   .fx-filter .offcanvas-md { background: var(--fx-surface); color: var(--fx-ink); }
   .fx-filter .offcanvas-body, .fx-filter__fields { display: flex; flex-direction: column; align-items: stretch; }
@@ -753,3 +757,101 @@
 [data-bs-theme] .flatpickr-days .dayContainer { width: 100%; min-width: 0; max-width: none; }
 [data-bs-theme] .flatpickr-day { max-width: none; height: 2.75rem; line-height: 2.75rem; }
 [data-bs-theme] .flatpickr-day.today { border-color: var(--fx-primary); }
+/* ---------- Cột ảnh trang đăng nhập (ẩn trên điện thoại) ---------- */
+.auth-aside {
+  position: relative;
+  isolation: isolate;
+  display: none;
+  min-height: 100%;
+  padding: 2.5rem;
+  color: var(--fx-paper);
+  background: var(--fx-photo-fallback);
+}
+
+.auth-aside > img {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Lớp phủ trung tính dưới chữ trắng */
+.auth-aside::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(to top,
+    color-mix(in srgb, var(--fx-scrim) 88%, transparent) 0%,
+    color-mix(in srgb, var(--fx-scrim) 55%, transparent) 55%,
+    color-mix(in srgb, var(--fx-scrim) 35%, transparent) 100%);
+}
+
+.auth-aside__copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 100%;
+}
+
+.auth-aside h2 {
+  color: var(--fx-paper);
+  font-family: var(--fx-font-serif);
+  font-size: 1.75rem;
+}
+
+.auth-aside ul {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.auth-aside li {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  color: color-mix(in srgb, var(--fx-paper) 92%, transparent);
+}
+@media (min-width: 768px) { .auth-aside { display: block; } }
+/* ---------- Trang lỗi và không có quyền ---------- */
+.status-page {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 3rem 0;
+  text-align: center;
+}
+
+.status-code {
+  margin: 0;
+  color: var(--fx-primary);
+  font-family: var(--fx-font-serif);
+  font-size: clamp(4.5rem, 14vw, 7.5rem);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.status-page h1 {
+  margin-top: 0.75rem;
+}
+
+.status-page__message {
+  color: var(--fx-muted);
+}
+
+.status-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.status-page__reference {
+  margin: 1.5rem 0 0;
+  color: var(--fx-muted);
+  font-size: 0.875rem;
+}

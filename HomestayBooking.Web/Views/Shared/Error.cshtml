@@ -1,4 +1,3 @@
 @model ErrorViewModel
 @{ Layout = "_AuthLayout"; ViewData["Title"] = L["Đã xảy ra lỗi"]; }
-<partial name="_EmptyState" model='new EmptyStateModel("Đã xảy ra lỗi", "Vui lòng thử lại sau hoặc liên hệ Fuji để được hỗ trợ.", "exclamation-triangle", "Về trang chủ", Url.Action("Index", "Home"))' />
-@if (Model.ShowRequestId) { <p class="text-center text-muted">@L["Mã đối chiếu"]: <code>@Model.RequestId</code></p> }
+<partial name="_StatusPage" model="@(new StatusPageModel(null, "Đã xảy ra lỗi", "Vui lòng thử lại sau hoặc liên hệ Fuji để được hỗ trợ.", Model.ShowRequestId ? Model.RequestId : null))" />

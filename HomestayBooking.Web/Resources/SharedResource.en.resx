@@ -2104,4 +2104,85 @@
   <data name="Chưa có đơn đã qua." xml:space="preserve"><value>No past bookings yet.</value></data>
   <data name="Không có đơn đã hủy." xml:space="preserve"><value>No cancelled bookings.</value></data>
   <data name="Bạn chưa có đơn sắp tới." xml:space="preserve"><value>You have no upcoming bookings.</value></data>
+  <data name="1. Thông tin cơ sở" xml:space="preserve"><value>1. Property details</value></data>
+  <data name="2. Khu vực và địa chỉ" xml:space="preserve"><value>2. Area and address</value></data>
+  <data name="3. Liên hệ và tài khoản" xml:space="preserve"><value>3. Contact and account</value></data>
+  <data name="Bước 1–3 điền ngay trên trang này. Sau khi tạo hồ sơ, bạn tải giấy phép kinh doanh, giấy PCCC và ảnh thực tế rồi gửi hồ sơ." xml:space="preserve"><value>Fill in steps 1–3 on this page. After the application is created, upload the business licence, fire safety certificate and real photos, then submit it.</value></data>
+  <data name="Chia sẻ trải nghiệm để khách sau chọn phòng dễ hơn. Mỗi đơn được đánh giá một lần." xml:space="preserve"><value>Share your stay to help future guests choose. Each booking can be reviewed once.</value></data>
+  <data name="Chọn khu vực" xml:space="preserve"><value>Choose an area</value></data>
+  <data name="Có homestay? Trở thành đối tác" xml:space="preserve"><value>Own a homestay? Become a partner</value></data>
+  <data name="Dùng số này và mật khẩu bên dưới để đăng nhập, tải giấy tờ và theo dõi hồ sơ." xml:space="preserve"><value>Use this number and the password below to sign in, upload documents and track your application.</value></data>
+  <data name="Giấy PCCC" xml:space="preserve"><value>Fire safety certificate</value></data>
+  <data name="Giấy phép kinh doanh" xml:space="preserve"><value>Business licence</value></data>
+  <data name="Giấy tờ khác" xml:space="preserve"><value>Other document</value></data>
+  <data name="Gửi hồ sơ" xml:space="preserve"><value>Submit application</value></data>
+  <data name="Gửi hồ sơ cho Fuji thẩm định?" xml:space="preserve"><value>Submit the application to Fuji for review?</value></data>
+  <data name="Gửi khi đã có đủ giấy phép kinh doanh, giấy PCCC và ảnh thực tế còn hạn. Sau khi gửi, hồ sơ bị khóa cho tới khi có kết quả." xml:space="preserve"><value>Submit once the business licence, fire safety certificate and real photos are uploaded and valid. After submitting, the application is locked until there is a result.</value></data>
+  <data name="Gửi đánh giá" xml:space="preserve"><value>Submit review</value></data>
+  <data name="Hạn {0}" xml:space="preserve"><value>Valid until {0}</value></data>
+  <data name="Hết hạn {0}" xml:space="preserve"><value>Expired {0}</value></data>
+  <data name="Hồ sơ còn thiếu:" xml:space="preserve"><value>Still missing:</value></data>
+  <data name="Hồ sơ gắn với tài khoản bạn đang đăng nhập." xml:space="preserve"><value>The application is linked to the account you are signed in with.</value></data>
+  <data name="Hồ sơ đối tác" xml:space="preserve"><value>Partner application</value></data>
+  <data name="Loại giấy tờ" xml:space="preserve"><value>Document type</value></data>
+  <data name="Ngày hết hạn (nếu có)" xml:space="preserve"><value>Expiry date (if any)</value></data>
+  <data name="Nhân viên Fuji thẩm định trong 3 ngày làm việc và báo kết quả qua thông báo trên tài khoản." xml:space="preserve"><value>Fuji staff review it within 3 working days and send the result as a notification on your account.</value></data>
+  <data name="Nhận xét (không bắt buộc)" xml:space="preserve"><value>Comment (optional)</value></data>
+  <data name="Nhập lại số điện thoại đã dùng khi đặt để xác nhận bạn là khách của đơn." xml:space="preserve"><value>Re-enter the phone number used for the booking to confirm it is yours.</value></data>
+  <data name="Số phòng, loại phòng và giá được nhập sau khi hồ sơ được duyệt." xml:space="preserve"><value>Rooms, room types and prices are entered after the application is approved.</value></data>
+  <data name="Trở thành đối tác Fuji" xml:space="preserve"><value>Become a Fuji partner</value></data>
+  <data name="Tài khoản ngân hàng nhận tiền đối soát; Fuji chỉ dùng để chuyển tiền cho bạn." xml:space="preserve"><value>The bank account receives your settlements; Fuji only uses it to pay you.</value></data>
+  <data name="Tạo hồ sơ đối tác" xml:space="preserve"><value>Create partner application</value></data>
+  <data name="Tải giấy tờ lên" xml:space="preserve"><value>Upload document</value></data>
+  <data name="Vài câu về không gian, số phòng và điểm đặc biệt." xml:space="preserve"><value>A few sentences about the space, the rooms and what makes it special.</value></data>
+  <data name="Xem file" xml:space="preserve"><value>View file</value></data>
+  <data name="Đang tạo hồ sơ..." xml:space="preserve"><value>Creating application...</value></data>
+  <data name="Đang tải lên..." xml:space="preserve"><value>Uploading...</value></data>
+  <data name="Điểm đánh giá (1–5)" xml:space="preserve"><value>Rating (1–5)</value></data>
+  <data name="Đánh giá của bạn" xml:space="preserve"><value>Your review</value></data>
+  <data name="Đã có tài khoản Fuji?" xml:space="preserve"><value>Already have a Fuji account?</value></data>
+  <data name="Đã gửi hồ sơ lúc {0}. Nhân viên Fuji thẩm định trong 3 ngày làm việc." xml:space="preserve"><value>Application submitted at {0}. Fuji staff review it within 3 working days.</value></data>
+  <data name="Đăng nhập để dùng chung tài khoản" xml:space="preserve"><value>Sign in to use the same account</value></data>
+  <data name="Đưa homestay của bạn lên Fuji: khách đặt theo từng đêm, cọc 30% qua QR, Fuji đối soát và chuyển tiền cho bạn theo kỳ." xml:space="preserve"><value>List your homestay on Fuji: guests book by the night and pay a 30% deposit by QR; Fuji reconciles and pays you each period.</value></data>
+  <data name="Địa chỉ chỉ gửi cho khách sau khi đơn được xác nhận." xml:space="preserve"><value>The address is only sent to guests after a booking is confirmed.</value></data>
+  <data name="Ảnh thực tế" xml:space="preserve"><value>Real photos</value></data>
+  <data name="Thông tin cơ sở" xml:space="preserve"><value>Property details</value></data>
+  <data name="Khu vực và địa chỉ" xml:space="preserve"><value>Area and address</value></data>
+  <data name="Liên hệ và tài khoản" xml:space="preserve"><value>Contact and account</value></data>
+  <data name="Ảnh và giấy tờ" xml:space="preserve"><value>Photos and documents</value></data>
+  <data name="Các bước đăng ký đối tác" xml:space="preserve"><value>Partner application steps</value></data>
+  <data name="Lý do từ chối: {0}" xml:space="preserve"><value>Reason for rejection: {0}</value></data>
+  <data name="Fuji cần bạn bổ sung: {0}" xml:space="preserve"><value>Fuji needs you to add: {0}</value></data>
+  <data name="Hồ sơ đã được duyệt. Homestay mở bán sau khi Fuji và bạn ký hợp đồng." xml:space="preserve"><value>Your application is approved. The homestay goes on sale after you and Fuji sign the contract.</value></data>
+  <data name="Hồ sơ không được duyệt. Gọi 1900 0000 nếu bạn cần trao đổi thêm." xml:space="preserve"><value>Your application was not approved. Call 1900 0000 if you want to discuss it.</value></data>
+  <data name="Hồ sơ đang chờ thẩm định, bạn sẽ nhận thông báo khi có kết quả." xml:space="preserve"><value>Your application is waiting for review; you will be notified when there is a result.</value></data>
+  <data name="Nhân viên không đăng ký đối tác ở cổng khách hàng." xml:space="preserve"><value>Staff accounts cannot apply as partners on the guest site.</value></data>
+  <data name="Đã tạo hồ sơ đối tác. Tải giấy tờ rồi gửi hồ sơ để Fuji thẩm định." xml:space="preserve"><value>Partner application created. Upload your documents, then submit it for Fuji to review.</value></data>
+  <data name="Vui lòng chọn file giấy tờ." xml:space="preserve"><value>Please choose a document file.</value></data>
+  <data name="Đã tải giấy tờ lên." xml:space="preserve"><value>Document uploaded.</value></data>
+  <data name="Đã gửi hồ sơ. Nhân viên Fuji thẩm định trong 3 ngày làm việc." xml:space="preserve"><value>Application submitted. Fuji staff review it within 3 working days.</value></data>
+  <data name="Hồ sơ còn thiếu, vui lòng bổ sung rồi gửi lại." xml:space="preserve"><value>The application is incomplete; please add what is missing and submit again.</value></data>
+  <data name="Cảm ơn bạn đã đánh giá." xml:space="preserve"><value>Thank you for your review.</value></data>
+  <data name="Giới thiệu ngắn" xml:space="preserve"><value>Short description</value></data>
+  <data name="Địa chỉ homestay" xml:space="preserve"><value>Homestay address</value></data>
+  <data name="Họ tên chủ homestay" xml:space="preserve"><value>Owner's full name</value></data>
+  <data name="Số điện thoại đăng nhập" xml:space="preserve"><value>Sign-in phone number</value></data>
+  <data name="Vui lòng chọn {0}." xml:space="preserve"><value>Please choose {0}.</value></data>
+  <data name="Điểm đánh giá phải từ 1 đến 5." xml:space="preserve"><value>Rating must be between 1 and 5.</value></data>
+  <data name="Chỉ đánh giá sau khi đơn đã hoàn thành." xml:space="preserve"><value>You can only review after the stay is completed.</value></data>
+  <data name="Đơn này đã được đánh giá." xml:space="preserve"><value>This booking has already been reviewed.</value></data>
+  <data name="Nội dung phải có từ 1 đến 1000 ký tự." xml:space="preserve"><value>Content must be 1 to 1000 characters.</value></data>
+  <data name="Chỉ khách sở hữu đơn được đánh giá." xml:space="preserve"><value>Only the guest who owns the booking can review it.</value></data>
+  <data name="Số điện thoại đã thuộc chủ hoặc tài khoản khác; không tự ghép hồ sơ." xml:space="preserve"><value>The phone number already belongs to another owner or account; profiles are not merged automatically.</value></data>
+  <data name="Chủ đã có một hồ sơ đang xử lý." xml:space="preserve"><value>This owner already has an application in progress.</value></data>
+  <data name="Vui lòng nhập tên homestay và địa chỉ hợp lệ." xml:space="preserve"><value>Please enter a valid homestay name and address.</value></data>
+  <data name="Khu vực không hợp lệ." xml:space="preserve"><value>Invalid area.</value></data>
+  <data name="Số điện thoại liên hệ không hợp lệ." xml:space="preserve"><value>Invalid contact phone number.</value></data>
+  <data name="Họ tên hoặc thông tin ngân hàng quá dài." xml:space="preserve"><value>Full name or bank details are too long.</value></data>
+  <data name="Giấy tờ đã hết hạn." xml:space="preserve"><value>The document has expired.</value></data>
+  <data name="Loại giấy tờ không hợp lệ." xml:space="preserve"><value>Invalid document type.</value></data>
+  <data name="Tên file quá dài." xml:space="preserve"><value>File name is too long.</value></data>
+  <data name="Hồ sơ đang duyệt, chỉ được sửa khi còn nháp, chờ kích hoạt hoặc cần bổ sung." xml:space="preserve"><value>The application is under review; it can only be edited as a draft, while awaiting activation or when more information is needed.</value></data>
+  <data name="Chỉ sửa homestay nháp hoặc homestay chờ duyệt khi hồ sơ cần bổ sung." xml:space="preserve"><value>Only draft homestays, or pending ones when more information is needed, can be edited.</value></data>
+  <data name="Bạn không có quyền xem hồ sơ đối tác này." xml:space="preserve"><value>You do not have permission to view this partner application.</value></data>
 </root>

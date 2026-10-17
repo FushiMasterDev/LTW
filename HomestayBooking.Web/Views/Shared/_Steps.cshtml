@@ -1,0 +1,8 @@
+@model StepsModel
+@* Tiến trình chỉ đọc cho luồng nhiều bước (đăng ký đối tác); cùng kiểu fx-stepper với _BookingStepper, không phải nút. *@
+<ol class="fx-stepper" aria-label="@L[Model.Label]">
+    @for (var i = 0; i < Model.Steps.Count; i++)
+    {
+        <li class="@(i < Model.Current ? "is-complete" : null)" aria-current="@(i == Model.Current ? "step" : null)"><span class="fx-stepper__number" aria-hidden="true">@(i + 1)</span><span>@L[Model.Steps[i]]</span></li>
+    }
+</ol>

@@ -46,3 +46,9 @@ public record UploadZoneModel(string Id, string Name = "file", bool Multiple = f
 /// <param name="Tone">success/danger/warning/info, ánh xạ sang tone hiện có.</param>
 /// <param name="Dismissible">Có nút đóng hay không.</param>
 public record AlertModel(string Message, string Tone = "info", bool Dismissible = true);
+
+/// <param name="Id">Tiền tố id của các ô chọn.</param>
+/// <param name="Name">Tên trường form server đọc.</param>
+/// <param name="Value">Điểm đã chọn trước (1–5), null nếu chưa chọn.</param>
+/// <param name="Error">Thông báo lỗi từ server.</param>
+public record RatingInputModel(string Id, string Name = "rating", int? Value = null, string? Error = null);

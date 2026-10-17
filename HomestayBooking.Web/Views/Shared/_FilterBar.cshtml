@@ -20,7 +20,7 @@
                             {
                                 var option = choices[i];
                                 <input class="btn-check" type="checkbox" id="@(id)-@i" name="@field.Name" value="@option.Value" checked="@(chosen.Count > 0 ? chosen.Contains(option.Value) : option.Selected)" />
-                                <label class="btn fx-filter__choice" for="@(id)-@i">@L[option.Text]</label>
+                                <label class="btn fx-chip" for="@(id)-@i">@L[option.Text]</label>
                             }
                             </fieldset>
                             continue;

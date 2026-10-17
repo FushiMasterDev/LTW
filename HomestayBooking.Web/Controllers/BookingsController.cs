@@ -281,8 +281,36 @@ public partial class BookingsController : Controller
             LastRejectedReceipt = booking.Payments.Where(p => p.Type == PaymentType.Deposit && p.Status == PaymentStatus.Rejected).MaxBy(p => p.ReviewedAt),
             IsOwnAccount = booking.Customer.PersonId == User.PersonId(),
             ShowDevSimulator = _env.IsDevelopment(),
-            HasReview = await _db.Reviews.AnyAsync(r => r.BookingId == booking.Id),
+            Review = await _db.Reviews.AsNoTracking().SingleOrDefaultAsync(r => r.BookingId == booking.Id),
         });
+    }
+
+    /// <summary>FR-06: khách của đơn (đăng nhập) hoặc khách đã tra cứu (nhập lại SĐT) đánh giá sau khi trả phòng; BR-09 do ReviewService kiểm.</summary>
+    [HttpPost]
+    public async Task<IActionResult> Review(string id, int rating, string? comment, string? phoneNumber, [FromServices] ReviewService reviews)
+    {
+        var booking = await _db.Bookings.AsNoTracking().Include(b => b.Customer).SingleOrDefaultAsync(b => b.Code == id);
+        if (booking is null || !CanAccess(booking))
+        {
+            return NotFound();
+        }
+        try
+        {
+            if (User.PersonId() is int personId && booking.Customer.PersonId == personId)
+            {
+                await reviews.CreateAsync(booking.Id, rating, comment, CustomerActor());
+            }
+            else
+            {
+                await reviews.CreateByLookupAsync(booking.Code, phoneNumber ?? string.Empty, rating, comment);
+            }
+            TempData["Success"] = _localizer["Cảm ơn bạn đã đánh giá."].Value;
+        }
+        catch (BookingException ex)
+        {
+            TempData["Error"] = _localizer[ex.ResourceKey, ex.Arguments].Value;
+        }
+        return RedirectToAction(nameof(Details), new { id });
     }
 
     /// <summary>Trang thanh toán hỏi mỗi 5 giây; trạng thái đổi (tiền về, hết hạn) thì trang tự tải lại.</summary>
