@@ -89,7 +89,7 @@ Có thể đổi tên hoặc gộp partial, nhưng phải sửa **mọi** chỗ 
 | Loại | Dùng khi | Ví dụ |
 |---|---|---|
 | **Tag Helper** (`TagHelpers/`) | Phần tử nhỏ, không có logic dữ liệu, lặp lại rất nhiều | `<status-badge>`, `<money>`, `<date-range>`, `<rating>`, `<icon>` |
-| **Partial có model kiểu rõ** (`Views/Shared/Components/_X.cshtml` + record trong `Models/ViewModels/Ui/`) | Khối giao diện ghép từ dữ liệu view đã có | thẻ homestay, ô số liệu, bảng giá, timeline, empty state, pager |
+| **Partial có model kiểu rõ** (`Views/Shared/_X.cshtml` + record trong `Models/ViewModels/Ui/`; `Views/Shared/Components/` để dành cho View Component) | Khối giao diện ghép từ dữ liệu view đã có | thẻ homestay, ô số liệu, bảng giá, timeline, empty state, pager |
 | **View Component** (`ViewComponents/`) | Khối tự lấy dữ liệu qua service đã có, xuất hiện trên nhiều trang | sidebar có số đếm, chuông thông báo, chuyển khu làm việc |
 
 Quy tắc:

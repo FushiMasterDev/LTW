@@ -27,7 +27,7 @@ Skill: `minimalist-ui`, `ui-ux-pro-max` (UX form và lịch trên điện thoạ
 3. **Lịch nhận–trả (FR-16):** `OwnerScheduleService.ReadAsync(actor)` (overload B8). Danh sách theo ngày (Hôm nay / Ngày mai / 7 ngày tới), mỗi dòng có tên khách, SĐT (theo `BookingContactVisibility`), phòng, số đêm.
 4. **Đối soát (FR-16):** `SettlementService.ListAsync/DetailsAsync` phía chủ. Danh sách kỳ + trạng thái; chi tiết gồm các đơn, hoa hồng, khoản bù, số được nhận (`<money>`).
 5. **Đánh giá (FR-06):** danh sách đánh giá homestay của mình, trả lời bằng `ReviewService.ReplyAsync`.
-6. **Thông báo (FR-15):** trang danh sách đầy đủ của `NotificationBell` dùng `NotificationService.ListAsync/MarkReadAsync/MarkAllReadAsync` (B8). Trang này đặt ở chỗ dùng chung cho mọi vai trò nội bộ (ví dụ `/Notifications`), không chỉ riêng Owner.
+6. **Thông báo (FR-15):** chuông và trang `/Notifications` dùng chung đã làm ở bước 02. Chỉ rà lại trên điện thoại cho chủ và bảo đảm link trong thông báo của chủ mở đúng màn mới của bước này.
 7. **Dashboard Owner:** bổ sung lối tắt tới các màn trên, đơn chờ xác nhận, khách đến hôm nay.
 
 ## Kết quả bàn giao
