@@ -8,6 +8,7 @@ Luật chung, kiến trúc component và ràng buộc nằm ở `docs/prompts/ui
 | 2 | `../b8-backend-ui-gaps.md` | **Backend B8:** lấp gap cho giao diện (thông báo, sửa homestay, hợp đồng…) | Backend |
 | 2b | `01-nen.md` | CSS mới, 3 layout, điều hướng, Tag Helper nền, UI Kit | Có |
 | 3 | `02-component.md` | Thư viện component đầy đủ | Có |
+| 3b | `02x-ra-skill.md` | Rà lại component theo skill thiết kế (bù cho 01–02 chạy khi Codex chưa có skill) | Sửa lỗi review 02 + chỉnh phần nhìn |
 | 4 | `03-trang-khach.md` | Trang khách + đăng ký đối tác + viết đánh giá | Có |
 | 5 | `04-noi-bo-cu.md` | Chuyển các màn Admin/Staff/Owner/Accounting đang có | Có |
 | 6 | `05a-chu-homestay.md` | Màn mới cho chủ homestay | Có |
