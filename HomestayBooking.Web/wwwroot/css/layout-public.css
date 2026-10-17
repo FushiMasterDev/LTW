@@ -25,8 +25,7 @@
 
 /* ---------- Header ---------- */
 .site-header {
-  background: color-mix(in srgb, var(--fx-bg) 92%, transparent);
-  backdrop-filter: blur(8px);
+  background: var(--fx-bg);
   border-bottom: 1px solid var(--fx-border);
 }
 
@@ -257,7 +256,6 @@
   margin-top: -4.5rem;
   padding: 1.25rem;
   border-radius: var(--fx-radius-lg);
-  box-shadow: var(--fx-shadow-raised);
 }
 
 @media (min-width: 992px) {

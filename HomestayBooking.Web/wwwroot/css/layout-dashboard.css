@@ -29,12 +29,10 @@
     width: var(--fx-sidebar-w);
     display: flex;
     flex-direction: column;
-    transition: width 0.2s var(--fx-ease);
   }
 
   .app-main {
     margin-left: var(--fx-sidebar-w);
-    transition: margin-left 0.2s var(--fx-ease);
   }
 
   .sidebar-collapsed .app-sidebar {
@@ -185,8 +183,8 @@
   min-width: 1.5rem;
   padding: 0 0.45rem;
   border-radius: 999px;
-  background: #b42318;
-  color: #fff;
+  background: var(--fx-danger);
+  color: var(--fx-on-primary);
   font-size: 0.75rem;
   font-weight: 700;
   line-height: 1.5rem;

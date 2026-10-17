@@ -45,7 +45,7 @@
 .uikit-swatch[class*="tone-"] { --swatch: var(--tone-solid); }
 
 .uikit-dark-band {
-  background: var(--fx-primary);
+  background: var(--fx-on-paper);
   border-radius: var(--fx-radius);
   padding: 1rem;
 }

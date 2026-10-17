@@ -27,7 +27,8 @@ public record DescriptionItem(string Label, IHtmlContent Value);
 /// <param name="Label">Tiêu đề cột.</param>
 /// <param name="SortKey">Khóa sắp xếp được controller hỗ trợ, null nếu không sắp xếp.</param>
 /// <param name="Numeric">Căn phải cột số.</param>
-public record TableColumn(string Label, string? SortKey = null, bool Numeric = false);
+/// <param name="NoWrap">Giữ mã/số tiền trên một dòng, không áp cho cột văn bản dài.</param>
+public record TableColumn(string Label, string? SortKey = null, bool Numeric = false, bool NoWrap = false);
 
 /// <param name="Cells">Nội dung từng ô theo thứ tự cột, không dùng HtmlString cho dữ liệu người dùng.</param>
 /// <param name="Actions">Nút thao tác theo partial RowActions hiện có.</param>

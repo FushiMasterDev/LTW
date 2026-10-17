@@ -193,26 +193,11 @@
     <h2 id="lists-title" class="section-title">Trang danh sách</h2>
     <partial name="_PageHead" model='new PageHeadModel("Đơn đặt phòng", "bi-journal-check", "tone-sky", "Tiêu đề, mô tả và nút chính của trang danh sách.", ShowCreate: false)' />
     <partial name="_CatalogSearch" />
-    <div class="card-soft table-responsive">
-        <table class="table table-modern align-middle mb-0">
-            <thead>
-                <tr><th scope="col">Mã đơn</th><th scope="col">Khách</th><th scope="col">Lưu trú</th><th scope="col" class="text-end">Tổng tiền</th><th scope="col">Trạng thái</th></tr>
-            </thead>
-            <tbody>
-                @foreach (var r in sampleRows)
-                {
-                    <tr>
-                        <td><span class="booking-code">@r.Code</span></td>
-                        <td>@r.Guest</td>
-                        <td><date-range from="r.In" to="r.Out" /></td>
-                        <td class="text-end"><money value="r.Total" /></td>
-                        <td><status-badge value="r.Status" /></td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-    <div class="mt-3"><partial name="_Pager" model='new PaginatedList<int>(Enumerable.Range(11, 10), 47, 2, 10)' /></div>
+    <partial name="_DataTable" model='new DataTableModel("Đơn đặt phòng",
+        new TableColumn[] { new("Mã đơn", NoWrap: true), new("Khách"), new("Tổng tiền", Numeric: true, NoWrap: true) },
+        sampleRows.Select(r => new TableRow(new IHtmlContent[] {
+            new HtmlContentBuilder().Append(r.Code), new HtmlContentBuilder().Append(r.Guest), new HtmlContentBuilder().Append(MoneyTagHelper.Format(r.Total))
+        })).ToArray(), new PaginatedList<int>(Enumerable.Range(11, 10), 47, 2, 10))' />
 </section>
 
 <section id="empty" class="uikit-section" aria-labelledby="empty-title">
@@ -242,9 +227,10 @@
     </div>
 </section>
 <section id="data-table" class="uikit-section" aria-labelledby="data-table-title">
-    <h2 id="data-table-title" class="section-title">Bảng dùng chung: sắp xếp giữ bộ lọc, ô có nhãn trên điện thoại</h2>
+    <h2 id="data-table-title" class="section-title">Bảng dữ liệu dùng chung</h2>
+    <p class="text-muted">Sắp xếp giữ bộ lọc; ô có nhãn trên điện thoại, mã đơn và số tiền giữ một dòng.</p>
     @{
-        var columns = new TableColumn[] { new("Mã đơn", "code"), new("Khách", "guest"), new("Tổng tiền", "amount", true) };
+        var columns = new TableColumn[] { new("Mã đơn", "code", NoWrap: true), new("Khách", "guest"), new("Tổng tiền", "amount", Numeric: true, NoWrap: true) };
         var tableRows = sampleRows.Select(r => new TableRow(new IHtmlContent[] {
             new HtmlContentBuilder().Append(r.Code), new HtmlContentBuilder().Append(r.Guest), new HtmlContentBuilder().Append(MoneyTagHelper.Format(r.Total)),
         })).ToArray();

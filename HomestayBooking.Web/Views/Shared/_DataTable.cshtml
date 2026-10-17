@@ -9,7 +9,7 @@
             @foreach (var column in Model.Columns)
             {
                 var selected = column.SortKey is not null && string.Equals(Context.Request.Query["sort"], column.SortKey, StringComparison.OrdinalIgnoreCase);
-                <th scope="col" class="@(column.Numeric ? "text-end" : null)" aria-sort="@(selected ? (Context.Request.Query["dir"] == "desc" ? "descending" : "ascending") : null)">
+                <th scope="col" class="@(column.Numeric ? "text-end" : null) @(column.NoWrap ? "fx-table__nowrap" : null)" aria-sort="@(selected ? (Context.Request.Query["dir"] == "desc" ? "descending" : "ascending") : null)">
                     @if (column.SortKey is { } key)
                     {
                         <a href="@TableSortLink.Build(Context.Request.PathBase + Context.Request.Path, Context.Request.Query, key)">@L[column.Label] <icon name="arrow-down-up" /></a>
@@ -25,7 +25,7 @@
                 <tr>
                     @for (var i = 0; i < Model.Columns.Count; i++)
                     {
-                        <td data-label="@L[Model.Columns[i].Label]" class="@(Model.Columns[i].Numeric ? "text-end" : null)">@(i < row.Cells.Count ? row.Cells[i] : null)</td>
+                        <td data-label="@L[Model.Columns[i].Label]" class="@(Model.Columns[i].Numeric ? "text-end" : null) @(Model.Columns[i].NoWrap ? "fx-table__nowrap" : null)">@(i < row.Cells.Count ? row.Cells[i] : null)</td>
                     }
                     @if (actions) { <td data-label="@L["Thao tác"]">@if (row.Actions is not null) { <partial name="_RowActions" model="row.Actions" /> }</td> }
                 </tr>

@@ -4,18 +4,6 @@
    scale, opacity, box-shadow; không dùng "transition: all", không animate kích thước.
    Gỡ animation: xóa file này + dòng <link> tới nó trong _Layout/_DashboardLayout.
    ========================================================================= */
-:root {
-  --fx-ease-enter: cubic-bezier(0.22, 1, 0.36, 1);    /* xuất hiện, hover có transform */
-  --fx-ease-press: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  --fx-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);   /* ngăn kéo: đi nhanh lúc đầu, dừng êm */
-  --fx-ease-expo: cubic-bezier(0.19, 1, 0.22, 1);     /* ảnh phóng trong khung */
-  --fx-shadow-card-hover: 0 14px 28px -12px rgba(30, 35, 32, 0.28);
-}
-
-[data-bs-theme="dark"] {
-  --fx-shadow-card-hover: 0 14px 28px -12px rgba(0, 0, 0, 0.7);
-}
-
 /* Đổi sáng/tối: tắt transition đúng lúc đổi để toàn trang đổi màu cùng một khung hình
    (site.js đặt data-theme-switching trên <html> rồi gỡ ở khung hình kế tiếp) */
 [data-theme-switching] *,
@@ -30,13 +18,14 @@
   /* Giữ nguyên danh sách transition của components.css, thêm scale cho lúc nhấn */
   transition: background-color 0.18s var(--fx-ease), border-color 0.18s var(--fx-ease),
               color 0.18s var(--fx-ease), box-shadow 0.18s var(--fx-ease),
-              scale 0.1s var(--fx-ease-press);
+              scale 0.1s var(--fx-ease);
 }
 
 /* Nút trong nhóm (VI/EN) và trong input-group (hiện mật khẩu, Hủy đơn) đứng sát ô bên cạnh,
    co lại sẽ hở viền nên bỏ qua */
 .btn:not(:disabled):not(.disabled):active:not(.btn-group > .btn):not(.input-group > .btn) {
   scale: 0.97;
+  transition-duration: 0s;
 }
 
 /* ---------- Thẻ homestay: nâng nhẹ, đổ bóng, ảnh phóng trong khung ----------
@@ -62,7 +51,7 @@
   }
 
   .fx-homestay-card:hover .fx-homestay-card__media {
-    box-shadow: var(--fx-shadow-card-hover);
+    box-shadow: var(--fx-shadow-raised);
   }
 
   .fx-homestay-card:hover .fx-homestay-card__media > img {
@@ -77,7 +66,7 @@
 }
 
 .fx-homestay-card:focus-visible .fx-homestay-card__media {
-  box-shadow: var(--fx-shadow-card-hover);
+  box-shadow: var(--fx-shadow-raised);
 }
 
 /* ---------- Ảnh: mờ dần khi tải xong (khung đã đặt sẵn tỉ lệ nên không xô bố cục) ---------- */
@@ -99,7 +88,7 @@
 
 .dropdown-menu.show {
   transform-origin: top left;
-  animation: fx-dropdown-in 0.15s var(--fx-ease-enter);
+  animation: fx-dropdown-in 0.15s var(--fx-ease);
 }
 
 .dropdown-menu-end.show {
@@ -108,7 +97,7 @@
 
 /* ---------- Ô báo giá ở trang đặt phòng: nội dung mới mờ dần vào ---------- */
 #quoteBox > * {
-  transition: opacity 0.15s var(--fx-ease-enter);
+  transition: opacity 0.15s var(--fx-ease);
 }
 
 @starting-style {
@@ -120,13 +109,13 @@
 /* ---------- Modal xem ảnh: phóng nhẹ từ giữa, nền tối cùng nhịp ---------- */
 .lightbox.modal.fade,
 #fx-confirm-dialog.modal.fade {
-  transition: opacity 0.22s var(--fx-ease-enter);
+  transition: opacity 0.22s var(--fx-ease);
 }
 
 .lightbox.modal.fade .modal-dialog,
 #fx-confirm-dialog.modal.fade .modal-dialog {
   transform: scale(0.96);
-  transition: transform 0.22s var(--fx-ease-enter);
+  transition: transform 0.22s var(--fx-ease);
 }
 
 .lightbox.modal.show .modal-dialog,
@@ -137,11 +126,11 @@
 /* Bootstrap hiện backdrop xong mới hiện hộp thoại: backdrop ngắn (150ms) để tổng thời gian mở ~370ms.
    Modal duy nhất của ứng dụng là lightbox nên đặt chung cho .modal-backdrop. */
 .modal-backdrop.fade {
-  transition: opacity 0.15s var(--fx-ease-enter);
+  transition: opacity 0.15s var(--fx-ease);
 }
 
 .lightbox [data-lightbox-view] {
-  transition: opacity 0.15s var(--fx-ease-enter);
+  transition: opacity 0.15s var(--fx-ease);
 }
 
 .lightbox [data-lightbox-view].is-swapping {
@@ -151,11 +140,11 @@
 
 /* ---------- Ngăn kéo menu dashboard (< 992px) và lớp phủ: cùng thời lượng, cùng đường cong ---------- */
 .app-sidebar {
-  --bs-offcanvas-transition: transform 0.3s var(--fx-ease-drawer);
+  --bs-offcanvas-transition: transform 0.3s var(--fx-ease);
 }
 
 .offcanvas-backdrop.fade {
-  transition: opacity 0.3s var(--fx-ease-drawer);
+  transition: opacity 0.3s var(--fx-ease);
 }
 
 /* ---------- Thông báo kết quả thao tác (TempData): trượt xuống nhẹ khi xuất hiện ---------- */
@@ -167,7 +156,7 @@
 }
 
 .alert-dismissible.fade.show {
-  animation: fx-alert-in 0.2s var(--fx-ease-enter);
+  animation: fx-alert-in 0.2s var(--fx-ease);
 }
 
 /* ---------- Trang chủ: intro một lần mỗi phiên (class fx-intro do _HeadAssets đặt) ---------- */
@@ -179,15 +168,15 @@
 }
 
 .fx-intro .hero-copy > h1 {
-  animation: fx-rise 0.45s var(--fx-ease-enter) both;
+  animation: fx-rise 0.45s var(--fx-ease) both;
 }
 
 .fx-intro .hero-copy > .lead {
-  animation: fx-rise 0.45s var(--fx-ease-enter) 0.06s both;
+  animation: fx-rise 0.45s var(--fx-ease) 0.06s both;
 }
 
 .fx-intro .hero-search {
-  animation: fx-rise 0.45s var(--fx-ease-enter) 0.12s both;
+  animation: fx-rise 0.45s var(--fx-ease) 0.12s both;
 }
 
 /* ---------- Giảm chuyển động: bỏ di chuyển/phóng to, giữ đổi màu, độ mờ, bóng ---------- */
@@ -202,6 +191,7 @@
     scale: none;
   }
 
+  .flatpickr-calendar.animate.open,
   .dropdown-menu.show,
   .alert-dismissible.fade.show,
   .fx-intro .hero-copy > h1,
@@ -210,8 +200,10 @@
     animation: none;
   }
 
+  .app-sidebar { --bs-offcanvas-transition: none; }
+
   .lightbox.modal.fade .modal-dialog,
-#fx-confirm-dialog.modal.fade .modal-dialog {
+  #fx-confirm-dialog.modal.fade .modal-dialog {
     transform: none;
   }
 }

@@ -199,11 +199,14 @@ $(document).on('change', 'form[data-date-range] input[name="CheckIn"]', function
     const lightbox = document.getElementById('lightbox');
     const view = lightbox?.querySelector('[data-lightbox-view]');
     if (view && document.querySelectorAll('[data-lightbox-src]').length > 1) {
-        const reveal = () => view.classList.remove('is-swapping');
+        let revealTimer;
+        const reveal = () => { clearTimeout(revealTimer); view.classList.remove('is-swapping'); };
         const hide = () => {
             view.classList.add('is-swapping');
-            setTimeout(reveal, 400);
+            clearTimeout(revealTimer);
+            revealTimer = setTimeout(reveal, 400);
         };
+        lightbox.addEventListener('hidden.bs.modal', reveal);
         view.addEventListener('load', reveal);
         view.addEventListener('error', reveal);
         lightbox.addEventListener('click', e => { if (e.target.closest('[data-lightbox-step]')) hide(); }, true);

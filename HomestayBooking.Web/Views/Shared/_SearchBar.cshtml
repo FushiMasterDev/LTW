@@ -11,5 +11,5 @@
     <div class="fx-search__area"><label class="form-label" for="@(Model.Id)-area">@L["Khu vực"]</label><select class="form-select" name="AreaId" id="@(Model.Id)-area"><option value="">@L["Tất cả khu vực"]</option>@foreach (var area in Model.Areas) { <option value="@area.Value" selected="@(area.Value == q.AreaId?.ToString())">@area.Text</option> }</select></div>
     <div class="fx-search__dates"><partial name="_DateRangePicker" model="@(new DateRangePickerModel(Model.Id + "-dates", q.CheckIn, q.CheckOut))" /></div>
     <div class="fx-search__guests"><partial name="_GuestPicker" model="@(new GuestPickerModel(Model.Id + "-guests", Value: q.Guests))" /></div>
-    <button type="submit" class="btn btn-brand fx-search__submit"><icon name="search" /> @L["Tìm phòng trống"]</button>
+    <button type="submit" class="btn btn-brand fx-search__submit" aria-label="@L["Tìm phòng trống"]"><icon name="search" /><span class="fx-search__submit-label">@L["Tìm phòng trống"]</span></button>
 </form>

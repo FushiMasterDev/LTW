@@ -9,7 +9,7 @@
     </div>
     <ul class="fx-room-calendar__legend">
         @foreach (var sample in new[] { new CalendarNight(0, "", Model.Month, CalendarNightState.Free), new CalendarNight(0, "", Model.Month, CalendarNightState.Booked), new CalendarNight(0, "", Model.Month, CalendarNightState.Blocked, BlockReason: RoomBlockReason.Maintenance), new CalendarNight(0, "", Model.Month, CalendarNightState.Blocked), new CalendarNight(0, "", Model.Month, CalendarNightState.ChangeRequestHeld) })
-        { var item = RoomCalendarModel.Describe(sample); <li class="@item.Tone"><icon name="@item.Icon" /> @L[item.Label]</li> }
+        { var item = RoomCalendarModel.Describe(sample); <li class="@(sample.State == CalendarNightState.Free ? "fx-room-calendar__free" : item.Tone)"><icon name="@item.Icon" /> @L[item.Label]</li> }
     </ul>
     @foreach (var room in Model.Rooms)
     {
@@ -22,7 +22,7 @@
                     var night = Model.Night(room, date); var item = RoomCalendarModel.Describe(night);
                     var inMonth = date.Month == Model.Month.Month;
                     var label = L["Phòng {0}, đêm {1}: {2}", room.Code, date.ToString("dd/MM/yyyy"), L[item.Label]].Value + (night.Code is { } code ? " · " + code : "");
-                    <button type="button" class="fx-room-calendar__night @item.Tone" data-calendar-night data-room-id="@room.Id" data-date="@date.ToString("yyyy-MM-dd")" data-state="@night.State" aria-label="@label" aria-pressed="false" disabled="@(!inMonth)">
+                    <button type="button" class="fx-room-calendar__night @(night.State == CalendarNightState.Free ? "fx-room-calendar__free" : item.Tone)" data-calendar-night data-room-id="@room.Id" data-date="@date.ToString("yyyy-MM-dd")" data-state="@night.State" aria-label="@label" aria-pressed="false" disabled="@(!inMonth)">
                         <span>@date.Day <icon name="@item.Icon" /></span><small>@L[item.Label]</small>
                     </button>
                 }
