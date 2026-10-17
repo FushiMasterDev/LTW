@@ -54,6 +54,14 @@ public class SeedDataSqliteTests
             Assert.True(await db.Payments.AnyAsync());
             Assert.True(await db.Settlements.AnyAsync());
             Assert.True(await db.BookingChangeRequests.AnyAsync());
+            // Tin nhắc ngắn vẫn giữ đủ tên cơ sở dài nhất trong dữ liệu seed và liên kết chi tiết.
+            var longest = (await db.Homestays.AsNoTracking().ToListAsync()).MaxBy(h => h.Name.Length)!;
+            var sample = new HomestayBooking.Web.Models.Entities.Booking {
+                Code = "FJ261110-001", Status = HomestayBooking.Web.Models.Entities.BookingStatus.Confirmed,
+                Homestay = longest, CheckIn = new(2026, 11, 11) };
+            var shortMessage = HomestayBooking.Web.Services.ReminderService.CustomerText(sample, "http://localhost:5011");
+            Assert.True(shortMessage.Length <= 160); Assert.Contains(longest.Name, shortMessage);
+            Assert.Contains("/Bookings/Details/" + sample.Code, shortMessage);
             var requests = await db.BookingChangeRequests.Include(r => r.Booking).ToListAsync();
             Assert.Equal(5, requests.Count);
             Assert.All(requests, r =>

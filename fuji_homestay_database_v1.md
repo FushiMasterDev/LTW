@@ -331,9 +331,9 @@ DocumentType có CHECK whitelist. Theo D17, BusinessLicense/FireSafety/PropertyP
 | AreaId | int | FK → Areas, NOT NULL | |
 | Name | nvarchar(200) | NOT NULL | |
 | Address | nvarchar(300) | NOT NULL | Chỉ hiển thị chính xác sau khi đơn được xác nhận (BR-13); trước đó chỉ hiện khu vực |
-| Latitude, Longitude | decimal(9,6) | NULL | Bản đồ trong tin nhắc trước ngày nhận phòng (FR-23) |
+| Latitude, Longitude | decimal(9,6) | NULL | Thông tin bản đồ sau xác nhận (BR-13); tin nhắc FR-23 chỉ gửi link chi tiết |
 | DescriptionHtml | nvarchar(max) | NULL | Đã lọc bằng HtmlSanitizer |
-| CheckinGuideHtml | nvarchar(max) | NULL | Hướng dẫn nhận phòng, chỉ gửi khách sau khi xác nhận |
+| CheckinGuideHtml | nvarchar(max) | NULL | Hướng dẫn trên chi tiết đơn sau xác nhận, không gửi qua tin ngoài |
 | ContactPhone | nvarchar(16) | NULL | E.164; chỉ gửi khách sau khi xác nhận (BR-13) |
 | CheckinTime, CheckoutTime | time | NOT NULL; 14:00 / 12:00 là mặc định **trong C#** (`Homestay`), database không có DEFAULT | |
 | Status | nvarchar(20) | NOT NULL | `Draft`, `PendingReview`, `Active`, `Suspended`, `Ended` |
@@ -786,7 +786,9 @@ Chủ xác nhận số liệu là tùy chọn; giữ nguyên CHECK Sent/Paid, kh
 | RepliedAt | datetime2, NULL |
 | IsHidden | bit — Fuji ẩn đánh giá vi phạm |
 
-Chỉ cho đánh giá khi đơn `Completed` (service).
+**Backend B4 (service + test, chưa có giao diện mới):** `ReviewService` chỉ nhận đánh giá khi đơn `Completed`, mỗi đơn một lần; cả kiểm tra trước và lỗi unique khi gửi đồng thời đều trả lỗi tiếng Việt. Xác thực bằng tài khoản khách sở hữu đơn đang Active, hoặc mã đơn + SĐT E.164 khớp SĐT người ở/khách như tra cứu FR-04. HomestayId lấy từ đơn; Rating 1–5; Comment trim, tối đa 1000, rỗng lưu NULL. Bình luận/trả lời là chuỗi văn bản nguyên bản, không render HTML; giao diện sử dụng sau này phải encode, không Html.Raw.
+
+Chủ đúng homestay, tài khoản Active và không phải nhân viên được trả lời/sửa trả lời, trim và bắt buộc 1–1000 ký tự (chặn cả khoảng trắng ở service), cập nhật RepliedAt; không có thao tác xóa trả lời. Manager/Administrator ẩn/hiện với lý do bắt buộc trong AuditLog. Danh sách mới nhất trước, phân trang; công khai chỉ lấy đánh giá không ẩn, quản lý mới xem được cả dòng ẩn. `ReviewRatings.Summaries` dùng chung với AvailabilityService, luôn loại đánh giá ẩn khỏi điểm trung bình/số lượt. Audit tạo mới có Id thật, sửa có JSON cũ/mới và AccountId, trong transaction mặc định. Chủ nhận thông báo đánh giá mới, khách có tài khoản nhận thông báo trả lời; đơn Completed gửi lời mời đánh giá.
 
 CHECK `CK_Reviews_Reply`: OwnerReply và RepliedAt cùng NULL, hoặc OwnerReply khác NULL/khác rỗng và RepliedAt khác NULL.
 
@@ -794,9 +796,23 @@ CHECK `CK_Reviews_Reply`: OwnerReply và RepliedAt cùng NULL, hoặc OwnerReply
 
 Giữ như code: `UserId` (FK → AspNetUsers), `Message`, `Url`, `IsRead`, `CreatedAt`; chỉ mục `(UserId, IsRead)`.
 
+**Thông báo chủ B4 (FR-15):** dùng luồng chung `BookingService.NotifyAsync` cho đơn đã cọc chờ xác nhận, nhân viên xác nhận/từ chối thay chủ và hủy (khách tự hủy, trùng phòng); `NotifyChangeRequestResult` dùng chung bước Manager/Accountant cho đổi đã áp dụng và hủy theo yêu cầu nhân viên. Đơn đổi về Deposited ghi rõ “cần xác nhận lại trong 30 phút” (theo Booking:ConfirmMinutes). Đơn thay thế mới dùng luồng Deposited hiện có; ReviewService báo đánh giá mới. Không đưa lý do/ghi chú dài hoặc liên hệ homestay vào thông báo khách trước Confirmed; mỗi thông báo tối đa 500 ký tự.
+
+**Lịch chủ B4 (FR-16):** `OwnerScheduleService` đọc các homestay thuộc chủ, khoảng ngày gồm hai đầu tối đa 31 ngày: nhận phòng là Confirmed theo CheckIn, trả phòng là CheckedIn theo CheckOut. Trả mã đơn, người ở, SĐT, số khách, phòng, ghi chú đặc biệt. Chủ chỉ xem của mình; Manager/Administrator đang làm việc được hỗ trợ, Consultant/Accountant/khách bị chặn. Bảng đối soát chủ để B5.
+
 #### `MessageLogs` — tin gửi ra ngoài (○, **mới**)
 
 `Id bigint`, `Channel` (`Sms`, `Zalo`, `Email`), `RecipientPhone` / `RecipientEmail`, `TemplateCode` (`Otp`, `BookingConfirmed`, `DepositReminder`, `CheckinReminder`…), `BookingId` (NULL), `Status` (`Pending`, `Sent`, `Failed`), `ErrorMessage`, `SentAt`, `CreatedAt`. **Không** lưu nội dung OTP. Dùng để đối chiếu chi phí gửi tin (NFR-12).
+
+**Backend gửi tin B4 (NFR-07/NFR-12):** `IMessageSender` mặc định `LoggingMessageSender` chỉ giả lập: “shortcut: chưa nối Zalo/SMS thật, thay khi Fuji duyệt dự toán (NFR-12)”. Gửi theo ba bước: (a) transaction ngắn khóa dòng đơn/chủ, kiểm chống lặp, tạo thông báo app và MessageLog Pending nếu số nhận hợp lệ rồi commit; (b) gọi sender NGOÀI transaction; (c) transaction ngắn cập nhật Sent + SentAt hoặc Failed + ErrorMessage ≤ 500. Zalo lỗi thì bước (c) đồng thời tạo Pending SMS, commit rồi mới gọi SMS, tránh khoảng trống mất dấu đang gửi. Không giữ khóa đơn/chủ trong lúc chờ kênh ngoài, không Serializable. Caller phải commit nghiệp vụ trước khi gọi SendAsync; lỗi kênh không rollback nghiệp vụ đã lưu. MessageLog tự là nhật ký gửi tin, KHÔNG thêm hai AuditLog cho mỗi lần thử; không lưu nội dung tin hoặc nguyên lỗi nhà cung cấp trong database/audit/log. Số nhận E.164. Sent mặc định chỉ là giả lập thành công.
+
+**Nhắc lịch B4 (FR-23):** `ReminderService` chọn đúng Confirmed, CheckIn trong [hôm nay, hôm nay + Reminders:CustomerDaysBefore] (mặc định 1). Chỉ gửi ngoài trong [SendHour, QuietFromHour) giờ VN (mặc định [9, 21)), KỂ CẢ ngày nhận phòng hôm nay; 07:00 đợi 09:00, 23:30 đợi khung giờ hợp lệ tiếp theo. Thông báo trong app cũng theo cùng khung giờ, độc lập kết quả tin ngoài. Tin khách ≤ 160 ký tự, chỉ gồm mã đơn, tên homestay (rút gọn nếu cần), ngày/giờ nhận, SĐT cơ sở và link `/Bookings/Details/{code}` ghép Reminders:PublicBaseUrl (mặc định http://localhost:5011). URL phải HTTP/HTTPS tuyệt đối, không userinfo/query/fragment, tối đa 50 ký tự để chừa chỗ cho tin 160 ký tự; triển khai thật đặt URL công khai của ứng dụng. Địa chỉ, bản đồ, hướng dẫn không gửi ra ngoài, chỉ xem trong chi tiết sau chốt BR-13. Khách có tài khoản nhận thông báo app ngay transaction Reserve, không phụ thuộc kết quả Zalo/SMS; chống lặp bằng CustomerUrl (link chi tiết với query reminder=checkin) và CreatedAt >= ConfirmedAt, nên xác nhận lại được nhắc mới. Template CheckinReminder + BookingId, bỏ qua Sent/Pending từ ConfirmedAt (>= để chống lặp timestamp bằng nhau); tối đa 3 lượt Zalo→SMS/lần xác nhận (tối đa 6 dòng Failed). Đổi ngày rồi xác nhận lại mở chu kỳ mới.
+
+Chủ được gộp lịch đơn Confirmed nhận ngày mai theo homestay, cũng chỉ gửi trong [SendHour, QuietFromHour). OwnerArrivals có BookingId NULL, gửi ContactPhone cơ sở; nhiều cơ sở cùng số nhận (kể cả khác chủ) gộp một tin chứa đủ lịch, thông báo app chỉ chứa lịch của đúng chủ. Thông báo app tạo ngay transaction Reserve, tách đoạn ≤ 500, chống lặp bằng Notification.Url theo (chủ, ngày nhận), không đợi Sent; homestay không có SĐT hợp lệ vẫn báo app, chỉ bỏ tin ngoài; metadata template/số nhận/ngày gửi chống lặp tin ngoài kể cả chủ chưa có Account. Pending đang gửi chặn lượt khác; Pending quá 10 phút đổi Failed với ErrorMessage “Quá thời gian chờ kết quả gửi”, rồi mới được thử lại trong giới hạn lượt. Nếu lưu bước (c) lỗi, rollback giữ Pending đã commit, lượt kế tiếp không gửi lại ngay; sau timeout kết quả bên ngoài có thể chưa xác định, khi nối nhà cung cấp cần khóa chống trùng phía nhà cung cấp để tránh giao lặp. Giữ cùng thứ tự khóa đơn/chủ → MessageLog trong hai transaction ngắn. Job vẫn scope/try-catch riêng từng tác vụ. Options validate DataAnnotations/IValidatableObject khi khởi động, SendHour < QuietFromHour. Khi nối Zalo ZNS hoặc SMS brandname thật cần đăng ký mẫu tin và đổi IMessageSender sang mã mẫu + tham số, chưa nối dịch vụ thật trong B4.
+
+**Rà BR-13:** `BookingContactVisibility.CanView` chỉ nhận Confirmed/CheckedIn/Completed; BookingsController.ShowAddress và ReminderService cùng dùng. Details lược Address/ContactPhone/Latitude/Longitude/CheckinGuideHtml trên entity AsNoTracking trước khi đưa vào view model, không lưu ngược. Đã rà HomestaysController/HomeController và các view model công khai (chỉ khu vực, không liên hệ chính xác), AvailabilityOffer/đề xuất Overbooking (không trường liên hệ), thông báo của BookingService/OverbookingService/yêu cầu đổi (chỉ mã/trạng thái); thông báo từ chối cọc bổ sung không ghép lý do dài. Trang nhân viên/chủ có dữ liệu liên hệ theo quyền nghiệp vụ. Không đổi giao diện.
+
+`data_consistency.sql` B4 giữ 23 mục cũ, thêm phản hồi chỉ khoảng trắng, log Sent/Failed thiếu mốc/lỗi, thiếu cả SĐT/email — tổng 26, chỉ SELECT. Không thêm bảng/cột/CHECK/index/migration.
 
 #### `AuditLogs` — thay đổi dữ liệu nhạy cảm (○, **mới**)
 
@@ -833,8 +849,8 @@ Giữ như code: `UserId` (FK → AspNetUsers), `Message`, `Url`, `IsRead`, `Cre
         │ homestay xác nhận (D12)
         ▼
  Confirmed ──────────(khách / NV hủy)──────────────────────► Cancelled  (hoàn theo chính sách hủy)
- (gửi SĐT, địa chỉ,  └─(khách không đến)───────────────────► NoShow     (không hoàn)
-  hướng dẫn cho khách — BR-13)
+ (mở liên hệ trên    └─(khách không đến)───────────────────► NoShow     (không hoàn)
+  chi tiết đơn — BR-13; tin nhắc ngoài chỉ gửi link)
         │ đến ngày nhận phòng
         ▼
  CheckedIn ──► Completed ──► được đánh giá (BR-09), vào kỳ đối soát (D7)
@@ -867,7 +883,7 @@ Mọi lần đổi trạng thái đi qua một hàm duy nhất (`BookingService.
    - giao dịch ngân hàng về muộn và khớp → hệ thống **tự duyệt** khoản bill đó;
    - không khớp được → kế toán xem bill + danh sách `BankTransactions` chưa khớp, **khớp tay** (`ManuallyMatched`) hoặc từ chối (`Rejected` + lý do → đơn quay lại `AwaitingPayment`, giữ thêm 15').
 4. **Job mỗi phút:** đơn `AwaitingPayment` có `HoldExpiresAt < now` → `Expired`, xóa `RoomNights`. Tiền về **sau** khi đơn đã hết hạn → `BankTransactions.LatePayment`: nhân viên mở lại đơn nếu phòng còn trống, nếu không thì hoàn tiền.
-5. **Homestay** xác nhận trong 30 phút → `Confirmed`, hệ thống gửi khách SĐT, địa chỉ, hướng dẫn nhận phòng (BR-13). Homestay từ chối → `Rejected`, kế toán chuyển hoàn và ghi `Payment(Type = Refund, Method = ManualTransfer, Amount = DepositAmount)`.
+5. **Homestay** xác nhận trong 30 phút → `Confirmed`, khách được xem SĐT, địa chỉ, hướng dẫn nhận phòng ở chi tiết đơn (BR-13); tin nhắc ngoài chỉ có tóm tắt và link chi tiết. Homestay từ chối → `Rejected`, kế toán chuyển hoàn và ghi `Payment(Type = Refund, Method = ManualTransfer, Amount = DepositAmount)`.
 
 **Trong BTL (không đăng ký SePay/Casso thật):** endpoint `POST /api/bank-webhook/sepay` nhận đúng định dạng của SePay; trang **"Giả lập tiền vào"** (chỉ Development, chỉ quản lý) cho nhập mã đơn + số tiền rồi gọi chính endpoint đó với `Provider = Simulator`. Khi Fuji đăng ký thật chỉ cần cấu hình khóa API, không đổi database.
 
@@ -952,9 +968,9 @@ Ví dụ: tổng 2.000.000đ, cọc 600.000đ, hoa hồng 12%.
 | Đối soát đã gửi / đã trả có mốc thời gian | CHECK `CK_Settlements_Sent` (khác `Draft` ⇒ có `SentAt`), `CK_Settlements_Paid` (`Paid` ⇒ có `PaidAt`) | Màn đối soát gán mốc khi chuyển trạng thái. `Confirmed` ⇒ `ConfirmedAt` **chưa** có CHECK |
 | Yêu cầu đổi/hủy hợp lệ | Type/Status/RequestedBy/Fields/Decision, Amounts/Finance/ActorSeparation/Notes/PaymentDeadline; CHECK liên kết AdditionalDeposit, chủ RoomNight và ChangeFeeAmount; `ChangeRequestWorkflow` đã áp v5 ngày 16/10/2026 | **Chốt 14/10 và 15/10**: sửa tại chỗ, đổi kết hợp, Manager → Accountant khi có tiền thêm; không tự duyệt; hạn khách nộp; phí đổi ngày chia theo CommissionRate của đơn trên phần phí (chốt 15/10). Service kiểm phòng, giá, 3 ngày/2 lần/90 ngày, chặn đổi khi DiscountAmount > 0; Pending cũ chỉ cho Manager từ chối; chia phí/đối soát và transaction (mục 5.E) |
 | Không hoàn quá tiền khách đã chuyển (BR-04) | CHECK `Bookings.RefundAmount ≤ DepositAmount − DiscountAmount` | |
-| Đánh giá một lần sau khi hoàn thành (BR-09) | UNIQUE `Reviews.BookingId`, CHECK 1–5 | Kiểm tra `Status = Completed` |
+| Đánh giá một lần sau khi hoàn thành (BR-09) | UNIQUE `Reviews.BookingId`, CHECK 1–5 và Reply | ReviewService kiểm Completed, chủ đơn/tài khoản hoặc mã + SĐT, trim/độ dài, quyền trả lời/ẩn; ReviewRatings bỏ đánh giá ẩn |
 | Homestay phải được duyệt mới hiện (BR-12) | `Homestays.Status`, `VerificationDocuments` | Lọc `Status = Active` |
-| Ẩn SĐT, địa chỉ trước khi xác nhận (BR-13) | `Homestays.ContactPhone`, `CheckinGuideHtml` | Chỉ trả về khi đơn từ `Confirmed` |
+| Ẩn SĐT, địa chỉ trước khi xác nhận (BR-13) | `Homestays.ContactPhone`, `CheckinGuideHtml` | BookingContactVisibility.CanView chỉ Confirmed/CheckedIn/Completed; lược dữ liệu Details trước xác nhận, ReminderService dùng chung |
 
 ---
 

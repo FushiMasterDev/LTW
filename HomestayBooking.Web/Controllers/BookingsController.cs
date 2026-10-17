@@ -246,6 +246,7 @@ public partial class BookingsController : Controller
             return NotFound();
         }
 
+        BookingContactVisibility.RedactIfHidden(booking);
         var awaiting = booking.Status == BookingStatus.AwaitingPayment && booking.HoldExpiresAt > UtcNow;
         var cancelQuote = await _refunds.QuoteCancellationAsync(booking);
         return View(new BookingDetailsViewModel
@@ -256,7 +257,7 @@ public partial class BookingsController : Controller
             CanUploadReceipt = awaiting,
             CancelQuote = cancelQuote,
             CanCancel = BookingService.CanTransition(booking.Status, BookingStatus.Cancelled) && cancelQuote.DaysBefore >= 0,
-            ShowAddress = booking.Status is BookingStatus.Confirmed or BookingStatus.CheckedIn or BookingStatus.Completed,
+            ShowAddress = BookingContactVisibility.CanView(booking.Status),
             ChangeRequests = await _changeUi.CustomerAsync(booking, User, _qr, booking.Customer.PersonId == User.PersonId()),
             PendingReceipt = booking.Payments.FirstOrDefault(p => p.Type == PaymentType.Deposit && p.Method == PaymentMethod.ManualReceipt && p.Status == PaymentStatus.Submitted),
             LastRejectedReceipt = booking.Payments.Where(p => p.Type == PaymentType.Deposit && p.Status == PaymentStatus.Rejected).MaxBy(p => p.ReviewedAt),

@@ -7,7 +7,7 @@ Dựng database SQL Server cho ứng dụng trên một máy hoặc server mới
 | `schema.sql` | Toàn bộ schema (bảng, khóa, CHECK, index) **sinh tự động từ EF Core migrations**, không sửa tay |
 | `deploy.sql` | Chạy `schema.sql` với kiểm tra database đích và `XACT_ABORT` |
 | `verify.sql` | Kiểm tra sau khi dựng: số bảng/khóa/index, migration đã áp, các ràng buộc chính. Chỉ đọc |
-| `tests/data_consistency.sql` | Đối chiếu 23 quy tắc dữ liệu liên bảng, chỉ đọc; dùng được trên mọi database đã deploy, có LỆCH thì mã thoát khác 0 |
+| `tests/data_consistency.sql` | Đối chiếu 26 quy tắc dữ liệu liên bảng, chỉ đọc; dùng được trên mọi database đã deploy, có LỆCH thì mã thoát khác 0 |
 | `tests/constraints.sql` | Thử ràng buộc trên database **mới dựng, chưa seed** (mục 4) |
 | `tests/hardening_seeded.sql` | Thử các ràng buộc của migration `DatabaseHardening` trên database **đã seed** (mục 4) |
 | `tests/change_request_seeded.sql` | Thử 65 ca workflow trên database **đã seed** (mục 4), luôn ROLLBACK |
@@ -118,7 +118,7 @@ DeployTest, ConstraintTest hoặc database đã deploy khác, không có guard t
 sqlcmd -S localhost,1433 -U sa -C -b -d HomestayBooking_DeployTest -i tests/data_consistency.sql
 ```
 
-Mỗi mục in tên tiếng Việt, số dòng lệch và `OK`/`LỆCH`, cuối có tổng 23 mục.
+Mỗi mục in tên tiếng Việt, số dòng lệch và `OK`/`LỆCH`, cuối có tổng 26 mục.
 Mã thoát 0 khi tất cả OK; có LỆCH thì THROW để `sqlcmd -b` thoát khác 0.
 Tổng là tổng lượt vi phạm; một bản ghi có thể lệch nhiều mục. Script dùng đúng trạng thái
 `HoldsRoom()` (kể cả Completed), ngày Việt Nam cho hợp đồng hết hạn. Nếu đổi enum hoặc
@@ -267,3 +267,11 @@ Migration `20261015200521_EnumAndReviewChecks` chỉ thêm **16 CHECK**: 13 whit
 - Quyết định backend đã chốt: chủ xác nhận đối soát tùy chọn, Paid đi từ Sent hoặc Confirmed; ghi actor vào AuditLog trực tiếp ở service. Không thêm cột actor/liên kết hồ sơ, không thêm CHECK `Settlements.ConfirmedAt`; xem 10 quyết định ngày 16/10 trong tài liệu database.
 
 B3 giữ nguyên 19 mục B1/B2, thêm 4 mục: đơn có ReplacedByBookingId phải Cancelled; đơn thay thế giữ CustomerId/CheckIn/CheckOut; Payment Compensation gắn đơn được thay thế tới; AssignedEmployeeId chỉ trỏ Consultant/Manager/Administrator. Script không sửa dữ liệu; có LỆCH thì dừng báo lại, không tự sửa seed hoặc nới điều kiện.
+
+B4 giữ nguyên 23 mục trên, thêm 3 mục: phản hồi đánh giá chỉ có khoảng trắng; MessageLog Sent thiếu SentAt hoặc Failed thiếu lỗi có nội dung; MessageLog thiếu cả SĐT lẫn email người nhận. Script chỉ đọc, không yêu cầu migration mới. Gửi tin B4 hiện dùng `LoggingMessageSender` giả lập, không gọi Zalo/SMS thật; `Sent` trong môi trường này là gửi giả lập thành công, không phải bằng chứng khách đã nhận tin. Không lưu nội dung tin trong MessageLogs, AuditLogs hay log ứng dụng; không tạo AuditLog cho từng lần thử vì MessageLog đã là nhật ký gửi tin.
+
+`Reminders:CustomerDaysBefore` mặc định 1 (0–365), `Reminders:SendHour` 9 (0–23), `Reminders:QuietFromHour` 21 (1–23), bắt buộc SendHour < QuietFromHour, validate khi khởi động. Khách và chủ chỉ nhận tin ngoài trong [SendHour, QuietFromHour) giờ VN, kể cả khách nhận phòng hôm nay; ngoài giờ đợi lượt hợp lệ kế tiếp. `Reminders:PublicBaseUrl` mặc định `http://localhost:5011`; khi triển khai đặt URL công khai HTTP/HTTPS tuyệt đối, không userinfo/query/fragment, tối đa 50 ký tự để bảo đảm tin khách ≤ 160 ký tự. Tin chỉ có mã đơn, tên homestay (rút nếu cần), ngày/giờ nhận, SĐT cơ sở và link chi tiết; không gửi địa chỉ/map/hướng dẫn qua tin ngoài.
+
+Gửi ba bước: transaction ngắn kiểm chống lặp + tạo thông báo app và Pending (nếu số nhận hợp lệ) rồi commit → sender ngoài transaction → transaction ngắn lưu Sent/Failed. Zalo lỗi thì tạo Pending SMS trong cùng transaction lưu lỗi, commit rồi mới gọi SMS. Pending chặn gửi lặp; quá 10 phút đổi Failed với lỗi "Quá thời gian chờ kết quả gửi", rồi được thử lại (khách tối đa 3 lượt Zalo→SMS mỗi lần xác nhận, tối đa 6 dòng Failed). Lỗi lưu kết quả giữ Pending đã commit, không gửi lại ngay ở lượt sau. Kết quả giao tin có thể chưa xác định sau timeout: khi nối Zalo ZNS hoặc SMS brandname thật cần đăng ký mẫu tin, đổi IMessageSender sang mã mẫu + tham số, và chống giao lặp phía nhà cung cấp. Caller phải commit nghiệp vụ trước SendAsync. Không chạy app để thử trên database thật: startup/job có thể ghi dữ liệu.
+
+Thông báo app của khách/chủ tạo và commit ngay bước Reserve, không đợi Sent và vẫn có khi cả Zalo/SMS đều lỗi. Khách chống lặp theo Notification.Url riêng của lời nhắc + CreatedAt >= ConfirmedAt; chủ theo URL lịch/chủ/ngày nhận. Homestay thiếu SĐT hợp lệ vẫn thông báo app cho chủ, không tạo MessageLog. Thông báo app cũng chạy cùng khung [SendHour, QuietFromHour), tránh báo giữa đêm. Lỗi lưu kết quả tin ngoài không rollback thông báo app đã commit.
