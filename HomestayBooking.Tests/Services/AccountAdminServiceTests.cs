@@ -37,6 +37,24 @@ public sealed class AccountAdminServiceTests
     }
 
     [Theory]
+    [InlineData("  Tư vấn đặt phòng ", "Tư vấn đặt phòng")] [InlineData("   ", null)] [InlineData(null, null)]
+    public async Task DepartmentIsTrimmedStoredAndListed(string? input, string? stored)
+    {
+        using var h = await PartnerTestHost.CreateAsync();
+        var user = await Service(h).CreateEmployeeAsync(Input() with { Department = input }, h.Admin);
+        Assert.Equal(stored, (await h.Db.Employees.SingleAsync(e => e.PersonId == user.PersonId)).Department);
+        var row = (await Service(h).ListAsync(new(Term: "NV-B6"), h.Admin)).Single(r => r.Id == user.Id);
+        Assert.Equal(stored, row.Department);
+    }
+
+    [Fact]
+    public async Task DepartmentLongerThanColumnIsRejected()
+    {
+        using var h = await PartnerTestHost.CreateAsync();
+        await Assert.ThrowsAsync<BookingException>(() => Service(h).CreateEmployeeAsync(Input() with { Department = new string('x', 101) }, h.Admin));
+    }
+
+    [Theory]
     [InlineData("phone")] [InlineData("code")] [InlineData("existing-person")]
     public async Task DuplicatePhoneOrCodeNeverMergesPeople(string kind)
     {

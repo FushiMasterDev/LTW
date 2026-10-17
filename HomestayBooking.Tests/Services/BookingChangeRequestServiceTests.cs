@@ -543,4 +543,14 @@ public sealed partial class BookingChangeRequestServiceTests
         Assert.Equal(BookingStatus.Confirmed, booking.Status);
     }
 
+    [Fact]
+    public async Task PendingCountFollowsSubmitAndApprove()
+    {
+        using var s = new Scenario(); var b = await s.Book(10);
+        Assert.Equal(0, await s.Service().PendingCountAsync());
+        var request = await s.Service().SubmitAsync(s.Dates(b), s.Customer);
+        Assert.Equal(1, await s.Service().PendingCountAsync());
+        await s.Service().ApproveAsync(request.Id, "Đồng ý", s.Manager);
+        Assert.Equal(0, await s.Service().PendingCountAsync());
+    }
 }

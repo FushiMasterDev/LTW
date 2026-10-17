@@ -41,6 +41,9 @@ public partial class BookingChangeRequestService
         _notifications = notifications; _clock = clock; _options = options.Value;
     }
 
+    /// <summary>Số yêu cầu đổi/hủy đang chờ duyệt, cho số đếm trên sidebar.</summary>
+    public Task<int> PendingCountAsync() => _db.BookingChangeRequests.CountAsync(r => r.Status == ChangeRequestStatus.Pending);
+
     private IQueryable<Booking> BookingQuery => _db.Bookings
         .Include(b => b.Customer).ThenInclude(c => c.Person).ThenInclude(p => p.Account)
         .Include(b => b.Homestay).ThenInclude(h => h.Owner).ThenInclude(o => o.Person).ThenInclude(p => p.Account);

@@ -146,6 +146,44 @@ public sealed class AvailabilityServiceTests
     }
 
     [Fact]
+    public async Task BlockedDatesListsOnlyNightsWithEveryRoomTaken()
+    {
+        using var h = await BackofficeTestHost.CreateAsync(); var typeId = h.H.RoomType.Id;
+        var rooms = await h.Availability().SellableRooms().Where(r => r.RoomTypeId == typeId).Select(r => r.Id).ToListAsync();
+        Assert.Equal(2, rooms.Count); var full = h.Today.AddDays(10); var partial = h.Today.AddDays(11);
+        foreach (var _ in rooms) await h.H.Bookings().CreateAsync(h.H.Request(full, full.AddDays(1)));
+        await h.H.Bookings().CreateAsync(h.H.Request(partial, partial.AddDays(1)));
+        var blocked = await h.Availability().BlockedDatesAsync(typeId, h.Today.AddDays(-3), h.Today.AddDays(20));
+        Assert.Contains(full, blocked);
+        Assert.DoesNotContain(partial, blocked);
+        Assert.All(blocked, d => Assert.True(d >= h.Today));
+        await Assert.ThrowsAsync<BookingException>(() => h.Availability().BlockedDatesAsync(typeId, h.Today, h.Today.AddDays(93)));
+    }
+
+    [Fact]
+    public async Task SearchCardsCarryVisibleRatingAndFiltersListOnlyOptionsInUse()
+    {
+        using var h = await BackofficeTestHost.CreateAsync();
+        var b = await h.BookingAsync(BookingStatus.Completed);
+        h.Db.Reviews.Add(new() { BookingId = b.Id, HomestayId = b.HomestayId, Rating = 4 });
+        var hidden = await h.H.Bookings().CreateAsync(h.H.Request(h.Today.AddDays(20), h.Today.AddDays(21)));
+        hidden.Status = BookingStatus.Completed; hidden.ConfirmedAt = h.H.Clock.Now.UtcDateTime;
+        h.Db.Reviews.Add(new() { BookingId = hidden.Id, HomestayId = hidden.HomestayId, Rating = 1, IsHidden = true });
+        var used = new Amenity { Name = "Wifi" }; var unused = new Amenity { Name = "Hồ bơi" };
+        var draftOnly = new RoomCategory { Name = "Chỉ ở nháp" };
+        h.Db.AddRange(used, unused, draftOnly);
+        h.Db.HomestayAmenities.Add(new() { HomestayId = h.H.Homestay.Id, Amenity = used });
+        h.Db.Add(new RoomType { Name = "Nháp", Category = draftOnly, MaxGuests = 2, IsActive = true,
+            Homestay = new Homestay { Name = "Nháp", Address = "X", Status = HomestayStatus.Draft, OwnerId = h.H.Homestay.OwnerId, AreaId = h.H.Homestay.AreaId } });
+        await h.Db.SaveChangesAsync();
+        var vm = await h.Availability().SearchAsync(new());
+        var card = vm.Results.Single(c => c.Id == h.H.Homestay.Id);
+        Assert.Equal(4, card.Rating); Assert.Equal(1, card.ReviewCount);
+        Assert.Contains(vm.Amenities, a => a.Name == "Wifi"); Assert.DoesNotContain(vm.Amenities, a => a.Name == "Hồ bơi");
+        Assert.Contains(vm.Categories, c => c.Id == h.H.RoomType.CategoryId); Assert.DoesNotContain(vm.Categories, c => c.Name == "Chỉ ở nháp");
+    }
+
+    [Fact]
     public async Task StaffLoadsNightsPricesAndHolidaysOnceForWholeRangeAndReflectsChangesImmediately()
     {
         using var h = await BackofficeTestHost.CreateAsync(); await h.TypeAsync(800000);

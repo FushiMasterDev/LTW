@@ -14,6 +14,17 @@ public class OwnerScheduleService(ApplicationDbContext db, TimeProvider clock)
     public Task<OwnerSchedule> ReadAsync(int ownerId, Actor actor) =>
         ReadAsync(ownerId, VietnamTime.Today(clock), VietnamTime.Today(clock).AddDays(30), actor);
 
+    /// <summary>Lịch của chủ đang đăng nhập: tự suy ownerId từ tài khoản (mặc định hôm nay → +30 ngày).</summary>
+    public async Task<OwnerSchedule> ReadAsync(Actor actor, DateOnly? from = null, DateOnly? through = null, int? homestayId = null)
+    {
+        var ownerId = actor.Type == ActorType.Owner && actor.AccountId is not null
+            ? await db.Owners.Where(o => o.Person.Account != null && o.Person.Account.Id == actor.AccountId).Select(o => (int?)o.Id).SingleOrDefaultAsync()
+            : null;
+        if (ownerId is null) throw new BookingException("Bạn không có quyền xem lịch nhận–trả của chủ này.");
+        var start = from ?? VietnamTime.Today(clock);
+        return await ReadAsync(ownerId.Value, start, through ?? start.AddDays(30), actor, homestayId);
+    }
+
     public async Task<OwnerSchedule> ReadAsync(int ownerId, DateOnly from, DateOnly through, Actor actor, int? homestayId = null)
     {
         if (through < from || through.DayNumber - from.DayNumber + 1 > 31) throw new BookingException("Khoảng lịch nhận–trả phải từ 1 đến 31 ngày.");

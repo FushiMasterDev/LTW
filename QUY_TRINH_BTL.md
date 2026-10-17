@@ -119,7 +119,7 @@ Bảng sau truy vết đề bài gốc đến code và test sau B6. Cột Servic
 | FR-24 | Cung cấp môi trường chạy thử với dữ liệu mẫu để hướng dẫn nhân viên, chủ homestay và kiểm thử trước khi vận hành | Quản trị viên | SeedData.InitializeAsync (Development); DevController.SimulateBank; database/data/seed_topup_2028.sql | SeedDataSqliteTests; SeedDataTests; SeedDataMigrationTests |
 | FR-25 | Gửi đăng ký trở thành đối tác trực tuyến (thông tin cơ sở, số phòng, khu vực, liên hệ, ảnh giấy phép kinh doanh lưu trú, PCCC, ảnh thực tế); theo dõi trạng thái hồ sơ | Chủ homestay chưa hợp tác | OwnerRegistrationService.RegisterAsync/CreateAssistedAsync/ActivateAsync/UploadDocumentAsync/SubmitAsync; OwnerRegistrationQueryService.MineAsync (trạng thái, ghi chú cần bổ sung, không lộ người thẩm định) | OwnerRegistrationServiceTests; OwnerRegistrationQueryServiceTests; PartnerReviewTests; PartnerWorkflowRegressionTests |
 | FR-26 | Thẩm định hồ sơ đăng ký, cập nhật trạng thái hồ sơ (chờ thẩm định / cần bổ sung / từ chối / đã ký hợp đồng), kích hoạt tài khoản homestay (BR-12) | Nhân viên, Quản lý | OwnerRegistrationService.TakeAsync/RequestRevisionAsync/ApproveAsync/RejectAsync/InviteAsync/ResendInviteAsync; OwnerRegistrationQueryService.ListAsync/DetailsAsync/OpenDocumentAsync (hạn 3 ngày làm việc, lọc quá hạn, che số tài khoản với Tư vấn) | PartnerReviewTests; PartnerWorkflowRegressionTests; OwnerRegistrationQueryServiceTests |
-| FR-27 | Duyệt nội dung homestay (ảnh, mô tả, giá) trước khi hiển thị cho khách; cảnh báo hồ sơ quá 3 ngày làm việc chưa xử lý (BR-12) | Nhân viên, Hệ thống | HomestayReviewService.PendingAsync/ApproveAsync/RejectAsync/ResumeAsync; OwnerRegistrationService.AlertOverdueAsync (SLA hồ sơ chủ) | HomestayReviewTests; HomestayReviewFixTests; OwnerRegistrationSlaTests |
+| FR-27 | Duyệt nội dung homestay (ảnh, mô tả, giá) trước khi hiển thị cho khách; cảnh báo hồ sơ quá 3 ngày làm việc chưa xử lý (BR-12) | Quản lý, Hệ thống | HomestayReviewService.PendingAsync/ApproveAsync/RejectAsync/ResumeAsync; OwnerRegistrationService.AlertOverdueAsync (SLA hồ sơ chủ) | HomestayReviewTests; HomestayReviewFixTests; OwnerRegistrationSlaTests |
 
 ---
 
@@ -687,3 +687,17 @@ Danh sách đầy đủ do Vĩ tổng hợp, khoảng 30–40 test case, mỗi m
 - data_consistency.sql giữ 33 mục cũ, thêm nhân viên Suspended/Resigned nhưng Account Active và kiểm Administrator khi EXISTS Employees: tổng 35, chỉ SELECT, không áp kiểm thiếu Administrator cho database rỗng như ConstraintTest. Không so EndDate với ngày lễ cuối; giữ mục 13 hợp đồng Active quá hạn và D20. Không tự sửa dữ liệu nếu có LỆCH.
 
 Những phần chưa đủ đã ghi ngay trong bảng 3.3: FR-03 đặt không đăng nhập; FR-07 tạo khách mới theo SĐT cho đơn đặt hộ; FR-08 đo tải; FR-04/23 kênh thật; FR-21 bootstrap Administrator Production; FR-26 truy vấn hồ sơ thẩm định. Đây không phải tuyên bố backend mọi FR đã hoàn tất.
+
+### 7.10. Backend bổ sung cho giao diện (B8)
+
+Lấp các gap Bước 0 kiểm kê giao diện ghi ở `docs/ui/backend-gaps.md` (G-01…G-14). Không thêm schema/migration, không sửa view. 1500 → 1520 test (1 test hiệu năng vẫn skip như cũ).
+
+- Quyết định 17/10: FR-27 chỉ Quản lý/Quản trị viên duyệt nội dung homestay (giữ kiểm quyền hiện tại, màn duyệt ở khu Admin); màn hợp đồng FR-19 ở khu Admin, URL thông báo hết hạn `/Admin/Contracts/{id}`; Tư vấn xem phòng trống FR-08 bằng bảng `StaffAvailabilityAsync`, lịch tháng `RoomBlockService.CalendarAsync` giữ quyền Chủ + Quản lý/Quản trị.
+- G-08 (lỗi): `OverbookingService` gửi khách link `/Bookings/Details/{mã đơn}` (trước dùng Id nên 404); đổi phòng gửi chủ `/Owner/Bookings/Details/{id}`.
+- Thông báo (FR-11/15): `NotificationService.ListAsync/LatestAsync/UnreadCountAsync/MarkReadAsync/MarkAllReadAsync`, luôn lọc theo userId; đánh dấu thông báo của người khác trả false.
+- FR-13/27: `HomestayContentService.OwnerHomestaysAsync(actor)` và `EditorAsync(id, actor)` trả DTO form sửa (giá hiện hành mỗi DayType + giá tương lai theo EffectiveFrom, ảnh, tiện nghi, chính sách đang áp dụng, giấy tờ không kèm FileUrl); `HomestayReviewService.PendingDetailsAsync` dùng lại DTO đó cho trang duyệt, kèm FirstReview (chưa từng duyệt) và chủ.
+- FR-19: `ContractService.ListAsync(ContractQuery)` (lọc trạng thái, tìm số HĐ/homestay/chủ, sắp hết hạn trong N ngày) và `DetailsAsync` (lịch sử tạo/gia hạn/chấm dứt đọc từ AuditLog); chỉ Quản lý/Quản trị.
+- FR-09: `StaffBookingService.AssigneesAsync` (Tư vấn/Quản lý đang làm việc, đúng điều kiện `AssignAsync`). Sidebar: `BookingChangeRequestService.PendingCountAsync`.
+- FR-16: `OwnerScheduleService.ReadAsync(actor, …)` tự suy chủ từ tài khoản.
+- FR-01/02: `HomestaySearchViewModel.Categories/Amenities` (chỉ loại phòng/tiện nghi đang có ở homestay Active); `HomestayCard.Rating/ReviewCount` lấy từ `ReviewRatings` đã nạp một lần; `AvailabilityService.BlockedDatesAsync` trả đêm hết phòng (≤ 92 đêm) cho bộ chọn ngày.
+- FR-06: `BookingDetailsViewModel.HasReview`. FR-21: `EmployeeAccountInput.Department`/`AccountSummary.Department` (≤ 100 ký tự, ghi audit).

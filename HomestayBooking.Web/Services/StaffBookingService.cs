@@ -24,12 +24,25 @@ public record StaffBookingInput(string Phone, string FullName, string? Email, in
 public record StaffBookingDetails(Booking Booking, IReadOnlyList<BookingStatusHistory> History,
     IReadOnlyList<BookingChangeRequest> Changes, IReadOnlyList<Payment> Payments, IReadOnlyList<AuditLog> Audit);
 
+public record BookingAssignee(int EmployeeId, string EmployeeCode, string? FullName, EmployeePosition Position);
+
 /// <summary>FR-09: nhân viên thao tác qua luật đặt phòng chung, không có đường duyệt tiền hoặc hủy trực tiếp.</summary>
 public class StaffBookingService(ApplicationDbContext db, BookingService bookings, NotificationService notifications, TimeProvider clock,
     GuestCustomerService guests)
 {
     internal static Task<Employee> EmployeeAsync(ApplicationDbContext db, Actor actor) =>
         PartnerServiceSupport.EmployeeAsync(db, actor, EmployeePosition.Consultant, EmployeePosition.Manager, EmployeePosition.Administrator);
+
+    /// <summary>Người nhận đơn hợp lệ theo đúng điều kiện của AssignAsync; mọi nhân viên đang làm việc đều gọi được.</summary>
+    public async Task<IReadOnlyList<BookingAssignee>> AssigneesAsync(Actor actor)
+    {
+        await EmployeeAsync(db, actor);
+        return await db.Employees.AsNoTracking()
+            .Where(e => e.EmploymentStatus == EmploymentStatus.Active && e.Person.Account != null && e.Person.Account.Status == AccountStatus.Active
+                && (e.Position == EmployeePosition.Consultant || e.Position == EmployeePosition.Manager))
+            .OrderBy(e => e.Position).ThenBy(e => e.EmployeeCode)
+            .Select(e => new BookingAssignee(e.Id, e.EmployeeCode, e.Person.FullName, e.Position)).ToListAsync();
+    }
 
     internal static string RequiredNote(string? note)
     {

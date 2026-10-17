@@ -1,3 +1,4 @@
+using System.Text.Json;
 using HomestayBooking.Web.Data;
 using HomestayBooking.Web.Extensions;
 using HomestayBooking.Web.Models.Entities;
@@ -8,12 +9,75 @@ namespace HomestayBooking.Web.Services;
 public record CreateContractRequest(int HomestayId, string ContractNo, DateOnly StartDate,
     DateOnly EndDate, decimal CommissionRate);
 
+/// <summary>ExpiringWithinDays: chỉ hợp đồng Active có EndDate trong [hôm nay, hôm nay + N]. Search: số hợp đồng, tên homestay, tên/SĐT chủ.</summary>
+public record ContractQuery(ContractStatus? Status = null, string? Search = null, int? ExpiringWithinDays = null, int? Page = null, int PageSize = 20);
+public record ContractRow(int Id, string ContractNo, int HomestayId, string HomestayName, string? OwnerName, string OwnerPhone,
+    decimal CommissionRate, DateOnly StartDate, DateOnly EndDate, ContractStatus Status);
+/// <summary>Một dòng lịch sử từ AuditLog: tạo, gia hạn (EndDate mới), chấm dứt (Reason), hết hạn tự động (AccountId null).</summary>
+public record ContractHistoryItem(DateTime At, AuditAction Action, string? AccountId, DateOnly? EndDate, ContractStatus? Status, string? Reason);
+public record ContractDetails(ContractRow Contract, string? SignedByName, DateTime CreatedAt, DateTime UpdatedAt, IReadOnlyList<ContractHistoryItem> History);
+
 /// <summary>FR-19, BR-02: quản lý hợp đồng; không thay snapshot hoa hồng của đơn đã nhận.</summary>
 public class ContractService(ApplicationDbContext db, NotificationService notifications, TimeProvider clock)
 {
     private DateTime Now => clock.GetUtcNow().UtcDateTime;
     private static object State(Contract c) => new { c.ContractNo, c.HomestayId, c.StartDate, c.EndDate,
         c.CommissionRate, Status = c.Status.ToString(), c.SignedByEmployeeId, c.UpdatedAt };
+
+    public async Task<PaginatedList<ContractRow>> ListAsync(ContractQuery query, Actor actor)
+    {
+        await PartnerServiceSupport.EmployeeAsync(db, actor, EmployeePosition.Manager, EmployeePosition.Administrator);
+        var contracts = db.Contracts.AsNoTracking();
+        if (query.Status is { } status) contracts = contracts.Where(c => c.Status == status);
+        if (query.ExpiringWithinDays is { } days)
+        {
+            var today = VietnamTime.Today(clock); var until = today.AddDays(Math.Max(0, days));
+            contracts = contracts.Where(c => c.Status == ContractStatus.Active && c.EndDate >= today && c.EndDate <= until);
+        }
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            var term = query.Search.Trim();
+            contracts = contracts.Where(c => c.ContractNo.Contains(term) || c.Homestay.Name.Contains(term)
+                || (c.Homestay.Owner.Person.FullName != null && c.Homestay.Owner.Person.FullName.Contains(term))
+                || c.Homestay.Owner.Person.PhoneNumber.Contains(term));
+        }
+        return await PaginatedList<ContractRow>.CreateAsync(Rows(contracts.OrderBy(c => c.Status).ThenBy(c => c.EndDate).ThenBy(c => c.Id)),
+            query.Page, query.PageSize);
+    }
+
+    public async Task<ContractDetails> DetailsAsync(int id, Actor actor)
+    {
+        await PartnerServiceSupport.EmployeeAsync(db, actor, EmployeePosition.Manager, EmployeePosition.Administrator);
+        var row = await Rows(db.Contracts.AsNoTracking().Where(c => c.Id == id)).SingleOrDefaultAsync()
+            ?? throw new BookingException("Không tìm thấy hợp đồng.");
+        var extra = await db.Contracts.AsNoTracking().Where(c => c.Id == id)
+            .Select(c => new { Signer = c.SignedByEmployee == null ? null : c.SignedByEmployee.Person.FullName, c.CreatedAt, c.UpdatedAt }).SingleAsync();
+        var logs = await db.AuditLogs.AsNoTracking().Where(a => a.TableName == "Contracts" && a.RecordId == id.ToString())
+            .OrderBy(a => a.CreatedAt).ThenBy(a => a.Id).ToListAsync();
+        return new ContractDetails(row, extra.Signer, extra.CreatedAt, extra.UpdatedAt, logs.Select(History).ToList());
+    }
+
+    private static IQueryable<ContractRow> Rows(IQueryable<Contract> contracts) => contracts.Select(c => new ContractRow(c.Id, c.ContractNo,
+        c.HomestayId, c.Homestay.Name, c.Homestay.Owner.Person.FullName, c.Homestay.Owner.Person.PhoneNumber,
+        c.CommissionRate, c.StartDate, c.EndDate, c.Status));
+
+    private static ContractHistoryItem History(AuditLog log)
+    {
+        DateOnly? end = null; ContractStatus? status = null; string? reason = null;
+        if (log.NewValues is not null)
+        {
+            using var doc = JsonDocument.Parse(log.NewValues);
+            var values = doc.RootElement.TryGetProperty("Values", out var v) ? v : doc.RootElement;
+            if (values.ValueKind == JsonValueKind.Object && values.TryGetProperty("Reason", out var r) && r.ValueKind == JsonValueKind.String) reason = r.GetString();
+            if (values.ValueKind == JsonValueKind.Object && values.TryGetProperty("Contract", out var inner)) values = inner;
+            if (values.ValueKind == JsonValueKind.Object)
+            {
+                if (values.TryGetProperty("EndDate", out var e) && DateOnly.TryParse(e.GetString(), out var d)) end = d;
+                if (values.TryGetProperty("Status", out var s) && Enum.TryParse<ContractStatus>(s.GetString(), out var st)) status = st;
+            }
+        }
+        return new ContractHistoryItem(log.CreatedAt, log.Action, log.AccountId, end, status, reason);
+    }
 
     public Task<Contract> CreateAsync(CreateContractRequest input, Actor actor) => WriteAsync(async () =>
     {
@@ -87,7 +151,7 @@ public class ContractService(ApplicationDbContext db, NotificationService notifi
             contract.Status = ContractStatus.Expired; contract.UpdatedAt = Now;
             PartnerServiceSupport.Audit(db, clock, Actor.System, "Contracts", contract.Id.ToString(), old, State(contract));
             PartnerServiceSupport.Notify(db, notifications, clock, managers, $"Hợp đồng {contract.ContractNo} đã hết hạn.",
-                $"/Staff/Contracts/{contract.Id}");
+                $"/Admin/Contracts/{contract.Id}");
         }
         return contracts.Count;
     });

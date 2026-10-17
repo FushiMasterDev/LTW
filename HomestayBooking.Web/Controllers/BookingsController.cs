@@ -281,6 +281,7 @@ public partial class BookingsController : Controller
             LastRejectedReceipt = booking.Payments.Where(p => p.Type == PaymentType.Deposit && p.Status == PaymentStatus.Rejected).MaxBy(p => p.ReviewedAt),
             IsOwnAccount = booking.Customer.PersonId == User.PersonId(),
             ShowDevSimulator = _env.IsDevelopment(),
+            HasReview = await _db.Reviews.AnyAsync(r => r.BookingId == booking.Id),
         });
     }
 

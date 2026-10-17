@@ -9,17 +9,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HomestayBooking.Web.Services;
 
-public record EmployeeAccountInput(string FullName, string Phone, string? Email, string EmployeeCode, EmployeePosition Position, string Password);
+public record EmployeeAccountInput(string FullName, string Phone, string? Email, string EmployeeCode, EmployeePosition Position, string Password,
+    string? Department = null);
 public record AccountQuery(string? Term = null, string? Role = null, AccountStatus? Status = null, int? Page = 1);
 public record AccountSummary(string Id, string? FullName, string Phone, string? Email, string? EmployeeCode,
-    EmployeePosition? Position, EmploymentStatus? EmploymentStatus, AccountStatus Status, IReadOnlyList<string> Roles);
+    EmployeePosition? Position, EmploymentStatus? EmploymentStatus, AccountStatus Status, IReadOnlyList<string> Roles, string? Department = null);
 
 /// <summary>FR-21: chỉ Administrator sửa; Identity quản lý mật khẩu/stamp, không ghi bí mật vào audit.</summary>
 public class AccountAdminService(ApplicationDbContext db, UserManager<ApplicationUser> users, AccountActivityLogger activities, TimeProvider clock)
 {
     private DateTime Now => clock.GetUtcNow().UtcDateTime;
     private static object State(ApplicationUser u) => new { u.Id, u.PersonId, Status = u.Status.ToString(), u.PasswordChangedAt };
-    private static object EmployeeState(Employee e) => new { e.PersonId, e.EmployeeCode, Position = e.Position.ToString(), EmploymentStatus = e.EmploymentStatus.ToString() };
+    private static object EmployeeState(Employee e) => new { e.PersonId, e.EmployeeCode, e.Department, Position = e.Position.ToString(), EmploymentStatus = e.EmploymentStatus.ToString() };
     private static void Identity(IdentityResult result)
     {
         if (!result.Succeeded) throw new BookingException("Không thể cập nhật tài khoản: {0}", string.Join(" ", result.Errors.Select(e => e.Description)));
@@ -70,12 +71,13 @@ public class AccountAdminService(ApplicationDbContext db, UserManager<Applicatio
     {
         var phone = PhoneNumberNormalizer.ToE164(input.Phone) ?? throw new BookingException("Số điện thoại không hợp lệ.");
         var name = input.FullName?.Trim() ?? ""; var code = input.EmployeeCode?.Trim().ToUpperInvariant() ?? ""; var email = string.IsNullOrWhiteSpace(input.Email) ? null : input.Email.Trim();
+        var department = string.IsNullOrWhiteSpace(input.Department) ? null : input.Department.Trim();
         if (name.Length is < 1 or > 100 || code.Length is < 1 or > 20 || !Enum.IsDefined(input.Position)
-            || email?.Length > 256 || email is not null && !new EmailAddressAttribute().IsValid(email)) throw new BookingException("Thông tin nhân viên không hợp lệ.");
+            || email?.Length > 256 || department?.Length > 100 || email is not null && !new EmailAddressAttribute().IsValid(email)) throw new BookingException("Thông tin nhân viên không hợp lệ.");
         if (await db.PersonProfiles.AnyAsync(p => p.PhoneNumber == phone)) throw new BookingException("Số điện thoại đã thuộc hồ sơ khác, không tự ghép tài khoản.");
         if (await db.Employees.AnyAsync(e => e.EmployeeCode == code)) throw new BookingException("Mã nhân viên đã được sử dụng.");
         var person = new PersonProfile { FullName = name, PhoneNumber = phone, Email = email, CreatedAt = Now, UpdatedAt = Now };
-        var employee = new Employee { Person = person, EmployeeCode = code, Position = input.Position, EmploymentStatus = EmploymentStatus.Active, CreatedAt = Now, UpdatedAt = Now };
+        var employee = new Employee { Person = person, EmployeeCode = code, Department = department, Position = input.Position, EmploymentStatus = EmploymentStatus.Active, CreatedAt = Now, UpdatedAt = Now };
         var user = new ApplicationUser { Person = person, Email = email, Status = AccountStatus.Active, PasswordChangedAt = Now, CreatedAt = Now, UpdatedAt = Now };
         db.Employees.Add(employee);
         // shortcut: chưa bắt đổi mật khẩu lần đầu, nâng cấp khi có luồng kích hoạt cho nhân viên
@@ -167,6 +169,7 @@ public class AccountAdminService(ApplicationDbContext db, UserManager<Applicatio
         var page = await PaginatedList<ApplicationUser>.CreateAsync(rows.Include(u => u.Person).ThenInclude(p => p.Employee)
             .Include(u => u.UserRoles).ThenInclude(r => r.Role).OrderBy(u => u.Person.FullName).ThenBy(u => u.Id), query.Page);
         return new(page.Select(u => new AccountSummary(u.Id, u.Person.FullName, u.Person.PhoneNumber, u.Person.Email, u.Person.Employee?.EmployeeCode,
-            u.Person.Employee?.Position, u.Person.Employee?.EmploymentStatus, u.Status, u.UserRoles.Select(r => r.Role!.Name!).Order().ToList())), page.TotalCount, page.PageIndex, page.PageSize);
+            u.Person.Employee?.Position, u.Person.Employee?.EmploymentStatus, u.Status, u.UserRoles.Select(r => r.Role!.Name!).Order().ToList(),
+            u.Person.Employee?.Department)), page.TotalCount, page.PageIndex, page.PageSize);
     }
 }

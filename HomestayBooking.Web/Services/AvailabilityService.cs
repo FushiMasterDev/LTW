@@ -40,6 +40,24 @@ public class AvailabilityService(ApplicationDbContext db, TimeProvider clock, IO
     public Task<List<int>> FreeRoomIdsAsync(int typeId, DateOnly checkIn, DateOnly checkOut) =>
         SellableRooms(checkIn, checkOut).Where(r => r.RoomTypeId == typeId).OrderBy(r => r.Id).Select(r => r.Id).ToListAsync();
 
+    /// <summary>
+    /// Các đêm trong [from, to) không còn phòng nào của loại phòng (đơn, khóa lịch, yêu cầu đổi đều nằm ở RoomNights),
+    /// dùng công khai để bộ chọn ngày bôi xám. Chỉ để gợi ý: đặt phòng vẫn kiểm lại tồn phòng và hợp đồng khi tạo đơn.
+    /// </summary>
+    public async Task<IReadOnlyList<DateOnly>> BlockedDatesAsync(int roomTypeId, DateOnly from, DateOnly to)
+    {
+        if (to <= from || to.DayNumber - from.DayNumber > 92) throw new BookingException("Khoảng ngày phải từ 1 đến 92 đêm.");
+        var today = VietnamTime.Today(clock);
+        if (from < today) from = today;
+        if (to <= from) return [];
+        var rooms = await SellableRooms().Where(r => r.RoomTypeId == roomTypeId).Select(r => r.Id).ToListAsync();
+        var nights = Enumerable.Range(0, to.DayNumber - from.DayNumber).Select(from.AddDays).ToList();
+        if (rooms.Count == 0) return nights;
+        var taken = await NightsDuring(from, to).Where(n => rooms.Contains(n.RoomId)).Select(n => new { n.Date, n.RoomId }).ToListAsync();
+        var full = taken.GroupBy(n => n.Date).Where(g => g.Select(n => n.RoomId).Distinct().Count() >= rooms.Count).Select(g => g.Key).ToHashSet();
+        return nights.Where(full.Contains).ToList();
+    }
+
     private void Normalize(HomestaySearchQuery query)
     {
         var today = VietnamTime.Today(clock);
@@ -115,7 +133,8 @@ public class AvailabilityService(ApplicationDbContext db, TimeProvider clock, IO
                     ? PricingService.RoundToThousand(total / (query.CheckOut!.Value.DayNumber - query.CheckIn!.Value.DayNumber))
                     : g.Min(o => o.TotalPrice),
                 offers.Where(o => o.HomestayId == g.Key).Max(o => o.MaxGuests),
-                home.HomestayAmenities.OrderBy(a => a.AmenityId).Take(4).Select(a => a.Amenity.Name).ToList());
+                home.HomestayAmenities.OrderBy(a => a.AmenityId).Take(4).Select(a => a.Amenity.Name).ToList(),
+                g.First().Rating, g.First().ReviewCount);
         }).Where(c => (query.MinPrice == null || c.FromPrice >= query.MinPrice) && (query.MaxPrice == null || c.FromPrice <= query.MaxPrice));
         cards = query.Sort switch
         {
@@ -126,7 +145,12 @@ public class AvailabilityService(ApplicationDbContext db, TimeProvider clock, IO
         };
         var all = cards.ToList(); const int size = 9;
         var page = Math.Clamp(query.Page ?? 1, 1, Math.Max(1, (int)Math.Ceiling(all.Count / (double)size)));
+        // Chỉ đưa vào bộ lọc loại phòng/tiện nghi đang có ở homestay Active, tránh lọc ra trang rỗng.
         return new() { Query = query, Areas = await db.Areas.OrderBy(a => a.Name).Select(a => new AreaOption(a.Id, a.Name, a.AreaGroup)).ToListAsync(),
+            Categories = await db.RoomCategories.Where(c => db.RoomTypes.Any(t => t.CategoryId == c.Id && t.IsActive && t.Homestay.Status == HomestayStatus.Active))
+                .OrderBy(c => c.Name).Select(c => new FilterOption(c.Id, c.Name)).ToListAsync(),
+            Amenities = await db.Amenities.Where(a => a.HomestayAmenities.Any(x => x.Homestay.Status == HomestayStatus.Active))
+                .OrderBy(a => a.Name).Select(a => new FilterOption(a.Id, a.Name)).ToListAsync(),
             Results = new PaginatedList<HomestayCard>(all.Skip((page - 1) * size).Take(size), all.Count, page, size) };
     }
 

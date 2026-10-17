@@ -12,6 +12,8 @@ public record HomestayReviewResult(Homestay Homestay, IReadOnlyList<string> Miss
     public bool Succeeded => Missing.Count == 0;
 }
 public record PendingHomestay(Homestay Homestay, DateTime? SubmittedAt);
+/// <summary>FirstReview = homestay chưa từng được duyệt (mới); false = duyệt lại sau khi đổi địa chỉ/giấy tờ (quyết định 16/10).</summary>
+public record PendingHomestayDetails(HomestayEditor Content, DateTime? SubmittedAt, bool FirstReview, string? OwnerName, string OwnerPhone);
 
 public class HomestayReviewService(ApplicationDbContext db, HomestayAccessService access,
     OwnerRegistrationService registrations, NotificationService notifications, TimeProvider clock)
@@ -78,6 +80,17 @@ public class HomestayReviewService(ApplicationDbContext db, HomestayAccessServic
             && JsonStatus(a.NewValues) == "PendingReview" && JsonStatus(a.OldValues) != "PendingReview")
             .Select(a => (DateTime?)a.CreatedAt).Max())).OrderBy(x => x.SubmittedAt ?? DateTime.MinValue).ThenBy(x => x.Homestay.Id).ToList();
     }
+    /// <summary>Nội dung đầy đủ cho trang duyệt; chỉ Quản lý/Quản trị, chỉ homestay đang chờ duyệt.</summary>
+    public async Task<PendingHomestayDetails> PendingDetailsAsync(int id, Actor actor)
+    {
+        var pending = (await PendingAsync(actor)).SingleOrDefault(p => p.Homestay.Id == id)
+            ?? throw new BookingException("Homestay không ở trạng thái chờ duyệt.");
+        var content = await new HomestayContentService(db, access, notifications, clock).EditorAsync(id, actor, allowConsultant: false);
+        var owner = await db.Homestays.AsNoTracking().Where(h => h.Id == id)
+            .Select(h => new { h.Owner.Person.FullName, h.Owner.Person.PhoneNumber }).SingleAsync();
+        return new(content, pending.SubmittedAt, pending.Homestay.ApprovedAt is null, owner.FullName, owner.PhoneNumber);
+    }
+
     private static string? JsonStatus(string? json)
     {
         if (json is null) return null;

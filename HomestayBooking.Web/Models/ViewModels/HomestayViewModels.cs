@@ -33,14 +33,21 @@ public record HomestayCard(
     string? CoverUrl,
     decimal? FromPrice,
     int MaxGuests,
-    IReadOnlyList<string> Amenities);
+    IReadOnlyList<string> Amenities,
+    double? Rating = null,
+    int ReviewCount = 0);
 
 public record AreaOption(int Id, string Name, AreaGroup Group);
+
+/// <summary>Một lựa chọn trong bộ lọc tìm kiếm (loại phòng, tiện nghi).</summary>
+public record FilterOption(int Id, string Name);
 
 public class HomestaySearchViewModel
 {
     public HomestaySearchQuery Query { get; init; } = new();
     public IReadOnlyList<AreaOption> Areas { get; init; } = [];
+    public IReadOnlyList<FilterOption> Categories { get; init; } = [];
+    public IReadOnlyList<FilterOption> Amenities { get; init; } = [];
     public PaginatedList<HomestayCard> Results { get; init; } = new([], 0, 1, PaginatedList<HomestayCard>.DefaultPageSize);
 }
 

@@ -77,6 +77,9 @@ public class BookingDetailsViewModel
     public Payment? LastRejectedReceipt { get; init; }
     public bool IsOwnAccount { get; init; }
     public bool ShowDevSimulator { get; init; }
+
+    /// <summary>Đơn đã có đánh giá (mỗi đơn tối đa một, BR-09): ẩn form viết đánh giá.</summary>
+    public bool HasReview { get; init; }
 }
 
 public record MyBookingRow(string Code, string HomestayName, string RoomTypeName, DateOnly CheckIn, DateOnly CheckOut,
