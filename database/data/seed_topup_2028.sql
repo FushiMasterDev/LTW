@@ -56,7 +56,7 @@ BEGIN TRY
         (SELECT 'System' AS Actor, 'SeedTopup2028' AS Step, h.[Date], h.Name FOR JSON PATH, WITHOUT_ARRAY_WRAPPER), @Now FROM @Holidays h;
 
     -- Giữ nguyên giấy tờ gắn hồ sơ Owner; chỉ thêm ảnh thực tế vào cơ sở mẫu chưa có ảnh gắn Homestay.
-    -- File có sẵn trong Data/SampleFiles; cần có bản sao App_Data/documents/sample-document.png ở môi trường chạy thử.
+    -- File có sẵn trong Data/SampleFiles; cần có bản sao App_Data/receipts/sample-document.png (thư mục ReceiptFileStore đọc) ở môi trường chạy thử.
     INSERT INTO VerificationDocuments (OwnerRegistrationId, HomestayId, DocumentType, FileUrl, OriginalFileName, ExpiryDate, CreatedAt)
     OUTPUT inserted.Id, inserted.HomestayId, inserted.FileUrl INTO @Photos
     SELECT NULL, h.Id, 'PropertyPhoto', 'sample-document.png', N'anh-thuc-te-mau-2028.png', NULL, @Now
