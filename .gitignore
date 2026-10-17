@@ -486,3 +486,5 @@ $RECYCLE.BIN/
 
 # Ảnh bill khách tải lên (dữ liệu nhạy cảm, không đưa lên repo)
 HomestayBooking.Web/App_Data/
+# Playwright CLI output (may contain credentials)
+.playwright-cli/
