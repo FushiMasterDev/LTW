@@ -372,7 +372,7 @@ public class BookingService
             ChangedAt = now,
         });
 
-        await NotifyAsync(booking, to);
+        await NotifyAsync(booking, to, actor);
     }
 
     /// <summary>Chỉ dùng sau khi yêu cầu đổi đã được duyệt; không mở Transitions chung.</summary>
@@ -410,7 +410,7 @@ public class BookingService
             ActorAccountId = actor.AccountId, Note = note, ChangedAt = UtcNow });
     }
 
-    private async Task NotifyAsync(Booking booking, BookingStatus to)
+    private async Task NotifyAsync(Booking booking, BookingStatus to, Actor actor)
     {
         var accounts = await _db.Bookings
             .Where(b => b.Id == booking.Id)
@@ -432,9 +432,14 @@ public class BookingService
                 break;
             case BookingStatus.Confirmed:
                 _notifications.Add([accounts.Customer, accounts.Staff], $"Đơn {code} đã được homestay xác nhận.");
+                if (actor.Type == ActorType.Employee) PartnerServiceSupport.Notify(_db, _notifications, _clock, [accounts.Owner], $"Nhân viên đã xác nhận thay chủ đơn {code} sau khi liên hệ.", $"/Owner/Bookings/Details/{booking.Id}");
                 break;
             case BookingStatus.Rejected:
                 _notifications.Add([accounts.Customer, accounts.Staff], $"Homestay đã từ chối đơn {code}. Fuji sẽ hoàn 100% tiền cọc.");
+                if (actor.Type == ActorType.Employee) PartnerServiceSupport.Notify(_db, _notifications, _clock, [accounts.Owner], $"Nhân viên đã từ chối thay chủ đơn {code} sau khi liên hệ.", $"/Owner/Bookings/Details/{booking.Id}");
+                break;
+            case BookingStatus.Completed:
+                PartnerServiceSupport.Notify(_db, _notifications, _clock, [accounts.Customer], $"Đơn {code} đã hoàn thành. Mời bạn đánh giá homestay và chia sẻ trải nghiệm.", $"/Bookings/Details/{code}");
                 break;
             case BookingStatus.Expired:
                 _notifications.Add([accounts.Customer, accounts.Staff], $"Đơn {code} đã hết hạn giữ phòng vì chưa thanh toán.");
@@ -443,6 +448,17 @@ public class BookingService
                 _notifications.Add([accounts.Owner, accounts.Staff], $"Đơn {code} đã bị hủy.");
                 break;
         }
+    }
+
+    /// <summary>Một nơi gửi kết quả yêu cầu đổi/hủy, dùng chung Manager và Accountant.</summary>
+    internal void NotifyChangeRequestResult(Booking booking, string status, bool applied)
+    {
+        var message = $"Yêu cầu đổi/hủy đơn {booking.Code} {status}.";
+        PartnerServiceSupport.Notify(_db, _notifications, _clock, [booking.Customer.Person.Account?.Id], message, $"/Bookings/Details/{booking.Code}");
+        var ownerMessage = applied && booking.Status == BookingStatus.Deposited
+            ? $"Yêu cầu đổi đơn {booking.Code} đã được áp dụng; cần xác nhận lại trong {_options.ConfirmMinutes} phút."
+            : applied && booking.Status == BookingStatus.Cancelled ? $"Đơn {booking.Code} đã bị hủy theo yêu cầu do nhân viên gửi." : message;
+        PartnerServiceSupport.Notify(_db, _notifications, _clock, [booking.Homestay.Owner.Person.Account?.Id], ownerMessage, $"/Owner/Bookings/Details/{booking.Id}");
     }
 
     // ---------------------------------------------------------------- Việc định kỳ (job mỗi phút)

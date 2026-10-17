@@ -22,29 +22,38 @@ public class BookingTimeoutJob : BackgroundService
         using var timer = new PeriodicTimer(TimeSpan.FromMinutes(1));
         do
         {
-            try
-            {
-                using var scope = _scopeFactory.CreateScope();
-                var bookings = scope.ServiceProvider.GetRequiredService<BookingService>();
-                var expired = await bookings.ExpireOverdueHoldsAsync();
-                var expiredRequests = await scope.ServiceProvider.GetRequiredService<BookingChangeRequestService>().ExpireUnpaidAsync();
-                var alerted = await bookings.AlertOverdueConfirmationsAsync();
-                var slowReceipts = await scope.ServiceProvider.GetRequiredService<ReceiptReviewService>().AlertSlowReviewsAsync();
-                await scope.ServiceProvider.GetRequiredService<VoucherService>().ExpireAsync();
-                await scope.ServiceProvider.GetRequiredService<ContractService>().ExpireAsync();
-                await scope.ServiceProvider.GetRequiredService<OwnerRegistrationService>().AlertOverdueAsync();
-                if (expired + expiredRequests + alerted + slowReceipts > 0)
-                {
-                    _logger.LogInformation("Hết hạn {Expired} đơn và {Requests} yêu cầu đổi, cảnh báo {Alerted} đơn quá hạn xác nhận, {Receipts} bill chậm duyệt.",
-                        expired, expiredRequests, alerted, slowReceipts);
-                }
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                // Lỗi một lượt (ví dụ mất kết nối CSDL) không được làm dừng job
-                _logger.LogError(ex, "BookingTimeoutJob lỗi.");
-            }
+            await RunOnceAsync(stoppingToken);
         }
         while (await timer.WaitForNextTickAsync(stoppingToken));
     }
+
+    /// <summary>Mỗi tác vụ có scope/try-catch riêng, không dùng context lỗi của tác vụ trước.</summary>
+    public async Task RunOnceAsync(CancellationToken cancellationToken = default)
+    {
+        (string Name, Func<IServiceProvider, Task> Run)[] jobs = [
+            ("Hết hạn giữ phòng", async p => { await p.GetRequiredService<BookingService>().ExpireOverdueHoldsAsync(); }),
+            ("Hết hạn yêu cầu đổi", async p => { await p.GetRequiredService<BookingChangeRequestService>().ExpireUnpaidAsync(); }),
+            ("Quá hạn xác nhận", async p => { await p.GetRequiredService<BookingService>().AlertOverdueConfirmationsAsync(); }),
+            ("Bill chậm duyệt", async p => { await p.GetRequiredService<ReceiptReviewService>().AlertSlowReviewsAsync(); }),
+            ("Hết hạn voucher", async p => { await p.GetRequiredService<VoucherService>().ExpireAsync(); }),
+            ("Hết hạn hợp đồng", async p => { await p.GetRequiredService<ContractService>().ExpireAsync(); }),
+            ("Quá hạn hồ sơ chủ", async p => { await p.GetRequiredService<OwnerRegistrationService>().AlertOverdueAsync(); }),
+            ("Nhắc khách nhận phòng", async p => { await p.GetRequiredService<ReminderService>().SendCustomersAsync(cancellationToken); }),
+            ("Nhắc chủ đón khách", async p => { await p.GetRequiredService<ReminderService>().SendOwnersAsync(cancellationToken); })
+        ];
+        foreach (var job in jobs)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                await job.Run(scope.ServiceProvider);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogError(ex, "BookingTimeoutJob: lỗi tác vụ {Job}; tiếp tục tác vụ kế tiếp.", job.Name);
+            }
+        }
+    }
+
 }

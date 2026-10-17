@@ -292,12 +292,11 @@ public partial class BookingChangeRequestService
         if (request.Status == ChangeRequestStatus.Applied)
             _db.AuditLogs.Add(new AuditLog { AccountId = actor.AccountId, TableName = "Bookings", RecordId = booking.Id.ToString(),
                 Action = AuditAction.Update, OldValues = oldBooking, NewValues = JsonSerializer.Serialize(BookingState(booking)), CreatedAt = Now });
-        Notify(booking, request.Status == ChangeRequestStatus.Applied ? "đã được áp dụng" : "đang chờ nộp cọc bổ sung");
+        Notify(booking, request.Status == ChangeRequestStatus.Applied ? "đã được áp dụng" : "đang chờ nộp cọc bổ sung", request.Status == ChangeRequestStatus.Applied);
         return request;
     });
 
-    private void Notify(Booking b, string status) => _notifications.Add(
-        [b.Customer.Person.Account?.Id, b.Homestay.Owner.Person.Account?.Id], $"Yêu cầu đổi/hủy đơn {b.Code} {status}.");
+    private void Notify(Booking b, string status, bool applied = false) => _bookings.NotifyChangeRequestResult(b, status, applied);
 
     private static object BookingState(Booking b) => new { b.Id, b.Code, b.CheckIn, b.CheckOut, b.RoomTypeId, b.RoomId,
         b.TotalAmount, b.DepositAmount, b.ChangeFeeAmount, b.DiscountAmount, b.RefundAmount, Status = b.Status.ToString(),

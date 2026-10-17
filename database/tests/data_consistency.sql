@@ -82,9 +82,20 @@
     SELECT 23 AS STT, N'Đơn giao nhân viên không đúng vị trí' AS Muc, COUNT_BIG(*) AS SoDongLech
     FROM Bookings b JOIN Employees e ON e.Id = b.AssignedEmployeeId
     WHERE e.Position NOT IN ('Consultant','Manager','Administrator')
+    UNION ALL
+    SELECT 24 AS STT, N'Trả lời đánh giá chỉ có khoảng trắng' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Reviews r WHERE r.OwnerReply IS NOT NULL AND LEN(LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(r.OwnerReply, CHAR(9), ' '), CHAR(10), ' '), CHAR(13), ' ')))) = 0
+    UNION ALL
+    SELECT 25 AS STT, N'Tin Sent thiếu giờ gửi hoặc Failed thiếu lỗi' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM MessageLogs m WHERE (m.Status = 'Sent' AND m.SentAt IS NULL)
+        OR (m.Status = 'Failed' AND (m.ErrorMessage IS NULL OR LTRIM(RTRIM(m.ErrorMessage)) = ''))
+    UNION ALL
+    SELECT 26 AS STT, N'Tin thiếu cả số điện thoại và email người nhận' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM MessageLogs m WHERE (m.RecipientPhone IS NULL OR LTRIM(RTRIM(m.RecipientPhone)) = '')
+        AND (m.RecipientEmail IS NULL OR LTRIM(RTRIM(m.RecipientEmail)) = '')
 )
 SELECT CASE WHEN GROUPING(STT) = 1 THEN 99 ELSE STT END AS STT,
-       CASE WHEN GROUPING(STT) = 1 THEN N'TỔNG (23 mục)' ELSE Muc END AS Muc,
+       CASE WHEN GROUPING(STT) = 1 THEN N'TỔNG (26 mục)' ELSE Muc END AS Muc,
        SUM(SoDongLech) AS SoDongLech,
        CASE WHEN SUM(SoDongLech) = 0 THEN N'OK' ELSE N'LỆCH' END AS KetQua
 FROM KiemTra
@@ -171,6 +182,17 @@ IF EXISTS (
     SELECT 23 AS STT, N'Đơn giao nhân viên không đúng vị trí' AS Muc, COUNT_BIG(*) AS SoDongLech
     FROM Bookings b JOIN Employees e ON e.Id = b.AssignedEmployeeId
     WHERE e.Position NOT IN ('Consultant','Manager','Administrator')
+    UNION ALL
+    SELECT 24 AS STT, N'Trả lời đánh giá chỉ có khoảng trắng' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM Reviews r WHERE r.OwnerReply IS NOT NULL AND LEN(LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(r.OwnerReply, CHAR(9), ' '), CHAR(10), ' '), CHAR(13), ' ')))) = 0
+    UNION ALL
+    SELECT 25 AS STT, N'Tin Sent thiếu giờ gửi hoặc Failed thiếu lỗi' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM MessageLogs m WHERE (m.Status = 'Sent' AND m.SentAt IS NULL)
+        OR (m.Status = 'Failed' AND (m.ErrorMessage IS NULL OR LTRIM(RTRIM(m.ErrorMessage)) = ''))
+    UNION ALL
+    SELECT 26 AS STT, N'Tin thiếu cả số điện thoại và email người nhận' AS Muc, COUNT_BIG(*) AS SoDongLech
+    FROM MessageLogs m WHERE (m.RecipientPhone IS NULL OR LTRIM(RTRIM(m.RecipientPhone)) = '')
+        AND (m.RecipientEmail IS NULL OR LTRIM(RTRIM(m.RecipientEmail)) = '')
     ) AS KiemTra WHERE SoDongLech > 0
 )
     THROW 50020, N'Đối chiếu dữ liệu có mục LỆCH; không tự sửa dữ liệu.', 1;

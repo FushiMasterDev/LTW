@@ -100,6 +100,15 @@ builder.Services.AddScoped<AvailabilityService>();
 builder.Services.AddScoped<StaffBookingService>();
 builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<OverbookingService>();
+builder.Services.AddScoped<ReviewService>();
+builder.Services.AddScoped<IMessageSender, LoggingMessageSender>();
+builder.Services.AddScoped<MessageService>();
+builder.Services.AddScoped<ReminderService>();
+builder.Services.AddScoped<OwnerScheduleService>();
+builder.Services.AddOptions<ReminderOptions>()
+    .Bind(builder.Configuration.GetSection(ReminderOptions.Section))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 builder.Services.AddSingleton<ReceiptFileStore>();
 builder.Services.AddHostedService<BookingTimeoutJob>();
 

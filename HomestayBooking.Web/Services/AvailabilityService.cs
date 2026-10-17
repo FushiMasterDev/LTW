@@ -73,8 +73,7 @@ public class AvailabilityService(ApplicationDbContext db, TimeProvider clock, IO
             .Include(t => t.Homestay).ThenInclude(h => h.HomestayAmenities).ThenInclude(a => a.Amenity).AsSplitQuery().ToListAsync();
         var homes = types.Select(t => t.Homestay).DistinctBy(h => h.Id).ToList();
         var homeIds = homes.Select(h => h.Id).ToArray();
-        var ratings = await db.Reviews.Where(r => homeIds.Contains(r.HomestayId) && !r.IsHidden).GroupBy(r => r.HomestayId)
-            .Select(g => new { Id = g.Key, Rating = g.Average(r => (double)r.Rating), Count = g.Count() }).ToDictionaryAsync(r => r.Id);
+        var ratings = await ReviewRatings.Summaries(db.Reviews.Where(r => homeIds.Contains(r.HomestayId))).ToDictionaryAsync(r => r.Id);
         var prices = await db.RoomTypePrices.AsNoTracking().Where(p => typeIds.Contains(p.RoomTypeId)).ToListAsync();
         var occupied = new HashSet<int>(); var holidays = new HashSet<DateOnly>();
         if (query.HasDates)

@@ -38,6 +38,9 @@ public static class VietnamTime
         return minutes;
     }
 
+    public static DateTime ToUtc(DateTime vietnamLocal) =>
+        TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(vietnamLocal, DateTimeKind.Unspecified), Zone);
+
     public static DateOnly Today(TimeProvider clock) => DateOnly.FromDateTime(ToLocal(clock.GetUtcNow().UtcDateTime));
 }
 

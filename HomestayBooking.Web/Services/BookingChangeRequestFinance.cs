@@ -124,7 +124,7 @@ public partial class BookingChangeRequestService
         Audit(id, actor, old, JsonSerializer.Serialize(new { Step = "FinanceConfirmed", PaymentId = payment.Id, Request = RequestState(request) }));
         _db.AuditLogs.Add(new AuditLog { AccountId = actor.AccountId, TableName = "Bookings", RecordId = booking.Id.ToString(),
             Action = AuditAction.Update, OldValues = oldBooking, NewValues = JsonSerializer.Serialize(BookingState(booking)), CreatedAt = Now });
-        Notify(booking, "đã được kế toán xác nhận và áp dụng");
+        Notify(booking, "đã được kế toán xác nhận và áp dụng", applied: true);
         return request;
     });
 
@@ -157,7 +157,7 @@ public partial class BookingChangeRequestService
         request.RejectionReason = reason;
         _db.RoomNights.RemoveRange(await _db.RoomNights.Where(n => n.BookingChangeRequestId == request.Id).ToListAsync());
         Audit(request.Id, actor, old, JsonSerializer.Serialize(new { Step = "FinanceRejected", PaymentId = payment?.Id, Request = RequestState(request) }));
-        Notify(booking, "bị kế toán từ chối: " + reason);
+        Notify(booking, "bị kế toán từ chối");
     }
 
     /// <summary>Mỗi yêu cầu được chốt bằng một UPDATE có điều kiện, cùng transaction nhả phòng và ghi log.</summary>
