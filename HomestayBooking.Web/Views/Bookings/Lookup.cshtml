@@ -7,7 +7,7 @@
     <p class="form-panel__lead">@L["Dành cho đơn đặt qua tổng đài hoặc khi bạn chưa đăng nhập. Nhập mã đơn (dạng FJ261110-001) và số điện thoại đã dùng khi đặt."]</p>
     <form asp-action="Lookup" method="post" novalidate>
         <div asp-validation-summary="ModelOnly" class="alert tone-rose" role="alert"></div>
-        <form-field asp-for="Code" placeholder="FJ261110-001" autocomplete="off" autofocus="true" />
+        <form-field asp-for="Code" placeholder="FJ261110-001" autocomplete="off" />
         <form-field asp-for="PhoneNumber" type="tel" inputmode="tel" autocomplete="tel" placeholder="09xx xxx xxx" wrapper="mb-4" />
         <button type="submit" class="btn btn-brand btn-lg w-100" data-loading-text="@L["Đang tìm..."]"><icon name="search" /> @L["Tra cứu"]</button>
     </form>

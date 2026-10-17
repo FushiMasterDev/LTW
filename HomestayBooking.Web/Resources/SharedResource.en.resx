@@ -2079,7 +2079,7 @@
   <data name="Trở thành đối tác" xml:space="preserve"><value>Become a partner</value></data>
   <data name="Xem phòng trống, giá từng đêm và chính sách hủy trước khi đặt. Chỉ cần số điện thoại." xml:space="preserve"><value>See open rooms, nightly prices and the cancellation policy before you book. All you need is a phone number.</value></data>
   <data name="phạm vi công cộng" xml:space="preserve"><value>public domain</value></data>
-  <data name="trên 5, từ {0} đánh giá" xml:space="preserve"><value>out of 5, from {0} reviews</value></data>
+  <data name="trên 5, từ {0} đánh giá" xml:space="preserve"><value>out of 5, from {0} review(s)</value></data>
   <data name="{0} đêm, từ {1} đến {2}, cho {3} khách." xml:space="preserve"><value>{0} nights, {1} to {2}, for {3} guests.</value></data>
   <data name="Áp dụng" xml:space="preserve"><value>Apply</value></data>
   <data name="Đánh giá của khách" xml:space="preserve"><value>Guest reviews</value></data>
