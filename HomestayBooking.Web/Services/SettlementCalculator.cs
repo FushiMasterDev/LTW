@@ -14,6 +14,8 @@ public record SettlementPeriod(int Year, int Month, int PeriodNo)
 /// </summary>
 public static class SettlementCalculator
 {
+    /// <summary>D14: phần voucher Fuji chịu trừ vào hoa hồng thực thu, không giảm tiền trả chủ.</summary>
+    public static decimal FujiNetRevenue(SettlementItem item) => item.CommissionAmount - item.DiscountAmount;
     /// <summary>Kỳ 1: ngày 1–15; kỳ 2: ngày 16 – cuối tháng.</summary>
     public static SettlementPeriod PeriodOf(DateOnly checkOut) =>
         new(checkOut.Year, checkOut.Month, checkOut.Day <= 15 ? 1 : 2);

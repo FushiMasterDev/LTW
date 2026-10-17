@@ -105,6 +105,12 @@ builder.Services.AddScoped<IMessageSender, LoggingMessageSender>();
 builder.Services.AddScoped<MessageService>();
 builder.Services.AddScoped<ReminderService>();
 builder.Services.AddScoped<OwnerScheduleService>();
+builder.Services.AddScoped<SettlementService>();
+builder.Services.AddScoped<CompensationService>();
+builder.Services.AddOptions<SettlementOptions>()
+    .Bind(builder.Configuration.GetSection(SettlementOptions.Section))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 builder.Services.AddOptions<ReminderOptions>()
     .Bind(builder.Configuration.GetSection(ReminderOptions.Section))
     .ValidateDataAnnotations()

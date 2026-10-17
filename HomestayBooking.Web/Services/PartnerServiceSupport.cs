@@ -8,6 +8,15 @@ namespace HomestayBooking.Web.Services;
 /// <summary>Kiểm tra lại tác nhân trong CSDL và ghi audit trong transaction nghiệp vụ đối tác.</summary>
 internal static class PartnerServiceSupport
 {
+    internal static async Task RequireOwnerBankAsync(ApplicationDbContext db, int homestayId)
+    {
+        var bank = await db.Homestays.Where(h => h.Id == homestayId)
+            .Select(h => new { h.Owner.BankName, h.Owner.BankAccountNo, h.Owner.BankAccountName }).SingleOrDefaultAsync();
+        if (bank is null || string.IsNullOrWhiteSpace(bank.BankName) || string.IsNullOrWhiteSpace(bank.BankAccountNo)
+            || string.IsNullOrWhiteSpace(bank.BankAccountName))
+            throw new BookingException("Chủ homestay chưa có đủ thông tin tài khoản ngân hàng.");
+    }
+
     internal static async Task<Employee> EmployeeAsync(ApplicationDbContext db, Actor actor,
         params EmployeePosition[] positions)
     {

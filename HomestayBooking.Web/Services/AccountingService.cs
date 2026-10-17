@@ -104,9 +104,10 @@ public class AccountingService
     }
 
     /// <summary>Ghi nhận Fuji đã chuyển hoàn cọc cho khách (đơn hủy / bị từ chối) và báo khách.</summary>
-    public async Task<Payment> RecordRefundAsync(int bookingId, int employeeId, string bankRef)
+    public Task<Payment> RecordRefundAsync(int bookingId, int employeeId, string bankRef) => HomestayWrite.RunAsync(_db, async () =>
     {
         var handler = await HandlerAsync(employeeId);
+        await LockTransferBookingAsync(bookingId);
         var booking = await PendingRefunds().Include(b => b.Customer).ThenInclude(c => c.Person).ThenInclude(p => p.Account)
             .SingleOrDefaultAsync(b => b.Id == bookingId)
             ?? throw new BookingException("Đơn này không có khoản hoàn nào đang chờ.");
@@ -117,18 +118,49 @@ public class AccountingService
             Method = PaymentMethod.ManualTransfer,
             Amount = booking.RefundAmount!.Value,
             TransferContent = $"Fuji hoan coc {booking.Code}",
-            BankRef = RequireBankRef(bankRef),
-            Status = PaymentStatus.Approved,
+            Status = PaymentStatus.Submitted,
             SubmittedByAccountId = handler.AccountId,
             SubmittedAt = now,
             ReviewedByEmployeeId = handler.EmployeeId,
             ReviewedAt = now,
         };
         booking.Payments.Add(payment);
-        _notifications.Add([booking.Customer.Person.Account?.Id],
-            $"Fuji đã chuyển hoàn {payment.Amount:N0}đ cho đơn {booking.Code}. Tiền thường về tài khoản trong vòng 24 giờ.");
-        await SaveAsync();
+        await RecordTransferInTransactionAsync(payment, handler, bankRef);
+        PartnerServiceSupport.Notify(_db, _notifications, _clock, [booking.Customer.Person.Account?.Id],
+            $"Fuji đã chuyển hoàn {payment.Amount:N0}đ cho đơn {booking.Code}. Tiền thường về tài khoản trong vòng 24 giờ.", $"/Bookings/Details/{booking.Code}");
         return payment;
+    });
+
+    // Dùng chung cho hoàn cọc và chuyển riêng khoản bù; caller đã kiểm quyền, điều kiện và mở transaction.
+    internal async Task<Payment> RecordTransferInTransactionAsync(Payment payment, Actor handler, string bankRef)
+    {
+        await PartnerServiceSupport.EmployeeAsync(_db, handler, Handlers);
+        var inserted = payment.Id == 0;
+        var old = inserted ? null : TransferState(payment);
+        payment.BankRef = RequireTransferReference(bankRef);
+        payment.Status = PaymentStatus.Approved;
+        payment.ReviewedByEmployeeId = handler.EmployeeId; payment.ReviewedAt = UtcNow;
+        if (inserted) await _db.SaveChangesAsync();
+        PartnerServiceSupport.Audit(_db, _clock, handler, "Payments", payment.Id.ToString(), old, TransferState(payment), inserted ? AuditAction.Insert : AuditAction.Update);
+        return payment;
+    }
+
+    internal static object TransferState(Payment p) => new { p.BookingId, p.Type, p.Method, p.Amount, p.Status, p.BankRef,
+        p.ReviewedByEmployeeId, p.ReviewedAt, p.RejectReason };
+
+    internal static string RequireTransferReference(string? bankRef) => string.IsNullOrWhiteSpace(bankRef) || bankRef.Trim().Length > 100
+        ? throw new BookingException("Vui lòng nhập mã giao dịch chuyển tiền từ 1 đến 100 ký tự.") : bankRef.Trim();
+
+    internal async Task LockTransferBookingAsync(int id)
+    {
+        if (_db.Database.IsRelational())
+        {
+            var homeId = await _db.Bookings.Where(b => b.Id == id).Select(b => (int?)b.HomestayId).SingleOrDefaultAsync();
+            // Cùng thứ tự với đối soát: homestay trước, đơn sau; không giữ khóa ngược khi báo chủ.
+            if (homeId is int home) await _db.Homestays.Where(h => h.Id == home)
+                .ExecuteUpdateAsync(s => s.SetProperty(h => h.UpdatedAt, h => h.UpdatedAt));
+            await _db.Bookings.Where(b => b.Id == id).ExecuteUpdateAsync(s => s.SetProperty(b => b.Status, b => b.Status));
+        }
     }
 
     private static string RequireBankRef(string? bankRef) =>
