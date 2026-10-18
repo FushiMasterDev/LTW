@@ -1,0 +1,30 @@
+@model HomeIndexViewModel
+@{ var areas = Model.Areas.Select(a => new SelectListItem(a.Name, a.Id.ToString())).ToList(); }
+<section class="home-hero" data-autoplay="ambient" aria-labelledby="heroTitle">
+        <div class="home-hero__scene">
+            <div class="home-hero__camera">
+                <picture>
+                    <source media="(max-width: 767.98px)" srcset="/images/ai/hero-hanoi-mobile.webp" width="1080" height="1350" />
+                    <img class="home-hero__photo" src="~/images/ai/hero-hanoi.webp" alt="@L["Hồ nước và mái ngói Hà Nội trong sương bình minh, ảnh trang trí tạo bằng AI"]" width="2400" height="1350" fetchpriority="high" decoding="async" />
+                </picture>
+            </div>
+            <div class="container home-hero__content">
+                <div class="home-hero__copy">
+                    <span class="home-hero__badge"><icon name="geo-alt" /> @L["{0} homestay tại Hà Nội", Model.HomestayCount]</span>
+                    <h1 id="heroTitle"><span>@L["Ngủ giữa phố cổ,"]</span><span>@L["thức cùng"] <em>@L["Hà Nội"].</em></span></h1>
+                    <p>@L["Một chốn nghỉ giữa lòng Hà Nội. Chọn ngày, xem phòng trống và bắt đầu chuyến đi của bạn."]</p>
+                </div>
+                <div class="home-hero__search-depth">
+                    <div class="home-search">
+                        <partial name="_SearchBar" model="@(new SearchBarModel("home-search", areas, Variant: "hero"))" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <span class="home-hero__sentinel" aria-hidden="true"></span>
+        <p class="home-hero__credit">@L["Ảnh trang trí tạo bằng AI (ChatGPT)"]</p>
+        <button class="home-hero__motion btn btn-light-glass" type="button" data-motion-toggle aria-pressed="false" aria-label="@L["Tạm dừng"]"
+                data-pause="@L["Tạm dừng"]" data-resume="@L["Tiếp tục"]">
+            <icon name="pause-circle" /><span data-motion-label>@L["Tạm dừng"]</span>
+        </button>
+    </section>

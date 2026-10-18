@@ -657,6 +657,7 @@
 .fx-search .fx-guests__control { gap: .25rem; }
 .fx-search .fx-guests__control button { flex-basis: 2.75rem; border-color: transparent; }
 .fx-search .fx-dates > .form-text, .fx-search [data-date-error]:not(:empty) { position: absolute; left: 1.5rem; right: 1.5rem; top: calc(100% + .4rem); margin: 0; }
+.fx-search--hero .fx-dates > .form-text { top: calc(100% + 1.3rem); }
 .fx-search [data-date-error]:not(:empty) { top: calc(100% + 1.8rem); }
 .fx-search__submit { position: relative; z-index: 1; align-self: center; border-radius: var(--fx-radius-full); white-space: nowrap; }
 @media (min-width: 768px) and (max-width: 1199.98px) {
@@ -1009,6 +1010,7 @@
 /* Autoplay components are ordinary content until their controller is available. */
 .fx-motion-controls { display: none; align-items: center; justify-content: center; gap: .75rem; margin-block: 1.25rem; }
 .has-autoplay .fx-motion-controls { display: flex; }
+.fx-carousel .fx-motion-controls { margin-block: .75rem; }
 .fx-motion-controls .btn { min-width: 2.75rem; min-height: 2.75rem; display: inline-flex; gap: .5rem; align-items: center; justify-content: center; }
 .fx-carousel__stage { overflow: clip; padding: 1rem .5rem; }
 .fx-card-deck__cards { list-style: decimal; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1.5rem; padding: 0; margin: 0; counter-reset: fx-step; }
@@ -1021,7 +1023,8 @@
 .fx-photo-stack__photos { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .5rem; }
 .fx-photo-stack__photos a { display: block; min-width: 0; border-radius: var(--fx-radius-xl); overflow: hidden; }
 .fx-photo-stack__photos img { width: 100%; height: 100%; aspect-ratio: 4/3; object-fit: cover; }
-.fx-photo-stack .btn { color: inherit; border-color: currentColor; }
+.fx-photo-stack .fx-motion-controls { justify-content: flex-end; margin: .5rem 0 0; }
+.fx-photo-stack .btn { color: var(--fx-paper); border-color: currentColor; }
 .fx-gallery-block .fx-gallery { margin-bottom: 0; }
 .fx-gallery-block .fx-gallery > :nth-child(n+4) { display: block; }
 .fx-gallery-block:not(.is-enhanced) .fx-gallery { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); }

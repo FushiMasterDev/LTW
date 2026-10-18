@@ -8,17 +8,37 @@
         let index = 0, control, animation;
         const select = (next, animate = true) => {
             animation?.cancel();
+            cards.forEach(card => card.classList.remove('is-shuffling'));
             const old = cards[index];
             index = (next + cards.length) % cards.length;
             cards.forEach((card, i) => {
                 const depth = (i - index + cards.length) % cards.length;
                 card.style.setProperty('--fx-depth', depth);
+                card.dataset.depth = depth;
+                card.style.setProperty('--fx-deck-angle', `${depth === 1 ? -2.5 : depth === 2 ? 2.5 : 0}deg`);
                 card.style.zIndex = String(cards.length - depth);
                 if (i === index) card.setAttribute('aria-current', 'step'); else card.removeAttribute('aria-current');
             });
             choices.forEach((button, i) => { if (i === index) button.setAttribute('aria-current', 'step'); else button.removeAttribute('aria-current'); });
             if (animate && !FxMotion.reduced && old !== cards[index]) {
-                animation = old.animate([{ transform: 'translate3d(0,0,0) rotateX(0)' }, { transform: 'translate3d(0,-28px,60px) rotateX(-65deg)', offset: .45 }, { transform: 'translate3d(0,28px,-100px) rotateX(0)' }], { duration: FxMotion.duration('--fx-dur-5'), easing: getComputedStyle(root).getPropertyValue('--fx-ease-out').trim() });
+                const depth = Number(old.dataset.depth);
+                const duration = FxMotion.duration('--fx-dur-6') / 2;
+                const easing = getComputedStyle(root).getPropertyValue('--fx-ease-out').trim();
+                const behind = 'translate3d(0,-90px,-160px) rotateX(-20deg)';
+                const bottom = `translate3d(0,${depth * 52}px,${depth * -70}px) scale(${1 - depth * .035}) rotate(${depth === 1 ? -2.5 : 2.5}deg)`;
+                old.classList.add('is-shuffling');
+                old.style.zIndex = String(cards.length + 1);
+                animation = old.animate([
+                    { transform: 'translate3d(0,0,0) rotateX(0)' },
+                    { transform: 'translate3d(0,-72px,100px) rotateX(-65deg)', offset: .6 },
+                    { transform: behind }
+                ], { duration, easing });
+                // Change stacking only after the outgoing card has lifted clear of the deck.
+                animation.onfinish = () => {
+                    old.style.zIndex = String(cards.length - depth);
+                    old.classList.remove('is-shuffling');
+                    animation = old.animate([{ transform: behind }, { transform: bottom }], { duration, easing });
+                };
             }
             control?.reset();
         };
@@ -30,7 +50,7 @@
             if (!['ArrowLeft','ArrowRight'].includes(event.key)) return;
             event.preventDefault(); select(index + (event.key === 'ArrowRight' ? 1 : -1));
         });
-        document.addEventListener('fx:motionchange', () => { if (FxMotion.reduced) animation?.cancel(); });
+        document.addEventListener('fx:motionchange', () => { if (FxMotion.reduced) select(index, false); });
         select(0, false);
     });
 })();

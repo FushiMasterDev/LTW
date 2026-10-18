@@ -244,3 +244,66 @@ Không đổi palette/font. Các cặp phát sinh khi đặt điều khiển/ch�
 ### Cần người dùng quyết định
 
 Không có quyết định nghiệp vụ mới cần chốt. Không đề xuất/thêm thư viện. Điểm kiểm thử còn giới hạn: tab ẩn thật và thao tác trên điện thoại vật lý chưa được xác minh ngoài mô phỏng; có thể kiểm thêm trên thiết bị khi nghiệm thu, không đổi hành vi hoặc nghiệp vụ để né giới hạn công cụ.
+
+## 03y2 – sửa sau review (19/10/2026)
+
+Bắt đầu từ `6eeed0e`, giữ nhánh `feature/foundation`. Sửa đúng bốn lỗi thị giác được giao, dùng ảnh đã có; không thay nghiệp vụ, controller, Services, Data, Entities, migration, font, palette hay thư viện. Không bắt đầu bước 04.
+
+### Lỗi, nguyên nhân gốc và kết quả
+
+Các đường dẫn mã dưới đây tính từ `HomestayBooking.Web/`. Tất cả bốn lỗi đều đã sửa, không có lỗi được giữ lại.
+
+| Lỗi → nguyên nhân gốc | Đã sửa / không sửa | File đã đổi | Ảnh chụp lại 1280 sáng / tối |
+|---|---|---|---|
+| Hero tối: scrim dọc 64–92% phủ toàn ảnh; gợi ý ngày neo theo ô ngày nên chạm mép pill | **Đã sửa.** Scrim ngang tập trung vùng chữ trái, scrim dưới bảo vệ thanh tìm; vùng Tháp Rùa/bầu trời bên phải không có scrim ngang. Tablet phủ rộng hơn vì đoạn chữ chiếm nhiều chiều ngang; mobile 72→67%, nhẹ hơn lớp cũ ở vùng chữ. Đẩy gợi ý xuống khỏi mép pill, không thêm hộp/bóng chữ. Tách hero thành partial để UI Kit dùng đúng component thật | `Views/Shared/_HomeHero.cshtml`, `Views/Home/Index.cshtml`, `wwwroot/css/layout-public.css`, `wwwroot/css/components.css`, `Views/Dev/UiKit.cshtml` | `/private/tmp/fuji-03y2-fix/hero-light-1280.png`, `hero-dark-1280.png` |
+| Khu vực nhỏ/trống: khung 13×18rem, vòng quay góc lớn khiến thẻ bên gần cạnh nhìn; stage 28rem và lề section quá rộng | **Đã sửa.** Cung tròn 3D nông, năm thẻ nhìn rõ, mờ dần theo chiều sâu. 1280: thẻ trước **336×448px (21rem, 3:4)**, section **795px**. 768: thẻ 288×384px, section 782px, thấy 3–5 thẻ; 375: thẻ **270px =72vw**, coverflow ±35°, section 779px. Caption chỉ ở thẻ trước; link thật/Tab đưa thẻ ra trước vẫn giữ | `wwwroot/js/motion/carousel-3d.js`, `wwwroot/css/motion.css`, `wwwroot/css/components.css`, `wwwroot/css/layout-public.css`, `Views/Dev/UiKit.cshtml` | `/private/tmp/fuji-03y2-fix/area-light-1280.png`, `area-dark-1280.png` |
+| Bộ bài phẳng: mỗi lớp chỉ lệch 16px, opacity .35 làm mất lớp; thẻ bay bị hạ z-index trước khi được nhấc lên | **Đã sửa.** Ba lớp lệch 52px/lớp, Z giảm 70px/lớp, scale giảm, xoay −2.5°/+2.5°, hai sắc nền từ token. Thẻ trước cao tối thiểu 16rem, nhóm danh sách/điều khiển căn theo thẻ trước. Xào hai chặng trong cùng nhịp 1.2s: nhấc/lật, rồi đổi lớp/hạ xuống đáy. Chỉ giữ chữ thẻ trước (và thẻ đang bay); fallback vẫn đủ ba nội dung. Thu khoảng cách tới khối kế; mobile xếp dọc, không tràn | `wwwroot/js/motion/card-deck.js`, `wwwroot/css/motion.css`, `wwwroot/css/layout-public.css`, `Views/Dev/UiKit.cshtml` | `/private/tmp/fuji-03y2-fix/deck-light-1280.png`, `deck-dark-1280.png`; `deck-shuffle.png` ghi giữa động tác |
+| Đối tác: ba ảnh cùng cỡ gần trùng nhau, keyframe cuối kéo cả ba về cùng transform; CTA là flex item riêng nên rớt xuống xa đoạn chữ | **Đã sửa.** Ảnh rộng 72% vùng ảnh, lệch x/y/Z riêng, xoay −6°/6°/0°; keyframe giữ độ xòe ở cả hai đầu và lệch pha như cũ. Nút dừng nằm sát góc dưới phải vùng ảnh, chữ trắng trên photo-glass. CTA nằm trong nhóm chữ, cách đoạn văn 1.5rem; grid hai cột căn giữa, mobile một cột | `wwwroot/css/motion.css`, `wwwroot/css/components.css`, `wwwroot/css/layout-public.css`, `Views/Home/Index.cshtml`, `Views/Dev/UiKit.cshtml` | `/private/tmp/fuji-03y2-fix/partner-light-1280.png`, `partner-dark-1280.png` |
+
+Các sửa hình học dùng chính class của `_AreaCarousel`, `_CardDeck`, `_PhotoStack`, áp dụng cả Home và UI Kit; không thêm nhánh CSS vá theo route. UI Kit thêm hero dùng chung, mẫu carousel năm thẻ và ba ảnh có sẵn khác nhau để nhìn được độ xòe.
+
+### Tương phản hero theo pixel ảnh thực
+
+Đo trên Chromium qua playwright-cli, viewport cao 800px, ảnh WebP nén được trình duyệt chọn qua `currentSrc`. Cho máy quay chạy rồi pause/seek CSS animation tại **0/6/12/18/24 giây** (bao gồm hai đầu scale/rotate), giữ nguyên scrim và bố cục. Dùng DOM Range lấy từng dòng văn bản; tạm ẩn màu chữ khi chụp để lấy pixel nền thực nằm dưới chữ. Tính luminance sRGB/WCAG trên **mọi pixel trong từng hình chữ nhật dòng chữ**, lấy tỷ lệ nhỏ nhất so với màu chữ computed. Đây là cách đo bảo thủ, gồm cả khoảng trống quanh glyph; không suy luận từ nền trắng giả định và không dựa vào text-shadow.
+
+| Rộng / theme | Chữ trắng tiêu đề (min hai dòng) | Cụm cam “Hà Nội.” | Câu phụ | Gợi ý tính theo đêm |
+|---|---:|---:|---:|---:|
+| 375 sáng | 7.46:1 | **4.66:1** | 9.91:1 | 5.25:1 |
+| 375 tối | 7.46:1 | **4.66:1** | 9.91:1 | 8.40:1 |
+| 768 sáng | 8.87:1 | 5.60:1 | 8.91:1 | 13.03:1 |
+| 768 tối | 8.87:1 | 5.60:1 | 8.91:1 | 13.03:1 |
+| 1280 sáng | 10.71:1 | 5.39:1 | 10.58:1 | 12.75:1 |
+| 1280 tối | 10.71:1 | 5.39:1 | 10.58:1 | 12.75:1 |
+
+Các số là min của cả năm thời điểm. Mobile gợi ý nằm trong surface của form, dùng muted theo theme; desktop/tablet gợi ý nằm trên ảnh, dùng paper. Đo thêm ảnh tĩnh không máy quay (reduce): cụm cam đạt **4.75 / 5.56 / 5.41:1** tại 375/768/1280, chữ trắng đạt ít nhất 8.43:1. Không đổi token màu hoặc tạo/nén lại ảnh. Dữ liệu, tọa độ/RGB pixel xấu nhất, script và ảnh nền đo ở `/private/tmp/fuji-03y2-fix/contrast.json`, `contrast-static.json`, `contrast.js`, `contrast.py`, `pixels-*.png`.
+
+### Kiểm tra và bằng chứng
+
+- `dotnet build HomestayBooking.sln -c Release -p:UseSharedCompilation=false`: 0 lỗi, 0 warning. `dotnet test HomestayBooking.sln -c Release --no-build`: **1597 đạt, 1 bỏ qua, 0 lỗi**; skip là `StaffAvailabilityAndDatedSearchStayWithinTargets` theo cấu hình sẵn có. Log `build-final.log`, `test-final.log` trong thư mục artifact.
+- Trang chủ: 375/768/1280 × sáng/tối, mỗi khối đã được để tự chạy hơn một nhịp 4s trước chụp; không lỗi JS, không ảnh hỏng, không tràn ngang. 6 ảnh toàn trang `home-{light,dark}-{375,768,1280}.png` và 24 ảnh khối `{hero,area,deck,partner}-{light,dark}-{375,768,1280}.png`, tất cả ở `/private/tmp/fuji-03y2-fix/`. `shots-final.log`, `deck-proof.log` ghi kích thước/trạng thái.
+- Reduce và không JS: **12 cấu hình**, mỗi cấu hình chụp đủ bốn khối (48 ảnh). Đủ **7 khu vực / 3 bước / 3 ảnh**, **0 animation chạy, 0 transform không gian, 0 tràn ngang**. Ảnh `{reduce,nojs}-{hero,area,deck,partner}-{light,dark}-{375,768,1280}.png`; kết quả `fallbacks.log`. Với no-JS tối, harness đặt data-bs-theme vào HTML trả về vì script đọc localStorage không chạy; không sửa app để phục vụ phép thử.
+- Bật reduce ngay giữa động tác xào: enhanced=false, shuffling=0, transform không gian=0; `reduce-mid-shuffle.log` xác nhận lớp tạm được dọn.
+- UI Kit đăng nhập QL001: 24 ảnh `uikit-{hero,area,deck,photos}-{light,dark}-{375,768,1280}.png`; **0 lỗi JS / 0 tràn ngang**, mẫu băng chuyền đủ năm thẻ. Log `uikit.log`.
+- Inspector **nguyên bản**, `/` tại 375/768/1280: **0 FAIL, 2 WARN**. Giữ đúng các ngoại lệ 03y-D đã chốt; không miễn covered-text, overflow, headline-lines hay text-shadow. Hai WARN giữ nguyên phạm vi: số cỡ chữ của hệ UI và no-footage (yêu cầu dùng ảnh hiện có). Bằng chứng `inspect-verified/report.json`, `inspect-verified.log`.
+- `node --check` hai module JS và `git diff --check` sạch; Views không có `style="`. Không thêm màu literal ngoài tokens, thư viện, chuyển động theo chuột/cuộn, hay animation thuộc tính ngoài transform/opacity. Rà các file thay đổi theo [Web Interface Guidelines](https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md): link/nút thật, label/alt/focus/bàn phím, nút dừng đủ vùng bấm 44px; không có lỗi mức cao mới trong bốn khối.
+
+- Điều khiển đã thử: Tạm dừng/Tiếp tục, hover/focus dừng trên carousel/deck/photo stack; Tab qua đủ bảy link khu vực đều ra trước với opacity=1 và aria-current; mũi tên và chọn bước thứ ba đúng. `interactions-final.log`, `deck-proof.log`, `deck-shuffle.png` là bằng chứng. Khi giảm khoảng cách section, có vị trí hai khối lân cận vẫn giao viewport nên bộ điều khiển chủ động giữ bộ bài theo giới hạn hai khối; đã giữ luật này, cuộn bộ bài vào vùng chạy và xác nhận tự chuyển sang bước 2 ở cả sáu cấu hình trước chụp.
+
+### CLS và frame khi đứng yên
+
+Đo bản Release trên cổng 5012, Chromium 1280×800, sau khi test/build/inspector và các lượt chụp khác kết thúc. Mỗi khối × mỗi theme đứng yên **15 giây** sau khi ổn định; PerformanceObserver layout-shift (buffered, bỏ hadRecentInput), long-animation-frame, cùng rAF đo khoảng cách frame. Bộ bài được đặt trong vùng thật sự được bộ điều khiển cấp chạy.
+
+| Khối | Frame sáng / tối | CLS sáng / tối | Frame lớn nhất sáng / tối | Frame >50ms sáng / tối |
+|---|---:|---:|---:|---:|
+| Hero | 900 / 901 | 0 / 0 | 16.8 / 16.8ms | 0 / 0 |
+| Khu vực | 900 / 900 | 0 / 0 | 16.8 / 16.8ms | 0 / 0 |
+| Bộ bài | 900 / 900 | 0 / 0 | 16.8 / 16.8ms | 0 / 0 |
+| Đối tác | 900 / 900 | 0 / 0 | 16.8 / 16.8ms | 0 / 0 |
+
+Tổng **7201 frame**, không có long-animation-frame; mỗi mẫu có 1–2 khối đang chạy. Đây là số đo trên máy kiểm thử, không suy rộng thành bảo đảm cho mọi thiết bị. Script `performance.js`, dữ liệu `performance.json`/`performance.log`, trace `performance-trace.zip` đều tại `/private/tmp/fuji-03y2-fix/`, không commit artifact.
+
+### Cần người dùng quyết định
+
+Không có quyết định nghiệp vụ mới cần chốt; không có lỗi nào trong bốn lỗi bị bỏ qua. Giữ giới hạn tối đa hai khối tự chạy và các ngoại lệ inspector đã chốt. Các thao tác chạm và kích thước điện thoại dùng Chromium emulation, chưa kiểm trên điện thoại vật lý.
+
+App kiểm thử riêng 5012 được dừng bằng đúng PID khi hoàn tất; không tắt app 5011, không dừng/xóa container `sql-homestay`. Một commit `fix(ui): sửa lỗi review bước 03y2`, không đổi nhánh, không push, không bắt đầu bước 04.

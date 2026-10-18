@@ -33,6 +33,7 @@
     };
 }
 @section Head {
+    <link rel="stylesheet" href="~/css/layout-public.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/lib/flatpickr/flatpickr.min.css" />
     <link rel="stylesheet" href="~/css/dev-uikit.css" asp-append-version="true" />
 }
@@ -420,11 +421,15 @@
     </ul>
 </section>
 
+<section class="uikit-section" id="hero-sample">
+    <h2>Hero: lớp phủ theo vùng chữ, ảnh có sẵn</h2>
+    <partial name="_HomeHero" model="new HomeIndexViewModel()" />
+</section>
 <section class="uikit-section" id="autoplay-samples">
     <h2>3D tự chạy: khu vực, bộ bài, gallery lập phương, chồng ảnh thật</h2>
-    <partial name="_AreaCarousel" model='new AreaCarouselModel(new[] { new AreaCardModel(1, "Nội thành", 0, "/images/demo/veranda-garden.webp"), new AreaCardModel(2, "Ngoại thành", 0, "/images/demo/veranda-garden.webp"), new AreaCardModel(3, "Tỉnh khác", 0, "/images/demo/veranda-garden.webp") })' />
+    <partial name="_AreaCarousel" model='new AreaCarouselModel(new[] { new AreaCardModel(1, "Nội thành", 0, "/images/demo/veranda-garden.webp"), new AreaCardModel(2, "Ngoại thành", 0, "/images/demo/veranda-garden.webp"), new AreaCardModel(3, "Tỉnh khác", 0, "/images/demo/veranda-garden.webp"), new AreaCardModel(4, "Ba Đình mẫu", 0, "/images/demo/veranda-garden.webp"), new AreaCardModel(5, "Tây Hồ mẫu", 0, "/images/demo/veranda-garden.webp") })' />
     <partial name="_CardDeck" model='new CardDeckModel(new[] { new MotionStep("Chọn phòng và ngày", "Xem phòng trống."), new MotionStep("Đặt và giữ phòng", "Đăng ký bằng số điện thoại."), new MotionStep("Quét QR đặt cọc 30%", "Theo dõi trạng thái đơn.") })' />
-    <partial name="_PhotoStack" model='new PhotoStackModel(new[] { new FeaturedHomestay(1, "Ảnh minh họa UI Kit", "", "/images/demo/veranda-garden.webp", null, null, 0), new FeaturedHomestay(2, "Ảnh minh họa UI Kit", "", "/images/demo/veranda-garden.webp", null, null, 0), new FeaturedHomestay(3, "Ảnh minh họa UI Kit", "", "/images/demo/veranda-garden.webp", null, null, 0) })' />
+    <partial name="_PhotoStack" model='new PhotoStackModel(new[] { new FeaturedHomestay(1, "Ảnh minh họa UI Kit", "", "/images/demo/veranda-garden.webp", null, null, 0), new FeaturedHomestay(2, "Ảnh minh họa UI Kit", "", "/images/demo/bright-living.webp", null, null, 0), new FeaturedHomestay(3, "Ảnh minh họa UI Kit", "", "/images/demo/dining-window.webp", null, null, 0) })' />
     <p>Gallery ở mục Gallery phía trên dùng cùng module lập phương. Mẫu này chỉ để kiểm tra component.</p>
 </section>
 
