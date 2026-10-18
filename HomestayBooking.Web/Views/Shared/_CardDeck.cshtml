@@ -1,0 +1,18 @@
+@model CardDeckModel
+<div class="fx-card-deck" data-card-deck role="region" aria-label="@L["Đặt phòng trong 3 bước"]">
+    <ol class="fx-card-deck__cards">
+        @for (var i = 0; i < Model.Steps.Count; i++)
+        {
+            <li data-deck-card tabindex="0"><h3>@Model.Steps[i].Title</h3><p>@Model.Steps[i].Text</p></li>
+        }
+    </ol>
+    <div class="fx-card-deck__side">
+        <ol class="fx-card-deck__list">
+            @for (var i = 0; i < Model.Steps.Count; i++)
+            {
+                <li><button type="button" data-deck-select="@i">@Model.Steps[i].Title</button></li>
+            }
+        </ol>
+        <partial name="_MotionControls" model="true" />
+    </div>
+</div>

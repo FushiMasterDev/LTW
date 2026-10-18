@@ -134,16 +134,20 @@ document.querySelectorAll('[data-sidebar-collapse]').forEach(btn =>
 (() => {
     const modalEl = document.getElementById('lightbox');
     if (!modalEl || !window.bootstrap) return;
-    const items = [...document.querySelectorAll('[data-lightbox-src]')];
+    const items = [...document.querySelectorAll('[data-lightbox-src]')].map(item => ({ src: item.dataset.lightboxSrc, alt: item.dataset.lightboxAlt }));
     const view = modalEl.querySelector('[data-lightbox-view]');
     const counter = modalEl.querySelector('[data-lightbox-counter]');
+    // Keep the modal outside the page entrance's transform stacking context.
+    document.body.append(modalEl);
     const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
     let index = 0, opener = null;
     fxBindModalDismiss(modalEl, () => opener?.focus());
     const show = n => {
+        const previous = index;
         index = (n + items.length) % items.length;
-        view.src = items[index].dataset.lightboxSrc;
-        view.alt = items[index].dataset.lightboxAlt || '';
+        const source = items[index];
+        if (window.FxCube && modalEl.classList.contains('show')) FxCube.turn(view, source.src, source.alt || '', n < previous ? -1 : 1);
+        else { view.src = source.src; view.alt = source.alt || ''; }
         counter.textContent = `${index + 1} / ${items.length}`;
     };
     document.addEventListener('click', e => {
@@ -201,7 +205,7 @@ $(document).on('change', 'form[data-date-range] input[name="CheckIn"]', function
 
 // Chỉ các trang có gallery mới nhận hành vi này.
 document.querySelectorAll('[data-gallery]').forEach(gallery => gallery.addEventListener('keydown', event => {
-    if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    if (gallery.closest('[data-cube-gallery]') || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
     const buttons = [...gallery.querySelectorAll('button[data-lightbox-src]')], index = buttons.indexOf(document.activeElement);
     if (index < 0) return; event.preventDefault();
     buttons[(index + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length].focus();

@@ -2,16 +2,18 @@
 @{ var shown = Math.Min(3, Model.Images.Count); }
 @if (shown > 0)
 {
-    <div class="fx-gallery mb-4" data-count="@shown" data-gallery>
-        @for (var i = 0; i < shown; i++)
+    <div class="fx-gallery-block mb-4" data-cube-gallery role="region" aria-label="@Model.Name">
+    <div class="fx-gallery" data-count="@shown" data-gallery>
+        @for (var i = 0; i < Model.Images.Count; i++)
         {
             <button type="button" class="fx-gallery__item" data-lightbox-src="@Model.Images[i]" data-lightbox-index="@i" data-lightbox-alt="@L["Ảnh {0} của {1}", i + 1, Model.Name]" aria-label="@L["Xem ảnh {0} trên {1}", i + 1, Model.Images.Count]">
                 <span class="fx-gallery__fallback" aria-hidden="true"><icon name="images" /> @L["Chưa có ảnh"]</span>
-                <img src="@(i == 0 ? Model.Images[i] : Model.Images[i].Thumbnail())" alt="" width="960" height="640" loading="@(i == 0 ? "eager" : "lazy")" />
+                <img src="@(i == 0 ? Model.Images[i] : Model.Images[i].Thumbnail())" alt="" width="960" height="640" decoding="async" loading="@(i == 0 ? "eager" : "lazy")" />
                 @if (i == shown - 1 && Model.Images.Count > shown) { <span class="fx-gallery__more">@L["+{0} ảnh", Model.Images.Count - shown]</span> }
             </button>
         }
-        @for (var i = shown; i < Model.Images.Count; i++) { <span hidden data-lightbox-src="@Model.Images[i]" data-lightbox-index="@i" data-lightbox-alt="@L["Ảnh {0} của {1}", i + 1, Model.Name]"></span> }
+    </div>
+    @if (Model.Images.Count > 1) { <partial name="_MotionControls" model="true" /> }
     </div>
     <div class="modal fade lightbox" id="lightbox" tabindex="-1" aria-labelledby="lightboxTitle" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content">

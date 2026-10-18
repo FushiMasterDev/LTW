@@ -54,11 +54,13 @@ Mọi mẫu dùng chung phải có partial/Tag Helper và xuất hiện trong `/
 
 ## Chuyển động
 
-Dùng easing `--fx-ease-out`, thời lượng `--fx-dur-1` … `--fx-dur-6` (150/250/350/500/800/1200ms), stagger 70ms, perspective 1000px. Phản hồi form/nút vẫn ngắn; vào trang 700ms, reveal 800ms, Ken Burns 20s. Chỉ animate transform/opacity, kính mờ khi cần; không animate bố cục, không `transition: all`.
+Dùng easing `--fx-ease-out`, thời lượng `--fx-dur-1` … `--fx-dur-6` (150/250/350/500/800/1200ms), stagger 70ms và `--fx-perspective`. Phản hồi form/nút vẫn ngắn; vào trang 700ms, reveal một lần 800ms. Chỉ animate transform/opacity; không animate bố cục hay dùng `transition: all`.
 
-Trang khách có chiều sâu: hero ba lớp nghiêng tối đa 3°, ảnh Ken Burns/parallax; thẻ khu vực 8°, thẻ homestay 4°, reveal một lần; bước đặt phòng tách từ chồng 3D, cam kết lật nhẹ, khối đối tác mở theo cuộn, FLIP lightbox. Pointermove gộp rAF, observer dùng chung, will-change chỉ khi tương tác; dừng vòng lặp khi ẩn tab/ra khỏi hero.
+Ảnh tự chuyển động theo thời gian: hero và cột đăng nhập dùng máy quay 3D scale 1.05–1.15, rotateX/Y ±1°, vòng `--fx-loop-slow` 24s đảo chiều. Khu vực từ ba thẻ dùng vòng 3D, điện thoại coverflow vuốt được; bộ bài ba bước tự xào; gallery lật lập phương mỗi `--fx-dwell` 4s; chồng tối đa ba ảnh homestay thật trôi lệch pha; icon cam kết xoay lệch nhịp. Lightbox giữ FLIP khi mở/đóng và chỉ lật lập phương khi người dùng chuyển ảnh. Không có chuyển động theo chuột hay theo tiến độ cuộn. Hover thẻ homestay chỉ nâng 4px, bóng lift và zoom ảnh 1.06.
 
-Dashboard chỉ stagger thẻ, count-up 800ms giữ giá trị cuối trong HTML, sidebar trượt viên chọn, Chart.js 800ms. Không 3D/parallax ở dashboard.
+`autoplay.js` dùng observer của FxMotion, một đồng hồ rAF chung, tối đa hai khối chạy trong màn hình. Mỗi khối có nút Tạm dừng/Tiếp tục; dừng khi khuất, ẩn tab, hover bằng chuột hoặc focus bên trong. Băng chuyền/bộ bài/gallery có trước–sau, phím mũi tên, aria-current và focus đưa thẻ ra trước. Không dùng aria-live cho tự chạy. Reduce hoặc không JS: lưới/danh sách phẳng đủ nội dung, không tự chạy hay 3D. will-change chỉ bật khi khối đang chạy.
+
+Dashboard chỉ stagger thẻ, count-up 800ms giữ giá trị cuối trong HTML, sidebar trượt viên chọn, Chart.js 800ms. Không có 3D tự chạy ở dashboard.
 
 Không JS vẫn thấy nội dung. Ẩn reveal chỉ khi script head và lớp khởi tạo observer sẵn sàng. `prefers-reduced-motion` tắt mọi chuyển động không gian, reveal hiện ngay, chỉ giữ opacity/đổi màu ≤200ms. Touch không nghiêng, parallax và chồng thẻ nhẹ hơn. Các nhóm motion có fallback tương ứng trong `motion.css`.
 

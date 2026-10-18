@@ -2195,4 +2195,9 @@
   <data name="Dừng chuyển động" xml:space="preserve"><value>Pause motion</value></data>
   <data name="Bật chuyển động" xml:space="preserve"><value>Resume motion</value></data>
   <data name="Xem tất cả" xml:space="preserve"><value>View all</value></data>
+  <data name="Tạm dừng" xml:space="preserve"><value>Pause</value></data>
+  <data name="Tiếp tục" xml:space="preserve"><value>Resume</value></data>
+  <data name="Trước" xml:space="preserve"><value>Previous</value></data>
+  <data name="Sau" xml:space="preserve"><value>Next</value></data>
+  <data name="Homestay của đối tác" xml:space="preserve"><value>Partner homestays</value></data>
 </root>

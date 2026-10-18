@@ -25,7 +25,7 @@
 }
 
 @section Hero {
-    <section class="home-hero" aria-labelledby="heroTitle">
+    <section class="home-hero" data-autoplay="ambient" aria-labelledby="heroTitle">
         <div class="home-hero__scene">
             <div class="home-hero__camera">
                 <img class="home-hero__photo" src="~/images/hero-hoan-kiem.jpg"
@@ -47,9 +47,9 @@
         </div>
         <span class="home-hero__sentinel" aria-hidden="true"></span>
         <p class="home-hero__credit">@L["Ảnh"]: <a href="https://commons.wikimedia.org/wiki/File:Hoan_Kiem_Lake_in_the_morning,_September_2014.jpeg" target="_blank" rel="noopener">Prof MK</a>, @L["phạm vi công cộng"]</p>
-        <button class="home-hero__motion btn btn-light-glass" type="button" data-motion-toggle aria-pressed="false"
-                data-pause="@L["Dừng chuyển động"]" data-resume="@L["Bật chuyển động"]">
-            <icon name="pause-circle" /><span data-motion-label>@L["Dừng chuyển động"]</span>
+        <button class="home-hero__motion btn btn-light-glass" type="button" data-motion-toggle aria-pressed="false" aria-label="@L["Tạm dừng"]"
+                data-pause="@L["Tạm dừng"]" data-resume="@L["Tiếp tục"]">
+            <icon name="pause-circle" /><span data-motion-label>@L["Tạm dừng"]</span>
         </button>
     </section>
 }
@@ -62,12 +62,7 @@
         </div>
         <a class="btn btn-link" asp-controller="Homestays" asp-action="Index">@L["Xem tất cả"] <icon name="arrow-right" /></a>
     </div>
-    <div class="fx-area-grid">
-        @foreach (var area in Model.Areas)
-        {
-            <partial name="_AreaCard" model="@(new AreaCardModel(area.Id, area.Name, area.HomestayCount, area.CoverUrl))" />
-        }
-    </div>
+    <partial name="_AreaCarousel" model="@(new AreaCarouselModel(Model.Areas.Select(area => new AreaCardModel(area.Id, area.Name, area.HomestayCount, area.CoverUrl)).ToList()))" />
     <p class="home-areas__note">@L["Đang có {0} homestay với {1} phòng ở {2} khu vực của Hà Nội. Không chọn ngày thì hiện mọi homestay.", Model.HomestayCount, Model.RoomCount, Model.Areas.Count]</p>
 </section>
 
@@ -92,7 +87,7 @@
     </section>
 }
 
-<section class="container home-section home-promises" aria-labelledby="promisesTitle">
+<section class="container home-section home-promises" data-autoplay="ambient" aria-labelledby="promisesTitle">
     <h2 id="promisesTitle">@L["Cam kết khi đặt qua Fuji"]</h2>
     <ul class="home-promises__list">
         @foreach (var p in promises)
@@ -106,19 +101,12 @@
             </li>
         }
     </ul>
+    <partial name="_MotionControls" model="false" />
 </section>
 
 <section class="container home-section home-steps" aria-labelledby="stepsTitle">
     <h2 id="stepsTitle">@L["Đặt phòng trong 3 bước"]</h2>
-    <ol class="home-steps__list">
-        @foreach (var step in steps)
-        {
-            <li>
-                <h3>@step.Title</h3>
-                <p>@step.Text</p>
-            </li>
-        }
-    </ol>
+    <partial name="_CardDeck" model="@(new CardDeckModel(steps.Select(step => new MotionStep(step.Title, step.Text)).ToList()))" />
 </section>
 
 <div class="container home-section">
@@ -127,6 +115,7 @@
         <h2 id="partnerTitle">@L["Có homestay ở Hà Nội?"]</h2>
         <p>@L["Gửi hồ sơ đối tác trực tuyến. Nhân viên Fuji thẩm định trong 3 ngày làm việc."]</p>
     </div>
+    <partial name="_PhotoStack" model="@(new PhotoStackModel(Model.Featured))" />
     <a class="btn btn-brand btn-lg" asp-controller="Partner" asp-action="Index">@L["Trở thành đối tác"]</a>
 </section>
 </div>

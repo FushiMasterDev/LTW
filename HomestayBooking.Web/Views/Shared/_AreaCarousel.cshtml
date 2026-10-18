@@ -1,0 +1,7 @@
+@model AreaCarouselModel
+<div class="fx-carousel" data-carousel-3d role="region" aria-label="@L["Khám phá khu vực"]">
+    <div class="fx-carousel__stage"><div class="fx-area-grid fx-carousel__ring">
+        @foreach (var area in Model.Areas) { <partial name="_AreaCard" model="area" /> }
+    </div></div>
+    @if (Model.Areas.Count >= 3) { <partial name="_MotionControls" model="true" /> }
+</div>

@@ -76,3 +76,8 @@ public record RoomOptionModel(RoomTypeOffer Offer, HomestaySearchQuery Query);
 
 /// <summary>Đánh giá công khai đã có, tên có thể trống khi service không nạp người viết.</summary>
 public record ReviewCardModel(int Rating, DateTime CreatedAt, string? Comment, string? Reply, string? Name = null);
+
+public record MotionStep(string Title, string Text);
+public record CardDeckModel(IReadOnlyList<MotionStep> Steps);
+public record AreaCarouselModel(IReadOnlyList<AreaCardModel> Areas);
+public record PhotoStackModel(IReadOnlyList<FeaturedHomestay> Homes);

@@ -22,7 +22,7 @@
         listeners.get(element).add({ callback, once });
         observer.observe(element);
     };
-    const duration = name => parseFloat(getComputedStyle(root).getPropertyValue(name)) || 0;
+    const duration = name => { const value = getComputedStyle(root).getPropertyValue(name).trim(); return (parseFloat(value) || 0) * (value.endsWith('ms') ? 1 : 1000); };
     window.FxMotion = { observe, duration, get reduced() { return preference.matches || !root.classList.contains('fx-motion'); } };
     const reveal = entry => {
         if (!entry.isIntersecting) return;
@@ -31,7 +31,7 @@
     };
     const publicPage = document.body.classList.contains('site-public');
     const selector = publicPage
-        ? '.home-section__head h2, .home-section__head p, .home-section__head > a, .fx-area-card, .fx-homestay-card, .home-steps > h2, .home-steps__list > li, .home-promises > h2, .home-promises__list > li, .home-partner > *, .stay-section > h2, .stay-room, .fx-review-card, .fx-stepper, .booking-head, .partner-intro > h1, .partner-intro > p'
+        ? '.home-section__head h2, .home-section__head p, .home-section__head > a, .fx-area-grid:not(.fx-carousel__ring) .fx-area-card, .fx-homestay-card, .home-steps > h2, .home-steps__list > li, .home-promises > h2, .home-promises__list > li, .home-partner > *, .stay-section > h2, .stay-room, .fx-review-card, .fx-stepper, .booking-head, .partner-intro > h1, .partner-intro > p'
         : '.fx-stat';
     const elements = [...document.querySelectorAll(selector)];
     let statIndex = 0;
