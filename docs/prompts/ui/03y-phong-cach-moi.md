@@ -4,6 +4,8 @@
 >
 > Ngày 18/10/2026, người dùng chốt đổi nhận diện giao diện sang phong cách của bản mẫu Lovable https://lua-ivory-forest-capture.lovable.app, kèm nhiều chuyển động, ưu tiên **3D tự chạy** (ảnh tự chuyển động, không đi theo chuột). Quyết định này **thay thế** các luật cũ: "không đổi màu, font, bo góc", "chỉ một màu nhấn", "không scroll reveal", "thời lượng 0.06–0.45s" (DESIGN.md và `decisions.md` 02-D, 02x, 03-1). Tên thương hiệu vẫn là **Fuji Homestay**; "Lúa" chỉ là tên bản mẫu.
 
+> **Ghi chú 18/10, sau khi Codex đã chạy bước này:** mục 4 (3D tự chạy, không theo chuột) và mục 5 (ảnh trang trí do ChatGPT tạo) đã được viết lại. Phần chênh so với code đã commit làm ở `03y2-3d-tu-chay-anh-ai.md`.
+
 Đọc trước:
 - `docs/prompts/ui-rebuild.md`, `DESIGN.md`, `docs/ui/decisions.md`, `docs/ui/03-trang-khach-report.md`.
 - `/Dev/UiKit` (đăng nhập `QL001` / `Fuji@2026` ở `/Account/EmployeeLogin`).
@@ -103,7 +105,7 @@ Sửa ở component, partial, Tag Helper và CSS dùng chung. Không vá riêng 
 
 **Ảnh khu vực:**
 - Thêm `CoverUrl` (có thể null) vào `AreaSummary`. Lấy ảnh bìa của một homestay đang hoạt động trong khu vực đó ngay trong truy vấn có sẵn của `HomeController`.
-- Không có ảnh thì dùng thẻ chữ trên nền xanh rừng.
+- Không có ảnh thì dùng ảnh AI dự phòng theo nhóm khu vực (mục 5).
 - Không thêm service, không sửa Services/Data/Entities/migration.
 
 ## 4. Chuyển động (nhóm C)
@@ -180,9 +182,35 @@ Các thời lượng cũ (0.06–0.45s) giữ cho phản hồi nút và form.
   - số và giá chỉ lấy từ dữ liệu thật.
 - **Ảnh:**
   - **Không lấy ảnh của bản mẫu** (không rõ giấy phép).
-  - Ảnh homestay lấy từ dữ liệu.
-  - Ảnh trang trí: CC0 hoặc public domain, tối đa 4 ảnh, lưu ở `wwwroot/images/`, ghi nguồn vào `docs/ui/credits.md`.
-  - Fuji bán phòng ở Hà Nội, nên hero là cảnh Hà Nội: giữ ảnh Hoàn Kiếm hoặc tìm ảnh rộng hơn, hợp lệ.
+  - **Ảnh homestay, phòng, gallery, thẻ homestay, ảnh trong khối đối tác vẫn lấy từ dữ liệu.** Không dùng ảnh tạo bằng AI để giả làm phòng hay homestay đang bán, vì khách sẽ đặt phòng dựa trên ảnh đó.
+  - **Ảnh trang trí do ChatGPT tự tạo** (quyết định 18/10, thay luật "chỉ CC0/public domain, tối đa 4 ảnh" của 03-1). Dùng công cụ tạo ảnh của phiên Codex/ChatGPT. Danh sách ảnh cần tạo:
+
+    | Ảnh | Dùng ở | Nội dung gợi ý | Kích thước |
+    |---|---|---|---|
+    | `hero-hanoi` | Hero trang chủ (thay ảnh Hoàn Kiếm) | Hà Nội lúc bình minh: hồ Hoàn Kiếm sương sớm hoặc mái ngói phố cổ nhìn từ ban công homestay, nắng vàng ấm, chân trời ở 1/3 trên để chữ đặt bên trái | 2400×1350, thêm bản điện thoại 1080×1350 |
+    | `auth-veranda` | `_AuthAside` | Ban công homestay Hà Nội có cây xanh, ghế mây, ấm trà, ánh chiều | 1200×1500 |
+    | `partner-host` | Nền hoặc ảnh phụ khối "Trở thành đối tác" (đi cùng 3 ảnh homestay thật) | Gian nhà gỗ ấm, chùm chìa khóa và sổ đón khách trên bàn, không có mặt người rõ | 1600×1000 |
+    | `area-noi-thanh`, `area-ngoai-thanh` (theo các nhóm trong `AreaGroup`) | Ảnh dự phòng cho thẻ khu vực khi khu vực chưa có ảnh homestay | Không khí chung của nhóm khu vực: phố cổ, hồ, làng ven đô. Không vẽ công trình cụ thể rồi gắn tên khu vực khác | 1200×1600 (3:4) |
+    | `status-lost` | `_StatusPage` (404/lỗi) | Con ngõ nhỏ Hà Nội về đêm, đèn lồng, đường rẽ | 1600×1000 |
+
+  - **Phong cách chung** cho mọi ảnh, viết vào đầu mỗi lệnh tạo ảnh:
+    - ảnh chụp chân thực, ánh nắng vàng ấm, sương nhẹ;
+    - tông màu hợp bảng màu mới (xanh rừng, cam đất, ivory);
+    - không có chữ, logo, watermark, biển hiệu đọc được;
+    - không có người nổi tiếng hoặc khuôn mặt nhìn rõ;
+    - đủ khoảng trống cho chữ đè lên ở ảnh hero.
+  - **Lưu ảnh:**
+    - đặt ở `wwwroot/images/ai/`, định dạng `.webp` (không có công cụ ghi WebP thì dùng `.jpg` nén bằng `sips`);
+    - ảnh hero ≤ 300 KB, ảnh khác ≤ 200 KB, `alt` mô tả đúng nội dung ảnh;
+    - xóa ảnh trang trí cũ không còn dùng (`hero-hoan-kiem*`, `auth-veranda.webp`).
+  - **Ghi nguồn:**
+    - `docs/ui/credits.md` ghi từng ảnh: "Tạo bằng AI (ChatGPT), ngày tạo", kèm nguyên văn lệnh tạo ảnh;
+    - thêm dòng vào `decisions.md`.
+  - **Nếu phiên không có công cụ tạo ảnh:**
+    - không tự tìm ảnh khác thay thế;
+    - viết đủ các lệnh tạo ảnh vào `docs/ui/image-prompts.md` để người dùng tự tạo bằng ChatGPT và bỏ vào `wwwroot/images/ai/` đúng tên file;
+    - trong lúc chờ, dùng tạm ảnh hiện có;
+    - nêu rõ việc này trong báo cáo.
 - **Câu chữ:**
   - Tiêu đề hero tối đa 2 dòng ở mọi độ rộng, ví dụ "Ngủ giữa phố cổ, thức dậy cùng *Hà Nội*."
   - Chữ mới đi qua `L[...]` và có bản dịch trong `SharedResource.en.resx`.
@@ -237,7 +265,7 @@ Viết `docs/ui/03y-phong-cach-report.md`:
 - danh sách chuyển động: chỗ, thời lượng, cách tắt khi reduce;
 - kết quả `inspect.mjs`;
 - CLS và frame dài;
-- ảnh đã dùng;
+- ảnh đã dùng: ảnh AI nào đã tạo, lệnh tạo, dùng ở đâu (hoặc đang chờ người dùng tạo);
 - chỗ còn khác bản mẫu và lý do;
 - đề xuất thư viện (nếu có).
 
