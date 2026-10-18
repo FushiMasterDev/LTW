@@ -6,13 +6,14 @@
     const turn = (view, src, alt, direction = 1) => {
         active.get(view)?.cancel();
         if (FxMotion.reduced || !view.getAttribute('src') || view.getAttribute('src') === src) { view.src = src; view.alt = alt; return null; }
-        const parent = view.parentElement, width = view.getBoundingClientRect().width;
+        const box = view.getBoundingClientRect();
+        const parent = view.parentElement, width = box.width;
         if (!width) { view.src = src; view.alt = alt; return null; }
         const scene = document.createElement('span'), cube = document.createElement('span');
         scene.className = 'fx-cube-scene'; scene.setAttribute('aria-hidden', 'true'); cube.className = 'fx-cube';
         scene.append(cube);
         for (const [url, rotation] of [[view.src, 0], [src, direction * 90]]) {
-            const face = document.createElement('img'); face.src = url; face.alt = ''; face.decoding = 'async';
+            const face = document.createElement('img'); face.src = url; face.alt = ''; face.decoding = 'async'; face.width = Math.round(width); face.height = Math.round(box.height);
             face.style.transform = `rotateY(${rotation}deg) translateZ(${width / 2}px)`; cube.append(face);
         }
         parent.append(scene); view.classList.add('is-cube-source');

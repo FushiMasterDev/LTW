@@ -69,7 +69,7 @@ public record PaymentQrModel(string? ImageUrl, decimal Amount, string Content, D
 
 
 /// <summary>Ảnh khu vực được controller lấy từ homestay đang hoạt động; null dùng nền xanh.</summary>
-public record AreaCardModel(int Id, string Name, int Count, string? CoverUrl = null);
+public record AreaCardModel(int Id, string Name, int Count, string? CoverUrl = null, AreaGroup Group = AreaGroup.InnerCity);
 
 /// <summary>Thẻ chọn phòng, giữ nguyên báo giá và query đã có; không tự tính nghiệp vụ.</summary>
 public record RoomOptionModel(RoomTypeOffer Offer, HomestaySearchQuery Query);

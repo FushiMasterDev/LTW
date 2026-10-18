@@ -2,7 +2,7 @@
 (() => {
     'use strict';
     const motion = window.FxMotion;
-    if (!motion) return;
+    if (!motion || !('IntersectionObserver' in window)) return;
     const blocks = new Map();
     let frame = 0, previous = 0;
     const fine = matchMedia('(hover: hover) and (pointer: fine)');
@@ -23,8 +23,9 @@
     };
     const reconcile = () => {
         let count = 0;
+        const modalOpen = !!document.querySelector('.modal.show');
         for (const [root, state] of blocks) {
-            const running = !motion.reduced && !document.hidden && state.visible && !state.paused && !state.hover && !state.focus && count < 2;
+            const running = !motion.reduced && !document.hidden && !modalOpen && state.visible && !state.paused && !state.hover && !state.focus && count < 2;
             if (running) count++;
             root.classList.toggle('is-running', running);
             root.classList.toggle('is-enhanced', !motion.reduced);
@@ -60,6 +61,8 @@
     };
     window.FxAutoplay = { register };
     document.addEventListener('visibilitychange', reconcile);
+    document.addEventListener('shown.bs.modal', reconcile);
+    document.addEventListener('hidden.bs.modal', reconcile);
     document.addEventListener('fx:motionchange', reconcile);
     fine.addEventListener('change', () => { for (const s of blocks.values()) s.hover = false; reconcile(); });
     document.querySelectorAll('[data-autoplay="ambient"]').forEach(root => register(root));

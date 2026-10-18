@@ -2200,4 +2200,7 @@
   <data name="Trước" xml:space="preserve"><value>Previous</value></data>
   <data name="Sau" xml:space="preserve"><value>Next</value></data>
   <data name="Homestay của đối tác" xml:space="preserve"><value>Partner homestays</value></data>
+  <data name="Ảnh trang trí tạo bằng AI (ChatGPT)" xml:space="preserve"><value>Decorative image generated with AI (ChatGPT)</value></data>
+  <data name="Hồ nước và mái ngói Hà Nội trong sương bình minh, ảnh trang trí tạo bằng AI" xml:space="preserve"><value>Hanoi lake and tiled rooftops in the dawn mist, decorative AI image</value></data>
+  <data name="Con ngõ có đèn lồng và đường rẽ, ảnh trang trí tạo bằng AI" xml:space="preserve"><value>Lantern-lit alley with a turn, decorative AI image</value></data>
 </root>

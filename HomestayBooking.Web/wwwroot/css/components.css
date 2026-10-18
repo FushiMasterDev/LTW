@@ -1034,3 +1034,10 @@
 .fx-card-deck [data-deck-card]:focus-visible, .fx-card-deck__list button:focus-visible { outline: 3px solid var(--fx-focus); outline-offset: 4px; }
 .auth-aside .fx-motion-controls { justify-content: flex-start; }
 .auth-aside .fx-motion-controls .btn { color: var(--fx-paper); border-color: var(--fx-paper); }
+.auth-aside { overflow: hidden; }
+.status-page__decoration { display: block; width: min(100%,30rem); height: auto; aspect-ratio: 8/5; object-fit: cover; margin: 0 auto 1.5rem; border-radius: var(--fx-radius-xl); }
+/* Native date fields remain usable when the picker has no JavaScript. */
+.fx-dates__native { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.fx-dates__native > div, .fx-dates__native input { min-width: 0; max-width: 100%; }
+.auth-aside .fx-motion-controls .btn { background: var(--fx-photo-glass); }
+.fx-photo-stack .btn { background: var(--fx-photo-glass); }

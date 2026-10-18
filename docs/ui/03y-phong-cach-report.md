@@ -144,3 +144,103 @@ Artifact không commit tại `/private/tmp/fuji-03y/`: bộ `a-*`, `b-*`, `c-*`,
 - Hai đơn QA trên được ghi vào database Development, có ghi chú “Kiểm thử giao diện bước 03y”, không chuyển tiền/xác nhận thanh toán; sẽ hết hạn giữ theo job hiện có. Không tự xóa dữ liệu nghiệp vụ. Không gửi yêu cầu đổi/hủy hoặc đăng ký đối tác mới trong lượt này.
 
 App kiểm thử riêng chạy cổng 5012; không tắt app người dùng ở 5011. Thay đổi được chia đúng bốn commit theo prompt; báo cáo nằm trong commit trang khách cuối. Không triển khai view nội bộ của bước 04.
+
+
+## 03y2 – 3D tự chạy và ảnh trang trí AI (18/10/2026)
+
+Thực hiện trên `feature/foundation`, bắt đầu từ `b78007d` (commit tài liệu 03y2 sau 03y). Không đổi nhánh, không push, không bắt đầu bước 04. Giữ font, nhận diện, các form/route/hợp đồng dữ liệu và nghiệp vụ của 03y; không sửa Services, Data, Entities, migration hoặc controller.
+
+### Đã gỡ và thay
+
+- Xóa `tilt.js`, `parallax.js` và thẻ script tương ứng; xóa data điều khiển theo con trỏ, class trạng thái, sheen của thẻ khu vực và nghiêng 4° của thẻ homestay.
+- Bỏ hero dịch/nghiêng theo chuột hoặc cuộn, khối đối tác xoay theo tiến độ cuộn, bộ bước dùng view timeline và icon xoay khi hover. Giữ reveal một lần, thứ tự chữ hero, nâng 4px/bóng/zoom 1.06 của thẻ homestay.
+- Component mới `_AreaCarousel`, `_CardDeck`, `_PhotoStack`, `_MotionControls`; `_Gallery` dùng module lập phương. Mẫu được thêm vào thư viện/UI Kit trước khi ghép vào trang thật. Dashboard không có tự chạy; UI Kit chỉ nạp các module này trong khu trưng bày mẫu.
+- Sửa hai lỗi tìm được khi kiểm tra: đưa modal lightbox ra body để backdrop không bị stacking context của main che nút; ô ngày native dùng minmax/min-width để chi tiết 375px không JS không tràn.
+
+### Chuyển động và điều khiển
+
+| Chỗ | Nhịp và chuyển động | Cách dừng | Reduce / không JS |
+|---|---|---|---|
+| Hero | Máy quay scale 1.05→1.15, rotateX/Y −1°→1°, 24s đảo chiều | Nút riêng; hover/focus/khuất/ẩn tab | Ảnh tĩnh, chữ hiện đủ |
+| Khu vực ≥3 thẻ | Vòng CSS 3D, 4s mỗi thẻ, đổi vị trí 1.2s; điện thoại coverflow ±35°, vuốt được | Nút riêng; trước/sau, mũi tên, Tab đưa thẻ đang focus ra trước; aria-current | Lưới đủ mọi link; <3 thẻ luôn dùng lưới |
+| Ba bước | Bộ bài xoay X ra sau mỗi 4s, chuyển 800ms; danh sách bước cạnh bên chọn trực tiếp | Nút riêng; trước/sau/mũi tên, focus; aria-current=step | Danh sách ba thẻ đầy đủ |
+| Đối tác | Tối đa ba ảnh thật từ Model.Featured trôi translateY/Z và rotate; 24s lệch pha | Nút riêng; hover/focus/khuất/ẩn tab | Dải ba ảnh thật phẳng |
+| Cam kết | Icon xoay Y trong phần cuối chu kỳ 24s; lệch pha 4s/8s | Nút riêng; hover/focus/khuất/ẩn tab | Icon tĩnh, đủ nội dung |
+| Gallery | Lật lập phương Y 90° mỗi 4s, 800ms; ảnh lớn Ken Burns nhẹ, hai thumbnail kế tiếp đổi cùng | Nút riêng; trước/sau/mũi tên/focus; aria-current | Lưới đủ mọi ảnh, kể cả ảnh thứ tư trở đi |
+| Lightbox | Giữ FLIP mở/đóng; chuyển bằng hai mặt lập phương, 800ms | Chỉ người dùng chuyển; không tự chạy | Đổi ảnh tức thì; không JS xem đủ gallery phẳng |
+| AuthAside | Máy quay như hero, 24s | Nút riêng; hover/focus/khuất/ẩn tab | Ảnh tĩnh; điện thoại vẫn giữ bố cục auth cũ |
+
+`autoplay.js` đăng ký các khối, dùng chung IntersectionObserver của FxMotion và một đồng hồ rAF cho nhịp đổi thẻ. Không setInterval từng thẻ; tối đa hai khối đang chạy. Khuất, ẩn tab, hover chuột, focus hoặc modal mở đều dừng; trạng thái nút độc lập từng khối. Nút Tiếp tục vẫn chờ người dùng rời chuột/focus khỏi khối. Thiếu IntersectionObserver/module thì giữ nội dung phẳng. will-change chỉ khi chạy; hai mặt cube có backface hidden. Chỉ animate transform/opacity, không thêm thư viện hoặc inline style trong markup.
+
+### Ảnh AI
+
+Tám ảnh đã tạo bằng công cụ image generation ChatGPT, ngày 18/10/2026; đã xem ảnh gốc, nén WebP bằng Pillow và xem lại trong trình duyệt. Phong cách chung được đặt ở đầu từng lệnh. **Nguyên văn đầy đủ mọi lệnh tạo ảnh:** [credits.md](credits.md), từng mục theo đúng tên file dưới đây. Ảnh AI chỉ trang trí; ảnh phòng, thẻ homestay, gallery và chồng ảnh đối tác giữ dữ liệu thật.
+
+| File trong `wwwroot/images/ai/` | Kích thước | Bytes | Dùng ở / lệnh tạo |
+|---|---|---|---|
+| `hero-hanoi.webp` | 2400×1350 | 279,536 | Hero desktop/tablet; [lệnh](credits.md#hero-hanoiwebp) |
+| `hero-hanoi-mobile.webp` | 1080×1350 | 179,964 | Hero điện thoại; [lệnh](credits.md#hero-hanoi-mobilewebp) |
+| `auth-veranda.webp` | 1200×1500 | 192,026 | Cột auth; [lệnh](credits.md#auth-verandawebp) |
+| `partner-host.webp` | 1600×1000 | 187,518 | Ảnh nền trang trí khối đối tác, đi cùng ba ảnh thật; [lệnh](credits.md#partner-hostwebp) |
+| `area-inner-city.webp` | 1200×1600 | 192,836 | Fallback AreaGroup.InnerCity; [lệnh](credits.md#area-inner-citywebp) |
+| `area-suburb.webp` | 1200×1600 | 199,304 | Fallback AreaGroup.Suburb; [lệnh](credits.md#area-suburbwebp) |
+| `area-other-province.webp` | 1200×1600 | 196,230 | Fallback AreaGroup.OtherProvince; [lệnh](credits.md#area-other-provincewebp) |
+| `status-lost.webp` | 1600×1000 | 193,300 | Trang 404/lỗi máy chủ; [lệnh](credits.md#status-lostwebp) |
+
+Hero preload đúng ảnh theo media desktop/điện thoại; có kích thước và decoding. Ảnh khác dưới fold dùng lazy khi phù hợp; khu vực/gallery có kích thước sẵn. Đã xóa `hero-hoan-kiem*.jpg`, `images/auth-veranda.webp`, cập nhật credit hero sang “Ảnh trang trí tạo bằng AI (ChatGPT)”. Giữ bản ảnh seed veranda trong demo vì vẫn được dữ liệu/UI Kit sử dụng. Không còn tham chiếu các ảnh trang trí cũ trong mã app.
+
+### Kiểm tra và vòng chụp → sửa
+
+- Build Release với UseSharedCompilation=false: cả ba nhóm và lượt cuối **0 lỗi, 0 cảnh báo**. Nhóm 2 có một warning nullable ở PhotoStack trong lượt đầu, đã sửa trước commit và build lại sạch.
+- Mốc trước: **1597 pass + 1 skip** của HEAD 03y; nhóm 1/2/3 đều **1597 pass + 1 skip, 0 fail**. Lượt nhóm 3 mất 4m22s. Không thêm test nghiệp vụ. Skip là performance SQL test chỉ bật khi RUN_PERF_TESTS=1. Lượt chạy trùng trong sandbox lúc đầu gặp SSL handshake; đã dừng đúng các PID chạy trùng và chạy thành công ngoài sandbox, không sửa SQL/container.
+- Mỗi commit có chụp 375/768/1280 × sáng/tối. Vòng cuối chụp tám trang Home/Search/Details/Create/Lookup/Partner/Auth/404 (48 ảnh), UI Kit bằng QL001 (6 ảnh), cùng ảnh sửa auth/đối tác. Không tràn ngang toàn trang, không reveal bị ẩn, không pageerror JS. Ảnh lazy ở mặt sau/ảnh gallery ẩn chưa tải và img lightbox chưa có src được loại khỏi lỗi ảnh thực tế.
+- Reduce và không JS: Home + Details × ba cỡ × hai theme; **0 animation chạy, 0 nội dung bị ẩn, 0 tràn ngang**, đủ bảy khu vực, ba bước và năm ảnh gallery mẫu. Vòng đầu phát hiện ô ngày native ép chiều rộng ở no-JS 375px; đã sửa và chạy lại toàn bộ ma trận.
+- Đã thử autoplay khi đứng yên; Tạm dừng/Tiếp tục; hover dừng và rời hover chạy tiếp; focus dừng; mũi tên; Tab qua đủ bảy link khu vực đều nhận aria-current và ra trước; chọn bước thứ ba; gallery đổi ảnh và lightbox trước/sau, đủ 5 ảnh. Root hero/băng chuyền dừng khi cuộn qua; auth có fx-camera; mobile có coverflow.
+- **Giới hạn phép thử ẩn tab:** Chrome headless vẫn báo document.hidden=false khi đổi tab, kể cả khi tắt focus emulation. Đã kiểm tra riêng nhánh visibilitychange bằng mô phỏng document.hidden: số khối chạy 1→0→1. Không trình bày phép mô phỏng này như kiểm tra tab thật. Touch dùng browser emulation, chưa kiểm trên điện thoại vật lý.
+- `rg` trong Views và js/motion: không còn tilt, pointermove, data-hero-parallax, animation-timeline. `style="` trong Views = 0; JavaScript qua node --check; git diff --check sạch. Không thêm mã màu ngoài tokens (màu mới đều dùng token đã có).
+- Crawl: **840 trang, bảy vai trò, 0 lỗi 500**. Bốn 404 đã biết: Create thiếu roomTypeId và ba mã demo UI Kit.
+- Luồng chưa đăng nhập: Home chọn 07–09/12/2026 → tìm → chi tiết → đặt → **FJ261018-005**, QR → tra cứu bằng mã/SĐT thử ra đúng đơn. Khách 0987000001: 14–16/12/2026 → cùng luồng → **FJ261018-006**, QR và tra cứu đúng. Hai đơn chỉ giữ phòng theo nghiệp vụ hiện có; không thanh toán, không xác nhận thay chủ.
+
+Inspector nguyên bản, không sửa công cụ, chạy đủ 375/768/1280:
+
+| Route | FAIL | WARN | Số phần tử chuyển động 375 / 768 / 1280 |
+|---|---:|---:|---|
+| `/` | 0 | 2 | 51 / 49 / 41 |
+| `/Homestays` | 0 | 2 | 17 / 19 / 19 |
+| `/Homestays/Details/6` | 0 | 3 | 10 / 10 / 10 |
+| `/Bookings/Create?roomTypeId=14` | 0 | 2 | 2 / 3 / 3 |
+| `/Bookings/Lookup` | 0 | 1 | 1 / 1 / 1 |
+| `/Partner` | 0 | 2 | 4 / 4 / 4 |
+
+Dùng đúng các ngoại lệ 03y-D đã ghi ở decisions.md (shadow/hairline/outlined-box/glass/palette-cream/mixed-font-headline; eyebrow/icon-cards của Home; focal-point/few-pictures/still-page theo trang tác vụ). **Home không miễn mức chuyển động**, đạt 41–51 phần tử. WARN còn lại: size-count của hệ UI, no-footage vì prompt yêu cầu ảnh tự chạy và không thêm video stock, side-scroll ngăn kéo lọc, first-action form dài, still-page WARN của Details với 10 phần tử (đạt ngưỡng 8, ít hơn mức khuyến nghị 16). Không miễn lỗi chữ bị che, tràn ngang hoặc headline-lines.
+
+Vòng nhìn/sửa theo design-taste: (1) sửa caption thẻ phía sau bị che trong vòng 3D, chỉ vẽ nhãn phía trước nhưng giữ tên truy cập mọi link; (2) sửa backdrop chặn lightbox; (3) sửa nền nút dừng auth/đối tác để tránh chữ trắng trên nền sáng và tăng màu chữ đoạn đối tác trên ảnh nền. Không draw.mjs, không làm lại thiết kế. Chấm nội bộ sau sửa: Design 8, Usability 8, Creativity 7, Content 8 → **7.8/10**; đây là thực thi hướng Lúa đã chốt, không thiết kế nhận diện mới.
+
+Rà [Web Interface Guidelines](https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md): nút có aria-label, link điều hướng thật, focus nhìn thấy, điều khiển bàn phím, nội dung tĩnh đầy đủ, ảnh có kích thước, không tự đọc nội dung thay đổi bằng aria-live. Giữ sentence case tiếng Việt theo quyết định cũ.
+
+Không đổi palette/font. Các cặp phát sinh khi đặt điều khiển/chữ trên ảnh được tính theo nền ảnh trắng xấu nhất ở cả hai theme:
+
+| Cặp | Tương phản tối thiểu sáng / tối |
+|---|---|
+| Chữ paper trên photo-glass (nút auth) | 8.49:1 / 8.49:1 |
+| Chữ footer-ink trên photo-glass (nút chồng ảnh) | 7.01:1 / 7.01:1 |
+| Chữ footer-ink trên ảnh đối tác opacity .15 + nền sidebar | 7.40:1 / 7.40:1 |
+
+### CLS, frame và bằng chứng
+
+Đo qua playwright-cli ở 1280×800, sau khi build/test/inspector nặng đã kết thúc. PerformanceObserver layout-shift buffered và long-animation-frame, rAF lấy mẫu thực tế:
+
+- Đứng yên 15s: **CLS=0**, 900 frame; lớn nhất **33.4ms**, **0 frame >50ms**, không có long-animation-frame.
+- Cuộn hết trang: **CLS=0**, lớn nhất **16.8ms**, **0 frame >50ms**, không có long-animation-frame; tối đa **2** khối chạy; root đã khuất dừng, khối còn giao với viewport được phép chạy.
+- Video `home-autoplay.webm` ghi phép đo; `home-autoplay-tour.webm` thêm dừng 6s ở băng chuyền/cam kết/bộ bài/đối tác để thấy tự chạy. Trace `.playwright-cli/traces/trace-1792342042164.trace`, network và resources đi cùng. Đây là số đo trên máy kiểm thử này, không suy rộng thành cam kết cho mọi thiết bị.
+- Toàn bộ ảnh/video/log/JSON không commit: `/private/tmp/fuji-03y2/` và `.playwright-cli/`. Inspector `inspect-final-{home,search,detail,booking,lookup,partner}/report.json`; logs build-1/build-2-verified/build-final, test-1/test-2/test-3, interactions, visibility-contract, performance, booking-flow-final, fallbacks-final, shots-final, uikit-final. test-1 log có phần output từ lượt sandbox chạy trùng; lượt ngoài sandbox thoát 0 và có summary 1597 pass.
+
+### Commit và phạm vi
+
+1. `bfe3589` — `refactor(ui): bỏ chuyển động 3D theo chuột và theo cuộn`.
+2. `67cb2ea` — `feat(ui): 3D tự chạy cho hero, khu vực, ba bước, đối tác và gallery`.
+3. Commit ảnh AI kèm cập nhật credits/decisions/DESIGN và báo cáo này; có các sửa QA nhỏ nêu trên. Cả ba commit kết thúc bằng Co-Authored-By đúng yêu cầu.
+
+### Cần người dùng quyết định
+
+Không có quyết định nghiệp vụ mới cần chốt. Không đề xuất/thêm thư viện. Điểm kiểm thử còn giới hạn: tab ẩn thật và thao tác trên điện thoại vật lý chưa được xác minh ngoài mô phỏng; có thể kiểm thêm trên thiết bị khi nghiệm thu, không đổi hành vi hoặc nghiệp vụ để né giới hạn công cụ.

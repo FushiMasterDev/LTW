@@ -62,8 +62,8 @@ Dùng easing `--fx-ease-out`, thời lượng `--fx-dur-1` … `--fx-dur-6` (150
 
 Dashboard chỉ stagger thẻ, count-up 800ms giữ giá trị cuối trong HTML, sidebar trượt viên chọn, Chart.js 800ms. Không có 3D tự chạy ở dashboard.
 
-Không JS vẫn thấy nội dung. Ẩn reveal chỉ khi script head và lớp khởi tạo observer sẵn sàng. `prefers-reduced-motion` tắt mọi chuyển động không gian, reveal hiện ngay, chỉ giữ opacity/đổi màu ≤200ms. Touch không nghiêng, parallax và chồng thẻ nhẹ hơn. Các nhóm motion có fallback tương ứng trong `motion.css`.
+Không JS vẫn thấy nội dung. Ẩn reveal chỉ khi script head và lớp khởi tạo observer sẵn sàng. `prefers-reduced-motion` tắt mọi chuyển động không gian, reveal hiện ngay, chỉ giữ opacity/đổi màu ≤200ms. Điện thoại dùng coverflow và vuốt; không theo chuột hoặc tiến độ cuộn. Các nhóm motion có fallback tương ứng trong `motion.css`.
 
 ## Không làm
 
-Không bịa số liệu, đánh giá, phí, thuế, đối tác thanh toán hoặc cam kết dịch vụ. Không thêm ảnh stock vào thẻ homestay. Ảnh trang trí CC0/public domain tối đa bốn ảnh, lưu local và ghi credits. Không inline style trong markup, không màu ngoài tokens, không thư viện mới. Không đổi Services, Data, Entities, migration hoặc database. Controller chỉ được thêm ảnh khu vực vào truy vấn đã có. Không tắt app người dùng cổng 5011.
+Không bịa số liệu, đánh giá, phí, thuế, đối tác thanh toán hoặc cam kết dịch vụ. Không thêm ảnh stock vào thẻ homestay. Ảnh trang trí tạo bằng AI (ChatGPT), lưu images/ai và ghi nguyên văn prompt trong credits.md; hero có bản điện thoại. Không dùng AI làm ảnh phòng/homestay/gallery. Không inline style trong markup, không màu ngoài tokens, không thư viện mới. Không đổi Services, Data, Entities, migration hoặc database. Controller chỉ được thêm ảnh khu vực vào truy vấn đã có. Không tắt app người dùng cổng 5011.

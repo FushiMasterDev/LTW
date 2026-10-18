@@ -19,8 +19,8 @@
 }
 
 @section Head {
-    <link rel="preload" as="image" href="~/images/hero-hoan-kiem.jpg"
-          imagesrcset="/images/hero-hoan-kiem-sm.jpg 1080w, /images/hero-hoan-kiem.jpg 1600w" imagesizes="100vw" />
+    <link rel="preload" as="image" href="~/images/ai/hero-hanoi.webp" media="(min-width: 768px)" />
+    <link rel="preload" as="image" href="~/images/ai/hero-hanoi-mobile.webp" media="(max-width: 767.98px)" />
     <link rel="stylesheet" href="~/lib/flatpickr/flatpickr.min.css" />
 }
 
@@ -28,9 +28,10 @@
     <section class="home-hero" data-autoplay="ambient" aria-labelledby="heroTitle">
         <div class="home-hero__scene">
             <div class="home-hero__camera">
-                <img class="home-hero__photo" src="~/images/hero-hoan-kiem.jpg"
-                     srcset="/images/hero-hoan-kiem-sm.jpg 1080w, /images/hero-hoan-kiem.jpg 1600w" sizes="100vw"
-                     alt="@L["Hồ Hoàn Kiếm buổi sáng, tháp Rùa giữa hồ"]" width="1600" height="1067" fetchpriority="high" />
+                <picture>
+                    <source media="(max-width: 767.98px)" srcset="/images/ai/hero-hanoi-mobile.webp" width="1080" height="1350" />
+                    <img class="home-hero__photo" src="~/images/ai/hero-hanoi.webp" alt="@L["Hồ nước và mái ngói Hà Nội trong sương bình minh, ảnh trang trí tạo bằng AI"]" width="2400" height="1350" fetchpriority="high" decoding="async" />
+                </picture>
             </div>
             <div class="container home-hero__content">
                 <div class="home-hero__copy">
@@ -46,7 +47,7 @@
             </div>
         </div>
         <span class="home-hero__sentinel" aria-hidden="true"></span>
-        <p class="home-hero__credit">@L["Ảnh"]: <a href="https://commons.wikimedia.org/wiki/File:Hoan_Kiem_Lake_in_the_morning,_September_2014.jpeg" target="_blank" rel="noopener">Prof MK</a>, @L["phạm vi công cộng"]</p>
+        <p class="home-hero__credit">@L["Ảnh trang trí tạo bằng AI (ChatGPT)"]</p>
         <button class="home-hero__motion btn btn-light-glass" type="button" data-motion-toggle aria-pressed="false" aria-label="@L["Tạm dừng"]"
                 data-pause="@L["Tạm dừng"]" data-resume="@L["Tiếp tục"]">
             <icon name="pause-circle" /><span data-motion-label>@L["Tạm dừng"]</span>
@@ -62,7 +63,7 @@
         </div>
         <a class="btn btn-link" asp-controller="Homestays" asp-action="Index">@L["Xem tất cả"] <icon name="arrow-right" /></a>
     </div>
-    <partial name="_AreaCarousel" model="@(new AreaCarouselModel(Model.Areas.Select(area => new AreaCardModel(area.Id, area.Name, area.HomestayCount, area.CoverUrl)).ToList()))" />
+    <partial name="_AreaCarousel" model="@(new AreaCarouselModel(Model.Areas.Select(area => new AreaCardModel(area.Id, area.Name, area.HomestayCount, area.CoverUrl, area.Group)).ToList()))" />
     <p class="home-areas__note">@L["Đang có {0} homestay với {1} phòng ở {2} khu vực của Hà Nội. Không chọn ngày thì hiện mọi homestay.", Model.HomestayCount, Model.RoomCount, Model.Areas.Count]</p>
 </section>
 
@@ -115,6 +116,7 @@
         <h2 id="partnerTitle">@L["Có homestay ở Hà Nội?"]</h2>
         <p>@L["Gửi hồ sơ đối tác trực tuyến. Nhân viên Fuji thẩm định trong 3 ngày làm việc."]</p>
     </div>
+    <img class="home-partner__decoration" src="~/images/ai/partner-host.webp" alt="" width="1600" height="1000" loading="lazy" decoding="async" />
     <partial name="_PhotoStack" model="@(new PhotoStackModel(Model.Featured))" />
     <a class="btn btn-brand btn-lg" asp-controller="Partner" asp-action="Index">@L["Trở thành đối tác"]</a>
 </section>

@@ -1,8 +1,14 @@
 @model AreaCardModel
-<a class="fx-area-card" aria-label="@Model.Name · @L["{0} homestay", Model.Count]" asp-controller="Homestays" asp-action="Index" asp-route-areaId="@Model.Id">
-    @if (!string.IsNullOrWhiteSpace(Model.CoverUrl))
+@{
+    var fallback = Model.Group switch
     {
-        <span class="fx-area-card__image"><img src="@Model.CoverUrl.Thumbnail()" alt="" width="480" height="640" loading="lazy" decoding="async" /></span>
-    }
+        AreaGroup.Suburb => "/images/ai/area-suburb.webp",
+        AreaGroup.OtherProvince => "/images/ai/area-other-province.webp",
+        _ => "/images/ai/area-inner-city.webp"
+    };
+    var source = string.IsNullOrWhiteSpace(Model.CoverUrl) ? fallback : Model.CoverUrl.Thumbnail();
+}
+<a class="fx-area-card" aria-label="@Model.Name · @L["{0} homestay", Model.Count]" asp-controller="Homestays" asp-action="Index" asp-route-areaId="@Model.Id">
+    <span class="fx-area-card__image"><img src="@source" alt="" width="480" height="640" loading="lazy" decoding="async" /></span>
     <span class="fx-area-card__copy"><span class="fx-area-card__name">@Model.Name</span><small>@L["{0} homestay", Model.Count]</small></span>
 </a>

@@ -818,3 +818,8 @@
   color: var(--fx-on-primary);
   border-color: var(--fx-primary);
 }
+.home-hero__camera > picture { display: block; width: 100%; height: 100%; }
+.home-partner { position: relative; isolation: isolate; overflow: hidden; }
+.home-partner__decoration { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; opacity: .15; }
+/* Keep copy readable even over the brightest pixels of the decorative image. */
+.home-partner p { color: var(--fx-footer-ink); }
