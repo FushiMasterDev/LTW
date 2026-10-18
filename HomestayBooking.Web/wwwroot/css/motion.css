@@ -1,209 +1,127 @@
-/* =========================================================================
-   Fuji Homestay – chuyển động & micro-interaction
-   Nạp sau cùng (sau layout-public.css / layout-dashboard.css). Chỉ animate transform, translate,
-   scale, opacity, box-shadow; không dùng "transition: all", không animate kích thước.
-   Gỡ animation: xóa file này + dòng <link> tới nó trong _Layout/_DashboardLayout.
-   ========================================================================= */
-/* Đổi sáng/tối: tắt transition đúng lúc đổi để toàn trang đổi màu cùng một khung hình
-   (site.js đặt data-theme-switching trên <html> rồi gỡ ở khung hình kế tiếp) */
-[data-theme-switching] *,
-[data-theme-switching] *::before,
-[data-theme-switching] *::after {
-  transition: none !important;
-}
-
-/* ---------- Nút: phản hồi khi nhấn ---------- */
-.btn {
-  touch-action: manipulation;
-  /* Giữ nguyên danh sách transition của components.css, thêm scale cho lúc nhấn */
-  transition: background-color 0.18s var(--fx-ease), border-color 0.18s var(--fx-ease),
-              color 0.18s var(--fx-ease), box-shadow 0.18s var(--fx-ease),
-              scale 0.1s var(--fx-ease);
-}
-
-/* Nút trong nhóm (VI/EN) và trong input-group (hiện mật khẩu, Hủy đơn) đứng sát ô bên cạnh,
-   co lại sẽ hở viền nên bỏ qua */
-.btn:not(:disabled):not(.disabled):active:not(.btn-group > .btn):not(.input-group > .btn) {
-  scale: 0.97;
-  transition-duration: 0s;
-}
-
-/* ---------- Thẻ homestay: nâng nhẹ, đổ bóng, ảnh phóng trong khung ----------
-   Thẻ <a> là vùng nhận chuột nên đứng yên; chỉ hai phần tử con (.fx-homestay-card__media, .fx-homestay-card__body) nâng lên,
-   nếu không đáy thẻ rời khỏi con trỏ và hover bật/tắt liên tục ở mép dưới. */
-.fx-homestay-card > .fx-homestay-card__body {
-  transition: translate 0.25s var(--fx-ease);
-}
-
-.fx-homestay-card > .fx-homestay-card__media {
-  isolation: isolate; /* Safari: giữ góc bo khi ảnh bên trong phóng to */
-  transition: translate 0.25s var(--fx-ease), box-shadow 0.25s var(--fx-ease);
-}
-
-.fx-homestay-card__media > img {
-  transition: scale 0.35s var(--fx-ease), opacity 0.2s var(--fx-ease);
-}
-
+/* Motion is an optional layer. All content is visible without the head + observer gates. */
+[data-theme-switching] *, [data-theme-switching] *::before, [data-theme-switching] *::after { transition: none !important; }
+.btn { touch-action: manipulation; transition: transform var(--fx-dur-1) var(--fx-ease-out), opacity var(--fx-dur-1) var(--fx-ease-out); }
+.btn:not(:disabled):not(.disabled):active:not(.btn-group > .btn):not(.input-group > .btn) { transform: scale(.97); transition-duration: 0s; }
 @media (hover: hover) and (pointer: fine) {
-  .fx-homestay-card:hover > .fx-homestay-card__media,
-  .fx-homestay-card:hover > .fx-homestay-card__body {
-    translate: 0 -3px;
-  }
-
-  .fx-homestay-card:hover .fx-homestay-card__media {
-    box-shadow: var(--fx-shadow-raised);
-  }
-
-  .fx-homestay-card:hover .fx-homestay-card__media > img {
-    scale: 1.03;
-  }
+  .btn:not(:disabled):not(.disabled):hover { transform: translateY(-1px); box-shadow: var(--fx-shadow); }
+  .btn:not(:disabled):not(.disabled):active { transform: scale(.97); }
 }
-
-/* Bàn phím nhận cùng phản hồi như chuột */
-.fx-homestay-card:focus-visible > .fx-homestay-card__media,
-.fx-homestay-card:focus-visible > .fx-homestay-card__body {
-  translate: 0 -3px;
+.site-nav .nav-link::after { content: ""; position: absolute; bottom: .2rem; inset-inline: .85rem; height: 2px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform var(--fx-dur-2) var(--fx-ease-out); }
+.site-nav .nav-link:hover::after, .site-nav .nav-link.active::after { transform: scaleX(1); }
+.site-footer a:not(.btn) { position: relative; text-decoration: none; }
+.site-footer a:not(.btn)::after { content: ""; position: absolute; bottom: .2rem; left: 0; right: 0; height: 1px; background: currentColor; transform-origin: left; transform: scaleX(0); transition: transform var(--fx-dur-2) var(--fx-ease-out); }
+.site-footer a:not(.btn):hover::after { transform: scaleX(1); }
+/* Underlines use a separate transform so their layout stays still. */
+.home-section__head > a { position: relative; }
+.home-section__head > a::after { content: ""; position: absolute; bottom: .15rem; inset-inline: 1rem; height: 1px; background: currentColor; transform-origin: left; transform: scaleX(0); transition: transform var(--fx-dur-2) var(--fx-ease-out); }
+.home-section__head > a:hover::after { transform: scaleX(1); }
+@keyframes fx-page-in { from { opacity: 0; transform: translate3d(0,18px,0); } }
+.fx-motion .site-public main { animation: fx-page-in var(--fx-dur-page) var(--fx-ease-out) both; }
+@keyframes fx-rise { from { opacity: 0; transform: translate3d(0,18px,0); } }
+.fx-motion .home-hero__badge, .fx-motion .home-hero h1 > span, .fx-motion .home-hero__copy > p, .fx-motion .home-hero .home-search { animation: fx-rise var(--fx-dur-page) var(--fx-ease-out) both; }
+.fx-motion .home-hero h1 > span:first-child { animation-delay: var(--fx-stagger); }
+.fx-motion .home-hero h1 > span:nth-child(2) { animation-delay: calc(var(--fx-stagger) * 2); }
+.fx-motion .home-hero__copy > p { animation-delay: calc(var(--fx-stagger) * 3); }
+.fx-motion .home-hero .home-search { animation-delay: var(--fx-dur-1); }
+/* Scroll entrances: titles, text and cards are individual parts, never nested hidden sections. */
+.fx-motion.fx-motion-ready [data-fx-reveal] { transition: transform var(--fx-dur-5) var(--fx-ease-out), opacity var(--fx-dur-5) var(--fx-ease-out); transition-delay: calc(var(--fx-i, 0) * var(--fx-stagger)); }
+.fx-motion.fx-motion-ready [data-fx-reveal]:not(.is-in) { opacity: 0; transform: perspective(var(--fx-perspective)) translate3d(0,24px,0) rotateX(8deg); }
+.fx-motion.fx-motion-ready .home-promises__list > [data-fx-reveal]:not(.is-in) { transform: perspective(var(--fx-perspective)) translate3d(0,24px,0) rotateY(-12deg); }
+/* Fine-pointer depth and image zoom. will-change is set only while a pointer is interacting. */
+[data-tilt], .fx-homestay-card { transition: transform var(--fx-dur-4) var(--fx-ease-out); }
+[data-tilt].is-tilting, .fx-homestay-card.is-tilting { transition-duration: var(--fx-dur-1); }
+.fx-area-card img, .fx-homestay-card__media > img { transition: transform var(--fx-dur-5) var(--fx-ease-out), opacity var(--fx-dur-1) var(--fx-ease-out); }
+.fx-area-card__sheen { transition: opacity var(--fx-dur-2) var(--fx-ease-out); }
+.fx-homestay-card__media, .fx-homestay-card__body { transition: translate var(--fx-dur-3) var(--fx-ease-out); }
+@media (hover: hover) and (pointer: fine) {
+  .fx-motion .fx-area-card:hover img, .fx-motion .fx-homestay-card:hover .fx-homestay-card__media > img { transform: scale(1.06); }
+  .fx-motion .fx-area-card:hover .fx-area-card__sheen { opacity: 1; }
+  .fx-motion .fx-homestay-card:hover > .fx-homestay-card__media, .fx-motion .fx-homestay-card:hover > .fx-homestay-card__body { translate: 0 -4px; }
+  .fx-motion .fx-homestay-card:hover > .fx-homestay-card__media { box-shadow: var(--fx-shadow-raised); }
+  .fx-motion .home-promises__list li:hover .bi { transform: perspective(var(--fx-perspective)) rotateY(360deg); }
 }
-
-.fx-homestay-card:focus-visible .fx-homestay-card__media {
-  box-shadow: var(--fx-shadow-raised);
+.fx-motion .fx-homestay-card:focus-visible > .fx-homestay-card__media { translate: 0 -4px; box-shadow: var(--fx-shadow-raised); }
+.home-promises__list .bi { transition: transform var(--fx-dur-5) var(--fx-ease-out); }
+.fx-motion .home-hero__scene { transform-style: preserve-3d; }
+.fx-motion .home-hero__copy { transform: translateZ(35px); }
+.fx-motion .home-hero__search-depth { transform: translateZ(60px); }
+@keyframes fx-kenburns { from { transform: scale(1.05); } to { transform: scale(1.12); } }
+.fx-motion .home-hero__photo { animation: fx-kenburns var(--fx-dur-kenburns) var(--fx-ease-out) infinite alternate; animation-play-state: paused; }
+.fx-motion .home-hero.is-playing .home-hero__photo { animation-play-state: running; }
+/* CSS scroll timelines split the deck into a row; unsupported browsers use the observer entrance above. */
+@supports (animation-timeline: view()) {
+  @keyframes fx-deck { from { transform: perspective(var(--fx-perspective)) translate3d(var(--fx-deck-x, 0px),16px,var(--fx-deck-z, -40px)) rotateX(8deg); } to { transform: none; } }
+  .fx-motion .home-steps__list > li { animation: fx-deck linear both; animation-timeline: view(); animation-range: entry 0% cover 35%; }
+  .home-steps__list > li:first-child { --fx-deck-x: 70%; --fx-deck-z: -80px; }
+  .home-steps__list > li:last-child { --fx-deck-x: -70%; --fx-deck-z: 40px; }
 }
-
-/* ---------- Ảnh: mờ dần khi tải xong (khung đã đặt sẵn tỉ lệ nên không xô bố cục) ---------- */
-.fx-homestay-card__media > img.is-loading,
-.fx-gallery__item img.is-loading {
-  opacity: 0;
+.fx-search__indicator.is-positioned { transition: transform var(--fx-dur-3) var(--fx-ease-out), opacity var(--fx-dur-1) var(--fx-ease-out); }
+.stay-room__check { transition: transform var(--fx-dur-2) var(--fx-ease-out), opacity var(--fx-dur-2) var(--fx-ease-out); }
+.fx-stepper { position: relative; }
+.fx-stepper::before { content: ""; position: absolute; left: 0; bottom: -.5rem; right: 0; height: 2px; border-radius: var(--fx-radius-full); background: var(--fx-primary); transform-origin: left; transform: scaleX(1); transition: transform var(--fx-dur-5) var(--fx-ease-out); }
+.fx-motion.fx-motion-ready .fx-stepper:not(.is-in)::before { transform: scaleX(0); }
+.fx-homestay-card__media > img.is-loading, .fx-gallery__item img.is-loading { opacity: 0; }
+@keyframes fx-menu-in { from { opacity: 0; translate: 0 -4px; scale: .96; } }
+.dropdown-menu.show { transform-origin: top left; animation: fx-menu-in var(--fx-dur-1) var(--fx-ease-out); }
+.dropdown-menu-end.show { transform-origin: top right; }
+#quoteBox > * { transition: opacity var(--fx-dur-1) var(--fx-ease-out); }
+@starting-style { #quoteBox > * { opacity: 0; } }
+#fx-confirm-dialog.modal.fade { transition: opacity var(--fx-dur-dialog) var(--fx-ease-out); }
+#fx-confirm-dialog.modal.fade .modal-dialog { transform: perspective(var(--fx-perspective)) scale(.96) rotateX(6deg); transition: transform var(--fx-dur-dialog) var(--fx-ease-out); }
+#fx-confirm-dialog.modal.show .modal-dialog { transform: none; }
+.modal-backdrop.fade { transition: opacity var(--fx-dur-1) var(--fx-ease-out); }
+.lightbox.modal.fade .modal-dialog { transform: none; transition: none; }
+.lightbox [data-lightbox-view] { transform-origin: top left; }
+.app-sidebar { --bs-offcanvas-transition: transform var(--fx-dur-3) var(--fx-ease-out); }
+.offcanvas-backdrop.fade { transition: opacity var(--fx-dur-3) var(--fx-ease-out); }
+@keyframes fx-feedback-in { from { opacity: 0; transform: perspective(var(--fx-perspective)) scale(.96) rotateX(6deg); } }
+.alert-dismissible.fade.show, .fx-toasts .toast.showing { animation: fx-feedback-in var(--fx-dur-dialog) var(--fx-ease-out); }
+.fx-motion .app-body .fx-stat[data-fx-reveal]:not(.is-in) { transform: translate3d(0,12px,0); }
+.fx-stat__value { position: relative; }
+.fx-count-final { opacity: 0; }
+.fx-count-visual { position: absolute; inset: 0; white-space: nowrap; }
+.app-sidebar-nav { position: relative; }
+.fx-sidebar-pill { position: absolute; left: 0; top: 0; width: 1px; height: 1px; transform-origin: top left; background: var(--fx-sidebar-active); border-radius: var(--fx-radius-full); pointer-events: none; }
+.has-motion-pill .sidebar-link.active { background: transparent; }
+.sidebar-link > *, .sidebar-group-title { position: relative; }
+@media (max-width: 1199.98px) { .fx-motion #mainNav.show { animation: fx-rise var(--fx-dur-3) var(--fx-ease-out); } }
+@media (hover: none), (pointer: coarse) {
+  .fx-motion .home-hero__copy, .fx-motion .home-hero__search-depth { transform: none; }
+  .home-steps__list > li:first-child, .home-steps__list > li:last-child { --fx-deck-x: 0px; --fx-deck-z: -12px; }
+  [data-tilt], .fx-homestay-card { will-change: auto; }
 }
-
-/* ---------- Dropdown: mở từ phía nút bấm ----------
-   Dùng thuộc tính translate/scale riêng lẻ để cộng dồn với transform inline của Popper,
-   không ghi đè vị trí. Đóng: tức thì (Bootstrap ẩn ngay), như phần tử dùng thường xuyên. */
-@keyframes fx-dropdown-in {
-  from {
-    opacity: 0;
-    scale: 0.96;
-    translate: 0 -4px;
-  }
-}
-
-.dropdown-menu.show {
-  transform-origin: top left;
-  animation: fx-dropdown-in 0.15s var(--fx-ease);
-}
-
-.dropdown-menu-end.show {
-  transform-origin: top right;
-}
-
-/* ---------- Ô báo giá ở trang đặt phòng: nội dung mới mờ dần vào ---------- */
-#quoteBox > * {
-  transition: opacity 0.15s var(--fx-ease);
-}
-
-@starting-style {
-  #quoteBox > * {
-    opacity: 0;
-  }
-}
-
-/* ---------- Modal xem ảnh: phóng nhẹ từ giữa, nền tối cùng nhịp ---------- */
-.lightbox.modal.fade,
-#fx-confirm-dialog.modal.fade {
-  transition: opacity 0.22s var(--fx-ease);
-}
-
-.lightbox.modal.fade .modal-dialog,
-#fx-confirm-dialog.modal.fade .modal-dialog {
-  transform: scale(0.96);
-  transition: transform 0.22s var(--fx-ease);
-}
-
-.lightbox.modal.show .modal-dialog,
-#fx-confirm-dialog.modal.show .modal-dialog {
-  transform: none;
-}
-
-/* Bootstrap hiện backdrop xong mới hiện hộp thoại: backdrop ngắn (150ms) để tổng thời gian mở ~370ms.
-   Modal duy nhất của ứng dụng là lightbox nên đặt chung cho .modal-backdrop. */
-.modal-backdrop.fade {
-  transition: opacity 0.15s var(--fx-ease);
-}
-
-.lightbox [data-lightbox-view] {
-  transition: opacity 0.15s var(--fx-ease);
-}
-
-.lightbox [data-lightbox-view].is-swapping {
-  opacity: 0;
-  transition: none;
-}
-
-/* ---------- Ngăn kéo menu dashboard (< 992px) và lớp phủ: cùng thời lượng, cùng đường cong ---------- */
-.app-sidebar {
-  --bs-offcanvas-transition: transform 0.3s var(--fx-ease);
-}
-
-.offcanvas-backdrop.fade {
-  transition: opacity 0.3s var(--fx-ease);
-}
-
-/* ---------- Thông báo kết quả thao tác (TempData): trượt xuống nhẹ khi xuất hiện ---------- */
-@keyframes fx-alert-in {
-  from {
-    opacity: 0;
-    translate: 0 -4px;
-  }
-}
-
-.alert-dismissible.fade.show {
-  animation: fx-alert-in 0.2s var(--fx-ease);
-}
-
-/* ---------- Trang chủ: intro một lần mỗi phiên (class fx-intro do _HeadAssets đặt) ---------- */
-@keyframes fx-rise {
-  from {
-    opacity: 0;
-    translate: 0 12px;
-  }
-}
-
-.fx-intro .home-hero__copy > h1 {
-  animation: fx-rise 0.45s var(--fx-ease) both;
-}
-
-.fx-intro .home-hero__copy > p {
-  animation: fx-rise 0.45s var(--fx-ease) 0.06s both;
-}
-
-.fx-intro .home-search {
-  animation: fx-rise 0.45s var(--fx-ease) 0.12s both;
-}
-
-/* ---------- Giảm chuyển động: bỏ di chuyển/phóng to, giữ đổi màu, độ mờ, bóng ---------- */
+/* Reduced motion: page/hero, entrances, tilt, drift, deck, FLIP, controls, overlays and dashboard. */
 @media (prefers-reduced-motion: reduce) {
-  .btn:not(:disabled):not(.disabled):active:not(.btn-group > .btn):not(.input-group > .btn),
-  .fx-homestay-card:hover > .fx-homestay-card__media,
-  .fx-homestay-card:hover > .fx-homestay-card__body,
-  .fx-homestay-card:focus-visible > .fx-homestay-card__media,
-  .fx-homestay-card:focus-visible > .fx-homestay-card__body,
-  .fx-homestay-card:hover .fx-homestay-card__media > img {
-    translate: none;
-    scale: none;
-  }
-
-  .flatpickr-calendar.animate.open,
-  .dropdown-menu.show,
-  .alert-dismissible.fade.show,
-  .fx-intro .home-hero__copy > h1,
-  .fx-intro .home-hero__copy > p,
-  .fx-intro .home-search {
-    animation: none;
-  }
-
+  .fx-motion .site-public main, .fx-motion .home-hero__badge, .fx-motion .home-hero h1 > span, .fx-motion .home-hero__copy > p, .fx-motion .home-hero .home-search { animation: none; }
+  .fx-motion.fx-motion-ready [data-fx-reveal], .fx-motion.fx-motion-ready [data-fx-reveal]:not(.is-in), .fx-motion.fx-motion-ready .home-promises__list > [data-fx-reveal]:not(.is-in) { opacity: 1; transform: none; transition: opacity var(--fx-dur-1); transition-delay: 0s; }
+  [data-tilt], .fx-homestay-card, .home-hero__scene, .home-hero__copy, .home-hero__search-depth, [data-hero-parallax], .home-partner { transform: none !important; transition: opacity var(--fx-dur-1); }
+  .fx-motion .home-hero__photo { animation: none; transform: none; }
+  .fx-motion .home-steps__list > li { animation: none; transform: none; }
+  .fx-motion .home-promises__list li:hover .bi { transform: none; }
+  .fx-motion .fx-area-card:hover img, .fx-motion .fx-homestay-card:hover .fx-homestay-card__media > img { transform: none; }
+  .fx-motion .fx-homestay-card:hover > .fx-homestay-card__media, .fx-motion .fx-homestay-card:hover > .fx-homestay-card__body, .fx-motion .fx-homestay-card:focus-visible > .fx-homestay-card__media { translate: none; }
+  .fx-motion.fx-motion-ready .fx-stepper:not(.is-in)::before { transform: none; }
+  .btn:not(:disabled):not(.disabled):hover, .btn:not(:disabled):not(.disabled):active, .site-nav .nav-link::after, .home-section__head > a::after { transform: none; }
+  .fx-search__indicator.is-positioned, .stay-room__check, .fx-area-card img, .fx-homestay-card__media > img { transition: opacity var(--fx-dur-1); }
+  .dropdown-menu.show, .alert-dismissible.fade.show, .fx-toasts .toast.showing, .fx-motion #mainNav.show, .flatpickr-calendar.animate.open { animation: none; }
+  #fx-confirm-dialog.modal.fade .modal-dialog { transform: none; transition: opacity var(--fx-dur-1); }
   .app-sidebar { --bs-offcanvas-transition: none; }
-
-  .lightbox.modal.fade .modal-dialog,
-  #fx-confirm-dialog.modal.fade .modal-dialog {
-    transform: none;
-  }
+  .offcanvas-backdrop.fade { transition-duration: var(--fx-dur-1); }
+  .home-hero__motion { display: none; }
 }
+/* A user's pause control has the same spatial fallback even without an OS preference. */
+html[data-motion-paused] [data-fx-reveal] { opacity: 1; transform: none; }
+html[data-motion-paused] .home-hero__scene, html[data-motion-paused] [data-hero-parallax], html[data-motion-paused] .home-partner { transform: none !important; }
+
+/* The glass layer crossfades without repainting the header background every frame. */
+.fx-js .site-header--home, .fx-js .site-header--home.is-past-hero { background: transparent; backdrop-filter: none; border-bottom-color: transparent; isolation: isolate; }
+.fx-js .site-header--home::before { content: ""; position: absolute; inset: 0; z-index: -1; opacity: 0; background: var(--fx-glass-bg); backdrop-filter: blur(var(--fx-glass-blur)); border-bottom: 1px solid var(--fx-border); transition: opacity var(--fx-dur-3) var(--fx-ease-out); }
+.fx-js .site-header--home.is-past-hero::before { opacity: 1; }
+.fx-motion.fx-motion-ready [data-fx-settled] { transition-delay: 0s; }
+.fx-motion.fx-motion-ready [data-fx-reveal].is-tilting { transition-duration: var(--fx-dur-1); transition-delay: 0s; }
+@media (prefers-reduced-motion: reduce) {
+  .fx-js .site-header--home::before, .site-footer a:not(.btn)::after { transition: opacity var(--fx-dur-1); }
+  .site-footer a:not(.btn):hover::after { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) { .site-nav .nav-link::after { opacity: 0; } .site-nav .nav-link:hover::after, .site-nav .nav-link.active::after { opacity: 1; } }

@@ -83,7 +83,7 @@
   align-items: center;
   gap: 0.45rem;
   white-space: nowrap;
-  transition: color 0.18s var(--fx-ease);
+  transition: none;
 }
 
 .site-nav .nav-link:hover,
@@ -329,7 +329,7 @@
   font-size: 1.1875rem;
   font-weight: 500;
   text-decoration: none;
-  transition: color 0.18s var(--fx-ease), background-color 0.18s var(--fx-ease);
+  transition: none;
 }
 
 .home-areas__list a:hover,
@@ -1138,13 +1138,13 @@
 
 /* Public frame: the homepage header floats over the photograph. */
 .site-public .container { max-width: 80rem; padding-inline: 1.25rem; }
-.site-header--home { position: fixed; inset: 0 0 auto; background: transparent; border-color: transparent; }
-.site-header--home:not(.is-past-hero) .brand-name, .site-header--home:not(.is-past-hero) .brand-name span,
-.site-header--home:not(.is-past-hero) .nav-link, .site-header--home:not(.is-past-hero) .navbar-toggler { color: var(--fx-paper); }
-.site-header--home:not(.is-past-hero) .nav-link.active::after { background: var(--fx-paper); }
-.site-header--home:not(.is-past-hero) .theme-toggle, .site-header--home:not(.is-past-hero) .lang-switch .btn,
-.site-header--home:not(.is-past-hero) .site-nav .btn-outline-secondary { color: var(--fx-paper); background: var(--fx-photo-glass); border-color: transparent; }
-.site-header--home.is-past-hero { background: var(--fx-glass-bg); backdrop-filter: blur(var(--fx-glass-blur)); border-color: var(--fx-border); }
+.fx-js .site-header--home { position: fixed; inset: 0 0 auto; background: transparent; border-color: transparent; }
+.fx-js .site-header--home:not(.is-past-hero) .brand-name, .fx-js .site-header--home:not(.is-past-hero) .brand-name span,
+.fx-js .site-header--home:not(.is-past-hero) .nav-link, .fx-js .site-header--home:not(.is-past-hero) .navbar-toggler { color: var(--fx-paper); }
+.fx-js .site-header--home:not(.is-past-hero) .nav-link.active::after { background: var(--fx-paper); }
+.fx-js .site-header--home:not(.is-past-hero) .theme-toggle, .fx-js .site-header--home:not(.is-past-hero) .lang-switch .btn,
+.fx-js .site-header--home:not(.is-past-hero) .site-nav .btn-outline-secondary { color: var(--fx-paper); background: var(--fx-photo-glass); border-color: transparent; }
+.fx-js .site-header--home.is-past-hero { background: var(--fx-glass-bg); backdrop-filter: blur(var(--fx-glass-blur)); border-color: var(--fx-border); }
 .site-nav { min-height: 4.75rem; }
 .site-footer { padding-top: 1.5rem; }
 .site-footer h2 { font-size: 1rem; font-weight: 600; }
@@ -1152,8 +1152,8 @@
 .auth-card { border: 1px solid var(--fx-border); box-shadow: var(--fx-shadow); border-radius: var(--fx-radius-xl); }
 @media (min-width: 768px) { .site-public .container { padding-inline: 2rem; } }
 @media (max-width: 1199.98px) {
-  .site-header--home #mainNav { padding: 1rem; margin-block: .75rem; border-radius: var(--fx-radius-xl); background: var(--fx-glass-bg); backdrop-filter: blur(var(--fx-glass-blur)); color: var(--fx-ink); box-shadow: var(--fx-shadow-raised); }
-  .site-header--home:not(.is-past-hero) #mainNav .nav-link, .site-header--home:not(.is-past-hero) #mainNav .btn { color: var(--fx-ink); }
-  .site-header--home:not(.is-past-hero) #mainNav .btn-brand { color: var(--fx-on-accent); }
-  .site-header--home:not(.is-past-hero) #mainNav .lang-switch .btn, .site-header--home:not(.is-past-hero) #mainNav .theme-toggle, .site-header--home:not(.is-past-hero) #mainNav .btn-outline-secondary { background: var(--fx-surface); }
+  .fx-js .site-header--home #mainNav { padding: 1rem; margin-block: .75rem; border-radius: var(--fx-radius-xl); background: var(--fx-glass-bg); backdrop-filter: blur(var(--fx-glass-blur)); color: var(--fx-ink); box-shadow: var(--fx-shadow-raised); }
+  .fx-js .site-header--home:not(.is-past-hero) #mainNav .nav-link, .fx-js .site-header--home:not(.is-past-hero) #mainNav .btn { color: var(--fx-ink); }
+  .fx-js .site-header--home:not(.is-past-hero) #mainNav .btn-brand { color: var(--fx-on-accent); }
+  .fx-js .site-header--home:not(.is-past-hero) #mainNav .lang-switch .btn, .fx-js .site-header--home:not(.is-past-hero) #mainNav .theme-toggle, .fx-js .site-header--home:not(.is-past-hero) #mainNav .btn-outline-secondary { background: var(--fx-surface); }
 }

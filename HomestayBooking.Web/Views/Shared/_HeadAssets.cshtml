@@ -11,9 +11,9 @@
             theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
         root.setAttribute('data-bs-theme', theme);
+        root.classList.add('fx-js');
         try { if (localStorage.getItem('fx-sidebar') === 'collapsed') root.classList.add('sidebar-collapsed'); } catch (e) { }
-        // [motion] fx-intro: intro trang chủ chạy một lần mỗi phiên (motion.css)
-        try { if (/^\/(home(\/index)?)?\/?$/i.test(location.pathname) && !sessionStorage.getItem('fx-intro')) { root.classList.add('fx-intro'); sessionStorage.setItem('fx-intro', '1'); } } catch (e) { }
+        if (window.matchMedia && !matchMedia('(prefers-reduced-motion: reduce)').matches) root.classList.add('fx-motion');
     })();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />

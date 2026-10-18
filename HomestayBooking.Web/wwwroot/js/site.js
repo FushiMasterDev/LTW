@@ -123,8 +123,8 @@ document.querySelectorAll('[data-sidebar-collapse]').forEach(btn =>
 
 // Ảnh homestay không tải được: ẩn ảnh để hiện khung thay thế bên dưới
 (() => {
-    const markBroken = img => img.closest('.fx-homestay-card__media, .fx-gallery__item')?.classList.add('is-broken');
-    document.querySelectorAll('.fx-homestay-card__media > img, .fx-gallery__item img').forEach(img => {
+    const markBroken = img => img.closest('.fx-homestay-card__media, .fx-gallery__item, .fx-area-card')?.classList.add('is-broken');
+    document.querySelectorAll('.fx-homestay-card__media > img, .fx-gallery__item img, .fx-area-card img').forEach(img => {
         if (img.complete && img.naturalWidth === 0 && img.getAttribute('src')) markBroken(img);
         else img.addEventListener('error', () => markBroken(img), { once: true });
     });
@@ -195,23 +195,7 @@ $(document).on('change', 'form[data-date-range] input[name="CheckIn"]', function
         img.addEventListener('error', done, { once: true });
     });
 
-    // Xem ảnh lớn: ẩn ảnh cũ khi chuyển ảnh, hiện lại khi ảnh mới tải xong (tối đa 400ms)
-    const lightbox = document.getElementById('lightbox');
-    const view = lightbox?.querySelector('[data-lightbox-view]');
-    if (view && document.querySelectorAll('[data-lightbox-src]').length > 1) {
-        let revealTimer;
-        const reveal = () => { clearTimeout(revealTimer); view.classList.remove('is-swapping'); };
-        const hide = () => {
-            view.classList.add('is-swapping');
-            clearTimeout(revealTimer);
-            revealTimer = setTimeout(reveal, 400);
-        };
-        lightbox.addEventListener('hidden.bs.modal', reveal);
-        view.addEventListener('load', reveal);
-        view.addEventListener('error', reveal);
-        lightbox.addEventListener('click', e => { if (e.target.closest('[data-lightbox-step]')) hide(); }, true);
-        lightbox.addEventListener('keydown', e => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') hide(); }, true);
-    }
+
 })();
 // [/motion]
 
