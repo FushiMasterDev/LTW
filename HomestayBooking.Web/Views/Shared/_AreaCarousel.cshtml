@@ -3,5 +3,5 @@
     <div class="fx-carousel__stage"><div class="fx-area-grid fx-carousel__ring">
         @foreach (var area in Model.Areas) { <partial name="_AreaCard" model="area" /> }
     </div></div>
-    @if (Model.Areas.Count >= 3) { <partial name="_MotionControls" model="true" /> }
+    @if (Model.Areas.Count >= 3) { <partial name="_MotionNavigation" /> }
 </div>

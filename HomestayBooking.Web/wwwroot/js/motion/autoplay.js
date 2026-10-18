@@ -25,7 +25,7 @@
         let count = 0;
         const modalOpen = !!document.querySelector('.modal.show');
         for (const [root, state] of blocks) {
-            const running = !motion.reduced && !document.hidden && !modalOpen && state.visible && !state.paused && !state.hover && !state.focus && count < 2;
+            const running = !motion.reduced && !document.hidden && !modalOpen && state.visible && !state.hover && !state.focus && count < 2;
             if (running) count++;
             root.classList.toggle('is-running', running);
             root.classList.toggle('is-enhanced', !motion.reduced);
@@ -37,7 +37,7 @@
     };
     const register = (root, options = {}) => {
         if (blocks.has(root)) return blocks.get(root).control;
-        const state = { visible: false, hover: false, focus: root.contains(document.activeElement), paused: false, running: false, elapsed: 0, ...options };
+        const state = { visible: false, hover: false, focus: root.contains(document.activeElement), running: false, elapsed: 0, ...options };
         const control = { reset: () => { state.elapsed = 0; }, get running() { return state.running; } };
         state.control = control;
         blocks.set(root, state);
@@ -46,15 +46,6 @@
         root.addEventListener('mouseleave', () => { state.hover = false; reconcile(); });
         root.addEventListener('focusin', () => { state.focus = true; reconcile(); });
         root.addEventListener('focusout', () => queueMicrotask(() => { state.focus = root.contains(document.activeElement); reconcile(); }));
-        const button = root.querySelector('[data-motion-toggle]');
-        button?.addEventListener('click', () => {
-            state.paused = !state.paused;
-            const label = state.paused ? button.dataset.resume : button.dataset.pause;
-            button.setAttribute('aria-pressed', String(state.paused));
-            button.setAttribute('aria-label', label);
-            button.querySelector('[data-motion-label]').textContent = label;
-            reconcile();
-        });
         motion.observe(root, entry => { state.visible = entry.isIntersecting; reconcile(); });
         reconcile();
         return control;

@@ -81,9 +81,7 @@
   #fx-confirm-dialog.modal.fade .modal-dialog { transform: none; transition: opacity var(--fx-dur-1); }
   .app-sidebar { --bs-offcanvas-transition: none; }
   .offcanvas-backdrop.fade { transition-duration: var(--fx-dur-1); }
-  .home-hero__motion { display: none; }
 }
-/* A user's pause control has the same spatial fallback even without an OS preference. */
 
 /* The glass layer crossfades without repainting the header background every frame. */
 .fx-js .site-header--home, .fx-js .site-header--home.is-past-hero { background: transparent; backdrop-filter: none; border-bottom-color: transparent; isolation: isolate; }
@@ -101,7 +99,6 @@
 
 .site-nav .collapsing { transition: none; }
 .lightbox.modal.fade { transition: opacity var(--fx-dur-1) var(--fx-ease-out); }
-@media (prefers-reduced-motion: reduce) { .fx-js .home-hero__motion { display: none; } }
 
 :root { --fx-loop-slow: 24000ms; --fx-dwell: 4000ms; }
 @keyframes fx-camera { from { transform: scale(1.05) rotateX(-1deg) rotateY(-1deg); } to { transform: scale(1.15) rotateX(1deg) rotateY(1deg); } }
@@ -169,7 +166,7 @@
 }
 /* Every new component has a flat, complete reduced-motion state. */
 @media (prefers-reduced-motion: reduce) {
- .fx-motion-controls, .fx-js .home-hero__motion { display: none; }
+ .fx-motion-controls { display: none; }
  .home-hero__photo, .auth-aside > img, .home-promises .bi, .fx-photo-stack__photos a, .fx-gallery__item > img { animation: none !important; transform: none !important; will-change: auto !important; }
  .fx-carousel .fx-area-card, .fx-card-deck [data-deck-card] { transform: none !important; opacity: 1 !important; transition: opacity var(--fx-dur-1) !important; will-change: auto !important; }
  .fx-carousel__stage, .fx-card-deck__cards, .fx-photo-stack__photos { perspective: none !important; }

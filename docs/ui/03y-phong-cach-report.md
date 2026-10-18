@@ -307,3 +307,22 @@ Tổng **7201 frame**, không có long-animation-frame; mỗi mẫu có 1–2 kh
 Không có quyết định nghiệp vụ mới cần chốt; không có lỗi nào trong bốn lỗi bị bỏ qua. Giữ giới hạn tối đa hai khối tự chạy và các ngoại lệ inspector đã chốt. Các thao tác chạm và kích thước điện thoại dùng Chromium emulation, chưa kiểm trên điện thoại vật lý.
 
 App kiểm thử riêng 5012 được dừng bằng đúng PID khi hoàn tất; không tắt app 5011, không dừng/xóa container `sql-homestay`. Một commit `fix(ui): sửa lỗi review bước 03y2`, không đổi nhánh, không push, không bắt đầu bước 04.
+
+## 03y3 – bỏ nút dừng và dòng credit
+
+Ngày 19/10/2026, theo yêu cầu người dùng:
+
+- Gỡ nút dừng ở hero, khu vực, bộ bài, gallery, chồng ảnh, auth và cam kết; UI Kit nhận cùng thay đổi qua partial chung. Thay `_MotionControls` bằng `_MotionNavigation` chỉ có trước/sau, giữ `data-motion-step` và các hook component. Xóa handler/trạng thái dừng bằng nút, CSS riêng và resource EN không còn dùng; cặp trước/sau vẫn căn giữa, không để chỗ trống của nút cũ.
+- Gỡ credit AI khỏi giao diện và alt liên quan; giữ mô tả ảnh, toàn bộ ảnh và `docs/ui/credits.md`. Không đổi nhịp/chuyển động, màu, font, nghiệp vụ hay controller. `DESIGN.md`, luật tự chạy và quyết định 03y3 ghi rõ việc bỏ nút khác khuyến nghị WCAG 2.2.2; vẫn dừng bằng hover/focus/khuất/reduce, khi tab ẩn hoặc modal mở.
+- `rg` trong Views/JS/CSS/Resources: **0** chuỗi/hook cần xóa. XML resource hợp lệ; `node --check autoplay.js`, `git diff --check` sạch; không thêm inline style hay màu literal. Các thư mục bị cấm và credits không đổi.
+- Build Release cuối: **0 lỗi, 0 cảnh báo**. Toàn bộ test: **1597 pass + 1 skip, 0 fail**, giữ nguyên nền; skip vẫn là `StaffAvailabilityAndDatedSearchStayWithinTargets`. Log `build-final.log`, `test-final.log` tại `/private/tmp/fuji-03y3/`.
+- Chụp đủ `/`, `/Homestays/Details/6`, `/Account/Login`, `/Dev/UiKit` (QL001), **375/1280 × sáng/tối**: 16 ảnh toàn trang và 38 ảnh viewport khối sau 4.7 giây. Auth aside vẫn ẩn ở 375 như trước. 32 ảnh/cấu hình reduce và không JS: **0 tự chạy, 0 transform không gian, 0 nội dung bị ẩn, 0 tràn ngang**. No-JS tối đặt theme vào HTML bằng harness. Bằng chứng `shots.js`, các PNG và `fallbacks.log` trong thư mục tạm.
+- `interactions.log`: hero/carousel/deck/photos/cam kết/gallery/auth vẫn tự chạy và dừng khi hover; focus dừng ở khối có phần tử focus được; trước/sau và hai phím mũi tên đạt ở 1280 và 375 (`visibility-mobile.log`). Khối cuộn khỏi màn hình dừng; lightbox dừng mọi autoplay. Chromium headless không ẩn tab nền, nên hợp đồng `visibilitychange` được kiểm bằng giả lập `document.hidden`: **1 → 0 → 1** khối chạy, không đổi code app.
+- Inspector nguyên bản trên `/`, 375/768/1280: **0 FAIL, 3 WARN**, giữ đúng ngoại lệ 03y-D. `size-count` giữ hệ chữ hiện có; `no-footage` giữ yêu cầu dùng ảnh; `first-action` ở 768 vì inspector bỏ qua nút tìm dạng icon rộng 44px (<64px), ảnh xác nhận nút vẫn hiện. Không miễn lỗi mới. Ảnh đã xem: tiêu đề hero hai dòng, cặp mũi tên gọn, không còn credit/nút cũ; reduce gallery hiện đủ ảnh phẳng. Bằng chứng `inspect/report.json`.
+- `console-scrolled.log`: **0 lỗi JavaScript** trên bốn trang. Riêng UI Kit có HTTP 404 của `/images/demo/ui-kit-missing-sm.webp`, mẫu “Khung ảnh lỗi có chủ ý để kiểm tra fallback” có sẵn; đây cũng là lý do harness `shots.log` báo lỗi cuối lượt sau khi đã lưu đủ ảnh. Không sửa mẫu này. Artifact không commit.
+
+### Cần người dùng quyết định
+
+Không có quyết định nghiệp vụ mới. Giữ các lựa chọn đã chốt và mẫu ảnh lỗi UI Kit; kiểm điện thoại bằng Chromium emulation, chưa dùng thiết bị vật lý.
+
+App riêng 5012 được dừng bằng đúng PID; không tác động app 5011 hoặc container `sql-homestay`. Một commit `style(ui): bỏ nút tạm dừng và dòng ghi ảnh AI ở trang khách`, không đổi nhánh, không push, không bắt đầu bước 04.

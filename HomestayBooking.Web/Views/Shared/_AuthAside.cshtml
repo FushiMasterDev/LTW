@@ -3,7 +3,6 @@
 <div class="auth-aside" data-autoplay="ambient">
     <img src="~/images/ai/auth-veranda.webp" alt="" width="1200" height="1500" decoding="async" />
     <div class="auth-aside__copy">
-        <partial name="_MotionControls" model="false" />
         <h2>@L[Model.Title]</h2>
         <ul>
             @foreach (var point in Model.Points) { <li><icon name="check-circle-fill" /> @L[point]</li> }

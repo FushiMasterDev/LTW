@@ -8,6 +8,5 @@
                 <a asp-controller="Homestays" asp-action="Details" asp-route-id="@home.Id"><img src="@(home.CoverUrl!.Thumbnail())" alt="@home.Name" width="480" height="360" loading="lazy" decoding="async" /></a>
             }
         </div>
-        <partial name="_MotionControls" model="false" />
     </div>
 }

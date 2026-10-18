@@ -151,8 +151,8 @@ Các thời lượng cũ (0.06–0.45s) giữ cho phản hồi nút và form.
 - Biểu đồ Chart.js vẽ dần (cấu hình `animation` 0.8s).
 - **Không** có 3D tự chạy, băng chuyền hay Ken Burns ở dashboard.
 
-**Luật cho phần tự chạy** (WCAG 2.2.2: nội dung tự chuyển động quá 5 giây phải dừng được):
-- Mỗi khối tự chạy có **nút Tạm dừng/Tiếp tục** nhìn thấy được, có `aria-label`, chữ qua `L[...]`. Khối tự dừng khi rê chuột vào hoặc khi một phần tử bên trong được focus bằng bàn phím.
+**Luật cho phần tự chạy** (quyết định 03y3 ngày 19/10/2026 thay yêu cầu nút dừng trước đây; khác khuyến nghị WCAG 2.2.2 về điều khiển dừng nội dung tự chuyển động quá 5 giây):
+- **Không có nút dừng/tiếp tục.** Khối chỉ dừng bằng hover/focus bên trong, khi khuất màn hình, tab ẩn, modal mở hoặc `prefers-reduced-motion: reduce`; không JS vẫn đứng yên và hiện phẳng.
 - Băng chuyền, bộ bài, gallery: có nút trước/sau, dùng được bằng phím mũi tên. Thẻ đang ở trước có `aria-current`. Mọi thẻ vẫn là link thật, Tab đi qua được, focus vào thẻ nào thì thẻ đó quay ra trước.
 - **Không tự trượt chữ:** khối tự chạy không mang đoạn văn dài, người đọc không phải đuổi theo chữ.
 - Tối đa **2 khối tự chạy cùng lúc trong một màn hình**. Khối ra khỏi màn hình hoặc tab bị ẩn (`visibilitychange`) thì dừng hẳn, không chạy ngầm.
@@ -171,7 +171,7 @@ Các thời lượng cũ (0.06–0.45s) giữ cho phản hồi nút và form.
   - Ảnh trong băng chuyền và gallery có `width`/`height`, `loading="lazy"` (trừ ảnh đầu), `decoding="async"`.
   - Ảnh hero `preload`, có kích thước sẵn: **CLS = 0** (đo bằng `PerformanceObserver` qua `playwright-cli`).
   - Khi trang chủ đứng yên và khi cuộn ở 1280px, không có frame nào > 50ms (ghi trace).
-- **File:** JS đặt ở `wwwroot/js/motion/` (ví dụ `reveal.js`, `carousel-3d.js`, `card-deck.js`, `cube-gallery.js`, `flip-lightbox.js`, `autoplay.js` (dừng/tiếp tục chung)), mỗi file một việc. Chỉ nạp ở layout/trang cần. Mẫu mới (băng chuyền, bộ bài, gallery lập phương, chồng ảnh) vào thư viện component + `/Dev/UiKit` trước, rồi mới dùng ở trang.
+- **File:** JS đặt ở `wwwroot/js/motion/` (ví dụ `reveal.js`, `carousel-3d.js`, `card-deck.js`, `cube-gallery.js`, `flip-lightbox.js`, `autoplay.js` (đồng hồ và điều kiện dừng tự động dùng chung)), mỗi file một việc. Chỉ nạp ở layout/trang cần. Mẫu mới (băng chuyền, bộ bài, gallery lập phương, chồng ảnh) vào thư viện component + `/Dev/UiKit` trước, rồi mới dùng ở trang.
 
 ## 5. Nội dung và ảnh
 
@@ -252,7 +252,7 @@ Mỗi nhóm làm theo vòng: sửa → `dotnet build -c Release -p:UseSharedComp
   - chụp lại khi tắt JavaScript (nội dung hiện đủ);
   - ở 375px không có thanh cuộn ngang;
   - quay một video ngắn (`video-start`) cảnh trang chủ đứng yên khoảng 15 giây rồi cuộn hết trang, để thấy các khối 3D tự chạy;
-  - kiểm nút Tạm dừng, dừng khi rê chuột/focus, phím mũi tên, và khối dừng khi ra khỏi màn hình.
+  - kiểm không còn nút dừng; dừng khi rê chuột/focus, phím mũi tên, và khối dừng khi ra khỏi màn hình.
 - Bảng tương phản các cặp màu mới ở cả hai chế độ.
 - `python3 -I tools/ui-crawl.py http://localhost:5012` với mọi vai trò: không có trang 500. Đã biết: `/Bookings/Create` thiếu `roomTypeId` trả 404, 3 thẻ mẫu ở UI Kit trả 404.
 - Đi lại luồng của bước 03 bằng tài khoản khách `0987000001` và khi chưa đăng nhập: trang chủ → tìm → chi tiết → đặt → chi tiết đơn có QR → tra cứu.

@@ -3,7 +3,7 @@
 <div class="status-page">
     @if (Model.Code is null or 404 or >= 500)
     {
-        <img class="status-page__decoration" src="~/images/ai/status-lost.webp" alt="@L["Con ngõ có đèn lồng và đường rẽ, ảnh trang trí tạo bằng AI"]" width="1600" height="1000" decoding="async" />
+        <img class="status-page__decoration" src="~/images/ai/status-lost.webp" alt="@L["Con ngõ có đèn lồng và đường rẽ, ảnh trang trí"]" width="1600" height="1000" decoding="async" />
     }
     @if (Model.Code is int code) { <p class="status-code" aria-hidden="true">@code</p> }
     <h1>@L[Model.Title]</h1>
