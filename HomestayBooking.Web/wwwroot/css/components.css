@@ -8,7 +8,7 @@
 /* ---------- Buttons ---------- */
 .btn {
   --bs-btn-font-weight: 600;
-  --bs-btn-border-radius: var(--fx-radius-sm);
+  --bs-btn-border-radius: var(--fx-radius-full);
   min-height: 2.75rem;
   padding-inline: 1.1rem;
   display: inline-flex;
@@ -31,18 +31,18 @@
 
 .btn-brand,
 .btn-accent {
-  --bs-btn-color: var(--fx-on-primary);
-  --bs-btn-bg: var(--fx-primary);
-  --bs-btn-border-color: var(--fx-primary);
-  --bs-btn-hover-color: var(--fx-on-primary);
-  --bs-btn-hover-bg: var(--fx-primary-hover);
-  --bs-btn-hover-border-color: var(--fx-primary-hover);
-  --bs-btn-active-color: var(--fx-on-primary);
-  --bs-btn-active-bg: var(--fx-primary-hover);
-  --bs-btn-active-border-color: var(--fx-primary-hover);
-  --bs-btn-disabled-color: var(--fx-on-primary);
-  --bs-btn-disabled-bg: var(--fx-primary);
-  --bs-btn-disabled-border-color: var(--fx-primary);
+  --bs-btn-color: var(--fx-on-accent);
+  --bs-btn-bg: var(--fx-accent);
+  --bs-btn-border-color: var(--fx-accent);
+  --bs-btn-hover-color: var(--fx-on-accent);
+  --bs-btn-hover-bg: var(--fx-accent-hover);
+  --bs-btn-hover-border-color: var(--fx-accent-hover);
+  --bs-btn-active-color: var(--fx-on-accent);
+  --bs-btn-active-bg: var(--fx-accent-hover);
+  --bs-btn-active-border-color: var(--fx-accent-hover);
+  --bs-btn-disabled-color: var(--fx-on-accent);
+  --bs-btn-disabled-bg: var(--fx-accent);
+  --bs-btn-disabled-border-color: var(--fx-accent);
 }
 
 /* Nút trên nền ảnh tối (banner, trang đăng nhập) */
@@ -144,6 +144,7 @@
 
 /* ---------- Cards, chips, badges ---------- */
 .card-soft {
+  box-shadow: var(--fx-shadow);
   background: var(--fx-surface);
   border: 1px solid var(--fx-border);
   border-radius: var(--fx-radius);
@@ -518,9 +519,9 @@
 /* ---------- Điểm đánh giá ---------- */
 .fx-rating { display: inline-flex; align-items: center; gap: .3rem; color: var(--fx-ink); font-size: .875rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 /* ---------- Ô số liệu ---------- */
-.fx-stat { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: .75rem; height: 100%; padding: 1.25rem; background: var(--fx-surface); border: 1px solid var(--fx-border); border-radius: var(--fx-radius); overflow-wrap: anywhere; }
-.fx-stat__icon { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: var(--fx-radius-sm); background: var(--tone-bg, var(--fx-primary-soft)); color: var(--tone-fg, var(--fx-on-primary-soft)); }
-.fx-stat__value { font-size: clamp(1.4rem, 2.5vw, 1.75rem); line-height: 1.2; font-variant-numeric: tabular-nums; }
+.fx-stat { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: .75rem; height: 100%; padding: 1.25rem; background: var(--fx-surface); border: 1px solid var(--fx-border); border-radius: var(--fx-radius); overflow-wrap: anywhere; box-shadow: var(--fx-shadow); }
+.fx-stat__icon { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: var(--fx-radius-full); background: var(--fx-primary-soft); color: var(--fx-on-primary-soft); }
+.fx-stat__value { font-family: var(--fx-font-display); font-weight: 500; font-size: clamp(1.75rem, 2.5vw, 2.25rem); line-height: 1.2; font-variant-numeric: tabular-nums; }
 .fx-stat__label { color: var(--fx-muted); text-decoration: none; }
 .fx-stat--linked:focus-within { outline: 2px solid var(--fx-focus); outline-offset: 3px; }
 /* ---------- Danh sách mô tả và bảng giá ---------- */
@@ -615,9 +616,9 @@
 .fx-toasts .toast-body { overflow-wrap: anywhere; }
 
 /* ---------- Tabs điều hướng trang ---------- */
-.fx-tabs { display: flex; gap: .5rem; overflow-x: auto; max-width: 100%; margin-bottom: 1.5rem; border-bottom: 1px solid var(--fx-border); }
-.fx-tabs__link { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.75rem; padding: .75rem; flex: 0 0 auto; color: var(--fx-muted); text-decoration: none; border-bottom: 2px solid transparent; }
-.fx-tabs__link.is-active { color: var(--fx-primary); border-bottom-color: var(--fx-primary); font-weight: 600; }
+.fx-tabs { display: flex; flex-wrap: wrap; gap: .5rem; max-width: 100%; margin-bottom: 1.5rem; padding: .375rem; border-radius: var(--fx-radius-xl); background: var(--fx-surface-2); }
+.fx-tabs__link { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.75rem; padding: .75rem; flex: 0 0 auto; color: var(--fx-muted); text-decoration: none; border-radius: var(--fx-radius-full); }
+.fx-tabs__link.is-active { color: var(--fx-on-primary); background: var(--fx-primary); font-weight: 600; }
 .fx-tabs__link:hover { color: var(--fx-primary); }
 /* ---------- Đầu trang và đường dẫn ---------- */
 .fx-page-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
@@ -642,9 +643,12 @@
 .fx-notification-list__item p { margin: .5rem 0 0; }
 
 /* ---------- Thanh tìm phòng dạng viên thuốc ---------- */
-.fx-search { position: relative; display: grid; grid-template-columns: minmax(7rem, 1fr) minmax(13rem, 1.7fr) minmax(8.5rem, 1fr) auto; align-items: start; padding: .75rem; margin-bottom: 3.25rem; border: 1px solid var(--fx-border); border-radius: var(--fx-radius-full); background: var(--fx-surface); }
-.fx-search > div { min-width: 0; padding-inline: 1rem; }
+.fx-search { position: relative; display: grid; grid-template-columns: minmax(7rem, 1fr) minmax(13rem, 1.7fr) minmax(8.5rem, 1fr) auto; align-items: start; padding: .75rem; margin-bottom: 3.25rem; border: 1px solid var(--fx-border); border-radius: var(--fx-radius-full); background: var(--fx-surface); box-shadow: var(--fx-shadow); }
+.fx-search > div { position: relative; z-index: 1; min-width: 0; padding-inline: 1rem; }
 .fx-search__dates, .fx-search__guests { border-inline-start: 1px solid var(--fx-border); }
+.fx-search--hero { background: var(--fx-glass-bg); backdrop-filter: blur(var(--fx-glass-blur)); color: var(--fx-ink); }
+.fx-search__indicator { position: absolute; left: 0; top: 0; width: 1px; height: 1px; border-radius: var(--fx-radius-full); background: var(--fx-surface-2); opacity: 0; pointer-events: none; transform-origin: top left; }
+.fx-search:focus-within .fx-search__indicator { opacity: 1; }
 .fx-search .form-label { display: block; font-size: .8125rem; margin: 0 0 .25rem; white-space: nowrap; }
 .fx-search .form-control, .fx-search .form-select { min-width: 0; padding-inline: .25rem; border: 0; border-radius: var(--fx-radius-sm); background-color: transparent; box-shadow: none; }
 /* Chừa chỗ cho mũi tên của select để "Tất cả khu vực" không bị che ở ~1000px */
@@ -654,7 +658,7 @@
 .fx-search .fx-guests__control button { flex-basis: 2.75rem; border-color: transparent; }
 .fx-search .fx-dates > .form-text, .fx-search [data-date-error]:not(:empty) { position: absolute; left: 1.5rem; right: 1.5rem; top: calc(100% + .4rem); margin: 0; }
 .fx-search [data-date-error]:not(:empty) { top: calc(100% + 1.8rem); }
-.fx-search__submit { align-self: center; border-radius: var(--fx-radius-full); white-space: nowrap; }
+.fx-search__submit { position: relative; z-index: 1; align-self: center; border-radius: var(--fx-radius-full); white-space: nowrap; }
 @media (min-width: 768px) and (max-width: 1199.98px) {
   .fx-search { grid-template-columns: minmax(8rem, 1fr) minmax(15rem, 1.8fr) minmax(10rem, 1fr) auto; }
   .fx-search__submit { width: 2.75rem; padding: 0; }
@@ -668,35 +672,40 @@
   .fx-search__submit { width: 100%; }
 }
 /* ---------- Thẻ homestay ---------- */
-/* Tối đa ba thẻ mỗi hàng ở desktop: trang 9 kết quả và 6 homestay nổi bật không lẻ thẻ */
+/* Lưới nội dung tự co theo vùng chứa; trang chủ có bốn cột từ 1280px. */
 .fx-homestay-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr)); gap: 2rem 1.5rem; }
 .fx-homestay-card { display: block; min-width: 0; color: var(--fx-ink); text-decoration: none; border-radius: var(--fx-radius); }
 .fx-homestay-card:hover { color: var(--fx-ink); }
-.fx-homestay-card__media { position: relative; aspect-ratio: 3 / 2; border-radius: var(--fx-radius); overflow: hidden; background: var(--fx-primary-soft); }
+.fx-homestay-card__media { position: relative; aspect-ratio: 4 / 3; border-radius: var(--fx-radius-xl); overflow: hidden; background: var(--fx-primary-soft); }
 .fx-homestay-card__media > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .fx-homestay-card__fallback { position: absolute; inset: 0; display: grid; place-content: center; gap: .5rem; text-align: center; color: var(--fx-on-primary-soft); }
 .fx-homestay-card__fallback .bi { font-size: 2rem; }
 .fx-homestay-card__media:has(img):not(.is-broken) .fx-homestay-card__fallback { visibility: hidden; }
 .fx-homestay-card__media.is-broken img { display: none; }
-.fx-homestay-card__body { padding-block: .85rem; overflow-wrap: anywhere; }
+.fx-homestay-card__body { padding: .9rem .25rem; overflow-wrap: anywhere; }
+.fx-homestay-card__head { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+.fx-homestay-card__head .fx-rating { max-width: 40%; text-align: right; flex-shrink: 0; font-size: .8125rem; }
+.fx-homestay-card__head .fx-rating .bi { color: var(--fx-accent-text); }
+.fx-homestay-card__area { color: var(--fx-muted); margin: .2rem 0 .5rem; font-size: .875rem; }
+.fx-photo-label { position: absolute; z-index: 2; left: .75rem; top: .75rem; max-width: calc(100% - 1.5rem); padding: .3rem .7rem; border-radius: var(--fx-radius-full); background: var(--fx-glass-bg); color: var(--fx-ink); backdrop-filter: blur(var(--fx-glass-blur)); font-size: .75rem; font-weight: 600; }
 .fx-homestay-card__title, .site-public .fx-homestay-card__title { margin: 0 0 .4rem; font-family: var(--fx-font-sans); font-size: 1.05rem; font-weight: 600; }
 .fx-homestay-card__title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .fx-homestay-card__price { margin-block: .5rem; }
 /* ---------- Gallery và lightbox ---------- */
-.fx-gallery { display: grid; gap: .5rem; overflow: hidden; border-radius: var(--fx-radius-lg); }
-.fx-gallery__item { position: relative; display: block; padding: 0; border: 0; overflow: hidden; background: var(--fx-primary-soft); }
+.fx-gallery { display: grid; gap: 1rem; overflow: hidden; border-radius: var(--fx-radius-xl); }
+.fx-gallery__item { border-radius: var(--fx-radius-xl); position: relative; display: block; padding: 0; border: 0; overflow: hidden; background: var(--fx-primary-soft); }
 .fx-gallery__item img { position: relative; display: block; width: 100%; height: 100%; object-fit: cover; }
 .fx-gallery__item.is-broken img { visibility: hidden; }
 .fx-gallery__fallback { position: absolute; inset: 0; display: grid; place-content: center; color: var(--fx-on-primary-soft); }
 .fx-gallery__more { position: absolute; bottom: .75rem; right: .75rem; padding: .5rem; border-radius: var(--fx-radius-sm); background: var(--fx-surface); color: var(--fx-ink); }
 @media (min-width: 768px) {
-  .fx-gallery { grid-template-columns: 2fr 1fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); height: clamp(20rem, 42vw, 30rem); }
+  .fx-gallery { grid-template-columns: 2fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); height: clamp(20rem, 42vw, 30rem); }
   .fx-gallery__item:first-child { grid-row: span 2; }
   .fx-gallery[data-count="1"] { grid-template-columns: 1fr; grid-template-rows: 1fr; }
   .fx-gallery[data-count="2"] { grid-template-columns: 2fr 1fr; grid-template-rows: 1fr; }
   .fx-gallery[data-count="2"] .fx-gallery__item:first-child { grid-row: auto; }
   .fx-gallery[data-count="3"] { grid-template-columns: 2fr 1fr; }
-  .fx-gallery[data-count="4"] .fx-gallery__item:last-child { grid-column: span 2; }
+
 }
 @media (max-width: 767.98px) {
   .fx-gallery { grid-auto-flow: column; grid-auto-columns: 86%; overflow-x: auto; scroll-snap-type: x mandatory; }
@@ -710,7 +719,7 @@
 .lightbox-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 0; background: color-mix(in srgb, var(--fx-paper) 90%, transparent); color: var(--fx-on-paper); }
 .lightbox-nav.prev { left: .75rem; } .lightbox-nav.next { right: .75rem; }
 /* ---------- Báo giá sticky và tiến trình chỉ đọc ---------- */
-.fx-booking-panel { position: sticky; top: 5rem; padding: 1.25rem; border-radius: var(--fx-radius); background: var(--fx-surface); border: 1px solid var(--fx-border); }
+.fx-booking-panel { box-shadow: var(--fx-shadow); position: sticky; top: 5rem; padding: 1.25rem; border-radius: var(--fx-radius); background: var(--fx-surface); border: 1px solid var(--fx-border); }
 .fx-booking-panel__title, .site-public .fx-booking-panel__title { margin-bottom: 1rem; font-family: var(--fx-font-sans); font-size: 1.125rem; font-weight: 600; }
 .fx-booking-panel .fx-price-breakdown > div { grid-template-columns: minmax(0, 1fr) auto; }
 .fx-booking-panel__empty { margin: 0; color: var(--fx-muted); }
@@ -855,3 +864,39 @@
   color: var(--fx-muted);
   font-size: 0.875rem;
 }
+
+/* Shared destination card: image comes from a live homestay in the area. */
+.fx-area-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.fx-area-card { position: relative; isolation: isolate; display: flex; align-items: flex-end; aspect-ratio: 3 / 4; padding: 1.5rem; border-radius: var(--fx-radius-xl); background: var(--fx-footer-bg); color: var(--fx-paper); text-decoration: none; transform-style: preserve-3d; }
+.fx-area-card:hover { color: var(--fx-paper); }
+.fx-area-card__image { position: absolute; inset: 0; z-index: -2; overflow: hidden; border-radius: inherit; }
+.fx-area-card img { width: 100%; height: 100%; object-fit: cover; }
+.fx-area-card::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: linear-gradient(to top, color-mix(in srgb, var(--fx-scrim) 92%, transparent), color-mix(in srgb, var(--fx-scrim) 5%, transparent) 75%); }
+.fx-area-card__copy { display: grid; transform: translateZ(40px); }
+.fx-area-card__name { font-family: var(--fx-font-display); font-size: 1.75rem; font-weight: 500; }
+.fx-area-card small { font-size: .8125rem; }
+.fx-area-card__sheen { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; background: radial-gradient(circle at var(--fx-x, 50%) var(--fx-y, 50%), var(--fx-sheen), transparent 65%); }
+.fx-area-card.is-broken img { display: none; }
+.fx-area-card:focus-visible { outline-offset: 5px; }
+.fx-stat__value { letter-spacing: -.02em; }
+.fx-booking-card, .fx-empty, .fx-filter-bar, .booking-summary, .form-panel, .partner-form { border: 1px solid var(--fx-border); box-shadow: var(--fx-shadow); }
+.fx-rating .bi { color: var(--fx-accent-text); }
+.modal, .offcanvas, .lightbox { overscroll-behavior: contain; }
+@media (max-width: 767.98px) { .fx-area-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .fx-area-card { padding: 1rem; } .fx-area-card__name { font-size: 1.375rem; } .fx-search__indicator { display: none; } }
+
+/* Room choice and public review, also rendered in the UI Kit. */
+.stay-room { position: relative; border: 1px solid var(--fx-border); border-radius: var(--fx-radius-xl); box-shadow: var(--fx-shadow); }
+.stay-room.is-selected { border-color: var(--fx-primary); outline: 1px solid var(--fx-primary); background: var(--fx-primary-soft); }
+.stay-room__check { position: absolute; top: .75rem; right: .75rem; display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: var(--fx-radius-full); background: var(--fx-primary); color: var(--fx-on-primary); opacity: 0; transform: scale(.5); }
+.stay-room.is-selected .stay-room__check { opacity: 1; transform: scale(1); }
+.stay-room.is-selected .stay-room__action { padding-top: 1.5rem; }
+.fx-review-card { padding: 1.5rem; border: 1px solid var(--fx-border); border-radius: var(--fx-radius-xl); background: var(--fx-surface); box-shadow: var(--fx-shadow); overflow-wrap: anywhere; }
+.fx-review-card__head { display: flex; align-items: center; gap: .75rem; }
+.fx-review-card__avatar { display: grid; place-items: center; flex-shrink: 0; width: 2.75rem; height: 2.75rem; border-radius: var(--fx-radius-full); background: var(--fx-primary-soft); color: var(--fx-on-primary-soft); font-weight: 700; }
+.fx-review-card time { margin-inline-start: auto; font-size: .8125rem; color: var(--fx-muted); }
+.fx-review-card > p { margin: 1rem 0 0; }
+.uikit-room-options { display: grid; gap: 1rem; list-style: none; padding: 0; }
+.uikit-room-options .stay-room { display: grid; gap: 1rem; padding: 1.5rem; background: var(--fx-surface); }
+.uikit-room-options .stay-room__prices { display: flex; gap: 1rem; flex-wrap: wrap; }
+.uikit-room-options .stay-room__action { display: flex; align-items: start; flex-wrap: wrap; gap: .5rem; }
+@media (max-width: 575.98px) { .fx-review-card__head { flex-wrap: wrap; } .fx-review-card time { width: 100%; margin-inline-start: 3.5rem; } }

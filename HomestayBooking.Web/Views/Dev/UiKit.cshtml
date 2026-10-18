@@ -11,10 +11,10 @@
     var sections = new (string Id, string Title)[]
     {
         ("colors", "Màu"), ("type", "Chữ"), ("buttons", "Nút"), ("badges", "Badge trạng thái"), ("money", "Tiền và ngày"),
-        ("icons", "Icon"), ("forms", "Form"), ("alerts", "Thông báo"), ("lists", "Trang danh sách"), ("empty", "Trạng thái rỗng"), ("layout", "Khung trang"), ("rating", "Điểm đánh giá"), ("stats", "Ô số liệu"), ("data-table", "Bảng dùng chung"), ("descriptions", "Mô tả"), ("timeline", "Dòng thời gian"), ("prices", "Bảng giá"), ("skeleton", "Khung chờ tải"), ("filters", "Thanh lọc"), ("date-picker", "Bộ chọn ngày"), ("guest-picker", "Số khách"), ("uploads", "Vùng tải file"), ("feedback", "Xác nhận và toast"), ("navigation", "Tabs, đường dẫn, đầu trang"), ("notifications", "Chuông thông báo"), ("booking-search", "Thanh tìm phòng"), ("homestay-cards", "Thẻ homestay"), ("gallery", "Gallery"), ("booking-panel", "Ô báo giá"), ("booking-stepper", "Tiến trình đơn"), ("booking-cards", "Thẻ đơn của khách"), ("rating-input", "Chọn điểm"), ("steps", "Các bước"), ("auth-aside", "Cột ảnh đăng nhập"), ("status-page", "Trang lỗi"), ("payment-qr", "Thanh toán QR"), ("room-calendar", "Lịch tháng"),
+        ("icons", "Icon"), ("forms", "Form"), ("alerts", "Thông báo"), ("lists", "Trang danh sách"), ("empty", "Trạng thái rỗng"), ("layout", "Khung trang"), ("rating", "Điểm đánh giá"), ("stats", "Ô số liệu"), ("data-table", "Bảng dùng chung"), ("descriptions", "Mô tả"), ("timeline", "Dòng thời gian"), ("prices", "Bảng giá"), ("skeleton", "Khung chờ tải"), ("filters", "Thanh lọc"), ("date-picker", "Bộ chọn ngày"), ("guest-picker", "Số khách"), ("uploads", "Vùng tải file"), ("feedback", "Xác nhận và toast"), ("navigation", "Tabs, đường dẫn, đầu trang"), ("notifications", "Chuông thông báo"), ("booking-search", "Thanh tìm phòng"), ("homestay-cards", "Thẻ homestay"), ("area-cards", "Khu vực"), ("room-options", "Chọn phòng"), ("review-cards", "Thẻ đánh giá"), ("gallery", "Gallery"), ("booking-panel", "Ô báo giá"), ("booking-stepper", "Tiến trình đơn"), ("booking-cards", "Thẻ đơn của khách"), ("rating-input", "Chọn điểm"), ("steps", "Các bước"), ("auth-aside", "Cột ảnh đăng nhập"), ("status-page", "Trang lỗi"), ("payment-qr", "Thanh toán QR"), ("room-calendar", "Lịch tháng"),
     };
     var tokens = new[] { "bg", "surface", "surface-2", "surface-3", "border", "border-strong", "ink", "muted", "primary", "primary-hover",
-        "primary-soft", "focus", "success", "warning", "danger", "info" };
+        "primary-soft", "accent", "accent-hover", "focus", "success", "warning", "danger", "info" };
     var tones = new[] { "sky", "indigo", "violet", "pink", "rose", "orange", "amber", "emerald", "teal", "slate" };
     var statusGroups = new (string Name, Enum[] Values)[]
     {
@@ -76,12 +76,12 @@
 
 <section id="type" class="uikit-section" aria-labelledby="type-title">
     <h2 id="type-title" class="section-title">Chữ</h2>
-    <p class="h1">Tiêu đề h1 – Homestay Tây Hồ</p>
-    <p class="h2">Tiêu đề h2 – Phòng đôi hướng hồ</p>
-    <p class="h3">Tiêu đề h3</p>
+    <p class="h1 uikit-display">Tiêu đề h1 – Homestay Tây Hồ</p>
+    <p class="h2 uikit-display">Tiêu đề h2 – Phòng đôi hướng hồ</p>
+    <p class="h3 uikit-display">Tiêu đề h3 · ỗ ữ ặ ậ ỡ</p>
     <p class="h4">Tiêu đề h4</p>
     <p class="h5">Tiêu đề h5</p>
-    <p>Đoạn văn thường: Fuji Homestay kết nối khách với các homestay đã được thẩm định tại Hà Nội. Dấu tiếng Việt: ắ ằ ẳ ẵ ặ ố ồ ổ ỗ ộ ứ ừ ử ữ ự.</p>
+    <p>Đoạn văn thường: Fuji Homestay kết nối khách với các homestay đã được thẩm định tại Hà Nội. Dấu tiếng Việt: ắ ằ ẳ ẵ ặ ố ồ ổ ỗ ộ ứ ừ ử ữ ự. ỗ ữ ặ ậ ỡ.</p>
     <p class="text-muted">Chữ phụ (<code>--fx-muted</code>) cho mô tả, nhãn phụ.</p>
     <p><span class="booking-code">FJ2611-0012</span> · <span class="price">1.700.000đ</span> · <a href="#type">Link trong đoạn văn</a></p>
 </section>
@@ -395,6 +395,29 @@
     }
     <partial name="_RoomCalendar" model='new RoomCalendarModel(month, nightsForKit, new[] { new CalendarRoom(1, "101"), new CalendarRoom(2, "102") })' />
     <div class="mt-4"><partial name="_RoomCalendar" model='new RoomCalendarModel(month, Array.Empty<CalendarNight>())' /></div>
+</section>
+
+<section id="area-cards" class="uikit-section" aria-labelledby="area-cards-title">
+    <h2 id="area-cards-title">Khu vực: có ảnh, không có ảnh, tên dài</h2>
+    <p>Mẫu minh họa trong UI Kit; trang thật lấy ảnh và số lượng từ dữ liệu.</p>
+    <div class="fx-area-grid">
+        <partial name="_AreaCard" model='new AreaCardModel(1, "Hoàn Kiếm", 4, "/images/hero-hoan-kiem.jpg")' />
+        <partial name="_AreaCard" model='new AreaCardModel(2, "Khu vực chưa có ảnh", 0)' />
+    </div>
+</section>
+<section id="room-options" class="uikit-section" aria-labelledby="room-options-title">
+    <h2 id="room-options-title">Thẻ chọn phòng và trạng thái hết phòng</h2>
+    <ul class="uikit-room-options">
+        <partial name="_RoomOption" model='new RoomOptionModel(new RoomTypeOffer(1, "Phòng đôi mẫu UI Kit", "Phòng đôi", 2, 24, null, 600000, 700000, 800000, 2, null), new HomestaySearchQuery())' />
+        <partial name="_RoomOption" model='new RoomOptionModel(new RoomTypeOffer(2, "Phòng hết chỗ mẫu UI Kit", "Phòng đôi", 2, 24, null, 600000, 700000, 800000, 0, null), new HomestaySearchQuery())' />
+    </ul>
+</section>
+<section id="review-cards" class="uikit-section" aria-labelledby="review-cards-title">
+    <h2 id="review-cards-title">Thẻ đánh giá minh họa: tên và tên không được nạp</h2>
+    <ul class="uikit-room-options">
+        <partial name="_ReviewCard" model='new ReviewCardModel(4, DateTime.UtcNow, "Nội dung minh họa để kiểm tra cách xuống dòng, không dùng như đánh giá thật.", null, "Nguyễn Mẫu")' />
+        <partial name="_ReviewCard" model='new ReviewCardModel(5, DateTime.UtcNow, null, null)' />
+    </ul>
 </section>
 
 @section Scripts {

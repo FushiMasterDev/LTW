@@ -1,0 +1,52 @@
+@using HomestayBooking.Web.TagHelpers
+@model RoomOptionModel
+@{
+    var t = Model.Offer;
+    var q = Model.Query;
+    var nights = q.HasDates ? q.CheckOut!.Value.DayNumber - q.CheckIn!.Value.DayNumber : 0;
+    var fits = t.MaxGuests >= q.Guests;
+    var soldOut = t.FreeRooms == 0;
+}
+<li class="stay-room @(fits && !soldOut ? null : "is-unavailable")">
+    <span class="stay-room__check" aria-hidden="true"><icon name="check-lg" /></span>
+    <div class="stay-room__info">
+        <h3>@t.Name</h3>
+        <p class="stay-room__meta">@t.CategoryName · @L["Tối đa {0} khách", t.MaxGuests]@(t.AreaM2 is int m2 ? $" · {m2} m²" : "")</p>
+        @if (!string.IsNullOrEmpty(t.Description))
+        {
+            <p class="stay-room__desc">@t.Description</p>
+        }
+        <dl class="stay-room__prices">
+            <div><dt>@L["Ngày thường"]</dt><dd><money value="t.WeekdayPrice" /></dd></div>
+            <div><dt>@L["Cuối tuần"]</dt><dd><money value="t.WeekendPrice" /></dd></div>
+            <div><dt>@L["Ngày lễ"]</dt><dd><money value="t.HolidayPrice" /></dd></div>
+        </dl>
+    </div>
+    <div class="stay-room__action">
+        @if (t.Quote is not null)
+        {
+            <p class="stay-room__total"><money value="t.Quote.Total" /></p>
+            <p class="stay-room__deposit">@L["{0} đêm", nights] · @L["Cọc {0}", MoneyTagHelper.Format(t.Quote.Deposit)]</p>
+        }
+        @if (!fits)
+        {
+            <span class="badge-tone tone-amber">@L["Không đủ chỗ cho {0} khách", q.Guests]</span>
+        }
+        else if (soldOut)
+        {
+            <span class="badge-tone tone-rose">@L["Hết phòng"]</span>
+        }
+        else
+        {
+            @if (t.FreeRooms is int free)
+            {
+                <span class="badge-tone tone-emerald">@L["Còn {0} phòng", free]</span>
+            }
+            <button type="button" class="btn btn-outline-primary" data-room-select aria-pressed="false">@L["Chọn phòng"]</button>
+            <a class="btn btn-brand" asp-controller="Bookings" asp-action="Create" asp-route-roomTypeId="@t.Id"
+               asp-route-checkIn="@q.CheckIn?.ToString("yyyy-MM-dd")" asp-route-checkOut="@q.CheckOut?.ToString("yyyy-MM-dd")" asp-route-guests="@q.Guests">
+                @L["Đặt phòng"]
+            </a>
+        }
+    </div>
+</li>

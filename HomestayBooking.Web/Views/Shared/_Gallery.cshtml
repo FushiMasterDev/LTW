@@ -1,5 +1,5 @@
 @model GalleryModel
-@{ var shown = Math.Min(5, Model.Images.Count); }
+@{ var shown = Math.Min(3, Model.Images.Count); }
 @if (shown > 0)
 {
     <div class="fx-gallery mb-4" data-count="@shown" data-gallery>

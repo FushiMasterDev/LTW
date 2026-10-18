@@ -66,3 +66,13 @@ public record BookingStepperModel(BookingStatus Status)
 /// <param name="ReloadOnExpiry">Chỉ trang đơn thật mới tự tải lại khi hết hạn.</param>
 public record PaymentQrModel(string? ImageUrl, decimal Amount, string Content, DateTime DeadlineUtc,
     BankAccountOptions? Bank = null, bool Additional = false, bool ReloadOnExpiry = false);
+
+
+/// <summary>Ảnh khu vực được controller lấy từ homestay đang hoạt động; null dùng nền xanh.</summary>
+public record AreaCardModel(int Id, string Name, int Count, string? CoverUrl = null);
+
+/// <summary>Thẻ chọn phòng, giữ nguyên báo giá và query đã có; không tự tính nghiệp vụ.</summary>
+public record RoomOptionModel(RoomTypeOffer Offer, HomestaySearchQuery Query);
+
+/// <summary>Đánh giá công khai đã có, tên có thể trống khi service không nạp người viết.</summary>
+public record ReviewCardModel(int Rating, DateTime CreatedAt, string? Comment, string? Reply, string? Name = null);

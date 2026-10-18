@@ -5,7 +5,7 @@
 <footer class="site-footer mt-5">
     <div class="container py-5">
         <div class="row g-4">
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <div class="d-flex align-items-center gap-2 mb-2">
                     <span class="brand-mark" aria-hidden="true"><icon name="house-heart-fill" /></span>
                     <strong class="fs-5" translate="no">Fuji Homestay</strong>
@@ -13,7 +13,7 @@
                 <p class="footer-muted mb-2">@L["Công ty Fuji – Hệ thống đặt phòng homestay"]</p>
                 <a asp-area="" asp-controller="Partner" asp-action="Index">@L["Có homestay? Trở thành đối tác"]</a>
             </div>
-            <div class="col-sm-6 col-md-4">
+            <div class="col-sm-6 col-md-3">
                 <h2 class="h6">@L["Liên hệ"]</h2>
                 <ul class="list-unstyled footer-muted mb-0">
                     <li><i class="bi bi-telephone me-2" aria-hidden="true"></i>@L["Hotline"]: <a href="tel:19000000">1900 0000</a></li>
@@ -21,9 +21,16 @@
                     <li><i class="bi bi-geo-alt me-2" aria-hidden="true"></i>@L["Hà Nội, Việt Nam"]</li>
                 </ul>
             </div>
+            <div class="col-sm-6 col-md-3">
+                <h2 class="h6">@L["Khám phá"]</h2>
+                <ul class="list-unstyled mb-0">
+                    <li><a asp-area="" asp-controller="Homestays" asp-action="Index">@L["Tìm homestay"]</a></li>
+                    <li><a asp-area="" asp-controller="Bookings" asp-action="@(signedIn ? "Mine" : "Lookup")">@(signedIn ? L["Đơn của tôi"] : L["Tra cứu đơn"])</a></li>
+                </ul>
+            </div>
             @if (!signedIn)
             {
-                <div class="col-sm-6 col-md-3">
+                <div class="col-sm-6 col-md-2">
                     <h2 class="h6">@L["Tài khoản"]</h2>
                     <a class="btn btn-light-glass mb-2" asp-area="" asp-controller="Account" asp-action="Login">
                         <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i> @L["Đăng nhập"]

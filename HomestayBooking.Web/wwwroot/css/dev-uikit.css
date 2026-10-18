@@ -50,3 +50,7 @@
   padding: 1rem;
 }
 .uikit-auth-aside .auth-aside { display: block; min-height: 22rem; border-radius: var(--fx-radius-lg); overflow: hidden; }
+
+.uikit-display { font-family: var(--fx-font-display); font-weight: 500; }
+.uikit-swatch[data-token="accent"] { --swatch: var(--fx-accent); }
+.uikit-swatch[data-token="accent-hover"] { --swatch: var(--fx-accent-hover); }

@@ -1,0 +1,9 @@
+@model AreaCardModel
+<a class="fx-area-card" asp-controller="Homestays" asp-action="Index" asp-route-areaId="@Model.Id" data-tilt="area">
+    @if (!string.IsNullOrWhiteSpace(Model.CoverUrl))
+    {
+        <span class="fx-area-card__image"><img src="@Model.CoverUrl.Thumbnail()" alt="" width="480" height="640" loading="lazy" /></span>
+    }
+    <span class="fx-area-card__copy"><span class="fx-area-card__name">@Model.Name</span><small>@L["{0} homestay", Model.Count]</small></span>
+    <span class="fx-area-card__sheen" aria-hidden="true"></span>
+</a>

@@ -15,10 +15,10 @@
 /* ---------- Sidebar ---------- */
 .app-sidebar {
   --bs-offcanvas-width: var(--fx-sidebar-w);
-  --bs-offcanvas-bg: var(--fx-surface);
-  --bs-offcanvas-color: var(--fx-ink);
-  background: var(--fx-surface);
-  border-right: 1px solid var(--fx-border);
+  --bs-offcanvas-bg: var(--fx-sidebar-bg);
+  --bs-offcanvas-color: var(--fx-sidebar-ink);
+  background: var(--fx-sidebar-bg);
+  border-right: 1px solid var(--fx-sidebar-border);
 }
 
 @media (min-width: 992px) {
@@ -56,7 +56,7 @@
   }
 
   .sidebar-collapsed .sidebar-group + .sidebar-group {
-    border-top: 1px solid var(--fx-border);
+    border-top: 1px solid var(--fx-sidebar-border);
     padding-top: 0.75rem;
   }
 
@@ -67,7 +67,7 @@
 }
 
 .app-sidebar-head {
-  border-bottom: 1px solid var(--fx-border);
+  border-bottom: 1px solid var(--fx-sidebar-border);
   flex-shrink: 0;
 }
 
@@ -77,19 +77,19 @@
   gap: 0.65rem;
   height: var(--fx-topbar-h);
   padding: 0 1.25rem;
-  color: var(--fx-ink);
+  color: var(--fx-sidebar-ink);
   text-decoration: none;
   flex-shrink: 0;
 }
 
 .app-sidebar-brand:hover {
-  color: var(--fx-ink);
+  color: var(--fx-sidebar-ink);
 }
 
 .app-sidebar .brand-mark {
   width: 2.25rem;
   height: 2.25rem;
-  border-radius: var(--fx-radius-sm);
+  border-radius: var(--fx-radius-full);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -105,7 +105,7 @@
 }
 
 .app-sidebar .brand-name span {
-  color: var(--fx-primary);
+  color: var(--fx-sidebar-ink);
 }
 
 .app-sidebar-nav {
@@ -123,7 +123,7 @@
   margin-bottom: 0.35rem;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--fx-muted);
+  color: var(--fx-sidebar-muted);
 }
 
 .sidebar-group ul {
@@ -141,8 +141,8 @@
   gap: 0.75rem;
   min-height: 2.75rem;
   padding: 0.5rem 0.75rem;
-  border-radius: var(--fx-radius-sm);
-  color: var(--fx-muted);
+  border-radius: var(--fx-radius-full);
+  color: var(--fx-sidebar-muted);
   font-weight: 500;
   text-decoration: none;
   transition: background-color 0.15s var(--fx-ease), color 0.15s var(--fx-ease);
@@ -157,25 +157,14 @@
 
 .sidebar-link:hover,
 .sidebar-link:focus-visible {
-  background: var(--fx-surface-2);
-  color: var(--fx-ink);
+  background: var(--fx-sidebar-hover);
+  color: var(--fx-sidebar-ink);
 }
 
 .sidebar-link.active {
-  background: var(--fx-primary-soft);
-  color: var(--fx-on-primary-soft);
+  background: var(--fx-sidebar-active);
+  color: var(--fx-sidebar-on-active);
   font-weight: 600;
-}
-
-.sidebar-link.active::before {
-  content: "";
-  position: absolute;
-  left: -0.75rem;
-  top: 0.5rem;
-  bottom: 0.5rem;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--fx-primary);
 }
 
 .sidebar-count {
@@ -193,7 +182,7 @@
 
 .app-sidebar-foot {
   padding: 0.75rem;
-  border-top: 1px solid var(--fx-border);
+  border-top: 1px solid var(--fx-sidebar-border);
   flex-shrink: 0;
 }
 
@@ -207,8 +196,7 @@
   gap: 0.75rem;
   height: var(--fx-topbar-h);
   padding: 0 1rem;
-  background: color-mix(in srgb, var(--fx-bg) 92%, transparent);
-  backdrop-filter: blur(8px);
+  background: var(--fx-surface);
   border-bottom: 1px solid var(--fx-border);
 }
 
@@ -281,13 +269,17 @@
 }
 
 .app-content h1 {
-  font-size: 1.5rem;
+  font-size: clamp(1.75rem, 2.5vw, 2.5rem);
+  font-family: var(--fx-font-display);
+  font-weight: 500;
 }
 
 /* Đầu trang tổng quan: trước là dải gradient, nay là tiêu đề yên tĩnh trên nền trang */
 /* Các biến thể cũ giữ tên, không còn mang màu riêng */
 .app-content .page-head h1 {
-  font-size: 1.5rem;
+  font-size: clamp(1.75rem, 2.5vw, 2.5rem);
+  font-family: var(--fx-font-display);
+  font-weight: 500;
 }
 
 .app-content .page-head .icon-chip-lg {
@@ -484,3 +476,11 @@
     width: 100%;
   }
 }
+
+.app-sidebar { color: var(--fx-sidebar-ink); }
+.app-sidebar .brand-name { font-family: var(--fx-font-display); }
+.sidebar-count { background: var(--fx-sidebar-hover); color: var(--fx-sidebar-ink); }
+.sidebar-link.active .sidebar-count { background: var(--fx-sidebar-bg); }
+/* Bootstrap removes the offcanvas background on large screens; the persistent sidebar keeps its forest surface. */
+.app-sidebar.offcanvas-lg { background-color: var(--fx-sidebar-bg) !important; }
+.app-sidebar .btn-ghost { color: var(--fx-sidebar-ink); }

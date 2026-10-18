@@ -1,0 +1,12 @@
+@using HomestayBooking.Web.Services
+@model ReviewCardModel
+@{ var name = string.IsNullOrWhiteSpace(Model.Name) ? L["Khách đã lưu trú"].Value : Model.Name; }
+<li class="fx-review-card">
+    <div class="fx-review-card__head">
+        <span class="fx-review-card__avatar" aria-hidden="true">@name[..1].ToUpper()</span>
+        <div><strong>@name</strong><div><rating value="Model.Rating" single="true" /></div></div>
+        <time datetime="@Model.CreatedAt.ToString("yyyy-MM-dd")">@VietnamTime.ToLocal(DateTime.SpecifyKind(Model.CreatedAt, DateTimeKind.Utc)).ToString("dd/MM/yyyy")</time>
+    </div>
+    @if (!string.IsNullOrEmpty(Model.Comment)) { <p>@Model.Comment</p> }
+    @if (!string.IsNullOrEmpty(Model.Reply)) { <div class="stay-reviews__reply"><p class="fw-semibold mb-1">@L["Chủ homestay trả lời"]</p><p>@Model.Reply</p></div> }
+</li>

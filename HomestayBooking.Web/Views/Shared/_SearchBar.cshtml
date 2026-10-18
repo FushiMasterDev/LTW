@@ -2,6 +2,7 @@
 @model SearchBarModel
 @{ var q = Model.Query ?? new HomestaySearchQuery(); }
 <form class="fx-search @(Model.Variant == "hero" ? "fx-search--hero" : "fx-search--compact")" method="get" asp-area="" asp-controller="Homestays" asp-action="Index" role="search" aria-label="@L["Tìm homestay"]">
+    <span class="fx-search__indicator" aria-hidden="true"></span>
     @if (q.Q is not null) { <input name="Q" value="@q.Q" type="hidden" /> }
     @if (q.MinPrice is { } min) { <input type="hidden" name="MinPrice" value="@min.ToString(CultureInfo.InvariantCulture)" /> }
     @if (q.MaxPrice is { } max) { <input type="hidden" name="MaxPrice" value="@max.ToString(CultureInfo.InvariantCulture)" /> }

@@ -1,24 +1,25 @@
 /* =========================================================================
    Website khách hàng: header, banner, tìm kiếm, thẻ homestay, chi tiết, đặt phòng,
-   thanh toán, tài khoản, trang lỗi. Tiêu đề dùng Lora, nội dung dùng Be Vietnam Pro.
+   thanh toán, tài khoản, trang lỗi. Tiêu đề dùng Fraunces, nội dung dùng Manrope.
    ========================================================================= */
 /* Class không có tiền tố fx- là class cũ chuyển nguyên từ CSS trước bước 01: bước 02–04 thay bằng component mới rồi xóa. */
 .site-public h1, .site-public .h1,
-.site-public h2, .site-public .h2 {
+.site-public h2, .site-public .h2,
+.site-public h3 {
   font-family: var(--fx-font-serif);
   font-weight: 600;
-  letter-spacing: -0.005em;
+  letter-spacing: -.02em;
 }
 
-.site-public h1, .site-public .h1 { font-size: clamp(1.75rem, 1.4rem + 1.4vw, 2.375rem); }
-.site-public h2, .site-public .h2 { font-size: clamp(1.375rem, 1.2rem + 0.7vw, 1.75rem); }
+.site-public h1, .site-public .h1 { font-size: clamp(1.875rem, 1.4rem + 1.8vw, 3rem); }
+.site-public h2, .site-public .h2 { font-size: clamp(1.625rem, 1.2rem + 1.4vw, 2.5rem); }
 .site-public h1.h3, .site-public .h3 { font-size: 1.5rem; }
 .site-public h1.h4, .site-public .h4 { font-size: 1.25rem; }
 .site-public h2.h5, .site-public .h5 { font-size: 1.125rem; }
 .site-public h2.h6, .site-public .h6 { font-size: 1rem; }
 
 /* Tiêu đề nhỏ trong thẻ (h2.h5, h2.h6) dùng sans cho gọn */
-.site-public h2.h5, .site-public h2.h6, .site-public h3 {
+.site-public h2.h5, .site-public h2.h6 {
   font-family: var(--fx-font-sans);
   font-weight: 650;
 }
@@ -1133,4 +1134,26 @@
   .page-head h1 {
     font-size: 1.5rem;
   }
+}
+
+/* Public frame: the homepage header floats over the photograph. */
+.site-public .container { max-width: 80rem; padding-inline: 1.25rem; }
+.site-header--home { position: fixed; inset: 0 0 auto; background: transparent; border-color: transparent; }
+.site-header--home:not(.is-past-hero) .brand-name, .site-header--home:not(.is-past-hero) .brand-name span,
+.site-header--home:not(.is-past-hero) .nav-link, .site-header--home:not(.is-past-hero) .navbar-toggler { color: var(--fx-paper); }
+.site-header--home:not(.is-past-hero) .nav-link.active::after { background: var(--fx-paper); }
+.site-header--home:not(.is-past-hero) .theme-toggle, .site-header--home:not(.is-past-hero) .lang-switch .btn,
+.site-header--home:not(.is-past-hero) .site-nav .btn-outline-secondary { color: var(--fx-paper); background: var(--fx-photo-glass); border-color: transparent; }
+.site-header--home.is-past-hero { background: var(--fx-glass-bg); backdrop-filter: blur(var(--fx-glass-blur)); border-color: var(--fx-border); }
+.site-nav { min-height: 4.75rem; }
+.site-footer { padding-top: 1.5rem; }
+.site-footer h2 { font-size: 1rem; font-weight: 600; }
+.site-footer li a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+.auth-card { border: 1px solid var(--fx-border); box-shadow: var(--fx-shadow); border-radius: var(--fx-radius-xl); }
+@media (min-width: 768px) { .site-public .container { padding-inline: 2rem; } }
+@media (max-width: 1199.98px) {
+  .site-header--home #mainNav { padding: 1rem; margin-block: .75rem; border-radius: var(--fx-radius-xl); background: var(--fx-glass-bg); backdrop-filter: blur(var(--fx-glass-blur)); color: var(--fx-ink); box-shadow: var(--fx-shadow-raised); }
+  .site-header--home:not(.is-past-hero) #mainNav .nav-link, .site-header--home:not(.is-past-hero) #mainNav .btn { color: var(--fx-ink); }
+  .site-header--home:not(.is-past-hero) #mainNav .btn-brand { color: var(--fx-on-accent); }
+  .site-header--home:not(.is-past-hero) #mainNav .lang-switch .btn, .site-header--home:not(.is-past-hero) #mainNav .theme-toggle, .site-header--home:not(.is-past-hero) #mainNav .btn-outline-secondary { background: var(--fx-surface); }
 }

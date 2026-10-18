@@ -2185,4 +2185,7 @@
   <data name="Hồ sơ đang duyệt, chỉ được sửa khi còn nháp, chờ kích hoạt hoặc cần bổ sung." xml:space="preserve"><value>The application is under review; it can only be edited as a draft, while awaiting activation or when more information is needed.</value></data>
   <data name="Chỉ sửa homestay nháp hoặc homestay chờ duyệt khi hồ sơ cần bổ sung." xml:space="preserve"><value>Only draft homestays, or pending ones when more information is needed, can be edited.</value></data>
   <data name="Bạn không có quyền xem hồ sơ đối tác này." xml:space="preserve"><value>You do not have permission to view this partner application.</value></data>
+  <data name="Khám phá" xml:space="preserve"><value>Explore</value></data>
+  <data name="Chọn phòng" xml:space="preserve"><value>Select room</value></data>
+  <data name="Khách đã lưu trú" xml:space="preserve"><value>Verified guest</value></data>
 </root>

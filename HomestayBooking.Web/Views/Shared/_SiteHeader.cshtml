@@ -5,9 +5,10 @@
     var controller = ViewContext.RouteData.Values["controller"]?.ToString();
     string Active(string? a, string c) => area == a && controller == c ? "active" : "";
     string? Current(string? a, string c) => area == a && controller == c ? "page" : null;
+    var home = controller == "Home" && (ViewContext.RouteData.Values["action"]?.ToString() == "Index");
     var signedIn = User.Identity?.IsAuthenticated == true;
 }
-<header class="site-header sticky-top">
+<header class="site-header sticky-top @(home ? "site-header--home" : null)" data-site-header>
     <nav class="navbar navbar-expand-xl site-nav py-2" aria-label="@L["Điều hướng chính"]">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center gap-2 me-xl-4" asp-area="" asp-controller="Home" asp-action="Index">
