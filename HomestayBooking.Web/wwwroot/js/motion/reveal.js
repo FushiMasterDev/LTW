@@ -50,18 +50,6 @@
         document.dispatchEvent(new Event('fx:motionchange'));
     };
     preference.addEventListener('change', update);
-    document.addEventListener('click', event => {
-        const button = event.target.closest('[data-motion-toggle]');
-        if (!button) return;
-        const paused = root.toggleAttribute('data-motion-paused');
-        button.setAttribute('aria-pressed', String(paused));
-        root.classList.toggle('fx-motion', !paused && !preference.matches);
-        button.querySelector('[data-motion-label]').textContent = paused ? button.dataset.resume : button.dataset.pause;
-        update();
-    });
-    document.addEventListener('animationend', event => {
-        if (event.animationName === 'fx-deck') event.target.dataset.deckDone = '';
-    });
     // Keyboard navigation must never wait for an entrance.
     document.addEventListener('focusin', event => {
         event.target.closest('[data-fx-reveal]')?.classList.add('is-in');

@@ -875,7 +875,6 @@
 .fx-area-card__copy { display: grid; transform: translateZ(40px); }
 .fx-area-card__name { font-family: var(--fx-font-display); font-size: 1.75rem; font-weight: 500; }
 .fx-area-card small { font-size: .8125rem; }
-.fx-area-card__sheen { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; background: radial-gradient(circle at var(--fx-x, 50%) var(--fx-y, 50%), var(--fx-sheen), transparent 65%); }
 .fx-area-card.is-broken img { display: none; }
 .fx-area-card:focus-visible { outline-offset: 5px; }
 .fx-stat__value { letter-spacing: -.02em; }
@@ -993,7 +992,6 @@
 .uikit-room-options { display: grid; gap: 1rem; list-style: none; padding: 0; }
 @media (max-width: 575.98px) { .fx-review-card__head { flex-wrap: wrap; } .fx-review-card time { width: 100%; margin-inline-start: 3.5rem; } }
 .fx-area-card__copy { position: relative; z-index: 2; }
-.fx-area-card__sheen { z-index: 1; }
 
 .stay-room__action { padding-top: 1rem; }
 /* Language is a selected setting, so it uses forest rather than the action accent. */

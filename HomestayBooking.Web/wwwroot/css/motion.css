@@ -27,33 +27,13 @@
 .fx-motion.fx-motion-ready [data-fx-reveal] { transition: transform var(--fx-dur-5) var(--fx-ease-out), opacity var(--fx-dur-5) var(--fx-ease-out); transition-delay: calc(var(--fx-i, 0) * var(--fx-stagger)); }
 .fx-motion.fx-motion-ready [data-fx-reveal]:not(.is-in) { opacity: 0; transform: perspective(var(--fx-perspective)) translate3d(0,24px,0) rotateX(8deg); }
 .fx-motion.fx-motion-ready .home-promises__list > [data-fx-reveal]:not(.is-in) { transform: perspective(var(--fx-perspective)) translate3d(0,24px,0) rotateY(-12deg); }
-/* Fine-pointer depth and image zoom. will-change is set only while a pointer is interacting. */
-[data-tilt], .fx-homestay-card { transition: transform var(--fx-dur-4) var(--fx-ease-out); }
-[data-tilt].is-tilting, .fx-homestay-card.is-tilting { transition-duration: var(--fx-dur-1); }
+/* Preserve the reference's small card hover response. */
 .fx-area-card img, .fx-homestay-card__media > img { transition: transform var(--fx-dur-5) var(--fx-ease-out), opacity var(--fx-dur-1) var(--fx-ease-out); }
-.fx-area-card__sheen { transition: opacity var(--fx-dur-2) var(--fx-ease-out); }
-.fx-homestay-card__media, .fx-homestay-card__body { transition: translate var(--fx-dur-3) var(--fx-ease-out); }
+.fx-homestay-card__media, .fx-homestay-card__body { transition: transform var(--fx-dur-3) var(--fx-ease-out); }
 @media (hover: hover) and (pointer: fine) {
-  .fx-motion .fx-area-card:hover img, .fx-motion .fx-homestay-card:hover .fx-homestay-card__media > img { transform: scale(1.06); }
-  .fx-motion .fx-area-card:hover .fx-area-card__sheen { opacity: 1; }
-  .fx-motion .fx-homestay-card:hover > .fx-homestay-card__media, .fx-motion .fx-homestay-card:hover > .fx-homestay-card__body { translate: 0 -4px; }
-  .fx-motion .fx-homestay-card:hover > .fx-homestay-card__media { box-shadow: var(--fx-shadow-raised); }
-  .fx-motion .home-promises__list li:hover .bi { transform: perspective(var(--fx-perspective)) rotateY(360deg); }
-}
-.fx-motion .fx-homestay-card:focus-visible > .fx-homestay-card__media { translate: 0 -4px; box-shadow: var(--fx-shadow-raised); }
-.home-promises__list .bi { transition: transform var(--fx-dur-5) var(--fx-ease-out); }
-.fx-motion .home-hero__scene { transform-style: preserve-3d; }
-.fx-motion .home-hero__copy { transform: translateZ(35px); }
-.fx-motion .home-hero__search-depth { transform: translateZ(60px); }
-@keyframes fx-kenburns { from { transform: scale(1.05); } to { transform: scale(1.12); } }
-.fx-motion .home-hero__photo { animation: fx-kenburns var(--fx-dur-kenburns) var(--fx-ease-out) infinite alternate; animation-play-state: paused; }
-.fx-motion .home-hero.is-playing .home-hero__photo { animation-play-state: running; }
-/* CSS scroll timelines split the deck into a row; unsupported browsers use the observer entrance above. */
-@supports (animation-timeline: view()) {
-  @keyframes fx-deck { from { transform: perspective(var(--fx-perspective)) translate3d(var(--fx-deck-x, 0px),16px,var(--fx-deck-z, -40px)) rotateX(8deg); } to { transform: none; } }
-  .fx-motion .home-steps__list > li { animation: fx-deck linear both; animation-timeline: view(); animation-range: entry 0% cover 35%; }
-  .home-steps__list > li:first-child { --fx-deck-x: 70%; --fx-deck-z: -80px; }
-  .home-steps__list > li:last-child { --fx-deck-x: -70%; --fx-deck-z: 40px; }
+ .fx-motion .fx-homestay-card:hover .fx-homestay-card__media > img { transform: scale(1.06); }
+ .fx-motion .fx-homestay-card:hover > .fx-homestay-card__media, .fx-motion .fx-homestay-card:hover > .fx-homestay-card__body { transform: translateY(-4px); }
+ .fx-motion .fx-homestay-card:hover > .fx-homestay-card__media { box-shadow: var(--fx-shadow-raised); }
 }
 .fx-search__indicator.is-positioned { transition: transform var(--fx-dur-3) var(--fx-ease-out), opacity var(--fx-dur-1) var(--fx-ease-out); }
 .stay-room__check { transition: transform var(--fx-dur-2) var(--fx-ease-out), opacity var(--fx-dur-2) var(--fx-ease-out); }
@@ -85,16 +65,10 @@
 .has-motion-pill .sidebar-link.active { background: transparent; }
 .sidebar-link > *, .sidebar-group-title { position: relative; }
 @media (max-width: 1199.98px) { .fx-motion #mainNav.show { animation: fx-rise var(--fx-dur-3) var(--fx-ease-out); } }
-@media (hover: none), (pointer: coarse) {
-  .fx-motion .home-hero__copy, .fx-motion .home-hero__search-depth { transform: none; }
-  .home-steps__list > li:first-child, .home-steps__list > li:last-child { --fx-deck-x: 0px; --fx-deck-z: -12px; }
-  [data-tilt], .fx-homestay-card { will-change: auto; }
-}
-/* Reduced motion: page/hero, entrances, tilt, drift, deck, FLIP, controls, overlays and dashboard. */
+/* Reduced motion: page/hero, entrances, camera, deck, FLIP, controls, overlays and dashboard. */
 @media (prefers-reduced-motion: reduce) {
   .fx-motion .site-public main, .fx-motion .home-hero__badge, .fx-motion .home-hero h1 > span, .fx-motion .home-hero__copy > p, .fx-motion .home-hero .home-search { animation: none; }
   .fx-motion.fx-motion-ready [data-fx-reveal], .fx-motion.fx-motion-ready [data-fx-reveal]:not(.is-in), .fx-motion.fx-motion-ready .home-promises__list > [data-fx-reveal]:not(.is-in) { opacity: 1; transform: none; transition: opacity var(--fx-dur-1); transition-delay: 0s; }
-  [data-tilt], .fx-homestay-card, .home-hero__scene, .home-hero__copy, .home-hero__search-depth, [data-hero-parallax], .home-partner { transform: none !important; transition: opacity var(--fx-dur-1); }
   .fx-motion .home-hero__photo { animation: none; transform: none; }
   .fx-motion .home-steps__list > li { animation: none; transform: none; }
   .fx-motion .home-promises__list li:hover .bi { transform: none; }
@@ -110,15 +84,12 @@
   .home-hero__motion { display: none; }
 }
 /* A user's pause control has the same spatial fallback even without an OS preference. */
-html[data-motion-paused] [data-fx-reveal] { opacity: 1; transform: none; }
-html[data-motion-paused] .home-hero__scene, html[data-motion-paused] [data-hero-parallax], html[data-motion-paused] .home-partner { transform: none !important; }
 
 /* The glass layer crossfades without repainting the header background every frame. */
 .fx-js .site-header--home, .fx-js .site-header--home.is-past-hero { background: transparent; backdrop-filter: none; border-bottom-color: transparent; isolation: isolate; }
 .fx-js .site-header--home::before { content: ""; position: absolute; inset: 0; z-index: -1; opacity: 0; background: var(--fx-glass-bg); backdrop-filter: blur(var(--fx-glass-blur)); border-bottom: 1px solid var(--fx-border); transition: opacity var(--fx-dur-3) var(--fx-ease-out); }
 .fx-js .site-header--home.is-past-hero::before { opacity: 1; }
 .fx-motion.fx-motion-ready [data-fx-settled] { transition-delay: 0s; }
-.fx-motion.fx-motion-ready [data-fx-reveal].is-tilting { transition-duration: var(--fx-dur-1); transition-delay: 0s; }
 @media (prefers-reduced-motion: reduce) {
   .fx-js .site-header--home::before, .site-footer a:not(.btn)::after { transition: opacity var(--fx-dur-1); }
   .site-footer a:not(.btn):hover::after { transform: none; }
@@ -126,10 +97,8 @@ html[data-motion-paused] .home-hero__scene, html[data-motion-paused] [data-hero-
 
 @media (prefers-reduced-motion: reduce) { .site-nav .nav-link::after { opacity: 0; } .site-nav .nav-link:hover::after, .site-nav .nav-link.active::after { opacity: 1; } }
 @media (max-width: 767.98px) {
-  .home-steps__list > li:first-child, .home-steps__list > li:last-child { --fx-deck-x: 0px; --fx-deck-z: -12px; }
 }
 
-.fx-motion .home-steps__list > [data-deck-done] { animation: none; transform: none; }
 .site-nav .collapsing { transition: none; }
 .lightbox.modal.fade { transition: opacity var(--fx-dur-1) var(--fx-ease-out); }
 @media (prefers-reduced-motion: reduce) { .fx-js .home-hero__motion { display: none; } }
