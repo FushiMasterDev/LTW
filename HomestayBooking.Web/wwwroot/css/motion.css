@@ -125,3 +125,11 @@ html[data-motion-paused] .home-hero__scene, html[data-motion-paused] [data-hero-
 }
 
 @media (prefers-reduced-motion: reduce) { .site-nav .nav-link::after { opacity: 0; } .site-nav .nav-link:hover::after, .site-nav .nav-link.active::after { opacity: 1; } }
+@media (max-width: 767.98px) {
+  .home-steps__list > li:first-child, .home-steps__list > li:last-child { --fx-deck-x: 0px; --fx-deck-z: -12px; }
+}
+
+.fx-motion .home-steps__list > [data-deck-done] { animation: none; transform: none; }
+.site-nav .collapsing { transition: none; }
+.lightbox.modal.fade { transition: opacity var(--fx-dur-1) var(--fx-ease-out); }
+@media (prefers-reduced-motion: reduce) { .fx-js .home-hero__motion { display: none; } }

@@ -16,9 +16,9 @@
   --fx-surface-3: #ece5d8;
   --fx-border: #e2d9ca;
   --fx-border-strong: #cbbfac;
-  --fx-ink: #29251f;            /* charcoal, trên nền ivory 15:1 */
-  --fx-muted: #6b6257;          /* trên nền trắng 6.3:1 */
-  --fx-primary: #234c38;        /* xanh rêu, chữ trắng 7.4:1 */
+  --fx-ink: #29251f;            /* charcoal, trên nền ivory 14.24:1 */
+  --fx-muted: #6b6257;          /* trên nền surface 5.89:1 */
+  --fx-primary: #234c38;        /* xanh rừng, chữ giấy 9.55:1 */
   --fx-primary-hover: #193c2b;
   --fx-on-primary: #fffdf8;
   --fx-primary-soft: #deeadf;   /* sage nhạt */
@@ -131,6 +131,14 @@
 [data-bs-theme="light"],
 [data-bs-theme="dark"] {
   --bs-body-font-family: var(--fx-font-sans);
+  --bs-primary: var(--fx-primary);
+  --bs-success: var(--fx-success);
+  --bs-warning: var(--fx-warning);
+  --bs-danger: var(--fx-danger);
+  --bs-info: var(--fx-info);
+  --bs-primary-text-emphasis: var(--fx-on-primary-soft);
+  --bs-primary-bg-subtle: var(--fx-primary-soft);
+  --bs-primary-border-subtle: var(--fx-border);
   --bs-body-bg: var(--fx-bg);
   --bs-body-color: var(--fx-ink);
   --bs-emphasis-color: var(--fx-ink);
@@ -174,3 +182,18 @@
 [data-bs-theme="dark"] .tone-emerald { --tone-bg: #1c2e23; --tone-fg: #a5d9b6; --tone-solid: #5fae7f; }
 [data-bs-theme="dark"] .tone-teal    { --tone-bg: #1a2e2b; --tone-fg: #9fd5cc; --tone-solid: #55a398; }
 [data-bs-theme="dark"] .tone-slate   { --tone-bg: #262b28; --tone-fg: #c3cac5; --tone-solid: #858e88; }
+
+[data-bs-theme="light"], :root {
+  --bs-primary-rgb: 35, 76, 56;
+  --bs-success-rgb: 46, 125, 79;
+  --bs-warning-rgb: 161, 92, 0;
+  --bs-danger-rgb: 180, 35, 24;
+  --bs-info-rgb: 47, 102, 144;
+}
+[data-bs-theme="dark"] {
+  --bs-primary-rgb: 165, 208, 180;
+  --bs-success-rgb: 127, 199, 154;
+  --bs-warning-rgb: 226, 168, 90;
+  --bs-danger-rgb: 240, 146, 138;
+  --bs-info-rgb: 143, 185, 218;
+}

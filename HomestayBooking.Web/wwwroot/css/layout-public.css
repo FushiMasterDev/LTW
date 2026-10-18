@@ -179,308 +179,64 @@
   margin-top: 0.35rem;
 }
 
-/* ---------- Trang chủ: banner ảnh, thanh tìm đè mép dưới ---------- */
-.home-hero {
-  position: relative;
-  isolation: isolate;
-  display: grid;
-  align-content: end;
-  min-height: clamp(28rem, 70vh, 40rem);
-  color: var(--fx-paper);
-  background: var(--fx-photo-fallback);
-}
-
-.home-hero__photo {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 62%;
-}
-
-/* Lớp phủ trung tính dưới chữ trắng: ngoại lệ duy nhất cho dải chuyển màu */
-.home-hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(to top,
-    color-mix(in srgb, var(--fx-scrim) 84%, transparent) 0%,
-    color-mix(in srgb, var(--fx-scrim) 52%, transparent) 45%,
-    color-mix(in srgb, var(--fx-scrim) 10%, transparent) 85%);
-}
-
-.home-hero__copy {
-  padding-block: 7rem 6.5rem;
-}
-
-.site-public .home-hero h1 {
-  max-width: 18ch;
-  margin-bottom: 1rem;
-  color: var(--fx-paper);
-  font-size: clamp(2.125rem, 1.35rem + 3.3vw, 4rem);
-  line-height: 1.05;
-  letter-spacing: -0.02em;
-}
-
-.home-hero__copy p {
-  max-width: 34rem;
-  margin: 0;
-  color: color-mix(in srgb, var(--fx-paper) 92%, transparent);
-  font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
-  line-height: 1.5;
-}
-
-/* Nguồn ảnh nằm trên nền trời sáng: cần nền tối riêng để đọc được */
-.home-hero__credit {
-  position: absolute;
-  top: 0.75rem;
-  right: 1rem;
-  margin: 0;
-  padding: 0.2rem 0.6rem;
-  border-radius: var(--fx-radius-full);
-  background: color-mix(in srgb, var(--fx-scrim) 62%, transparent);
-  color: var(--fx-paper);
-  font-size: 0.8125rem;
-}
-
-.home-hero__credit a {
-  color: inherit;
-}
-
-.home-search {
-  position: relative;
-  z-index: 2;
-  margin-top: -3.75rem;
-}
-
-.home-search .fx-search {
-  margin-bottom: 2.75rem;
-}
-
-.home-search__note {
-  max-width: 40rem;
-  margin: 0;
-  color: var(--fx-muted);
-}
-
-/* ---------- Trang chủ: khu vực, homestay nổi bật, ba bước, cam kết, đối tác ---------- */
-.home-section {
-  margin-top: clamp(4rem, 2.5rem + 5vw, 7rem);
-}
-
-.home-section h2,
-.home-areas h2 {
-  margin-bottom: 0.5rem;
-}
-
-.home-section__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem 1.5rem;
-  margin-bottom: 1.75rem;
-}
-
-.home-section__head p,
-.home-areas__intro p {
-  max-width: 36rem;
-  margin: 0;
-  color: var(--fx-muted);
-}
-
-.home-areas {
-  display: grid;
-  gap: 2rem;
-  margin-top: clamp(3rem, 2rem + 4vw, 5.5rem);
-}
-
-.home-areas__groups {
-  display: grid;
-  gap: 2rem;
-}
-
-.site-public .home-areas h3 {
-  margin-bottom: 0.25rem;
-  color: var(--fx-muted);
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
-
-.home-areas__list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.home-areas__list a {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  min-height: 3.25rem;
-  margin-inline: -0.75rem;
-  padding: 0.7rem 0.75rem;
-  border-radius: var(--fx-radius-sm);
-  color: var(--fx-ink);
-  font-size: 1.1875rem;
-  font-weight: 500;
-  text-decoration: none;
-  transition: none;
-}
-
-.home-areas__list a:hover,
-.home-areas__list a:focus-visible {
-  background: var(--fx-surface-2);
-  color: var(--fx-primary);
-}
-
-.home-areas__list small {
-  flex-shrink: 0;
-  color: var(--fx-muted);
-  font-size: 0.875rem;
-  font-weight: 400;
-  font-variant-numeric: tabular-nums;
-}
-
-@media (min-width: 768px) {
-  .home-areas__groups {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 3rem;
-  }
-}
-
-@media (min-width: 992px) {
-  .home-areas {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-    gap: 3rem;
-  }
-}
-
-/* Ba bước là trình tự thật: số thứ tự do <ol> sinh ra */
-.home-steps__list {
-  display: grid;
-  gap: 2rem;
-  margin: 1.75rem 0 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: home-step;
-}
-
-.home-steps__list li {
-  counter-increment: home-step;
-}
-
-.home-steps__list li::before {
-  content: counter(home-step);
-  display: block;
-  margin-bottom: 0.75rem;
-  color: var(--fx-primary);
-  font-family: var(--fx-font-serif);
-  font-size: 3rem;
-  font-weight: 600;
-  line-height: 1;
-}
-
-.site-public .home-steps h3,
-.site-public .home-promises h3 {
-  margin-bottom: 0.35rem;
-  font-size: 1.125rem;
-}
-
-.home-steps p,
-.home-promises p {
-  max-width: 24rem;
-  margin: 0;
-}
-
-@media (min-width: 768px) {
-  .home-steps__list {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 2.5rem;
-  }
-}
-
-.home-promises {
-  display: grid;
-  gap: 1.5rem;
-}
-
-.home-promises__list {
-  display: grid;
-  gap: 1.75rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.home-promises__list li {
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-}
-
-.home-promises__list .bi {
-  display: grid;
-  place-items: center;
-  flex: 0 0 2.75rem;
-  height: 2.75rem;
-  border-radius: var(--fx-radius-full);
-  background: var(--fx-primary-soft);
-  color: var(--fx-on-primary-soft);
-  font-size: 1.25rem;
-}
-
-@media (min-width: 992px) {
-  .home-promises {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-    gap: 3rem;
-  }
-}
-
-.home-partner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem 2rem;
-  margin-top: clamp(4rem, 2.5rem + 5vw, 7rem);
-  padding: clamp(1.75rem, 1rem + 3vw, 3.5rem);
-  border-radius: var(--fx-radius-lg);
-  background: var(--fx-primary-soft);
-  color: var(--fx-on-primary-soft);
-}
-
-.site-public .home-partner h2 {
-  margin-bottom: 0.5rem;
-  color: var(--fx-on-primary-soft);
-  font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2.25rem);
-}
-
-.home-partner p {
-  max-width: 34rem;
-  margin: 0;
-}
-
+/* ---------- Homepage: Hanoi photograph, glass search, real destinations ---------- */
+.home-hero { position: relative; isolation: isolate; overflow: hidden; min-height: min(100svh, 60rem); background: var(--fx-photo-fallback); color: var(--fx-paper); perspective: var(--fx-perspective); }
+.home-hero__scene { position: relative; isolation: isolate; min-height: inherit; display: grid; align-content: end; }
+.home-hero__parallax { position: absolute; inset: -2rem; z-index: -2; }
+.home-hero__photo { width: 100%; height: 100%; object-fit: cover; object-position: center 55%; }
+.home-hero__scene::before { content: ""; position: absolute; inset: -2rem; z-index: -1; background: linear-gradient(to top, color-mix(in srgb, var(--fx-scrim) 92%, transparent) 0%, color-mix(in srgb, var(--fx-scrim) 74%, transparent) 55%, color-mix(in srgb, var(--fx-scrim) 74%, transparent) 90%, color-mix(in srgb, var(--fx-scrim) 64%, transparent) 100%); }
+.home-hero__content { padding-block: 10rem 6rem; }
+.home-hero__copy { max-width: 64rem; }
+.home-hero__badge { display: inline-flex; align-items: center; gap: .5rem; padding: .4rem .8rem; margin-bottom: 1.25rem; border-radius: var(--fx-radius-full); background: var(--fx-glass-bg); color: var(--fx-ink); backdrop-filter: blur(var(--fx-glass-blur)); font-size: .8125rem; font-weight: 600; }
+.site-public .home-hero h1 { color: var(--fx-paper); font-size: clamp(2.5rem, 6.3vw, 5.5rem); font-weight: 500; line-height: 1.08; letter-spacing: -.025em; margin-bottom: 1.25rem; }
+.home-hero h1 > span { display: block; white-space: nowrap; }
+.home-hero h1 em { color: var(--fx-accent-photo); font-weight: 400; }
+.home-hero__copy > p { max-width: 35rem; margin: 0; color: var(--fx-paper); font-size: 1.125rem; }
+.home-search { max-width: 66rem; margin: 2.5rem auto 0; }
+.home-search .fx-search { margin-bottom: 0; }
+.home-search .fx-search .fx-dates > .form-text { color: var(--fx-paper); }
+.home-hero__credit { position: absolute; left: 2rem; bottom: 1rem; margin: 0; padding: .25rem .65rem; border-radius: var(--fx-radius-full); background: var(--fx-photo-glass); color: var(--fx-paper); font-size: .8125rem; }
+.home-hero__credit a { color: inherit; }
+.home-hero__motion { position: absolute; bottom: .75rem; right: 2rem; min-height: 2.75rem; font-size: .8125rem; background: var(--fx-photo-glass); }
+.home-hero__sentinel { position: absolute; bottom: 0; left: 0; width: 1px; height: 1px; }
+.home-section { padding-block: 6rem; }
+.home-section h2 { margin-bottom: .65rem; }
+.home-section__head { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 1rem 2rem; margin-bottom: 2rem; }
+.home-section__head p { max-width: 60ch; margin: 0; color: var(--fx-muted); }
+.home-areas__note { margin: 1.5rem 0 0; max-width: 60ch; color: var(--fx-muted); font-size: .875rem; }
+.home-featured { background: var(--fx-surface-2); }
+.home-promises > h2, .home-steps > h2 { margin-bottom: 2rem; }
+.home-promises__list, .home-steps__list { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1.5rem; margin: 0; padding: 0; list-style: none; perspective: var(--fx-perspective); }
+.home-promises__list > li, .home-steps__list > li { padding: 2rem; border-radius: var(--fx-radius-xl); border: 1px solid var(--fx-border); background: var(--fx-surface); box-shadow: var(--fx-shadow); }
+.home-promises__list .bi { display: grid; place-items: center; width: 3rem; height: 3rem; margin-bottom: 1.5rem; border-radius: var(--fx-radius-full); background: var(--fx-primary-soft); color: var(--fx-on-primary-soft); font-size: 1.25rem; }
+.site-public .home-promises h3, .site-public .home-steps h3 { font-size: 1.375rem; font-weight: 500; margin-bottom: .65rem; }
+.home-promises p, .home-steps p { color: var(--fx-muted); margin: 0; }
+.home-steps { padding-top: 1rem; }
+.home-steps__list { counter-reset: booking-step; overflow: clip; padding: 1rem .25rem 2rem; }
+.home-steps__list > li { counter-increment: booking-step; background: var(--fx-primary-soft); border-color: transparent; }
+.home-steps__list > li::before { content: counter(booking-step); display: grid; place-items: center; width: 2.75rem; height: 2.75rem; margin-bottom: 1.5rem; border-radius: var(--fx-radius-full); background: var(--fx-primary); color: var(--fx-on-primary); font-family: var(--fx-font-display); font-size: 1.5rem; }
+.home-partner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2rem; padding: 3.5rem; border-radius: var(--fx-radius-xl); background: var(--fx-sidebar-bg); color: var(--fx-footer-ink); transform-origin: left center; }
+.site-public .home-partner h2 { color: var(--fx-footer-ink); }
+.home-partner p { max-width: 36rem; margin: 0; color: var(--fx-footer-muted); }
+@media (min-width: 1280px) { .home-featured .fx-homestay-grid { grid-template-columns: repeat(4,minmax(0,1fr)); } }
 @media (max-width: 767.98px) {
-  .home-hero__copy {
-    padding-block: 5rem 5rem;
-  }
-
-  .home-search {
-    margin-top: -2.5rem;
-  }
-
-  .home-search .fx-search {
-    margin-bottom: 0.75rem;
-  }
-
-  .home-partner .btn {
-    width: 100%;
-  }
+  .home-hero { min-height: 100svh; }
+  .home-hero__content { padding-block: 8rem 6rem; }
+  .site-public .home-hero h1 { font-size: clamp(1.875rem, 7.6vw, 3.3rem); }
+  .home-hero__copy > p { font-size: 1rem; max-width: 30rem; }
+  .home-search { margin-top: 1.5rem; }
+  .home-search .fx-search { gap: .65rem; padding: 1rem; }
+  .home-search .fx-search__dates, .home-search .fx-search__guests { padding-top: .5rem !important; }
+  .home-search .fx-search .fx-dates > .form-text { color: var(--fx-muted); }
+  .home-hero__credit { left: 1.25rem; bottom: 1rem; max-width: calc(100% - 5rem); font-size: .8125rem; }
+  .home-hero__motion { right: 1.25rem; bottom: .75rem; width: 2.75rem; padding: 0; }
+  .home-hero__motion [data-motion-label] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .home-section { padding-block: 3.5rem; }
+  .home-promises__list, .home-steps__list { grid-template-columns: 1fr; }
+  .home-promises__list > li, .home-steps__list > li { padding: 1.5rem; }
+  .home-partner { padding: 2rem; }
+  .home-partner .btn { width: 100%; }
+  .home-steps { padding-top: 0; }
 }
 
 /* ---------- Tìm homestay ---------- */
@@ -601,92 +357,10 @@
   gap: 0.75rem;
 }
 
-/* Mỗi loại phòng là một nền surface, tách nhau bằng khoảng trống thay cho đường kẻ */
-.stay-room {
-  display: grid;
-  gap: 1rem 2rem;
-  padding: 1.25rem;
-  border-radius: var(--fx-radius);
-  background: var(--fx-surface);
-}
-
-.stay-room.is-unavailable {
-  background: var(--fx-surface-2);
-}
-
-.site-public .stay-room h3 {
-  margin-bottom: 0.25rem;
-  font-size: 1.1875rem;
-}
-
-.stay-room__meta,
-.stay-room__deposit {
-  margin-bottom: 0.5rem;
-  color: var(--fx-muted);
-  font-size: 0.9375rem;
-}
-
-.stay-room__desc {
-  max-width: 40rem;
-  margin-bottom: 0.75rem;
-}
-
-.stay-room__prices {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1.75rem;
-  margin: 0;
-}
-
-.stay-room__prices dt {
-  color: var(--fx-muted);
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.stay-room__prices dd {
-  margin: 0;
-  font-weight: 600;
-}
-
-.stay-room__action {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-
-.stay-room__total {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-.stay-room__deposit {
-  margin: 0;
-}
-
-.stay-room.is-unavailable .stay-room__info {
-  color: var(--fx-muted);
-}
-
-@media (min-width: 768px) {
-  .stay-room {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-  }
-
-  .stay-room__action {
-    align-items: flex-end;
-    text-align: right;
-  }
-}
-
 .stay-amenities {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
-  gap: 0.85rem 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, max-content));
+  gap: .65rem;
 }
 
 .stay-amenities li {
@@ -730,29 +404,6 @@
 .stay-reviews li {
   max-width: 44rem;
   overflow-wrap: anywhere;
-}
-
-.stay-reviews li p {
-  margin: 0.4rem 0 0;
-}
-
-.stay-reviews__head {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  color: var(--fx-muted);
-  font-size: 0.875rem;
-}
-
-.stay-reviews__reply {
-  margin-top: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-radius: var(--fx-radius-sm);
-  background: var(--fx-surface-2);
-}
-
-.stay-reviews__reply p {
-  margin: 0;
 }
 
 /* ---------- Đặt phòng và chi tiết đơn ---------- */
@@ -1156,4 +807,14 @@
   .fx-js .site-header--home:not(.is-past-hero) #mainNav .nav-link, .fx-js .site-header--home:not(.is-past-hero) #mainNav .btn { color: var(--fx-ink); }
   .fx-js .site-header--home:not(.is-past-hero) #mainNav .btn-brand { color: var(--fx-on-accent); }
   .fx-js .site-header--home:not(.is-past-hero) #mainNav .lang-switch .btn, .fx-js .site-header--home:not(.is-past-hero) #mainNav .theme-toggle, .fx-js .site-header--home:not(.is-past-hero) #mainNav .btn-outline-secondary { background: var(--fx-surface); }
+}
+
+.stay-amenities .fx-chip { padding: .65rem 1rem; background: var(--fx-surface-2); color: var(--fx-ink); border-radius: var(--fx-radius-full); }
+
+.home-hero__motion { display: none; }
+.fx-js .home-hero__motion { display: inline-flex; }
+.fx-js .site-header--home:not(.is-past-hero) .lang-switch .btn-brand {
+  background: var(--fx-primary);
+  color: var(--fx-on-primary);
+  border-color: var(--fx-primary);
 }

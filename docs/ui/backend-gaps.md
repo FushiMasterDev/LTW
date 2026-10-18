@@ -39,3 +39,7 @@ Các mục sau đã có service, không cần ghi gap:
 - **FR-25**: đăng ký/nộp/kích hoạt/xem hồ sơ của tôi.
 
 `ui-rebuild.md` từng ghi FR-03, FR-07, FR-26 là gap đã biết. Ba mục này đã được B7 làm xong (`dd1e8ba`).
+
+## G-15 — Bổ sung từ bước 03y (18/10/2026)
+
+`ReviewService.ListAsync` chưa nạp tên hiển thị của người viết (không Include Booking/Customer). Yêu cầu avatar theo chữ cái đầu tên vì vậy chỉ thực hiện khi tên đã có trong model; với dữ liệu hiện tại, `_ReviewCard` dùng nhãn “Khách đã lưu trú” và chữ K, không dựng tên giả hoặc gọi DbContext trong view. Đây là gap nhỏ về trình bày, không chặn đặt phòng. Một bước backend sau có thể trả tên hiển thị đã được phép công khai trong DTO đánh giá; bước 03y không sửa service/entity/controller để lấy thêm tên.

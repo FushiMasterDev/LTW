@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = L["Trang chủ"];
     ViewData["MainClass"] = "pt-0 pb-5";
+    ViewData["FullWidth"] = true;
     var areas = Model.Areas.Select(a => new SelectListItem(a.Name, a.Id.ToString())).ToList();
     var steps = new (string Title, string Text)[]
     {
@@ -25,53 +26,55 @@
 
 @section Hero {
     <section class="home-hero" aria-labelledby="heroTitle">
-        <img class="home-hero__photo" src="~/images/hero-hoan-kiem.jpg"
-             srcset="/images/hero-hoan-kiem-sm.jpg 1080w, /images/hero-hoan-kiem.jpg 1600w" sizes="100vw"
-             alt="@L["Hồ Hoàn Kiếm buổi sáng, tháp Rùa giữa hồ"]" width="1600" height="1067" fetchpriority="high" />
-        <div class="container home-hero__copy">
-            <h1 id="heroTitle">@L["Homestay Hà Nội, đặt theo từng đêm"]</h1>
-            <p>@L["Xem phòng trống, giá từng đêm và chính sách hủy trước khi đặt. Chỉ cần số điện thoại."]</p>
+        <div class="home-hero__scene" data-tilt="hero">
+            <div class="home-hero__parallax" data-hero-parallax>
+                <img class="home-hero__photo" src="~/images/hero-hoan-kiem.jpg"
+                     srcset="/images/hero-hoan-kiem-sm.jpg 1080w, /images/hero-hoan-kiem.jpg 1600w" sizes="100vw"
+                     alt="@L["Hồ Hoàn Kiếm buổi sáng, tháp Rùa giữa hồ"]" width="1600" height="1067" fetchpriority="high" />
+            </div>
+            <div class="container home-hero__content">
+                <div class="home-hero__copy">
+                    <span class="home-hero__badge"><icon name="geo-alt" /> @L["{0} homestay tại Hà Nội", Model.HomestayCount]</span>
+                    <h1 id="heroTitle"><span>@L["Ngủ giữa phố cổ,"]</span><span>@L["thức cùng"] <em>@L["Hà Nội"].</em></span></h1>
+                    <p>@L["Một chốn nghỉ giữa lòng Hà Nội. Chọn ngày, xem phòng trống và bắt đầu chuyến đi của bạn."]</p>
+                </div>
+                <div class="home-hero__search-depth">
+                    <div class="home-search">
+                        <partial name="_SearchBar" model="@(new SearchBarModel("home-search", areas, Variant: "hero"))" />
+                    </div>
+                </div>
+            </div>
         </div>
-        <p class="home-hero__credit">
-            @L["Ảnh"]: <a href="https://commons.wikimedia.org/wiki/File:Hoan_Kiem_Lake_in_the_morning,_September_2014.jpeg" target="_blank" rel="noopener">Prof MK</a>, @L["phạm vi công cộng"]
-        </p>
+        <span class="home-hero__sentinel" aria-hidden="true"></span>
+        <p class="home-hero__credit">@L["Ảnh"]: <a href="https://commons.wikimedia.org/wiki/File:Hoan_Kiem_Lake_in_the_morning,_September_2014.jpeg" target="_blank" rel="noopener">Prof MK</a>, @L["phạm vi công cộng"]</p>
+        <button class="home-hero__motion btn btn-light-glass" type="button" data-motion-toggle aria-pressed="false"
+                data-pause="@L["Dừng chuyển động"]" data-resume="@L["Bật chuyển động"]">
+            <icon name="pause-circle" /><span data-motion-label>@L["Dừng chuyển động"]</span>
+        </button>
     </section>
 }
 
-<div class="home-search">
-    <partial name="_SearchBar" model="@(new SearchBarModel("home-search", areas, Variant: "hero"))" />
-    <p class="home-search__note">@L["Đang có {0} homestay với {1} phòng ở {2} khu vực của Hà Nội. Không chọn ngày thì hiện mọi homestay.", Model.HomestayCount, Model.RoomCount, Model.Areas.Count]</p>
-</div>
-
-<section class="home-areas" id="areas" aria-labelledby="areasTitle">
-    <div class="home-areas__intro">
-        <h2 id="areasTitle">@L["Khám phá khu vực"]</h2>
-        <p>@L["Phố cổ, hồ Tây hay đồi núi ngoại thành: chọn khu vực để xem homestay ở đó."]</p>
+<section class="container home-section home-areas" id="areas" aria-labelledby="areasTitle">
+    <div class="home-section__head">
+        <div class="home-areas__intro">
+            <h2 id="areasTitle">@L["Khám phá khu vực"]</h2>
+            <p>@L["Phố cổ, hồ Tây hay đồi núi ngoại thành: chọn khu vực để xem homestay ở đó."]</p>
+        </div>
+        <a class="btn btn-link" asp-controller="Homestays" asp-action="Index">@L["Xem tất cả"] <icon name="arrow-right" /></a>
     </div>
-    <div class="home-areas__groups">
-        @foreach (var group in Model.Areas.GroupBy(a => a.Group).OrderBy(g => g.Key))
+    <div class="fx-area-grid">
+        @foreach (var area in Model.Areas)
         {
-            <div>
-                <h3>@L[group.Key.DisplayName()]</h3>
-                <ul class="home-areas__list">
-                    @foreach (var a in group)
-                    {
-                        <li>
-                            <a asp-controller="Homestays" asp-action="Index" asp-route-areaId="@a.Id">
-                                <span>@a.Name</span>
-                                <small>@L["{0} homestay", a.HomestayCount]</small>
-                            </a>
-                        </li>
-                    }
-                </ul>
-            </div>
+            <partial name="_AreaCard" model="@(new AreaCardModel(area.Id, area.Name, area.HomestayCount, area.CoverUrl))" />
         }
     </div>
+    <p class="home-areas__note">@L["Đang có {0} homestay với {1} phòng ở {2} khu vực của Hà Nội. Không chọn ngày thì hiện mọi homestay.", Model.HomestayCount, Model.RoomCount, Model.Areas.Count]</p>
 </section>
 
 @if (Model.Featured.Count > 0)
 {
-    <section class="home-section" aria-labelledby="featuredTitle">
+    <section class="home-section home-featured" aria-labelledby="featuredTitle">
+        <div class="container">
         <div class="home-section__head">
             <div>
                 <h2 id="featuredTitle">@L["Được khách đánh giá cao"]</h2>
@@ -85,23 +88,11 @@
                 <partial name="_HomestayCard" model="@HomestayCardModel.From(h)" />
             }
         </div>
+        </div>
     </section>
 }
 
-<section class="home-section home-steps" aria-labelledby="stepsTitle">
-    <h2 id="stepsTitle">@L["Đặt phòng trong 3 bước"]</h2>
-    <ol class="home-steps__list">
-        @foreach (var step in steps)
-        {
-            <li>
-                <h3>@step.Title</h3>
-                <p>@step.Text</p>
-            </li>
-        }
-    </ol>
-</section>
-
-<section class="home-section home-promises" aria-labelledby="promisesTitle">
+<section class="container home-section home-promises" aria-labelledby="promisesTitle">
     <h2 id="promisesTitle">@L["Cam kết khi đặt qua Fuji"]</h2>
     <ul class="home-promises__list">
         @foreach (var p in promises)
@@ -117,6 +108,20 @@
     </ul>
 </section>
 
+<section class="container home-section home-steps" aria-labelledby="stepsTitle">
+    <h2 id="stepsTitle">@L["Đặt phòng trong 3 bước"]</h2>
+    <ol class="home-steps__list">
+        @foreach (var step in steps)
+        {
+            <li>
+                <h3>@step.Title</h3>
+                <p>@step.Text</p>
+            </li>
+        }
+    </ol>
+</section>
+
+<div class="container home-section">
 <section class="home-partner" aria-labelledby="partnerTitle">
     <div>
         <h2 id="partnerTitle">@L["Có homestay ở Hà Nội?"]</h2>
@@ -124,6 +129,7 @@
     </div>
     <a class="btn btn-brand btn-lg" asp-controller="Partner" asp-action="Index">@L["Trở thành đối tác"]</a>
 </section>
+</div>
 
 @section Scripts {
     <script src="~/lib/flatpickr/flatpickr.min.js"></script>

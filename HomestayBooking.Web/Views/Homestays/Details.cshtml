@@ -67,49 +67,7 @@
             <ul class="stay-rooms">
                 @foreach (var t in Model.RoomTypes)
                 {
-                    var fits = t.MaxGuests >= q.Guests;
-                    var soldOut = t.FreeRooms == 0;
-                    <li class="stay-room @(fits && !soldOut ? null : "is-unavailable")">
-                        <div class="stay-room__info">
-                            <h3>@t.Name</h3>
-                            <p class="stay-room__meta">@t.CategoryName · @L["Tối đa {0} khách", t.MaxGuests]@(t.AreaM2 is int m2 ? $" · {m2} m²" : "")</p>
-                            @if (!string.IsNullOrEmpty(t.Description))
-                            {
-                                <p class="stay-room__desc">@t.Description</p>
-                            }
-                            <dl class="stay-room__prices">
-                                <div><dt>@L["Ngày thường"]</dt><dd><money value="t.WeekdayPrice" /></dd></div>
-                                <div><dt>@L["Cuối tuần"]</dt><dd><money value="t.WeekendPrice" /></dd></div>
-                                <div><dt>@L["Ngày lễ"]</dt><dd><money value="t.HolidayPrice" /></dd></div>
-                            </dl>
-                        </div>
-                        <div class="stay-room__action">
-                            @if (t.Quote is not null)
-                            {
-                                <p class="stay-room__total"><money value="t.Quote.Total" /></p>
-                                <p class="stay-room__deposit">@L["{0} đêm", nights] · @L["Cọc {0}", MoneyTagHelper.Format(t.Quote.Deposit)]</p>
-                            }
-                            @if (!fits)
-                            {
-                                <span class="badge-tone tone-amber">@L["Không đủ chỗ cho {0} khách", q.Guests]</span>
-                            }
-                            else if (soldOut)
-                            {
-                                <span class="badge-tone tone-rose">@L["Hết phòng"]</span>
-                            }
-                            else
-                            {
-                                @if (t.FreeRooms is int free)
-                                {
-                                    <span class="badge-tone tone-emerald">@L["Còn {0} phòng", free]</span>
-                                }
-                                <a class="btn btn-brand" asp-controller="Bookings" asp-action="Create" asp-route-roomTypeId="@t.Id"
-                                   asp-route-checkIn="@q.CheckIn?.ToString("yyyy-MM-dd")" asp-route-checkOut="@q.CheckOut?.ToString("yyyy-MM-dd")" asp-route-guests="@q.Guests">
-                                    @L["Đặt phòng"]
-                                </a>
-                            }
-                        </div>
-                    </li>
+                    <partial name="_RoomOption" model="@(new RoomOptionModel(t, q))" />
                 }
             </ul>
         </section>
@@ -129,7 +87,7 @@
                 <ul class="stay-amenities">
                     @foreach (var (name, icon) in Model.Amenities)
                     {
-                        <li><i class="bi @(icon ?? "bi-check2")" aria-hidden="true"></i>@name</li>
+                        <li class="fx-chip"><icon name="check2" />@name</li>
                     }
                 </ul>
             </section>
@@ -152,23 +110,7 @@
                     <ul class="stay-reviews">
                         @foreach (var r in reviews.Reviews)
                         {
-                            <li>
-                                <div class="stay-reviews__head">
-                                    <rating value="r.Rating" single="true" />
-                                    <time datetime="@r.CreatedAt.ToString("yyyy-MM-dd")">@VietnamTime.ToLocal(DateTime.SpecifyKind(r.CreatedAt, DateTimeKind.Utc)).ToString("dd/MM/yyyy")</time>
-                                </div>
-                                @if (!string.IsNullOrEmpty(r.Comment))
-                                {
-                                    <p>@r.Comment</p>
-                                }
-                                @if (!string.IsNullOrEmpty(r.OwnerReply))
-                                {
-                                    <div class="stay-reviews__reply">
-                                        <p class="fw-semibold mb-1">@L["Chủ homestay trả lời"]</p>
-                                        <p>@r.OwnerReply</p>
-                                    </div>
-                                }
-                            </li>
+                            <partial name="_ReviewCard" model="@(new ReviewCardModel(r.Rating, r.CreatedAt, r.Comment, r.OwnerReply, r.Booking?.ContactName))" />
                         }
                     </ul>
                     @if (reviews.Reviews.TotalPages > 1) { <partial name="_Pager" model="reviews.Reviews" /> }

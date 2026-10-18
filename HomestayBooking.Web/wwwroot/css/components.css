@@ -29,7 +29,8 @@
 }
 
 .btn-brand,
-.btn-accent {
+.btn-accent,
+.btn-primary {
   --bs-btn-color: var(--fx-on-accent);
   --bs-btn-bg: var(--fx-accent);
   --bs-btn-border-color: var(--fx-accent);
@@ -793,8 +794,8 @@
   z-index: -1;
   background: linear-gradient(to top,
     color-mix(in srgb, var(--fx-scrim) 88%, transparent) 0%,
-    color-mix(in srgb, var(--fx-scrim) 55%, transparent) 55%,
-    color-mix(in srgb, var(--fx-scrim) 35%, transparent) 100%);
+    color-mix(in srgb, var(--fx-scrim) 74%, transparent) 55%,
+    color-mix(in srgb, var(--fx-scrim) 64%, transparent) 100%);
 }
 
 .auth-aside__copy {
@@ -883,19 +884,126 @@
 .modal, .offcanvas, .lightbox { overscroll-behavior: contain; }
 @media (max-width: 767.98px) { .fx-area-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .fx-area-card { padding: 1rem; } .fx-area-card__name { font-size: 1.375rem; } .fx-search__indicator { display: none; } }
 
+/* Mỗi loại phòng là một nền surface, tách nhau bằng khoảng trống thay cho đường kẻ */
+.stay-room {
+  display: grid;
+  gap: 1rem 2rem;
+  padding: 1.25rem;
+  border-radius: var(--fx-radius-xl);
+  background: var(--fx-surface);
+}
+
+.stay-room.is-unavailable {
+  background: var(--fx-surface-2);
+}
+
+.stay-room h3 {
+  margin-bottom: 0.25rem;
+  font-size: 1.1875rem;
+  font-family: var(--fx-font-display);
+  font-weight: 500;
+}
+
+.stay-room__meta,
+.stay-room__deposit {
+  margin-bottom: 0.5rem;
+  color: var(--fx-muted);
+  font-size: 0.9375rem;
+}
+
+.stay-room__desc {
+  max-width: 40rem;
+  margin-bottom: 0.75rem;
+}
+
+.stay-room__prices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.75rem;
+  margin: 0;
+}
+
+.stay-room__prices dt {
+  color: var(--fx-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.stay-room__prices dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.stay-room__action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.stay-room__total {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.stay-room__deposit {
+  margin: 0;
+}
+
+.stay-room.is-unavailable .stay-room__info {
+  color: var(--fx-muted);
+}
+
+@media (min-width: 768px) {
+  .stay-room {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .stay-room__action {
+    align-items: flex-end;
+    text-align: right;
+  }
+}
+
+.stay-reviews__reply {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--fx-radius-sm);
+  background: var(--fx-surface-2);
+}
+
+.stay-reviews__reply p {
+  margin: 0;
+}
+
 /* Room choice and public review, also rendered in the UI Kit. */
 .stay-room { position: relative; border: 1px solid var(--fx-border); border-radius: var(--fx-radius-xl); box-shadow: var(--fx-shadow); }
 .stay-room.is-selected { border-color: var(--fx-primary); outline: 1px solid var(--fx-primary); background: var(--fx-primary-soft); }
 .stay-room__check { position: absolute; top: .75rem; right: .75rem; display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: var(--fx-radius-full); background: var(--fx-primary); color: var(--fx-on-primary); opacity: 0; transform: scale(.5); }
 .stay-room.is-selected .stay-room__check { opacity: 1; transform: scale(1); }
-.stay-room.is-selected .stay-room__action { padding-top: 1.5rem; }
+
 .fx-review-card { padding: 1.5rem; border: 1px solid var(--fx-border); border-radius: var(--fx-radius-xl); background: var(--fx-surface); box-shadow: var(--fx-shadow); overflow-wrap: anywhere; }
 .fx-review-card__head { display: flex; align-items: center; gap: .75rem; }
 .fx-review-card__avatar { display: grid; place-items: center; flex-shrink: 0; width: 2.75rem; height: 2.75rem; border-radius: var(--fx-radius-full); background: var(--fx-primary-soft); color: var(--fx-on-primary-soft); font-weight: 700; }
 .fx-review-card time { margin-inline-start: auto; font-size: .8125rem; color: var(--fx-muted); }
 .fx-review-card > p { margin: 1rem 0 0; }
 .uikit-room-options { display: grid; gap: 1rem; list-style: none; padding: 0; }
-.uikit-room-options .stay-room { display: grid; gap: 1rem; padding: 1.5rem; background: var(--fx-surface); }
-.uikit-room-options .stay-room__prices { display: flex; gap: 1rem; flex-wrap: wrap; }
-.uikit-room-options .stay-room__action { display: flex; align-items: start; flex-wrap: wrap; gap: .5rem; }
 @media (max-width: 575.98px) { .fx-review-card__head { flex-wrap: wrap; } .fx-review-card time { width: 100%; margin-inline-start: 3.5rem; } }
+.fx-area-card__copy { position: relative; z-index: 2; }
+.fx-area-card__sheen { z-index: 1; }
+
+.stay-room__action { padding-top: 1rem; }
+/* Language is a selected setting, so it uses forest rather than the action accent. */
+.lang-switch .btn-brand {
+  --bs-btn-color: var(--fx-on-primary);
+  --bs-btn-bg: var(--fx-primary);
+  --bs-btn-border-color: var(--fx-primary);
+  --bs-btn-hover-color: var(--fx-on-primary);
+  --bs-btn-hover-bg: var(--fx-primary-hover);
+  --bs-btn-hover-border-color: var(--fx-primary-hover);
+  --bs-btn-active-color: var(--fx-on-primary);
+  --bs-btn-active-bg: var(--fx-primary-hover);
+}

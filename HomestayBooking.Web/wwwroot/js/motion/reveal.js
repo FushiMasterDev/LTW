@@ -31,13 +31,14 @@
     };
     const publicPage = document.body.classList.contains('site-public');
     const selector = publicPage
-        ? '.home-section__head > *, .home-areas__intro > *, .fx-area-card, .fx-homestay-card, .home-steps > h2, .home-steps__list > li, .home-promises > h2, .home-promises__list > li, .home-partner > *, .stay-section > h2, .stay-room, .fx-review-card, .fx-stepper, .booking-head, .partner-intro > h1, .partner-intro > p'
+        ? '.home-section__head h2, .home-section__head p, .home-section__head > a, .fx-area-card, .fx-homestay-card, .home-steps > h2, .home-steps__list > li, .home-promises > h2, .home-promises__list > li, .home-partner > *, .stay-section > h2, .stay-room, .fx-review-card, .fx-stepper, .booking-head, .partner-intro > h1, .partner-intro > p'
         : '.fx-stat';
     const elements = [...document.querySelectorAll(selector)];
+    let statIndex = 0;
     for (const element of elements) {
         element.dataset.fxReveal = '';
         const siblings = [...element.parentElement.children].filter(sibling => sibling.matches(selector));
-        element.style.setProperty('--fx-i', Math.min(siblings.indexOf(element), 5));
+        element.style.setProperty('--fx-i', element.matches('.fx-stat') ? statIndex++ % 6 : Math.min(siblings.indexOf(element), 5));
         observe(element, reveal, true);
     }
     // An observer is ready before CSS can hide anything; a failed/missing file leaves a readable page.
@@ -57,6 +58,9 @@
         root.classList.toggle('fx-motion', !paused && !preference.matches);
         button.querySelector('[data-motion-label]').textContent = paused ? button.dataset.resume : button.dataset.pause;
         update();
+    });
+    document.addEventListener('animationend', event => {
+        if (event.animationName === 'fx-deck') event.target.dataset.deckDone = '';
     });
     // Keyboard navigation must never wait for an entrance.
     document.addEventListener('focusin', event => {

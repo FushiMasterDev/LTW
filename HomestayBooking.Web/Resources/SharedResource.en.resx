@@ -2188,4 +2188,11 @@
   <data name="Khám phá" xml:space="preserve"><value>Explore</value></data>
   <data name="Chọn phòng" xml:space="preserve"><value>Select room</value></data>
   <data name="Khách đã lưu trú" xml:space="preserve"><value>Verified guest</value></data>
+  <data name="{0} homestay tại Hà Nội" xml:space="preserve"><value>{0} stays in Hanoi</value></data>
+  <data name="Ngủ giữa phố cổ," xml:space="preserve"><value>Sleep in the old town,</value></data>
+  <data name="thức cùng" xml:space="preserve"><value>wake with</value></data>
+  <data name="Một chốn nghỉ giữa lòng Hà Nội. Chọn ngày, xem phòng trống và bắt đầu chuyến đi của bạn." xml:space="preserve"><value>A place to rest in the heart of Hanoi. Pick your dates, find a room and make yourself at home.</value></data>
+  <data name="Dừng chuyển động" xml:space="preserve"><value>Pause motion</value></data>
+  <data name="Bật chuyển động" xml:space="preserve"><value>Resume motion</value></data>
+  <data name="Xem tất cả" xml:space="preserve"><value>View all</value></data>
 </root>
