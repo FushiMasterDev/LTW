@@ -1,6 +1,6 @@
 /* =========================================================================
    Fuji Homestay – design tokens (sáng / tối)
-   Nền ivory, xanh rêu làm màu chính, chữ charcoal. Màu trạng thái dịu, đủ tương
+   Nền ivory, xanh rừng thương hiệu, cam đất hành động, chữ charcoal. Màu trạng thái dịu, đủ tương
    phản ≥ 4.5:1 cho chữ trên nền tương ứng ở cả hai chế độ.
    Chế độ tối dùng data-bs-theme="dark" của Bootstrap 5.3 trên thẻ <html>.
    ========================================================================= */
@@ -8,25 +8,30 @@
 [data-bs-theme="light"] {
   color-scheme: light;
 
-  --fx-bg: #f8f6f1;             /* ivory */
-  --fx-surface: #ffffff;
+  --fx-bg: #faf7f0;             /* ivory */
+  --fx-surface: #fffdf8;
   --fx-paper: #ffffff;          /* nền trắng cố định cho QR và nút trên ảnh */
-  --fx-on-paper: #1e2320;       /* chữ tối trên nền trắng cố định */
-  --fx-surface-2: #f2efe8;      /* nền chìm: đầu bảng, ô nhập phụ */
-  --fx-surface-3: #e9e5dc;
-  --fx-border: #e4dfd5;
-  --fx-border-strong: #cfc8ba;
-  --fx-ink: #1e2320;            /* charcoal, trên nền ivory 15:1 */
-  --fx-muted: #59615c;          /* trên nền trắng 6.3:1 */
-  --fx-primary: #2f5d50;        /* xanh rêu, chữ trắng 7.4:1 */
-  --fx-primary-hover: #244a40;
-  --fx-on-primary: #ffffff;
-  --fx-primary-soft: #e3ece5;   /* sage nhạt */
-  --fx-on-primary-soft: #24473d;
-  --fx-focus: #b7791f;          /* viền focus ấm, nổi trên cả xanh lẫn ivory */
+  --fx-on-paper: #29251f;       /* chữ tối trên nền trắng cố định */
+  --fx-surface-2: #f3eee3;      /* nền chìm: đầu bảng, ô nhập phụ */
+  --fx-surface-3: #ece5d8;
+  --fx-border: #e2d9ca;
+  --fx-border-strong: #cbbfac;
+  --fx-ink: #29251f;            /* charcoal, trên nền ivory 15:1 */
+  --fx-muted: #6b6257;          /* trên nền trắng 6.3:1 */
+  --fx-primary: #234c38;        /* xanh rêu, chữ trắng 7.4:1 */
+  --fx-primary-hover: #193c2b;
+  --fx-on-primary: #fffdf8;
+  --fx-primary-soft: #deeadf;   /* sage nhạt */
+  --fx-on-primary-soft: #234332;
+  --fx-accent: #a94d2c;
+  --fx-on-accent: #ffffff;
+  --fx-accent-text: #a94d2c;
+  --fx-accent-photo: #ffc09b;
+  --fx-accent-hover: #893b20;
+  --fx-focus: #a94d2c;          /* viền focus ấm, nổi trên cả xanh lẫn ivory */
   --fx-overlay: rgba(18, 24, 20, 0.55);
-  --fx-shadow: 0 1px 2px rgba(30, 35, 32, 0.05), 0 2px 8px rgba(30, 35, 32, 0.04);
-  --fx-shadow-raised: 0 12px 32px rgba(30, 35, 32, 0.12);
+  --fx-shadow: 0 1px 2px rgba(41, 37, 31, .05), 0 8px 24px -12px rgba(41, 37, 31, .15);
+  --fx-shadow-raised: 0 2px 4px rgba(41, 37, 31, .06), 0 24px 48px -20px rgba(41, 37, 31, .3);
 
   --fx-success: #2e7d4f;
   --fx-warning: #a15c00;
@@ -42,20 +47,24 @@
 [data-bs-theme="dark"] {
   color-scheme: dark;
 
-  --fx-bg: #121614;
-  --fx-surface: #1a1f1c;
-  --fx-surface-2: #222824;
-  --fx-surface-3: #2a312c;
-  --fx-border: #2e3631;
-  --fx-border-strong: #3f4943;
-  --fx-ink: #e7ebe8;
-  --fx-muted: #a2aba5;
-  --fx-primary: #8dbfa8;
-  --fx-primary-hover: #a7d1bd;
-  --fx-on-primary: #10241c;
-  --fx-primary-soft: #213129;
-  --fx-on-primary-soft: #b9dccb;
-  --fx-focus: #e0b45c;
+  --fx-bg: #121d18;
+  --fx-surface: #1b2922;
+  --fx-surface-2: #24342b;
+  --fx-surface-3: #2d4034;
+  --fx-border: #36493c;
+  --fx-border-strong: #546456;
+  --fx-ink: #f2eee5;
+  --fx-muted: #bdc6ba;
+  --fx-primary: #a5d0b4;
+  --fx-primary-hover: #c1e4cc;
+  --fx-on-primary: #14291d;
+  --fx-primary-soft: #2b4032;
+  --fx-on-primary-soft: #c5e3cc;
+  --fx-accent: #f0ab83;
+  --fx-accent-hover: #ffc4a1;
+  --fx-on-accent: #2a1b13;
+  --fx-accent-text: #f0ab83;
+  --fx-focus: #f0bd85;
   --fx-overlay: rgba(6, 9, 7, 0.62);
   --fx-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   --fx-shadow-raised: 0 12px 32px rgba(0, 0, 0, 0.45);
@@ -71,13 +80,15 @@
 
 /* Hằng số không đổi theo chế độ */
 :root {
-  --fx-font-sans: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --fx-font-serif: "Lora", Georgia, "Times New Roman", serif;
-  --fx-radius-lg: 1rem;      /* khối lớn: banner, ảnh bìa */
-  --fx-radius: 0.75rem;      /* thẻ, bảng */
-  --fx-radius-sm: 0.5rem;    /* nút, ô nhập */
+  --fx-font-sans: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fx-font-serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --fx-font-display: var(--fx-font-serif);
+  --fx-radius-xl: 1.5rem;
+  --fx-radius-lg: 1.5rem;      /* khối lớn: banner, ảnh bìa */
+  --fx-radius: 1.5rem;      /* thẻ, bảng */
+  --fx-radius-sm: 0.875rem;    /* nút, ô nhập */
   --fx-radius-full: 9999px; /* thanh tìm kiếm và bộ đếm */
-  --fx-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --fx-ease: cubic-bezier(.2, .7, .2, 1);
   --fx-sidebar-w: 16rem;
   --fx-sidebar-w-collapsed: 4.5rem;
   --fx-topbar-h: 4rem;
@@ -88,8 +99,31 @@
 
   /* Tên cũ vẫn được các view và CSS kế toán dùng */
   --fx-card: var(--fx-surface);
-  --fx-accent: var(--fx-primary);
-  --fx-accent-hover: var(--fx-primary-hover);
+  --fx-glass-bg: color-mix(in srgb, var(--fx-surface) 94%, transparent);
+  --fx-glass-blur: 14px;
+  --fx-photo-glass: rgba(18, 29, 24, .78);
+  --fx-sheen: rgba(255, 255, 255, .10);
+  --fx-sidebar-bg: #182e24;
+  --fx-sidebar-hover: #253f31;
+  --fx-sidebar-border: #35513f;
+  --fx-sidebar-ink: #f4f0e7;
+  --fx-sidebar-muted: #bdcbbb;
+  --fx-sidebar-active: #a94d2c;
+  --fx-sidebar-on-active: #ffffff;
+  --fx-ease-out: cubic-bezier(.2, .7, .2, 1);
+  --fx-dur-1: 150ms;
+  --fx-dur-2: 250ms;
+  --fx-dur-3: 350ms;
+  --fx-dur-4: 500ms;
+  --fx-dur-5: 800ms;
+  --fx-dur-6: 1200ms;
+  --fx-dur-page: 700ms;
+  --fx-dur-dialog: 220ms;
+  --fx-dur-kenburns: 20s;
+  --fx-stagger: 70ms;
+  --fx-perspective: 1000px;
+  --fx-perspective-area: 900px;
+
 }
 
 /* Ánh xạ sang biến Bootstrap để form, dropdown, modal, bảng tự đổi theo chế độ */
@@ -111,8 +145,8 @@
   --bs-focus-ring-color: color-mix(in srgb, var(--fx-focus) 45%, transparent);
 }
 
-[data-bs-theme="light"], :root { --bs-link-color-rgb: 47, 93, 80; --bs-link-hover-color-rgb: 36, 74, 64; }
-[data-bs-theme="dark"] { --bs-link-color-rgb: 141, 191, 168; --bs-link-hover-color-rgb: 167, 209, 189; }
+[data-bs-theme="light"], :root { --bs-link-color-rgb: 35, 76, 56; --bs-link-hover-color-rgb: 25, 60, 43; }
+[data-bs-theme="dark"] { --bs-link-color-rgb: 165, 208, 180; --bs-link-hover-color-rgb: 193, 228, 204; }
 
 /* -------------------------------------------------------------------------
    Tone: màu ngữ nghĩa cho trạng thái đơn, giao dịch, voucher, hồ sơ...
