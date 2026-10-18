@@ -10,7 +10,7 @@ Luật chung, kiến trúc component và ràng buộc nằm ở `docs/prompts/ui
 | 3 | `02-component.md` | Thư viện component đầy đủ | Có |
 | 3b | `02x-ra-skill.md` | Rà lại component theo skill thiết kế (bù cho 01–02 chạy khi Codex chưa có skill) | Sửa lỗi review 02 + chỉnh phần nhìn |
 | 4 | `03-trang-khach.md` (Claude làm: mở phiên bằng `claude-session.md`) | Trang khách + đăng ký đối tác + viết đánh giá | Có |
-| 4b | `03y-phong-cach-moi.md` | Đổi nhận diện theo bản mẫu Lovable "Lúa" (xanh rừng + cam đất, Fraunces/Manrope) và thêm chuyển động 3D (chốt 18/10) | Có |
+| 4b | `03y-phong-cach-moi.md` | Đổi nhận diện theo bản mẫu Lovable "Lúa" (xanh rừng + cam đất, Fraunces/Manrope) và thêm chuyển động 3D tự chạy, không theo chuột (chốt 18/10) | Có |
 | 5 | `04-noi-bo-cu.md` | Chuyển các màn Admin/Staff/Owner/Accounting đang có | Có |
 | 6 | `05a-chu-homestay.md` | Màn mới cho chủ homestay | Có |
 | 7 | `05b-nhan-vien.md` | Màn mới cho nhân viên | Có |

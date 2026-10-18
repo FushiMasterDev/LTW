@@ -2,7 +2,7 @@
 
 > Chạy **sau bước 03** (HEAD `ad0818c`) và **trước bước 04**, trong **phiên Codex mới** (để nạp skill ở `.agents/skills/`).
 >
-> Ngày 18/10/2026, người dùng chốt đổi nhận diện giao diện sang phong cách của bản mẫu Lovable https://lua-ivory-forest-capture.lovable.app, kèm nhiều chuyển động, ưu tiên 3D. Quyết định này **thay thế** các luật cũ: "không đổi màu, font, bo góc", "chỉ một màu nhấn", "không scroll reveal", "thời lượng 0.06–0.45s" (DESIGN.md và `decisions.md` 02-D, 02x, 03-1). Tên thương hiệu vẫn là **Fuji Homestay**; "Lúa" chỉ là tên bản mẫu.
+> Ngày 18/10/2026, người dùng chốt đổi nhận diện giao diện sang phong cách của bản mẫu Lovable https://lua-ivory-forest-capture.lovable.app, kèm nhiều chuyển động, ưu tiên **3D tự chạy** (ảnh tự chuyển động, không đi theo chuột). Quyết định này **thay thế** các luật cũ: "không đổi màu, font, bo góc", "chỉ một màu nhấn", "không scroll reveal", "thời lượng 0.06–0.45s" (DESIGN.md và `decisions.md` 02-D, 02x, 03-1). Tên thương hiệu vẫn là **Fuji Homestay**; "Lúa" chỉ là tên bản mẫu.
 
 Đọc trước:
 - `docs/prompts/ui-rebuild.md`, `DESIGN.md`, `docs/ui/decisions.md`, `docs/ui/03-trang-khach-report.md`.
@@ -87,7 +87,7 @@ Sửa ở component, partial, Tag Helper và CSS dùng chung. Không vá riêng 
 **Trang khách đã làm ở bước 03:**
 - **`Home/Index`:**
   - **Hero:** cao gần một màn hình, ảnh tràn viền. Gồm: nhãn kính mờ chứa số thật (`Model.HomestayCount` homestay), tiêu đề Fraunces 2 dòng có một cụm chữ nghiêng màu cam đất, một câu phụ, thanh tìm kính mờ.
-  - **Khu vực:** thẻ ảnh dọc 3:4, tên khu vực và số homestay đè ở đáy ảnh, có link "Xem tất cả".
+  - **Khu vực:** thẻ ảnh dọc 3:4, tên khu vực và số homestay đè ở đáy ảnh, đặt trên băng chuyền 3D tự quay (mục 4), có link "Xem tất cả".
   - **Homestay nổi bật:** lưới 4 cột ở 1280px.
   - **3 cam kết:** thẻ có icon tròn.
   - **3 bước đặt phòng:** giữ, theo quyết định 03-1.
@@ -108,65 +108,68 @@ Sửa ở component, partial, Tag Helper và CSS dùng chung. Không vá riêng 
 
 ## 4. Chuyển động (nhóm C)
 
-Giữ đủ mọi chuyển động của bản mẫu ở mục 1, rồi làm hơn. Ưu tiên chiều sâu 3D bằng **CSS 3D transform (`perspective`, `rotateX/Y`, `translateZ`) và JavaScript thuần**. **Không thêm thư viện** (three.js, GSAP, Lenis, framer…). Nếu thấy cần, ghi đề xuất vào báo cáo, không tự thêm.
+Giữ đủ mọi chuyển động của bản mẫu ở mục 1, rồi làm hơn bằng **3D tự chạy**: ảnh và khối tự chuyển động trong không gian 3D theo nhịp thời gian, **không đi theo con trỏ chuột**. **Không làm** kiểu nghiêng thẻ theo chuột, vệt sáng chạy theo chuột, hay hero lệch lớp theo vị trí chuột. Hover chỉ giữ các phản hồi nhẹ của bản mẫu (nâng thẻ, phóng ảnh trong khung).
+
+3D làm bằng **CSS 3D transform (`perspective`, `rotateX/Y`, `translateZ`, `transform-style: preserve-3d`), `@keyframes` và JavaScript thuần**. **Không thêm thư viện** (three.js, GSAP, Swiper, Lenis, framer…). Nếu thấy cần, ghi đề xuất vào báo cáo, không tự thêm.
 
 **Token** (thêm vào `motion.css` hoặc `tokens.css`, mọi chuyển động chỉ dùng các token này):
 - `--fx-ease-out: cubic-bezier(.2,.7,.2,1)`;
 - thời lượng `--fx-dur-1` … `--fx-dur-6`, khoảng 0.15 / 0.25 / 0.35 / 0.5 / 0.8 / 1.2s;
 - `--fx-stagger: 70ms`;
-- `--fx-perspective: 1000px`.
+- `--fx-perspective: 1200px`;
+- nhịp tự chạy: `--fx-loop-slow` (khoảng 24s) và `--fx-dwell` (thời gian dừng ở mỗi ảnh, khoảng 4s).
 
 Các thời lượng cũ (0.06–0.45s) giữ cho phản hồi nút và form.
 
-**Trang khách, tối thiểu các chuyển động sau:**
+**Trang khách, 3D tự chạy:**
 
 | # | Chỗ | Chuyển động |
 |---|---|---|
-| 1 | Vào trang | `main` fade-up 18px, 0.7s |
-| 2 | Hero, ảnh | Ken Burns chậm (scale 1.05 → 1.12, khoảng 20s, đảo chiều), cộng parallax khi cuộn: ảnh trôi chậm hơn chữ, dùng `translate3d`, cập nhật trong `requestAnimationFrame` |
-| 3 | Hero, chiều sâu | Desktop: ảnh, chữ, thanh tìm là 3 lớp `translateZ` khác nhau, cả khối nghiêng tối đa 3° theo con trỏ |
-| 4 | Hero, chữ | Lần lượt hiện nhãn → dòng 1 → dòng 2 → câu phụ → thanh tìm, cách nhau `--fx-stagger` (thanh tìm trễ khoảng 150ms như bản mẫu) |
-| 5 | Mọi section | Hiện khi cuộn tới, có chiều sâu: tiêu đề → chữ → ảnh/thẻ lần lượt dịch lên 24px kèm `rotateX(8deg)` về 0, 0.8s, chạy một lần |
-| 6 | Thẻ khu vực | Nghiêng 3D theo con trỏ (tối đa 8°, perspective 900px). Tên khu vực nổi `translateZ(40px)` trên ảnh. Một vệt sáng chạy theo con trỏ (lớp phủ độ mờ thấp từ token). Ảnh phóng 1.06. Rời chuột thì trở về trong 0.5s |
-| 7 | Thẻ homestay | `.lift` (nâng 4px + bóng lift, 0.35s), ảnh phóng 1.06 (0.8s), nghiêng nhẹ tối đa 4° trên desktop |
-| 8 | 3 bước đặt phòng | Hiệu ứng riêng của trang: 3 thẻ ban đầu xếp chồng 3D (lệch `translateZ`/`rotateX`), khi cuộn tới thì tách ra thành hàng. Dùng `animation-timeline: view()` trong `@supports`; trình duyệt không hỗ trợ thì dùng hiện-khi-cuộn thường |
-| 9 | 3 cam kết | Thẻ lật vào từ `rotateY(-12deg)` khi hiện; hover thì icon xoay 3D một vòng |
-| 10 | Khối đối tác | Ảnh hoặc khối nghiêng `rotateY(10deg)` về 0 theo tiến độ cuộn |
-| 11 | Header | Trong suốt → kính mờ khi qua hero, 0.35s |
-| 12 | Thanh tìm | Viên chỉ báo trượt sang ô đang focus |
-| 13 | Gallery / lightbox | Ảnh lớn phóng ra từ đúng vị trí thumbnail (kỹ thuật FLIP), đóng thì thu về |
-| 14 | Chi tiết homestay | Thẻ phòng khi chọn có dấu ✓ bật ra (scale), viền đổi màu |
-| 15 | `_BookingStepper`, `_Steps` | Đường tiến trình vẽ dần (`scaleX`) khi hiện |
-| 16 | Modal xác nhận, toast | Vào bằng `scale(.96)` + `rotateX(6deg)` → 0, giữ nhịp tổng khoảng 370ms của modal |
-| 17 | Link, nút, chip | Gạch chân link dài ra khi hover; nút nâng/nhấn như mục 3 |
+| 1 | Hero, ảnh nền | "Máy quay" 3D chậm: ảnh tự phóng 1.05 → 1.15, kèm trôi nhẹ `rotateX`/`rotateY` khoảng 2° trong `perspective`, vòng lặp `--fx-loop-slow`, đảo chiều. Cảm giác như máy quay đang lia chậm qua cảnh |
+| 2 | Hero, chữ | Khi vào trang, lần lượt hiện nhãn → dòng 1 → dòng 2 → câu phụ → thanh tìm. Mỗi phần nổi lên từ `translateZ(-60px)` + 18px về 0, cách nhau `--fx-stagger` (thanh tìm trễ khoảng 150ms như bản mẫu) |
+| 3 | Khu vực | **Băng chuyền 3D tự quay** (hiệu ứng riêng của trang): các thẻ ảnh khu vực xếp trên một vòng tròn (`rotateY(360deg / n)` + `translateZ`), cả vòng tự xoay chậm, dừng `--fx-dwell` ở mỗi thẻ. Thẻ phía trước to và rõ nhất, thẻ phía sau nhỏ và mờ dần. Từ 3 khu vực trở lên mới dùng vòng; ít hơn thì dùng lưới. Điện thoại: chuyển thành dải "coverflow" (thẻ giữa thẳng, hai bên nghiêng `rotateY(±35deg)`), tự trượt sang thẻ kế, vuốt được |
+| 4 | 3 bước đặt phòng | **Bộ bài 3D tự xào:** 3 thẻ bước xếp chồng lệch nhau theo chiều sâu. Cứ sau `--fx-dwell`, thẻ trên cùng lật ra sau (`rotateX`) và chui xuống đáy, thẻ kế nổi lên. Bên cạnh là danh sách 3 bước, bước đang ở trên cùng được đánh dấu. Bấm vào một bước thì thẻ đó lên trên |
+| 5 | Khối đối tác | **Chồng ảnh lơ lửng:** 3 ảnh homestay thật (lấy từ `Model.Featured`) xếp nghiêng ở các độ sâu khác nhau, tự nhấp nhô chậm (`translateZ`/`translateY`/`rotate` vài độ, mỗi ảnh lệch pha nhau), như ảnh đang trôi trong không gian |
+| 6 | 3 cam kết | Thẻ lật vào từ `rotateY(-12deg)` khi cuộn tới. Icon tự xoay 3D một vòng chậm, lặp lại cách nhau vài giây, ba icon lệch pha nhau |
+| 7 | Chi tiết homestay, gallery | Ảnh lớn tự chuyển sang ảnh kế (trong số ảnh của homestay) mỗi `--fx-dwell`, chuyển bằng **lật khối lập phương 3D** (`rotateY(-90deg)` sang mặt kế). Ảnh đang hiện có Ken Burns nhẹ. Hai ảnh nhỏ bên phải đổi theo ảnh kế tiếp |
+| 8 | Lightbox | Mở: ảnh phóng ra từ đúng vị trí thumbnail (kỹ thuật FLIP). Chuyển ảnh: lật khối lập phương như mục 7. Không tự chạy trong lightbox |
+| 9 | `_AuthAside` (đăng nhập/đăng ký) | Ảnh cột trái có "máy quay" 3D chậm như mục 1 |
+| 10 | Mọi section | Hiện khi cuộn tới, có chiều sâu: tiêu đề → chữ → ảnh/thẻ lần lượt dịch lên 24px kèm `rotateX(8deg)` về 0, 0.8s, chạy một lần |
+| 11 | Thẻ homestay | `.lift` của bản mẫu (hover nâng 4px + bóng lift, 0.35s), ảnh phóng 1.06 (0.8s). Không nghiêng |
+| 12 | Header | Trong suốt → kính mờ khi cuộn qua hero, 0.35s |
+| 13 | Thanh tìm | Viên chỉ báo trượt sang ô đang focus |
+| 14 | `_BookingStepper`, `_Steps` | Đường tiến trình vẽ dần (`scaleX`) khi hiện |
+| 15 | Modal xác nhận, toast | Vào bằng `scale(.96)` + `rotateX(6deg)` → 0, giữ nhịp tổng khoảng 370ms của modal |
+| 16 | Link, nút, chip | Gạch chân link dài ra khi hover; nút nâng/nhấn như mục 3 |
 
 **Dashboard: tiết chế để đọc dữ liệu.**
 - Thẻ số liệu hiện lần lượt một lần.
 - Số đếm lên trong 0.8s. Giá trị cuối đã có sẵn trong HTML, không JS thì vẫn đúng; không đặt `aria-live`.
 - Viên mục đang chọn của sidebar trượt sang mục mới.
 - Biểu đồ Chart.js vẽ dần (cấu hình `animation` 0.8s).
-- **Không** nghiêng 3D, parallax hay Ken Burns ở dashboard.
+- **Không** có 3D tự chạy, băng chuyền hay Ken Burns ở dashboard.
 
-**Luật bắt buộc:**
+**Luật cho phần tự chạy** (WCAG 2.2.2: nội dung tự chuyển động quá 5 giây phải dừng được):
+- Mỗi khối tự chạy có **nút Tạm dừng/Tiếp tục** nhìn thấy được, có `aria-label`, chữ qua `L[...]`. Khối tự dừng khi rê chuột vào hoặc khi một phần tử bên trong được focus bằng bàn phím.
+- Băng chuyền, bộ bài, gallery: có nút trước/sau, dùng được bằng phím mũi tên. Thẻ đang ở trước có `aria-current`. Mọi thẻ vẫn là link thật, Tab đi qua được, focus vào thẻ nào thì thẻ đó quay ra trước.
+- **Không tự trượt chữ:** khối tự chạy không mang đoạn văn dài, người đọc không phải đuổi theo chữ.
+- Tối đa **2 khối tự chạy cùng lúc trong một màn hình**. Khối ra khỏi màn hình hoặc tab bị ẩn (`visibilitychange`) thì dừng hẳn, không chạy ngầm.
+
+**Luật chung:**
 - **Chỉ animate `transform`, `opacity`** (thêm `filter`/`backdrop-filter` cho kính mờ khi thật cần). Không animate kích thước hay bố cục. Không dùng `transition: all`.
 - **Không JS vẫn thấy hết nội dung:**
+  - Băng chuyền, bộ bài và gallery khi không có JS hiện thành lưới hoặc danh sách thường.
   - Trạng thái ẩn chỉ áp dụng khi `<html>` có class bật chuyển động. Class này do script theme có sẵn trong `<head>` gắn.
-  - Không có `style="` trong markup. Độ trễ lệch nhau dùng `:nth-child`, hoặc JS gọi `style.setProperty('--fx-i', i)`.
-- **`prefers-reduced-motion: reduce`:**
-  - tắt nghiêng, parallax, Ken Burns, chồng thẻ, FLIP;
-  - phần tử hiện-khi-cuộn hiện ngay, không di chuyển;
-  - chỉ giữ đổi màu/độ mờ ≤ 0.2s.
-  
-  Mỗi khối chuyển động mới có khối reduce tương ứng trong `motion.css`.
-- **Thiết bị cảm ứng hoặc không có hover** (`(hover: none)`, `(pointer: coarse)`): không nghiêng theo con trỏ. Parallax và chồng thẻ vẫn chạy nhưng nhẹ hơn.
+  - Không có `style="` trong markup. Góc xoay từng thẻ và độ trễ lệch nhau dùng `:nth-child`, hoặc JS gọi `style.setProperty('--fx-i', i)`.
+- **`prefers-reduced-motion: reduce`:** mọi khối tự chạy đứng yên ở trạng thái đầu và hiện thành lưới/danh sách phẳng, không 3D. Phần hiện-khi-cuộn hiện ngay, không di chuyển. Chỉ giữ đổi màu/độ mờ ≤ 0.2s. Mỗi khối chuyển động mới có khối reduce tương ứng trong `motion.css`.
 - **Hiệu năng:**
-  - Một IntersectionObserver dùng chung, `unobserve` sau khi chạy.
-  - Sự kiện `pointermove` gộp theo `requestAnimationFrame`.
-  - `will-change` chỉ bật khi đang tương tác.
-  - Ken Burns dừng khi hero ra khỏi màn hình hoặc tab bị ẩn.
+  - Một IntersectionObserver dùng chung để bật/tắt hiện-khi-cuộn và các khối tự chạy.
+  - Vòng lặp dùng `@keyframes` CSS hoặc một `requestAnimationFrame` chung, không dùng `setInterval` cho từng thẻ.
+  - `will-change` chỉ bật khi khối đang chạy. Bật `backface-visibility: hidden` cho mặt lật.
+  - Ảnh trong băng chuyền và gallery có `width`/`height`, `loading="lazy"` (trừ ảnh đầu), `decoding="async"`.
   - Ảnh hero `preload`, có kích thước sẵn: **CLS = 0** (đo bằng `PerformanceObserver` qua `playwright-cli`).
-  - Cuộn trang chủ ở 1280px không có frame nào > 50ms (ghi trace).
-- **File:** JS đặt ở `wwwroot/js/motion/` (ví dụ `reveal.js`, `tilt.js`, `parallax.js`, `flip-lightbox.js`), mỗi file một việc. Chỉ nạp ở layout/trang cần.
+  - Khi trang chủ đứng yên và khi cuộn ở 1280px, không có frame nào > 50ms (ghi trace).
+- **File:** JS đặt ở `wwwroot/js/motion/` (ví dụ `reveal.js`, `carousel-3d.js`, `card-deck.js`, `cube-gallery.js`, `flip-lightbox.js`, `autoplay.js` (dừng/tiếp tục chung)), mỗi file một việc. Chỉ nạp ở layout/trang cần. Mẫu mới (băng chuyền, bộ bài, gallery lập phương, chồng ảnh) vào thư viện component + `/Dev/UiKit` trước, rồi mới dùng ở trang.
 
 ## 5. Nội dung và ảnh
 
@@ -220,7 +223,8 @@ Mỗi nhóm làm theo vòng: sửa → `dotnet build -c Release -p:UseSharedComp
   - chụp lại bằng `set-reduced-motion reduce` (nội dung hiện đủ, không có gì di chuyển);
   - chụp lại khi tắt JavaScript (nội dung hiện đủ);
   - ở 375px không có thanh cuộn ngang;
-  - quay một video ngắn (`video-start`) cảnh cuộn trang chủ và rê chuột lên thẻ.
+  - quay một video ngắn (`video-start`) cảnh trang chủ đứng yên khoảng 15 giây rồi cuộn hết trang, để thấy các khối 3D tự chạy;
+  - kiểm nút Tạm dừng, dừng khi rê chuột/focus, phím mũi tên, và khối dừng khi ra khỏi màn hình.
 - Bảng tương phản các cặp màu mới ở cả hai chế độ.
 - `python3 -I tools/ui-crawl.py http://localhost:5012` với mọi vai trò: không có trang 500. Đã biết: `/Bookings/Create` thiếu `roomTypeId` trả 404, 3 thẻ mẫu ở UI Kit trả 404.
 - Đi lại luồng của bước 03 bằng tài khoản khách `0987000001` và khi chưa đăng nhập: trang chủ → tìm → chi tiết → đặt → chi tiết đơn có QR → tra cứu.
