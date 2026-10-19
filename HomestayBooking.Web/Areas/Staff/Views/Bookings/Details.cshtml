@@ -8,7 +8,7 @@
     new("Homestay",new HtmlContentBuilder().Append(b.Homestay.Name)),
     new("Phòng",new HtmlContentBuilder().Append(b.RoomType.Name+" · "+b.Room.RoomCode)),
     new("Ngày ở",new HtmlContentBuilder().Append($"{b.CheckIn:dd/MM/yyyy} – {b.CheckOut:dd/MM/yyyy}")),
-    new("Người phụ trách",new HtmlContentBuilder().Append(b.AssignedEmployeeId is null ? L["Chưa giao"].Value : Model.Assignees.FirstOrDefault(a=>a.EmployeeId==b.AssignedEmployeeId)?.EmployeeCode ?? L["Nhân viên #{0}",b.AssignedEmployeeId].Value)),
+    new("Người phụ trách",new HtmlContentBuilder().Append(b.AssignedEmployeeId is null ? L["Chưa giao"].Value : b.AssignedEmployee?.Person.FullName ?? b.AssignedEmployee?.EmployeeCode ?? L["Nhân viên #{0}",b.AssignedEmployeeId].Value)),
     new("Yêu cầu đặc biệt",new HtmlContentBuilder().Append(b.SpecialRequests ?? "—"))
  };
  var targets=new List<BookingStatus>();
@@ -45,7 +45,7 @@
    <section class="fx-card p-4 mb-4"><h2 class="h5">@L["Đổi trạng thái"]</h2><p class="text-muted">@L["Chỉ cập nhật sau khi liên hệ chủ homestay."]</p>
     <form asp-action="Status" asp-route-id="@b.Id" method="post" data-confirm="@L["Xác nhận đổi trạng thái? Từ chối đơn sẽ tạo khoản hoàn theo nghiệp vụ hiện có."]">
      <label for="to" class="form-label">@L["Trạng thái mới"]</label><select id="to" name="to" class="form-select mb-3">@foreach(var s in targets){<option value="@s">@L[s.DisplayName()]</option>}</select>
-     @if(b.Status==BookingStatus.Deposited){<label for="newRoomId" class="form-label">@L["Phòng khi xác nhận"]</label><select id="newRoomId" name="newRoomId" class="form-select mb-3"><option value="">@L["Giữ phòng hiện tại"]</option>@foreach(var r in Model.FreeRooms){<option value="@r">@L["Phòng #{0}",r]</option>}</select>}
+     @if(b.Status==BookingStatus.Deposited){<label for="newRoomId" class="form-label">@L["Phòng khi xác nhận"]</label><select id="newRoomId" name="newRoomId" class="form-select mb-3"><option value="">@L["Giữ phòng hiện tại"]</option>@foreach(var r in Model.FreeRooms){<option value="@r.Id">@r.RoomCode</option>}</select>}
      <label for="note" class="form-label">@L["Ghi chú"]</label><textarea id="note" name="note" class="form-control mb-3" required maxlength="500"></textarea>
      <button class="btn btn-brand" type="submit" data-loading-text="@L["Đang lưu…"]">@L["Đổi trạng thái"]</button>
     </form>
@@ -58,4 +58,4 @@
  </div>
 </div>
 <h2 class="h5">@L["Lịch sử"]</h2>
-<partial name="_Timeline" model='new TimelineModel(Events:Model.Details.History.Select(h=>new TimelineItem(h.ChangedAt,h.ToStatus.DisplayName(),h.Note)).ToArray())' />
+<partial name="_Timeline" model='new TimelineModel(Events:Model.Details.History.Select(h=>new TimelineItem(h.ChangedAt,h.ToStatus.DisplayName(),string.Join(" · ",new[] {h.ActorAccount?.Person.FullName,h.Note}.Where(x=>!string.IsNullOrEmpty(x))))).ToArray())' />

@@ -18,7 +18,7 @@ public record StatCardModel(string Label, string Value, string Icon = "graph-up"
 /// <param name="Icon">Tên biểu tượng.</param>
 /// <param name="ActionLabel">Nhãn hành động tùy chọn.</param>
 /// <param name="ActionUrl">Đường dẫn hành động.</param>
-public record EmptyStateModel(string Title = "Không có dữ liệu.", string? Description = null, string Icon = "inbox", string? ActionLabel = null, string? ActionUrl = null);
+public record EmptyStateModel(string Title = "Không có dữ liệu.", string? Description = null, string Icon = "inbox", string? ActionLabel = null, string? ActionUrl = null, bool Compact = false);
 
 /// <param name="Label">Nhãn đã dịch hoặc khóa resource.</param>
 /// <param name="Value">Nội dung HTML tin cậy, dùng HtmlContentBuilder.Append cho văn bản người dùng.</param>

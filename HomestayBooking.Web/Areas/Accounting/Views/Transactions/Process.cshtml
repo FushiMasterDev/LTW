@@ -4,6 +4,7 @@
     ViewData["Title"] = L["Xử lý giao dịch"];
     var suggestedCode = t.BookingCode ?? Model.Suggestions.FirstOrDefault()?.Code;
 }
+@if(Model.Transaction.SettlementId is int settlementId) { <p><a asp-controller="Settlements" asp-action="Details" asp-route-id="@settlementId">@L["Xem kỳ đối soát"]</a></p> }
 <partial name="_PageHead" model='new PageHeadModel("Xử lý giao dịch", "", "", ShowCreate: false)' />
 <partial name="_Breadcrumb" model='new BreadcrumbModel(new BreadcrumbItem[] { new("Giao dịch ngân hàng", Url.Action("Index")), new("Xử lý giao dịch") })' />
 <partial name="_Tabs" model="@TabsModel.Accounting(User, ViewData["Counts"] as AccountingCounts, ViewContext.RouteData.Values["controller"]?.ToString())" />

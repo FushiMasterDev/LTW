@@ -19,7 +19,7 @@ public class OverbookingController(ApplicationDbContext db,StaffBookingService b
             var choices=alternatives.Where(a=>a.Offer.RoomTypeId!=b.RoomTypeId).ToList();
             const int size=6;var current=Math.Clamp(page ?? 1,1,Math.Max(1,(int)Math.Ceiling(choices.Count/(double)size)));
             return View(new StaffOverbookingModel(b,new PaginatedList<OverbookingAlternative>(choices.Skip((current-1)*size).Take(size),choices.Count,current,size),
-                await availability.FreeRoomIdsAsync(b.RoomTypeId,b.CheckIn,b.CheckOut)));
+                await availability.FreeRoomsAsync(b.RoomTypeId,b.CheckIn,b.CheckOut,actor)));
         } catch(BookingException ex){Error(ex);return RedirectToAction("Details","Bookings",new {id});}
     }
     [HttpPost,ValidateAntiForgeryToken]

@@ -10,7 +10,7 @@
 <partial name="_PageHead" model='new PageHeadModel("Chi tiết đối soát", "", "", L["Kỳ {0} · {1}/{2}", s.PeriodNo, s.Month, s.Year], ShowCreate: false)' />
 <partial name="_Tabs" model='TabsModel.Accounting(User, ViewData["Counts"] as AccountingCounts, "Settlements")' />
 <partial name="_Breadcrumb" model='new BreadcrumbModel(new BreadcrumbItem[] { new("Đối soát chủ homestay", Url.Action("Index")), new("Chi tiết đối soát") })' />
-<div class="d-flex flex-wrap gap-3 align-items-center mb-4"><status-badge value="@s.Status" /><span>@L["Homestay #{0}", s.HomestayId] · #@s.Id</span></div>
+<div class="d-flex flex-wrap gap-3 align-items-center mb-4"><status-badge value="@s.Status" /><span>@s.Homestay.Name · @s.Homestay.Owner.Person.FullName · #@s.Id</span></div>
 @if (d.UnclosedBookingCodes.Count > 0) { <partial name="_Alert" model='new AlertModel(L["Còn đơn chưa chốt trong kỳ: {0}.", string.Join(", ", d.UnclosedBookingCodes)], "warning", false)' /> }
 <h2 class="h5">@L["Các đơn trong kỳ"]</h2>
 @foreach (var line in d.Lines)
@@ -21,6 +21,7 @@
     Func<dynamic, IHtmlContent> commission = @<text><money value="@line.Item.CommissionAmount" /></text>;
     Func<dynamic, IHtmlContent> discount = @<text><money value="@line.Item.DiscountAmount" /></text>;
     Func<dynamic, IHtmlContent> compensation = @<text>
+        @if (!d.Compensations.Any(p => p.BookingId == line.Item.BookingId)) { <money value="0" /> }
         @foreach (var payment in d.Compensations.Where(p => p.BookingId == line.Item.BookingId))
         { <div><money value="@payment.Amount" /> <status-badge value="@payment.Status" /></div> }
     </text>;
@@ -42,7 +43,13 @@
     compensationRows.Add(new(new IHtmlContent[] { code(null!), amount(null!), status(null!) }));
 }
 <partial name="_DataTable" model='new DataTableModel("Khoản bù", new TableColumn[] { new("Mã đơn"), new("Số tiền", Numeric: true), new("Trạng thái") }, compensationRows)' />
-@if (s.Status == SettlementStatus.Sent) { <p class="mt-4 text-muted">@L["Chủ xác nhận số liệu trong khu Chủ homestay. Xác nhận của chủ là tùy chọn trước khi chuyển tiền."]</p> }
+@if (canWrite && s.Status == SettlementStatus.Sent) {
+    <section class="fx-card fx-form-card mt-4"><h2 class="h5">@L["Xác nhận thay chủ"]</h2>
+    <form asp-action="ConfirmOnBehalf" asp-route-id="@s.Id" method="post" data-confirm="@L["Xác nhận số liệu thay chủ homestay với lý do đã nhập?"]">
+        <label for="on-behalf-reason" class="form-label">@L["Lý do xác nhận thay chủ"]</label><textarea id="on-behalf-reason" name="reason" class="form-control" required maxlength="500" rows="3"></textarea>
+        <div class="fx-form-actions"><button type="submit" class="btn btn-brand" data-loading-text="@L["Đang lưu…"]">@L["Xác nhận thay chủ"]</button></div>
+    </form></section>
+}
 @if (canWrite && SettlementService.CanTransition(s.Status, SettlementStatus.Sent))
 {
     <form asp-action="Send" asp-route-id="@s.Id" method="post" class="mt-4" data-confirm="@L["Gửi bảng đối soát cho chủ homestay?"]"><button type="submit" class="btn btn-brand" disabled="@(d.UnclosedBookingCodes.Count > 0 || d.Lines.Count == 0)" data-loading-text="@L["Đang lưu…"]">@L["Gửi chủ"]</button></form>
@@ -51,8 +58,10 @@
 {
     <div class="fx-card fx-form-card mt-4">
         <h2 class="h5">@L["Ghi nhận đã chuyển tiền"]</h2><p>@L["Số tiền chuyển"]: <money value="@s.PayoutAmount" /></p>
-        <p class="form-text">@L["Ghi nhận toàn bộ số phải trả chủ. Ngày ghi nhận do hệ thống lưu khi xác nhận."]</p>
+        <p class="form-text">@L["Chuyển đủ số phải trả chủ, không hỗ trợ chi từng phần. Thời điểm chuyển theo giờ Việt Nam."]</p>
         <form asp-action="RecordPaid" asp-route-id="@s.Id" method="post" data-confirm="@L["Xác nhận đã chuyển đủ tiền cho chủ homestay?"]">
+            <label for="paid-amount" class="form-label">@L["Số tiền đã chuyển (đ)"]</label><input id="paid-amount" name="amount" class="form-control mb-3" type="number" step="1" value="@s.PayoutAmount.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture)" required />
+            <label for="paid-at" class="form-label">@L["Thời điểm chuyển thực tế"]</label><input id="paid-at" name="paidAt" class="form-control mb-3" type="datetime-local" step="1" required />
             <label for="paid-reference" class="form-label">@L["Mã tham chiếu ngân hàng"]</label><input id="paid-reference" name="bankRef" class="form-control" maxlength="100" required="@(s.PayoutAmount > 0)" autocomplete="off" spellcheck="false" />
             <div class="fx-form-actions"><button type="submit" class="btn btn-brand" data-loading-text="@L["Đang lưu…"]">@L["Ghi nhận đã chuyển tiền"]</button></div>
         </form>

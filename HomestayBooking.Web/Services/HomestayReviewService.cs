@@ -17,6 +17,7 @@ public record ReviewFieldChange(string Field, string? Before, string? After);
 public record PendingHomestayDetails(HomestayEditor Content, DateTime? SubmittedAt, bool FirstReview, string? OwnerName, string OwnerPhone)
 {
     public string? ChangeReason { get; init; }
+    public HomestayEditor? BeforeContent { get; init; }
     public IReadOnlyList<ReviewFieldChange> Changes { get; init; } = [];
     public IReadOnlyList<HomestayEditorDocument> LegacyDocuments { get; init; } = [];
 }
@@ -97,18 +98,43 @@ public class HomestayReviewService(ApplicationDbContext db, HomestayAccessServic
         var logs = await db.AuditLogs.AsNoTracking().Where(a => a.TableName == "Homestays" && a.RecordId == id.ToString()
             && a.CreatedAt == pending.SubmittedAt).OrderByDescending(a => a.Id).ToListAsync();
         var log = logs.FirstOrDefault(a => JsonStatus(a.NewValues) == "PendingReview" && JsonStatus(a.OldValues) != "PendingReview");
-        var changes = new List<ReviewFieldChange>(); string? reason = null;
+        var changes = new List<ReviewFieldChange>(); string? reason = null; HomestayEditor? beforeContent = null;
         if (log?.OldValues is { } oldJson && log.NewValues is { } newJson)
         {
             using var oldDoc = JsonDocument.Parse(oldJson); using var newDoc = JsonDocument.Parse(newJson);
             static JsonElement Values(JsonElement e) => e.ValueKind == JsonValueKind.Object && e.TryGetProperty("Values", out var v) ? v : e;
             static JsonElement Home(JsonElement e) => e.ValueKind == JsonValueKind.Object && e.TryGetProperty("Homestay", out var h) ? h : e;
-            var before = Home(Values(oldDoc.RootElement)); var after = Home(Values(newDoc.RootElement));
+            if (oldDoc.RootElement.ValueKind == JsonValueKind.Object && oldDoc.RootElement.TryGetProperty("Snapshot", out var snapshot) && snapshot.ValueKind == JsonValueKind.Object)
+                beforeContent = snapshot.Deserialize<HomestayEditor>();
+            var before = Home(Values(oldDoc.RootElement)); var after = JsonSerializer.SerializeToElement(content);
             foreach (var field in new[] { "Address", "AreaId", "Latitude", "Longitude", "Name", "DescriptionHtml", "ContactPhone" })
                 if (before.ValueKind == JsonValueKind.Object && after.ValueKind == JsonValueKind.Object && before.TryGetProperty(field, out var b) && after.TryGetProperty(field, out var a) && b.ToString() != a.ToString())
                     changes.Add(new(field, b.ValueKind == JsonValueKind.Null ? null : b.ToString(), a.ValueKind == JsonValueKind.Null ? null : a.ToString()));
             if (Values(newDoc.RootElement).TryGetProperty("ChangeReason", out var why)) reason = why.GetString();
             else if (changes.Any(c => new[] { "Address", "AreaId", "Latitude", "Longitude" }.Contains(c.Field))) reason = "Thay đổi địa chỉ / vị trí";
+        }
+        if (beforeContent is { } saved)
+        {
+            // Compare actual stored metadata with the current editor; never reconstruct old values from notifications.
+            static string RoomSummary(HomestayEditor h) => string.Join("\n", h.RoomTypes.Select(t =>
+                $"{t.Name} · {t.CategoryName} · {t.MaxGuests} · {t.AreaM2} · {t.Description} · {t.IsActive}: "
+                + string.Join(", ", t.Rooms.Select(r => $"{r.RoomCode} ({r.IsActive})"))));
+            static string PriceSummary(HomestayEditor h) => string.Join("\n", h.RoomTypes.SelectMany(t => t.CurrentPrices.Concat(t.UpcomingPrices)
+                .Select(p => $"{t.Name} · {p.DayType} · {p.EffectiveFrom:yyyy-MM-dd} · {p.Price}")));
+            static string ImageSummary(HomestayEditor h) => string.Join("\n", h.Images.Select(i => $"{i.Url} · {i.RoomTypeId} · {i.SortOrder} · {i.IsCover}"));
+            static string DocumentSummary(HomestayEditor h) => string.Join("\n", h.Documents.Select(d => $"{d.Id} · {d.Type} · {d.OriginalFileName} · {d.ExpiryDate:yyyy-MM-dd}"));
+            static string AmenitySummary(HomestayEditor h) => string.Join(", ", h.Amenities.Where(a => a.Selected).Select(a => a.Name));
+            static string PolicySummary(HomestayEditor h) => string.Join("\n", h.Policies.Select(p => $"{p.Scope} · {p.Name}: "
+                + string.Join(", ", p.Rules.Select(r => $"{r.MinDaysBefore} / {r.RefundPercent}%"))));
+            foreach (var (field, oldValue, newValue) in new[] {
+                ("RoomTypes", RoomSummary(saved), RoomSummary(content)), ("Prices", PriceSummary(saved), PriceSummary(content)),
+                ("Images", ImageSummary(saved), ImageSummary(content)), ("Documents", DocumentSummary(saved), DocumentSummary(content)),
+                ("Amenities", AmenitySummary(saved), AmenitySummary(content)), ("Policies", PolicySummary(saved), PolicySummary(content)),
+                ("DescriptionHtml", saved.DescriptionHtml, content.DescriptionHtml), ("Name", saved.Name, content.Name),
+                ("CheckinGuideHtml", saved.CheckinGuideHtml, content.CheckinGuideHtml), ("ContactPhone", saved.ContactPhone, content.ContactPhone),
+                ("CheckinTime", saved.CheckinTime.ToString("HH:mm"), content.CheckinTime.ToString("HH:mm")),
+                ("CheckoutTime", saved.CheckoutTime.ToString("HH:mm"), content.CheckoutTime.ToString("HH:mm")) })
+                if (oldValue != newValue && changes.All(c => c.Field != field)) changes.Add(new(field, oldValue, newValue));
         }
         var today = VietnamTime.Today(clock);
         var legacy = await db.VerificationDocuments.AsNoTracking().Where(d => d.OwnerRegistrationId != null
@@ -116,7 +142,7 @@ public class HomestayReviewService(ApplicationDbContext db, HomestayAccessServic
             && (d.ExpiryDate == null || d.ExpiryDate >= today)).OrderBy(d => d.Id)
             .Select(d => new HomestayEditorDocument(d.Id, d.DocumentType, d.OriginalFileName, d.ExpiryDate, d.CreatedAt)).ToListAsync();
         return new(content, pending.SubmittedAt, pending.Homestay.ApprovedAt is null, owner.FullName, owner.PhoneNumber)
-        { ChangeReason = reason, Changes = changes, LegacyDocuments = legacy };
+        { ChangeReason = reason, BeforeContent = beforeContent, Changes = changes, LegacyDocuments = legacy };
     }
 
     private static string? JsonStatus(string? json)

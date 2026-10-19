@@ -16,10 +16,8 @@ public class AvailabilityController(ApplicationDbContext db,AvailabilityService 
         try {
             if(!ModelState.IsValid) throw new BookingException("Dữ liệu không hợp lệ. Vui lòng kiểm tra lại các trường.");
             var actor=await CurrentActorAsync();
-            // Validate the entire range before expanding; each count comes from the existing service.
-            await availability.StaffAvailabilityAsync(start,end,areaId,guests,actor);
-            for(var night=start;night<end;night=night.AddDays(1))
-                nights.AddRange((await availability.StaffAvailabilityAsync(night,night.AddDays(1),areaId,guests,actor)).Select(o=>new StaffNightAvailability(night,o)));
+            nights.AddRange((await availability.StaffNightAvailabilityAsync(start,end,areaId,guests,actor))
+                .Select(n=>new StaffNightAvailability(n.Night,n)));
         } catch(BookingException ex){Error(ex);}
         var sorted=nights.OrderBy(n=>n.Offer.HomestayName).ThenBy(n=>n.Offer.RoomTypeName).ThenBy(n=>n.Night).ToList();
         const int size=30;var current=Math.Clamp(page ?? 1,1,Math.Max(1,(int)Math.Ceiling(sorted.Count/(double)size)));

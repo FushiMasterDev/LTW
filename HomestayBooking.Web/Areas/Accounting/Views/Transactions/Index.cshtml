@@ -26,7 +26,7 @@
                             }</text>;
                         Func<dynamic, IHtmlContent> cell3 = @<text>@if (t.BookingCode is not null)
                             {
-                                <span class="fx-code">@t.BookingCode</span>
+                                <span class="fx-code">@t.BookingCode</span>@if (t.SettlementId is int settlementId) { <div><a asp-controller="Settlements" asp-action="Details" asp-route-id="@settlementId">@L["Xem kỳ đối soát"]</a></div> }
                                 <div class="small text-muted">@L[t.BookingStatus!.Value.DisplayName()] · @L["cần"] <money value="@(t.BookingAmountDue ?? 0)" /></div>
                             }
                             else
@@ -48,5 +48,5 @@
                             }</text>;
                     rows.Add(new TableRow(new IHtmlContent[] { cell0(null!), cell1(null!), cell2(null!), cell3(null!), cell4(null!), cell5(null!) }));
 }
-<partial name="_DataTable" model='new DataTableModel("Giao dịch ngân hàng", new TableColumn[] { new("Thời gian"), new("Số tiền", Numeric: true), new("Nội dung chuyển khoản"), new("Đơn"), new("Trạng thái"), new("Thao tác") }, rows)' />
+<partial name="_DataTable" model='new DataTableModel("Giao dịch ngân hàng", new TableColumn[] { new("Thời gian",NoWrap:true), new("Số tiền", Numeric: true), new("Nội dung chuyển khoản"), new("Đơn"), new("Trạng thái"), new("Thao tác") }, rows)' />
 <partial name="_Pager" model="Model" />

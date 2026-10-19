@@ -12,7 +12,7 @@ namespace HomestayBooking.Web.Models.ViewModels;
 /// <param name="ActionLabel">Nhãn nút, mặc định giữ Thêm mới.</param>
 public record PageHeadModel(string Title, string Icon, string Tone, string? Subtitle = null, bool ShowCreate = true,
     string Action = "Create", string? Controller = null, string? Area = null,
-    IReadOnlyDictionary<string, string>? RouteValues = null, string ActionLabel = "Thêm mới");
+    IReadOnlyDictionary<string, string>? RouteValues = null, string ActionLabel = "Thêm mới", string ActionIcon = "plus-lg");
 
 /// <summary>Dữ liệu cho partial _RowActions (nút Sửa/Xóa trên mỗi dòng).</summary>
 public record RowActionsModel(string Id, string Name, string ConfirmMessage);

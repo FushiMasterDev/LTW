@@ -86,8 +86,18 @@ public class HomestaysController(HomestayContentService content, RoomService roo
         Type(h, typeId); await rooms.SetPriceAsync(typeId, dayType, effectiveFrom, price, Actor);
     });
     [HttpPost, ValidateAntiForgeryToken]
-    public Task<IActionResult> RoomType(int id, int typeId, string name, int maxGuests, int? areaM2, string? description) => Save(id, "rooms", async h => {
-        var t = Type(h, typeId); await rooms.UpdateTypeAsync(typeId, new(name, t.CategoryId, maxGuests, areaM2, description), Actor);
+    public Task<IActionResult> RoomType(int id, int typeId, string name, int maxGuests, int? areaM2, string? description, int? categoryId) => Save(id, "rooms", async h => {
+        var t = Type(h, typeId); await rooms.UpdateTypeAsync(typeId, new(name, categoryId ?? t.CategoryId, maxGuests, areaM2, description), Actor);
+    });
+    [HttpPost, ValidateAntiForgeryToken]
+    public Task<IActionResult> Amenities(int id, int[] amenityIds) => Save(id, "amenities", async h => {
+        await content.UpdateAsync(id, new(h.Name, h.DescriptionHtml, h.CheckinGuideHtml, h.ContactPhone ?? "", h.CheckinTime, h.CheckoutTime, amenityIds), Actor);
+    });
+    [HttpPost, ValidateAntiForgeryToken]
+    public Task<IActionResult> CreateRoomType(int id, string name, int categoryId, int maxGuests, int? areaM2, string? description,
+        decimal weekdayPrice, decimal weekendPrice, decimal holidayPrice) => Save(id, "rooms", async h => {
+        await rooms.CreateTypeAsync(id, new(name, categoryId, maxGuests, areaM2, description),
+            new Dictionary<DayType, decimal> { [DayType.Weekday] = weekdayPrice, [DayType.Weekend] = weekendPrice, [DayType.Holiday] = holidayPrice }, Actor);
     });
     [HttpPost, ValidateAntiForgeryToken]
     public Task<IActionResult> AddRoom(int id, int typeId, string code) => Save(id, "rooms", async h => {

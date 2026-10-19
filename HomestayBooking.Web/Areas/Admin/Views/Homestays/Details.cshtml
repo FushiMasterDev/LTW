@@ -6,7 +6,20 @@
 @if(Model.Pending is {} pending) {
 <partial name="_Alert" model='new AlertModel(L[pending.FirstReview ? "Homestay mới":"Duyệt lại địa chỉ / giấy tờ"].Value)' />
 }
-<partial name="_Alert" model='new AlertModel(L["Đang hiển thị nội dung hiện tại. Chưa có bản trước thay đổi hoặc lý do chi tiết để so sánh địa chỉ và giấy tờ."].Value,"warning")' />
+@if(Model.Pending is {} review) {
+    @if(review.ChangeReason is {} reason) { <p>@L["Lý do chờ duyệt"]: @L[reason]</p> }
+    @if(review.Changes.Count > 0) {
+        var changeRows = review.Changes.Select(c=>new TableRow(new IHtmlContent[] {
+            new HtmlContentBuilder().Append(L[c.Field switch {"Address"=>"Địa chỉ","AreaId"=>"Mã khu vực","Latitude"=>"Vĩ độ","Longitude"=>"Kinh độ","Name"=>"Tên homestay","DescriptionHtml"=>"Mô tả","ContactPhone"=>"Số điện thoại","RoomTypes"=>"Phòng","Prices"=>"Giá","Images"=>"Ảnh","Documents"=>"Giấy tờ","Amenities"=>"Tiện nghi","Policies"=>"Chính sách hủy","CheckinGuideHtml"=>"Hướng dẫn nhận phòng","CheckinTime"=>"Giờ nhận phòng",_=>"Giờ trả phòng"}].Value),
+            new HtmlContentBuilder().Append(c.Before ?? "—"),new HtmlContentBuilder().Append(c.After ?? "—") })).ToArray();
+        <partial name="_DataTable" model='new DataTableModel("Thay đổi có trong nhật ký",new TableColumn[] {new("Trường"),new("Trước thay đổi"),new("Sau thay đổi")},changeRows)' />
+    }
+}
+@if(Model.Pending?.BeforeContent is not null) {
+    <partial name="_Alert" model='new AlertModel(L["Đang so sánh với bản nội dung lưu trước khi vào hàng chờ. Bản lưu gồm thông tin và danh sách tệp, không sao lưu nội dung file đã xóa."].Value)' />
+} else if(Model.Pending is not null) {
+    <partial name="_Alert" model='new AlertModel(L["Chỉ so sánh các trường có trong nhật ký. Chưa có bản lưu lịch sử đầy đủ của ảnh, phòng, giá và giấy tờ."].Value,"warning")' />
+}
 <div class="fx-card p-4 mb-4"><h2 class="fx-section-title">@L["Thông tin homestay"]</h2>
 <partial name="_DescriptionList" model='new DescriptionItem[] {
 new("Mã homestay",new HtmlContentBuilder().Append(h.Id.ToString())),new("Địa chỉ",new HtmlContentBuilder().Append(h.Address)),new("Khu vực",new HtmlContentBuilder().Append(h.AreaName)),
@@ -26,7 +39,7 @@ priceRows.Add(new(new IHtmlContent[] {new HtmlContentBuilder().Append(t.Name),ne
 <partial name="_DataTable" model='new DataTableModel("Giá hiện tại và giá sắp tới",new TableColumn[] {new("Loại phòng"),new("Danh mục"),new("Sức chứa",Numeric:true),new("Loại ngày"),new("Giá",Numeric:true),new("Hiệu lực từ")},priceRows)' />
 @foreach(var t in h.RoomTypes){<p class="mt-3"><strong>@t.Name</strong> · @L[t.IsActive ? "Đang bán":"Ngừng bán"] · @string.Join(", ",t.Rooms.Select(r=>r.RoomCode+" ("+L[r.IsActive ? "Đang bán":"Ngừng bán"].Value+")"))</p>}
 </section>
-@foreach(var d in h.Documents){
+@foreach(var d in h.Documents.Concat(Model.Pending?.LegacyDocuments ?? [])){
 Func<dynamic,IHtmlContent> link=@<text><a asp-action="Document" asp-route-id="@d.Id">@(d.OriginalFileName ?? L["Xem giấy tờ"].Value)</a></text>;
 documentRows.Add(new(new IHtmlContent[] {new HtmlContentBuilder().Append(L[d.Type switch {DocumentType.BusinessLicense=>"Giấy phép kinh doanh",DocumentType.FireSafety=>"Giấy PCCC",DocumentType.PropertyPhoto=>"Ảnh thực tế",_=>"Giấy tờ khác"}].Value),link(null!),new HtmlContentBuilder().Append(d.ExpiryDate?.ToString("dd/MM/yyyy") ?? "—")}));
 }

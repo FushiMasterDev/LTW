@@ -10,7 +10,7 @@
 @if(Model.FreeRooms.Count>0){
  <section class="fx-form-card fx-card p-4 mb-4"><h2 class="h5">@L["Chuyển phòng cùng loại"]</h2>
  <partial name="_PriceBreakdown" model='new PriceBreakdownModel(new PriceLine[] {new("Chênh lệch",0m)})' />
- <form asp-action="Move" asp-route-id="@b.Id" method="post" data-confirm="@L["Chuyển phòng cùng loại? Giá và cọc giữ nguyên."]"><label for="roomId" class="form-label">@L["Phòng trống"]</label><select id="roomId" name="roomId" class="form-select mb-3">@foreach(var r in Model.FreeRooms){<option value="@r">@L["Phòng #{0}",r]</option>}</select><label for="move-note" class="form-label">@L["Ghi chú đã thống nhất với khách"]</label><textarea id="move-note" name="note" class="form-control mb-3" required maxlength="400"></textarea><button type="submit" class="btn btn-brand" data-loading-text="@L["Đang lưu…"]">@L["Chuyển phòng"]</button></form></section>
+ <form asp-action="Move" asp-route-id="@b.Id" method="post" data-confirm="@L["Chuyển phòng cùng loại? Giá và cọc giữ nguyên."]"><label for="roomId" class="form-label">@L["Phòng trống"]</label><select id="roomId" name="roomId" class="form-select mb-3">@foreach(var r in Model.FreeRooms){<option value="@r.Id">@r.RoomCode</option>}</select><label for="move-note" class="form-label">@L["Ghi chú đã thống nhất với khách"]</label><textarea id="move-note" name="note" class="form-control mb-3" required maxlength="400"></textarea><button type="submit" class="btn btn-brand" data-loading-text="@L["Đang lưu…"]">@L["Chuyển phòng"]</button></form></section>
 }
 <h2 class="h4">@L["Phương án thay thế"]</h2>
 @foreach(var a in Model.Alternatives.Where(a=>a.Offer.RoomTypeId!=b.RoomTypeId)) {<partial name="_OverbookingAlternative" model="new OverbookingAlternativeModel(b.Id,a)" />}

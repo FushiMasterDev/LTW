@@ -121,5 +121,9 @@ Mỗi quyết định ghi một dòng: ngày, bước, nội dung, lý do. Dùng
 | 19/10/2026 | B9 | Catalog editor dùng mọi Amenities/RoomCategories tồn tại vì bảng không có cờ Active, cùng điều kiện service ghi; không dùng catalog tìm kiếm công khai | G-16; không đổi nghiệp vụ hoặc schema |
 | 19/10/2026 | B9 | Giữ quyền ghi đối soát chỉ Accountant; thêm xác nhận thay chủ có lý do. Chuyển đúng toàn bộ PayoutAmount, nhận thời điểm thực tế UTC, chặn tương lai/trước gửi hoặc xác nhận | Yêu cầu người dùng 19/10; không chi từng phần và không thêm cột số tiền |
 | 19/10/2026 | B9 | Không backfill thông báo cũ; URL mới theo vai trò, hồ sơ chủ về Partner/Status | Không đoán mã đơn từ nội dung, giữ chặn quyền Staff |
-| 19/10/2026 | B9 | G-26 chỉ so sánh trường có trong audit chuyển trạng thái, trả giấy tờ legacy đúng điều kiện activation; thiếu lịch sử thì báo chưa có. Không thêm lý do bắt buộc khi duyệt | Snapshot ảnh/phòng/giá/giấy tờ trước thay đổi chưa tồn tại; không suy diễn dữ liệu |
+| 19/10/2026 | B9 | G-26 lưu snapshot editor vào AuditLog JSON trước khi địa chỉ/giấy pháp lý đưa Active vào chờ duyệt; DTO trả bản trước/diff và giấy tờ legacy hợp lệ; audit cũ thiếu bản lưu thì báo rõ. Không thêm lý do bắt buộc khi duyệt | Không đổi schema, không suy diễn lịch sử; snapshot chỉ lưu metadata, không sao lưu byte của file đã xóa |
 | 19/10/2026 | B9 | G-19 giữ chuyển lời mời thủ công; chưa chọn SMS/Zalo thật | Chốt kênh khi triển khai theo prompt B9 |
+
+| 19/10/2026 | B9 | Form chuyển tiền dùng datetime-local theo giờ Việt Nam, controller chuyển UTC; số tiền HTML number được parse invariant trước service | Lưu PaidAt chính xác và không lệch dấu thập phân khi đổi VI/EN |
+| 19/10/2026 | B9 | StatCard dùng quy tắc CSS chung hai cột ở 375px; EmptyState.Compact nằm trong tbody của DataTable; PageHead.ActionIcon mặc định plus-lg, Admin báo cáo dùng bar-chart | Sửa điểm yếu chung, giữ bố cục và nhận diện DESIGN.md |
+| 19/10/2026 | B9 | Biểu đồ không có giá trị dữ liệu dùng EmptyState; giữ StatCard, bỏ bảng toàn 0. Bảng nhân viên/homestay vẫn hiện nếu có dữ liệu thật dù chỉ tiêu biểu đồ bằng 0 | Không vẽ trục rỗng hoặc che dữ liệu khác có thật |

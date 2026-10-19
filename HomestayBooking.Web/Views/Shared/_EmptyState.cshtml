@@ -1,7 +1,7 @@
 @model object
 @* Lời gọi cũ không truyền model sẽ kế thừa model của trang; chỉ đọc EmptyStateModel khi được truyền rõ. *@
 @{ var state = Model as EmptyStateModel ?? new EmptyStateModel(); }
-<div class="fx-empty">
+<div class="fx-empty @(state.Compact ? "fx-empty--compact" : null)">
     <span class="fx-empty__icon" aria-hidden="true"><icon name="@state.Icon" /></span>
     <p class="fw-semibold mb-0">@L[state.Title]</p>
     @if (state.Description is { } description) { <p class="text-muted mb-0">@L[description]</p> }

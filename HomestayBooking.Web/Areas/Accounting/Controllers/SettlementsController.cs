@@ -1,5 +1,6 @@
 using HomestayBooking.Web.Extensions;
 using System.Text.Json;
+using System.Globalization;
 using HomestayBooking.Web.Data;
 using HomestayBooking.Web.Identity;
 using HomestayBooking.Web.Models.Entities;
@@ -98,13 +99,21 @@ public class SettlementsController(ApplicationDbContext db, SettlementService se
     [HttpPost, ValidateAntiForgeryToken]
     public Task<IActionResult> Send(int id) => Save(id, actor => settlements.SendAsync(id, actor));
     [HttpPost, ValidateAntiForgeryToken]
-    public Task<IActionResult> RecordPaid(int id, string? bankRef) => Save(id, actor => settlements.RecordPaidAsync(id, bankRef, actor));
+    public Task<IActionResult> RecordPaid(int id, string? bankRef, string? amount, DateTime? paidAt) => Save(id, actor =>
+    {
+        // HTML number submits an invariant decimal even when the page is in Vietnamese.
+        if (paidAt is null || !decimal.TryParse(amount, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint,
+            CultureInfo.InvariantCulture, out var transferred)) throw new BookingException("Vui lòng nhập số tiền và thời điểm chuyển thực tế.");
+        return settlements.RecordPaidAsync(id, bankRef, transferred, VietnamTime.ToUtc(paidAt.Value), actor);
+    });
+    [HttpPost, ValidateAntiForgeryToken]
+    public Task<IActionResult> ConfirmOnBehalf(int id, string reason) => Save(id, actor => settlements.ConfirmOnBehalfAsync(id, reason, actor));
     [HttpPost, ValidateAntiForgeryToken]
     public Task<IActionResult> Reopen(int id, string reason) => Save(id, actor => settlements.ReopenAsync(id, reason, actor));
 
     private async Task<IActionResult> Save(int id, Func<Actor, Task<Settlement>> action)
     {
-        // Only accountants can send, pay or reopen. Confirm remains an owner action.
+        // Accountant writes; the service separately checks every transition and actor.
         if (User.EmployeePosition() != EmployeePosition.Accountant) return Forbid();
         try
         {
@@ -134,7 +143,7 @@ public class SettlementsController(ApplicationDbContext db, SettlementService se
                 var values = json.RootElement.TryGetProperty("Values", out var wrapped) ? wrapped : json.RootElement;
                 if (values.TryGetProperty("Step", out var step)) title = step.GetString() switch
                 {
-                    "Sent" => "Đã gửi chủ", "OwnerConfirmed" => "Chủ đã xác nhận", "Paid" => "Đã chuyển tiền",
+                    "Sent" => "Đã gửi chủ", "OwnerConfirmed" => "Chủ đã xác nhận", "AccountantConfirmedOnBehalf" => "Kế toán xác nhận thay chủ", "Paid" => "Đã chuyển tiền",
                     "Reopened" => "Đã mở lại", "OwnerDiscrepancy" => "Chủ phản hồi sai lệch", _ => title,
                 };
                 if (values.TryGetProperty("Note", out var value) && value.ValueKind == JsonValueKind.String) note = value.GetString();

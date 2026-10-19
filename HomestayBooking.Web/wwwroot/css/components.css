@@ -1034,3 +1034,18 @@
 .fx-room-calendar[data-range-selection="true"] [data-calendar-night] { touch-action: none; user-select: none; }
 
 .fx-report-chart { position: relative; height: 21rem; min-width: 0; }
+
+/* B9: compact empty content belongs inside the table surface. */
+.fx-empty.fx-empty--compact { border: 0; border-radius: 0; box-shadow: none; padding: 1.5rem 1rem; }
+.fx-empty--compact .fx-empty__icon { width: 2.5rem; height: 2.5rem; font-size: 1.25rem; }
+.fx-table td.fx-table__empty { display: table-cell; text-align: center !important; }
+.fx-table td.fx-table__empty::before { display: none; }
+@media (max-width: 575.98px) {
+  .row > [class*="col-"]:has(> .fx-stat) { width: 50%; }
+  .fx-stat { padding: 1rem; gap: .5rem; }
+  .fx-stat__icon { width: 2rem; height: 2rem; }
+}
+
+@media (max-width: 991.98px) {
+  .fx-table td.fx-table__empty { display: block; }
+}

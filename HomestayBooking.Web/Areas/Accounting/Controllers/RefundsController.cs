@@ -25,33 +25,12 @@ public class RefundsController : AccountingController
     /// <summary>done = false: chờ hoàn, cũ nhất trước; done = true: đã hoàn, mới nhất trước.</summary>
     public async Task<IActionResult> Index(bool done, string? q, int? page)
     {
-        var query = done
-            ? Db.Bookings.AsNoTracking().Where(b => b.Payments.Any(p => p.Type == PaymentType.Refund))
-            : _accounting.PendingRefunds().AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(q))
-        {
-            var term = q.Trim();
-            var phone = PhoneNumberNormalizer.ToE164(term);
-            query = query.Where(b => b.Code.Contains(term) || b.ContactName.Contains(term) || (phone != null && b.ContactPhone == phone));
-        }
-        query = done
-            ? query.OrderByDescending(b => b.Payments.Where(p => p.Type == PaymentType.Refund).Max(p => p.ReviewedAt))
-            : query.OrderBy(b => b.CancelledAt);
 
-        var rows = query.Select(b => new RefundRow(
-            b.Id, b.Code, b.Status, b.ContactName, b.ContactPhone, b.Homestay.Name,
-            b.DepositAmount - b.DiscountAmount, b.RefundAmount ?? 0, b.CancelledAt, b.CancelReason,
-            b.Payments.Where(p => p.Type == PaymentType.Deposit && p.Status == PaymentStatus.Approved).Select(p => p.TransferContent).FirstOrDefault(),
-            b.Payments.Where(p => p.Type == PaymentType.Refund).Select(p => p.BankRef).FirstOrDefault(),
-            b.Payments.Where(p => p.Type == PaymentType.Refund)
-                .Select(p => p.ReviewedByEmployee == null ? null : p.ReviewedByEmployee.Person.FullName ?? p.ReviewedByEmployee.EmployeeCode)
-                .FirstOrDefault(),
-            b.Payments.Where(p => p.Type == PaymentType.Refund).Select(p => p.ReviewedAt).FirstOrDefault()));
 
         ViewData["Done"] = done;
         ViewData["Query"] = q;
         await LoadCountsAsync(_accounting);
-        return View(await PaginatedList<RefundRow>.CreateAsync(rows, page));
+        return View(await _accounting.RefundsAsync(done, q, page, await CurrentActorAsync()));
     }
 
     [HttpPost]

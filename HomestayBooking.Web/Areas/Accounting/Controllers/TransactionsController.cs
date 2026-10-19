@@ -24,33 +24,18 @@ public class TransactionsController : AccountingController
     /// <summary>status = null → các khoản cần xử lý; all = true → mọi giao dịch.</summary>
     public async Task<IActionResult> Index(BankMatchStatus? status, bool all, string? q, int? page)
     {
-        var query = Db.BankTransactions.AsNoTracking();
-        if (status is not null)
-        {
-            query = query.Where(t => t.MatchStatus == status);
-        }
-        else if (!all)
-        {
-            query = query.Where(t => AccountingService.OpenStatuses.Contains(t.MatchStatus));
-        }
-        if (!string.IsNullOrWhiteSpace(q))
-        {
-            var term = q.Trim();
-            var code = BankMatchingService.ExtractBookingCode(term);
-            query = query.Where(t => t.TransferContent!.Contains(term) || t.ProviderTransactionId.Contains(term)
-                                     || (code != null && t.MatchedBooking!.Code == code));
-        }
+
 
         ViewData["Status"] = status;
         ViewData["All"] = all;
         ViewData["Query"] = q;
         await LoadCountsAsync(_accounting);
-        return View(await PaginatedList<BankTransactionRow>.CreateAsync(Rows(query.OrderByDescending(t => t.TransactionTime)), page));
+        return View(await _accounting.TransactionsAsync(status, all, q, page, await CurrentActorAsync()));
     }
 
     public async Task<IActionResult> Process(int id)
     {
-        var row = await Rows(Db.BankTransactions.AsNoTracking().Where(t => t.Id == id)).SingleOrDefaultAsync();
+        var row = await _accounting.TransactionAsync(id, await CurrentActorAsync());
         if (row is null)
         {
             return NotFound();
@@ -116,13 +101,4 @@ public class TransactionsController : AccountingController
         }
     }
 
-    private static IQueryable<BankTransactionRow> Rows(IQueryable<BankTransaction> query) =>
-        query.Select(t => new BankTransactionRow(
-            t.Id, t.Provider, t.ProviderTransactionId, t.Amount, t.TransferContent, t.TransactionTime, t.MatchStatus,
-            t.MatchedBooking == null ? null : t.MatchedBooking.Code,
-            t.MatchedBooking == null ? null : t.MatchedBooking.Status,
-            t.MatchedBooking == null ? null : t.MatchedBooking.DepositAmount - t.MatchedBooking.DiscountAmount,
-            t.Note,
-            t.ProcessedByEmployee == null ? null : t.ProcessedByEmployee.Person.FullName ?? t.ProcessedByEmployee.EmployeeCode,
-            t.ProcessedAt, t.RefundBankRef));
 }

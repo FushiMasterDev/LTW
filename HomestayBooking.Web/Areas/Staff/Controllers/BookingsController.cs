@@ -12,7 +12,7 @@ public class BookingsController(ApplicationDbContext db, StaffBookingService boo
     {
         if (!ModelState.IsValid) { TempData["Error"] = L["Dữ liệu không hợp lệ. Vui lòng kiểm tra lại các trường."].Value; return RedirectToAction(nameof(Index)); }
         var actor = await CurrentActorAsync();
-        return View(new StaffBookingsModel(query, await bookings.SearchAsync(query,actor), await bookings.AssigneesAsync(actor)));
+        return View(new StaffBookingsModel(query, await bookings.SearchAsync(query,actor), await bookings.AssigneesAsync(actor)) { Homestays = await bookings.HomestaysAsync(actor) });
     }
     [HttpGet("/Staff/Bookings/{id:int}")]
     [HttpGet("/Staff/Bookings/Details/{id:int}")]
@@ -21,7 +21,7 @@ public class BookingsController(ApplicationDbContext db, StaffBookingService boo
         var actor = await CurrentActorAsync();
         try {
             var details = await bookings.DetailsAsync(id,actor); var b = details.Booking;
-            var rooms = b.Status == BookingStatus.Deposited ? await availability.FreeRoomIdsAsync(b.RoomTypeId,b.CheckIn,b.CheckOut) : [];
+            var rooms = b.Status == BookingStatus.Deposited ? await availability.FreeRoomsAsync(b.RoomTypeId,b.CheckIn,b.CheckOut,actor) : [];
             return View(new StaffBookingModel(details,await bookings.AssigneesAsync(actor), rooms,actor.EmployeeId,VietnamTime.Today(clock)));
         } catch (BookingException) { return NotFound(); }
     }

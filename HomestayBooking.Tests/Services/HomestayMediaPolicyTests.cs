@@ -49,7 +49,12 @@ public sealed class HomestayMediaPolicyTests
         var doc = await h.Documents.UploadAsync(h.HomeId, type, PartnerTestHost.Image(), h.Today, h.Owner);
         Assert.Equal(expected, h.Home.Status); Assert.Equal(count + 1, await h.Db.VerificationDocuments.CountAsync());
         Assert.Equal(h.HomeId, doc.HomestayId); Assert.Null(doc.OwnerRegistrationId);
-        if (expected == HomestayStatus.PendingReview) Assert.Contains(await h.Db.Notifications.ToListAsync(), n => n.UserId == h.Manager.AccountId);
+        if (expected == HomestayStatus.PendingReview) {
+            Assert.Contains(await h.Db.Notifications.ToListAsync(), n => n.UserId == h.Manager.AccountId);
+            var details = await h.Reviews.PendingDetailsAsync(h.HomeId, h.Manager);
+            Assert.NotNull(details.BeforeContent); Assert.Equal(count, details.BeforeContent.Documents.Count);
+            Assert.Contains(details.Changes, c => c.Field == "Documents");
+        }
     }
     [Theory]
     [InlineData(HomestayStatus.Active)] [InlineData(HomestayStatus.Suspended)]

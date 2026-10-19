@@ -8,4 +8,7 @@ foreach(var g in groups){rows.Add(new(new IHtmlContent[] {new HtmlContentBuilder
 <div class="col-sm-6 col-xl-3"><partial name="_StatCard" model='new StatCardModel("Tỷ lệ chủ từ chối",Model.RejectionPercent.ToString("N1")+"%","house-x",Hint:"Trên tổng đơn đã tạo.")' /></div>
 <div class="col-sm-6 col-xl-3"><partial name="_StatCard" model='new StatCardModel("Hết hạn giữ phòng",Model.Expired.ToString("N0"),"hourglass")' /></div></div>
 <partial name="_ReportChart" model='new ReportChartModel("booking-chart","Đơn theo trạng thái và kênh","bar",groups.Select(g=>L[g.Status.DisplayName()].Value+" · "+L[Channel(g.Channel)].Value).ToArray(),new[] {new ReportChartSeries(L["Số đơn"],groups.Select(g=>(double?)g.Count).ToArray())},new DataTableModel("Đơn theo trạng thái và kênh",new TableColumn[] {new("Trạng thái"),new("Kênh"),new("Số đơn",Numeric:true)},rows))' />
+@if(Model.Total > 0) {
 <partial name="_DescriptionList" model='new DescriptionItem[] {new("Đơn đã cọc không bị thay thế",new HtmlContentBuilder().Append(Model.DepositedCohort.ToString("N0"))),new("Khách hủy",new HtmlContentBuilder().Append(Model.CustomerCancelled.ToString("N0"))),new("Chủ từ chối",new HtmlContentBuilder().Append(Model.Rejected.ToString("N0")))}' />
+
+}

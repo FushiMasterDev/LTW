@@ -53,14 +53,12 @@ public class DashboardController : Controller
         }
 
         var today = VietnamTime.Today(_clock);
-        var arrivalsToday = User.IsApprovedOwner()
-            ? (int?)(await _schedule.ReadAsync(
-                new Actor(ActorType.Owner, User.FindFirstValue(ClaimTypes.NameIdentifier)), today, today)).Arrivals.Count
-            : null;
+        var summary = User.IsApprovedOwner()
+            ? await _schedule.OwnerBookingSummaryAsync(new Actor(ActorType.Owner, User.FindFirstValue(ClaimTypes.NameIdentifier))) : null;
         return View(new OwnerDashboardViewModel(
             owner.Registration?.Status, owner.Registration?.ReviewNote, owner.Homestays)
         {
-            ArrivalsToday = arrivalsToday
+            ArrivalsToday = summary?.ArrivalsToday, PendingConfirmation = summary?.PendingConfirmation, OverdueConfirmation = summary?.OverdueConfirmation
         });
     }
 }
@@ -71,4 +69,6 @@ public record OwnerDashboardViewModel(
     OwnerRegistrationStatus? RegistrationStatus, string? ReviewNote, List<OwnerHomestayRow> Homestays)
 {
     public int? ArrivalsToday { get; init; }
+    public int? PendingConfirmation { get; init; }
+    public int? OverdueConfirmation { get; init; }
 }

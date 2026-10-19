@@ -13,7 +13,7 @@
 @{ var rows = new List<TableRow>(); }
 @foreach (var r in Model)
                 {
-                    Func<dynamic, IHtmlContent> cell0 = @<text><span class="fx-code fw-semibold">@r.BookingCode</span>
+                    Func<dynamic, IHtmlContent> cell0 = @<text><span class="fx-code fw-semibold">@r.BookingCode</span>@if (r.SettlementId is int settlementId) { <div><a asp-controller="Settlements" asp-action="Details" asp-route-id="@settlementId">@L["Xem kỳ đối soát"]</a></div> }
                             <div><status-badge value="@r.Status" /></div></text>;
                         Func<dynamic, IHtmlContent> cell1 = @<text>@r.ContactName<div class="small text-muted">@PhoneNumberNormalizer.ToNational(r.ContactPhone) · @r.HomestayName</div></text>;
                         Func<dynamic, IHtmlContent> cell2 = @<text><money value="@r.AmountPaid" /></text>;

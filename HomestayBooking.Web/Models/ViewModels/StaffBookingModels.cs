@@ -3,8 +3,9 @@ using HomestayBooking.Web.Extensions;
 using HomestayBooking.Web.Models.Entities;
 using HomestayBooking.Web.Services;
 namespace HomestayBooking.Web.Models.ViewModels;
-public record StaffBookingsModel(StaffBookingQuery Query, PaginatedList<Booking> Bookings, IReadOnlyList<BookingAssignee> Assignees);
-public record StaffBookingModel(StaffBookingDetails Details, IReadOnlyList<BookingAssignee> Assignees, IReadOnlyList<int> FreeRooms, int? EmployeeId, DateOnly Today);
+public record StaffBookingsModel(StaffBookingQuery Query, PaginatedList<Booking> Bookings, IReadOnlyList<BookingAssignee> Assignees)
+{ public IReadOnlyList<StaffHomestayOption> Homestays { get; init; } = []; }
+public record StaffBookingModel(StaffBookingDetails Details, IReadOnlyList<BookingAssignee> Assignees, IReadOnlyList<AvailableRoom> FreeRooms, int? EmployeeId, DateOnly Today);
 public class StaffCreateForm
 {
     [Required, Display(Name="Số điện thoại")] public string Phone { get; set; } = "";

@@ -19,7 +19,7 @@
 <p class="form-text">@L["Để lọc theo kỳ, chọn đủ năm, tháng và kỳ đối soát."]</p>
 @foreach (var s in Model.Rows)
 {
-    Func<dynamic, IHtmlContent> period = @<text><a class="btn btn-link px-0" asp-action="Details" asp-route-id="@s.Id">@L["Kỳ {0} · {1}/{2}", s.PeriodNo, s.Month, s.Year]</a><div class="text-muted">@L["Homestay #{0}", s.HomestayId]</div></text>;
+    Func<dynamic, IHtmlContent> period = @<text><a class="btn btn-link px-0" asp-action="Details" asp-route-id="@s.Id">@L["Kỳ {0} · {1}/{2}", s.PeriodNo, s.Month, s.Year]</a><div class="text-muted">@s.Homestay.Name · @s.Homestay.Owner.Person.FullName</div></text>;
     Func<dynamic, IHtmlContent> status = @<text><status-badge value="@s.Status" /></text>;
     Func<dynamic, IHtmlContent> room = @<text><money value="@s.TotalRoomAmount" /></text>;
     Func<dynamic, IHtmlContent> commission = @<text><money value="@s.TotalCommission" /></text>;

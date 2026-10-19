@@ -15,29 +15,19 @@ public class AccountsController(ApplicationDbContext db, AccountAdminService acc
     : AdminServiceController(db, localizer)
 {
     private bool CanWrite => User.EmployeePosition() == EmployeePosition.Administrator;
-    private async Task<List<AccountSummary>> Employees(string? term = null, AccountStatus? status = null)
-    {
-        var result = new List<AccountSummary>(); var actor = await CurrentActorAsync();
-        for (var page = 1; ; page++)
-        {
-            var rows = await accounts.ListAsync(new(term, AppRoles.Employee, status, page), actor);
-            result.AddRange(rows);
-            if (page >= rows.TotalPages) return result;
-        }
-    }
     [HttpGet]
     public async Task<IActionResult> Index(string? term, EmployeePosition? position, AccountStatus? status, int? page)
     {
         if (!ModelState.IsValid || position is { } p && !Enum.IsDefined(p) || status is { } s && !Enum.IsDefined(s)) return BadRequest();
-        var filtered = (await Employees(term, status)).Where(e => position is null || e.Position == position).ToList();
-        var current = Math.Clamp(page ?? 1, 1, Math.Max(1, (int)Math.Ceiling(filtered.Count / 20d)));
-        return View(new AdminAccountList(new(filtered.Skip((current - 1) * 20).Take(20), filtered.Count, current, 20), position));
+        var rows = await accounts.ListAsync(new(term, AppRoles.Employee, status, page, position), await CurrentActorAsync());
+        return View(new AdminAccountList(rows, position));
     }
     [HttpGet]
     public async Task<IActionResult> Details(string id)
     {
-        var account = (await Employees()).SingleOrDefault(e => e.Id == id);
-        return account is null ? NotFound() : View(account);
+        try { var account = await accounts.DetailsAsync(id, await CurrentActorAsync());
+            return account.EmployeeCode is null ? NotFound() : View(account); }
+        catch (BookingException) { return NotFound(); }
     }
     [HttpGet]
     public IActionResult Create() => CanWrite ? View(RestoreForm("EmployeeForm", new EmployeeCreateForm())) : Forbid();

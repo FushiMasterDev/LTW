@@ -15,7 +15,10 @@ public class HomestayDocumentService(ApplicationDbContext db, HomestayAccessServ
         {
             return await HomestayWrite.RunAsync(db, async () =>
             {
-                var home = await access.AuthorizeAsync(homeId, actor); var old = HomestayReviewService.State(home);
+                var home = await access.AuthorizeAsync(homeId, actor);
+                var old = new { Homestay = HomestayReviewService.State(home), Snapshot = home.Status == HomestayStatus.Active
+                    && type is DocumentType.BusinessLicense or DocumentType.FireSafety
+                    ? await new HomestayContentService(db, access, notifications, clock).EditorAsync(homeId, actor) : null };
                 created = await registrations.StoreDocumentAsync(home, type, file, expiry, actor);
                 if (type is DocumentType.BusinessLicense or DocumentType.FireSafety && home.Status is HomestayStatus.Active or HomestayStatus.Suspended)
                 {

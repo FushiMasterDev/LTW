@@ -30,7 +30,9 @@
         <partial name="_StatCard" model='new StatCardModel("Homestay", homestays.Count.ToString(), "houses")' />
     </div>
     <div class="col-sm-6 col-xl-3">
-        <partial name="_StatCard" model='new StatCardModel("Đang hoạt động", activeCount.ToString(), "toggle-on")' />
+        @if(Model.PendingConfirmation is int pending) {
+        <partial name="_StatCard" model='new StatCardModel("Chờ xác nhận", pending.ToString(), "hourglass", "/Owner/Bookings?status=Deposited", L["{0} đơn quá hạn",Model.OverdueConfirmation ?? 0].Value)' />
+        } else { <partial name="_StatCard" model='new StatCardModel("Đang hoạt động", activeCount.ToString(), "toggle-on")' /> }
     </div>
     <div class="col-sm-6 col-xl-3">
         <partial name="_StatCard" model='new StatCardModel("Phòng", roomCount.ToString(), "door-closed")' />
@@ -42,7 +44,7 @@
 
 @if (User.IsApprovedOwner())
 {
-<partial name="_TaskList" model='new TaskListModel("Việc cần xử lý", new TaskListItem[] { new("Đơn đặt phòng", L["Đơn đã đặt cọc của homestay bạn. Xác nhận trong 30 phút sau khi khách đặt cọc."], Url.Action("Index", "Bookings", new {status=BookingStatus.Deposited})),
+<partial name="_TaskList" model='new TaskListModel("Việc cần xử lý", new TaskListItem[] { new("Đơn đặt phòng", L["{0} đơn chờ xác nhận, {1} đơn quá hạn. Xác nhận trong 30 phút sau khi khách đặt cọc.", Model.PendingConfirmation ?? 0, Model.OverdueConfirmation ?? 0], Url.Action("Index", "Bookings", new {status=BookingStatus.Deposited})),
     new("Homestay của tôi",Href:Url.Action("Index","Homestays")),new("Lịch phòng",Href:Url.Action("Index","Calendar")),
     new("Lịch nhận–trả",Href:Url.Action("Index","Schedule")),new("Đối soát",Href:Url.Action("Index","Settlements")),
     new("Đánh giá của khách",Href:Url.Action("Index","Reviews")),new("Thông báo",Href:"/Notifications") })' />

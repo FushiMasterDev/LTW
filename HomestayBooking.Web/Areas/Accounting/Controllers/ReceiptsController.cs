@@ -33,19 +33,7 @@ public class ReceiptsController : AccountingController
     public async Task<IActionResult> Index(PaymentStatus? status, int? page)
     {
         var shown = status ?? PaymentStatus.Submitted;
-        var query = _accounting.InitialDepositReceipts(shown).AsNoTracking();
-        query = shown == PaymentStatus.Submitted
-            ? query.OrderBy(p => p.SubmittedAt)
-            : query.OrderByDescending(p => p.ReviewedAt);
-        var rows = query.Select(p => new ReceiptRow(
-            p.Id, p.Booking.Code, p.Booking.Status, p.Booking.ContactName, p.Booking.ContactPhone, p.Booking.Homestay.Name,
-            p.Amount, p.Booking.DepositAmount - p.Booking.DiscountAmount, p.TransferContent, p.Status, p.SubmittedAt,
-            p.Booking.HoldExpiresAt,
-            p.Booking.Payments.Count(o => o.Id != p.Id && o.Type == PaymentType.Deposit && o.Method == PaymentMethod.ManualReceipt && o.Status == PaymentStatus.Rejected),
-            p.ReviewedByEmployee == null ? null : p.ReviewedByEmployee.Person.FullName ?? p.ReviewedByEmployee.EmployeeCode,
-            p.ReviewedAt, p.RejectReason));
-
-        var list = await PaginatedList<ReceiptRow>.CreateAsync(rows, page);
+        var list = await _accounting.ReceiptsAsync(shown, page, await CurrentActorAsync());
         var now = _clock.GetUtcNow().UtcDateTime;
         for (var i = 0; i < list.Count; i++)
         {

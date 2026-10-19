@@ -7,18 +7,18 @@
 <partial name="_FilterBar" model='new FilterBarModel("staff-bookings", new FilterField[] {
     new("Q","Mã đơn, tên hoặc SĐT",Model.Query.Q,Type:"search"),
     new("Status","Trạng thái",Options:new[] {new SelectListItem(L["Tất cả trạng thái"],"")}.Concat(Enum.GetValues<BookingStatus>().Select(s=>new SelectListItem(L[s.DisplayName()],s.ToString()))).ToArray()),
-    new("HomestayId","Mã homestay",Type:"number"),new("CheckInFrom","Nhận phòng từ",Type:"date"),new("CheckInTo","Nhận phòng đến",Type:"date"),
+    new("HomestayId","Homestay",Options:new[] {new SelectListItem(L["Tất cả"],"")}.Concat(Model.Homestays.Select(h=>new SelectListItem(h.Name,h.Id.ToString()))).ToArray()),new("CheckInFrom","Nhận phòng từ",Type:"date"),new("CheckInTo","Nhận phòng đến",Type:"date"),
     new("AssignedEmployeeId","Người phụ trách",Options:new[] {new SelectListItem(L["Tất cả"],"")}.Concat(Model.Assignees.Select(a=>new SelectListItem(a.EmployeeCode+" · "+a.FullName,a.EmployeeId.ToString()))).ToArray()),
     new("Unassigned","Chưa giao",Type:"checkbox",Options:new[] {new SelectListItem(L["Chưa giao"],"true")}) })' />
 @{var rows=new List<TableRow>();}
 @foreach(var b in Model.Bookings) {
     Func<dynamic,IHtmlContent> c0=@<text><a asp-action="Details" asp-route-id="@b.Id" class="fw-semibold fx-code">@b.Code</a><div><status-badge value="@b.Status" /></div></text>;
     Func<dynamic,IHtmlContent> c1=@<text>@b.ContactName<div class="text-muted">@PhoneNumberNormalizer.ToNational(b.ContactPhone)</div></text>;
-    Func<dynamic,IHtmlContent> c2=@<text>#@b.HomestayId</text>;
+    Func<dynamic,IHtmlContent> c2=@<text>@b.Homestay.Name<div class="text-muted">@b.RoomType.Name · @b.Room.RoomCode</div></text>;
     Func<dynamic,IHtmlContent> c3=@<text><date-range from="@b.CheckIn" to="@b.CheckOut" /></text>;
-    Func<dynamic,IHtmlContent> c4=@<text>@(b.AssignedEmployeeId is null ? L["Chưa giao"].Value : Model.Assignees.FirstOrDefault(a=>a.EmployeeId==b.AssignedEmployeeId)?.EmployeeCode ?? L["Nhân viên #{0}",b.AssignedEmployeeId].Value)</text>;
+    Func<dynamic,IHtmlContent> c4=@<text>@(b.AssignedEmployeeId is null ? L["Chưa giao"].Value : b.AssignedEmployee?.Person.FullName ?? b.AssignedEmployee?.EmployeeCode ?? L["Nhân viên #{0}",b.AssignedEmployeeId].Value)</text>;
     Func<dynamic,IHtmlContent> c5=@<text><money value="@b.TotalAmount" /></text>;
     rows.Add(new(new[] {c0(null!),c1(null!),c2(null!),c3(null!),c4(null!),c5(null!)}));
 }
-<partial name="_DataTable" model='new DataTableModel("Quản lý đơn",new TableColumn[] {new("Đơn"),new("Khách"),new("Mã homestay"),new("Ngày ở"),new("Người phụ trách"),new("Tổng tiền",Numeric:true)},rows)' />
+<partial name="_DataTable" model='new DataTableModel("Quản lý đơn",new TableColumn[] {new("Đơn"),new("Khách"),new("Homestay"),new("Ngày ở"),new("Người phụ trách"),new("Tổng tiền",Numeric:true)},rows)' />
 <partial name="_Pager" model="Model.Bookings" />

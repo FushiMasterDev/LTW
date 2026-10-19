@@ -29,7 +29,14 @@ var tabs = new[] { ("info","Thông tin"), ("location","Địa chỉ"), ("rooms",
 } else if (Model.Tab == "rooms") { <partial name="_Rooms" model="Model" />
 } else if (Model.Tab == "images") { <partial name="_Images" model="Model" />
 } else if (Model.Tab == "amenities") {
-    <partial name="_EmptyState" model='new EmptyStateModel("Chưa có danh mục tiện nghi cho trình sửa.", "Các tiện nghi hiện tại được giữ nguyên. Vui lòng liên hệ Fuji nếu cần thay đổi.", "stars")' />
+    <form asp-action="Amenities" asp-route-id="@h.Id" method="post" data-owner-form>
+        <fieldset><legend class="h5">@L["Tiện nghi"]</legend>
+        @foreach (var a in h.Amenities) {
+            <div class="form-check mb-3"><input class="form-check-input" type="checkbox" id="amenity-@a.Id" name="amenityIds" value="@a.Id" checked="@a.Selected" />
+                <label class="form-check-label" for="amenity-@a.Id">@a.Name</label></div>
+        }
+        </fieldset><partial name="_OwnerSave" />
+    </form>
 } else if (Model.Tab == "policy") { <partial name="_Policies" model="Model" />
 } else if (Model.Tab == "documents") { <partial name="_Documents" model="Model" /> }
 </div>

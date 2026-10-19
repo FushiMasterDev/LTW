@@ -61,6 +61,7 @@
                         }
 
 }
+@if(r.SettlementId is int settlementId) { <p><a asp-area="Accounting" asp-controller="Settlements" asp-action="Details" asp-route-id="@settlementId">@L["Xem kỳ đối soát"]</a></p> }
 <partial name="_DescriptionList" model="facts" />
                     @if (!Model.Preview && r.Status == PaymentStatus.Submitted)
                     {

@@ -18,9 +18,7 @@ public class AdditionalDepositsController(ApplicationDbContext db, AccountingSer
     public async Task<IActionResult> Index(int? page)
     {
         await LoadCountsAsync(accounting);
-        var query = accounting.PendingAdditionalDeposits().AsNoTracking().Include(p => p.Booking).ThenInclude(b => b.Homestay)
-            .Include(p => p.BankTransaction).Include(p => p.ChangeRequest);
-        return View(await PaginatedList<Payment>.CreateAsync(query, page));
+        return View(await accounting.AdditionalDepositsAsync(page, await CurrentActorAsync()));
     }
 
     [HttpPost]

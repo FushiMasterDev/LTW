@@ -2955,4 +2955,37 @@
 <data name="Website" xml:space="preserve"><value>Website</value></data>
 <data name="Zalo" xml:space="preserve"><value>Zalo</value></data>
 <data name="Messenger" xml:space="preserve"><value>Messenger</value></data>
+  <data name="Bạn không có quyền xem lịch nhận–trả của chủ này." xml:space="preserve"><value>You do not have permission to view this owner's schedule.</value></data>
+  <data name="Chuyển đủ số phải trả chủ, không hỗ trợ chi từng phần. Thời điểm chuyển theo giờ Việt Nam." xml:space="preserve"><value>Transfer the full payout; partial payments are not supported. Enter the actual time in Vietnam time.</value></data>
+  <data name="Chỉ so sánh các trường có trong nhật ký. Chưa có bản lưu lịch sử đầy đủ của ảnh, phòng, giá và giấy tờ." xml:space="preserve"><value>Only fields recorded in the audit log are compared. Full historical snapshots of photos, rooms, prices and documents are unavailable.</value></data>
+  <data name="Chức vụ không hợp lệ." xml:space="preserve"><value>Invalid employee position.</value></data>
+  <data name="Danh mục loại phòng" xml:space="preserve"><value>Room category</value></data>
+  <data name="Không tìm thấy tài khoản." xml:space="preserve"><value>Account not found.</value></data>
+  <data name="Lý do chờ duyệt" xml:space="preserve"><value>Reason for review</value></data>
+  <data name="Lý do xác nhận thay chủ" xml:space="preserve"><value>Reason for confirming on the owner's behalf</value></data>
+  <data name="Ngày chuyển tiền không được trước thời điểm gửi/xác nhận đối soát." xml:space="preserve"><value>The transfer time cannot precede settlement sending or confirmation.</value></data>
+  <data name="Ngày chuyển tiền không được ở tương lai." xml:space="preserve"><value>The transfer time cannot be in the future.</value></data>
+  <data name="Số tiền chuyển phải bằng đúng số phải trả ({0:N0}đ); không hỗ trợ chi từng phần." xml:space="preserve"><value>The transferred amount must equal the payout ({0:N0} VND); partial payments are not supported.</value></data>
+  <data name="Số tiền đã chuyển (đ)" xml:space="preserve"><value>Transferred amount (VND)</value></data>
+  <data name="Thời gian lưu trú không hợp lệ." xml:space="preserve"><value>Invalid stay dates.</value></data>
+  <data name="Thời điểm chuyển thực tế" xml:space="preserve"><value>Actual transfer time</value></data>
+  <data name="Thời điểm chuyển tiền phải theo UTC." xml:space="preserve"><value>The transfer timestamp must use UTC.</value></data>
+  <data name="Tạo loại phòng" xml:space="preserve"><value>Create room type</value></data>
+  <data name="Từ chối khoản bù này?" xml:space="preserve"><value>Reject this compensation?</value></data>
+  <data name="Vui lòng nhập số tiền và thời điểm chuyển thực tế." xml:space="preserve"><value>Enter the transferred amount and actual transfer time.</value></data>
+  <data name="Xem kỳ đối soát" xml:space="preserve"><value>View settlement</value></data>
+  <data name="Xác nhận số liệu thay chủ homestay với lý do đã nhập?" xml:space="preserve"><value>Confirm these figures on the owner's behalf with the entered reason?</value></data>
+  <data name="Xác nhận thay chủ" xml:space="preserve"><value>Confirm on owner's behalf</value></data>
+  <data name="{0} đơn chờ xác nhận, {1} đơn quá hạn. Xác nhận trong 30 phút sau khi khách đặt cọc." xml:space="preserve"><value>{0} bookings awaiting confirmation, {1} overdue. Confirm within 30 minutes of the deposit.</value></data>
+  <data name="{0} đơn quá hạn" xml:space="preserve"><value>{0} overdue bookings</value></data>
+  <data name="Có thể từ chối" xml:space="preserve"><value>Eligible for rejection</value></data>
+  <data name="Thay đổi có trong nhật ký" xml:space="preserve"><value>Changes recorded in the audit log</value></data>
+  <data name="Trường" xml:space="preserve"><value>Field</value></data>
+  <data name="Trước thay đổi" xml:space="preserve"><value>Before change</value></data>
+  <data name="Sau thay đổi" xml:space="preserve"><value>After change</value></data>
+  <data name="Thay đổi địa chỉ / vị trí" xml:space="preserve"><value>Address / location changed</value></data>
+  <data name="Bổ sung giấy tờ pháp lý" xml:space="preserve"><value>Legal documents added</value></data>
+  <data name="Kế toán xác nhận thay chủ" xml:space="preserve"><value>Accountant confirmed on owner's behalf</value></data>
+  <data name="Mã khu vực" xml:space="preserve"><value>Area ID</value></data>
+  <data name="Đang so sánh với bản nội dung lưu trước khi vào hàng chờ. Bản lưu gồm thông tin và danh sách tệp, không sao lưu nội dung file đã xóa." xml:space="preserve"><value>Comparing against content saved before review. The snapshot includes details and file metadata; it does not back up deleted files.</value></data>
 </root>

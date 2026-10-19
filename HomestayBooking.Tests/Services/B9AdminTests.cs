@@ -31,10 +31,19 @@ public sealed class B9AdminTests
         h.Db.VerificationDocuments.Add(new() { OwnerRegistrationId = registration.Id, DocumentType = DocumentType.FireSafety, FileUrl = "expired.png", ExpiryDate = h.Today.AddDays(-1) });
         await h.Db.SaveChangesAsync();
         await h.Content.UpdateLocationAsync(h.HomeId, new("B9 địa chỉ mới", h.Home.AreaId, null, null), h.Owner);
+        await h.Content.UpdateLocationAsync(h.HomeId, new("B9 địa chỉ hiện tại", h.Home.AreaId, null, null), h.Owner);
+        await h.Rooms.AddRoomAsync(h.H.RoomType.Id, "B9-ROOM", h.Owner);
         var d = await h.Reviews.PendingDetailsAsync(h.HomeId, h.Manager);
         Assert.Equal("Thay đổi địa chỉ / vị trí", d.ChangeReason);
-        Assert.Contains(d.Changes, c => c.Field == "Address" && c.Before == old && c.After == "B9 địa chỉ mới");
+        Assert.NotNull(d.BeforeContent); Assert.Equal(old, d.BeforeContent.Address);
+        Assert.DoesNotContain(d.BeforeContent.RoomTypes.SelectMany(t=>t.Rooms), r=>r.RoomCode=="B9-ROOM");
+        Assert.Contains(d.Changes,c=>c.Field=="RoomTypes" && c.After!.Contains("B9-ROOM"));
+        Assert.Contains(d.Changes, c => c.Field == "Address" && c.Before == old && c.After == "B9 địa chỉ hiện tại");
         Assert.Equal(DocumentType.BusinessLicense, Assert.Single(d.LegacyDocuments).Type);
         await Assert.ThrowsAsync<BookingException>(() => h.Reviews.PendingDetailsAsync(h.HomeId, h.Owner));
+        var log = await h.Db.AuditLogs.Where(a=>a.TableName=="Homestays" && a.NewValues!.Contains("ChangeReason")).OrderBy(a=>a.Id).FirstAsync();
+        log.OldValues = "null"; await h.Db.SaveChangesAsync();
+        var legacyAudit = await h.Reviews.PendingDetailsAsync(h.HomeId, h.Manager);
+        Assert.Null(legacyAudit.BeforeContent); Assert.Empty(legacyAudit.Changes);
     }
 }

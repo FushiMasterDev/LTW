@@ -35,7 +35,7 @@ public record AdminDashboardModel(ReportQuery Query, ManagementReport Report, Pa
 
 /// <summary>Canvas và bảng thay thế dùng cùng dữ liệu đã nạp. Labels/Series chỉ phục vụ trình bày, không tính nghiệp vụ.</summary>
 public record ReportChartModel(string Id, string Title, string Type, IReadOnlyList<string> Labels,
-    IReadOnlyList<ReportChartSeries> Series, DataTableModel Table);
+    IReadOnlyList<ReportChartSeries> Series, DataTableModel Table, bool? HasData = null);
 public record ReportChartSeries(string Label, IReadOnlyList<double?> Values, string Tone = "accent");
 
 public record TemporaryEmployeePassword(string Target, string Password);

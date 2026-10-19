@@ -163,6 +163,9 @@ public sealed class AdminWorkspaceUiTests
             var html = await client.GetStringAsync($"/Admin/Reports?tab={tab}&from={year}-01-01&to={year}-12-31");
             Assert.Contains($"from={year}-01-01", html);
             Assert.Contains($"to={year}-12-31", html);
+            if (year == 2028) {
+                Assert.DoesNotContain("data-report-chart", html); Assert.Contains("fx-empty", html); continue;
+            }
             Assert.Contains("data-report-chart", html);
             Assert.Contains("aria-describedby=", html);
             Assert.Contains("<caption", html);

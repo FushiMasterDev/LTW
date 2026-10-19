@@ -14,6 +14,6 @@
     </div>
     @if (Model.ShowCreate)
     {
-        <a class="btn btn-brand" href="@Url.Action(Model.Action, Model.Controller, routes)"><icon name="plus-lg" /> @L[Model.ActionLabel]</a>
+        <a class="btn btn-brand" href="@Url.Action(Model.Action, Model.Controller, routes)"><icon name="@Model.ActionIcon" /> @L[Model.ActionLabel]</a>
     }
 </div>

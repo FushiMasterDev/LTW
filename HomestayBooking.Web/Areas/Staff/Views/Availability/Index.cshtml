@@ -14,7 +14,7 @@
  Func<dynamic,IHtmlContent> c1=@<text>@o.RoomTypeName</text>;
  Func<dynamic,IHtmlContent> c2=@<text>@n.Night.ToString("dd/MM/yyyy")</text>;
  Func<dynamic,IHtmlContent> c3=@<text>@o.FreeRooms / @o.TotalRooms</text>;
- Func<dynamic,IHtmlContent> c4=@<text><money value="@(o.TotalPrice ?? 0)" /></text>;
+ Func<dynamic,IHtmlContent> c4=@<text><money value="@o.TotalPrice" /></text>;
  rows.Add(new(new[] {c0(null!),c1(null!),c2(null!),c3(null!),c4(null!)}));
 }
 <partial name="_DataTable" model='new DataTableModel("Phòng trống theo đêm",new TableColumn[] {new("Homestay"),new("Loại phòng"),new("Đêm lưu trú"),new("Trống / tổng",Numeric:true),new("Giá đêm",Numeric:true)},rows)' />

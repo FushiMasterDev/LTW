@@ -33,6 +33,7 @@ public sealed class AccountingWorkspaceUiTests
     [InlineData("Settlements/Generate")]
     [InlineData("Settlements/Send/1")]
     [InlineData("Settlements/RecordPaid/1")]
+    [InlineData("Settlements/ConfirmOnBehalf/1")]
     [InlineData("Settlements/Reopen/1")]
     [InlineData("Compensations/RecordPaid/1")]
     [InlineData("Compensations/Reject/1")]
@@ -99,7 +100,7 @@ public sealed class AccountingWorkspaceUiTests
         foreach (var value in new[] { details.Settlement.TotalRoomAmount, details.Settlement.TotalRetained, details.Settlement.TotalCommission, details.Settlement.PayoutAmount })
             Assert.Contains(value.ToString("N0", CultureInfo.GetCultureInfo("vi-VN")), WebUtility.HtmlDecode(html));
         Assert.Contains("data-confirm-variant=\"danger\"", html);
-        await client.PostAsync($"/Accounting/Settlements/RecordPaid/{id}", Form(token, ("bankRef", "UI05C-PAID")));
+        await client.PostAsync($"/Accounting/Settlements/RecordPaid/{id}", Form(token, ("bankRef", "UI05C-PAID"), ("amount", details.Settlement.PayoutAmount.ToString("0.##", CultureInfo.InvariantCulture)), ("paidAt", VietnamTime.ToLocal(DateTime.UtcNow).ToString("yyyy-MM-ddTHH:mm:ss.fffffff"))));
         Assert.Equal(SettlementStatus.Paid, factory.WithDb(db => db.Settlements.Single(s => s.Id == id).Status));
         html = await client.GetStringAsync(path);
         Assert.Contains("UI05C-PAID", html);

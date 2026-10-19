@@ -1,6 +1,6 @@
 @model AdminDashboardModel
 @{ViewData["Title"]=L["Tổng quan quản trị"];var f=Model.Report.Finance;var rows=new List<TableRow>();}
-<partial name="_PageHead" model='new PageHeadModel("Tổng quan quản trị","","",L["Kỳ {0} – {1}",Model.Query.From.ToString("dd/MM/yyyy"),Model.Query.To.ToString("dd/MM/yyyy")],Action:"Index",Controller:"Reports",ActionLabel:"Xem báo cáo")' />
+<partial name="_PageHead" model='new PageHeadModel("Tổng quan quản trị","","",L["Kỳ {0} – {1}",Model.Query.From.ToString("dd/MM/yyyy"),Model.Query.To.ToString("dd/MM/yyyy")],Action:"Index",Controller:"Reports",ActionLabel:"Xem báo cáo",ActionIcon:"bar-chart")' />
 <div class="row g-3 mb-4">
 <div class="col-sm-6 col-xl-4"><partial name="_StatCard" model='new StatCardModel("Tổng đơn",Model.Report.Bookings.Total.ToString("N0"),"journal-check")' /></div>
 <div class="col-sm-6 col-xl-4"><partial name="_StatCard" model='new StatCardModel("Tiền phòng hoàn thành",f.CompletedRoomAmount.ToString("N0",System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))+"đ","cash-stack",Hint:"Số liệu tạm tính")' /></div>

@@ -112,7 +112,9 @@ public class HomestayContentService(ApplicationDbContext db, HomestayAccessServi
         if (input.Latitude is < -90 or > 90 || input.Longitude is < -180 or > 180) throw new BookingException("Tọa độ không hợp lệ.");
         var changed = home.Address != input.Address.Trim() || home.AreaId != input.AreaId || home.Latitude != input.Latitude || home.Longitude != input.Longitude;
         if (!changed) return new HomestayContentResult(home, []);
-        var old = HomestayReviewService.State(home);
+        // AuditLog already stores JSON; keep the editor metadata before entering review without a schema change.
+        var old = new { Homestay = HomestayReviewService.State(home), Snapshot = home.Status == HomestayStatus.Active
+            ? await EditorAsync(id, actor) : null };
         home.Address = input.Address.Trim(); home.AreaId = input.AreaId; home.Latitude = input.Latitude; home.Longitude = input.Longitude;
         var recheck = home.Status is HomestayStatus.Active or HomestayStatus.Suspended;
         if (home.Status == HomestayStatus.Active) HomestayReviewService.Move(home, HomestayStatus.PendingReview, clock);

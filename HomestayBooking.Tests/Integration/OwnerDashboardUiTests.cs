@@ -44,6 +44,7 @@ public sealed class OwnerDashboardUiTests
             Assert.Contains($"href=\"/Owner/{screen}\"", html);
         Assert.Contains("href=\"/Owner/Bookings?status=Deposited\"", html);
         Assert.Contains("href=\"/Notifications\"", html);
+        Assert.Matches(@"Chờ xác nhận</a>\s*<span[^>]*>.*?</span>\s*<strong class=""fx-stat__value"">1</strong>", Regex.Replace(html, @"\r?\n", ""));
         Assert.Empty(factory.Errors);
     }
 

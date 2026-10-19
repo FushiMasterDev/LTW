@@ -30,8 +30,11 @@
                     @if (actions) { <td data-label="@L["Thao tác"]"><div class="fx-table__value">@if (row.Actions is not null) { <partial name="_RowActions" model="row.Actions" /> }</div></td> }
                 </tr>
             }
+            @if (Model.Rows.Count == 0) {
+                <tr><td class="fx-table__empty" colspan="@(Model.Columns.Count + (actions ? 1 : 0))"><partial name="_EmptyState" model="@((Model.Empty ?? new EmptyStateModel()) with { Compact = true })" /></td></tr>
+            }
         </tbody>
     </table>
-    @if (Model.Rows.Count == 0) { <partial name="_EmptyState" model="@(Model.Empty ?? new EmptyStateModel())" /> }
+
 </div>
 @if (Model.Pager is not null) { <partial name="_Pager" model="Model.Pager" /> }

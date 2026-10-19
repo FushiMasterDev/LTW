@@ -1,19 +1,26 @@
 @model IReadOnlyList<Payment>
 @{
     ViewData["Title"] = L["Khoản bù trùng phòng"];
+    var rejectable = ViewData["Rejectable"] as bool? == true;
     var rows = new List<TableRow>();
     var canWrite = User.EmployeePosition() == EmployeePosition.Accountant;
 }
 <partial name="_PageHead" model='new PageHeadModel("Khoản bù trùng phòng", "", "", L["Khoản bù chờ chi cho đơn thay thế đã hoàn thành, chưa bị thay tiếp."], ShowCreate: false)' />
 <partial name="_Tabs" model='TabsModel.Accounting(User, ViewData["Counts"] as AccountingCounts, "Compensations")' />
 <p class="text-muted">@L["Khoản bù được chi riêng, không cộng vào số được nhận trong bảng đối soát."]</p>
+@if(canWrite) { <partial name="_Tabs" model='new TabsModel("Khoản bù", new TabItem[] {new("Chờ chi",Url.Action("Index")!,!rejectable),new("Có thể từ chối",Url.Action("Index",new {rejectable=true})!,rejectable)})' /> }
 @foreach (var p in Model)
 {
     Func<dynamic, IHtmlContent> code = @<text>@p.Booking.Code<div class="text-muted">@L["Homestay #{0}", p.Booking.HomestayId]</div></text>;
     Func<dynamic, IHtmlContent> amount = @<text><money value="@p.Amount" /></text>;
-    Func<dynamic, IHtmlContent> status = @<text><status-badge value="@p.Status" /></text>;
+    Func<dynamic, IHtmlContent> status = @<text><status-badge value="@p.Status" /><div><status-badge value="@p.Booking.Status" /></div></text>;
     Func<dynamic, IHtmlContent> actions = @<text>
-        @if (canWrite)
+        @if (canWrite && rejectable) {
+            <form asp-action="Reject" asp-route-id="@p.Id" method="post" data-confirm="@L["Từ chối khoản bù này?"]" data-confirm-variant="danger">
+                <label for="reject-compensation-@p.Id" class="form-label">@L["Lý do từ chối"]</label><textarea class="form-control mb-2" id="reject-compensation-@p.Id" name="reason" required maxlength="500"></textarea>
+                <button class="btn btn-outline-danger" type="submit" data-loading-text="@L["Đang lưu…"]">@L["Từ chối"]</button>
+            </form>
+        } else if (canWrite)
         {
             <form asp-action="RecordPaid" asp-route-id="@p.Id" method="post" class="d-flex flex-column gap-2" data-confirm="@L["Xác nhận đã chi khoản bù này cho chủ homestay?"]">
                 <label class="form-label mb-0" for="compensation-ref-@p.Id">@L["Mã tham chiếu ngân hàng"]</label><input id="compensation-ref-@p.Id" name="bankRef" class="form-control" required maxlength="100" autocomplete="off" spellcheck="false" />

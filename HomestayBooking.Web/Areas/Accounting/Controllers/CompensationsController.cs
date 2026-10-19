@@ -11,17 +11,19 @@ public class CompensationsController(ApplicationDbContext db, CompensationServic
     AccountingService accounting, IStringLocalizer<SharedResource> L) : AccountingController(db)
 {
     [HttpGet]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(bool rejectable = false)
     {
-        var rows = await compensations.PendingAsync(await CurrentActorAsync());
+        if (rejectable && User.EmployeePosition() != EmployeePosition.Accountant) return Forbid();
+        var rows = rejectable ? await compensations.RejectableAsync(await CurrentActorAsync()) : await compensations.PendingAsync(await CurrentActorAsync());
+        ViewData["Rejectable"] = rejectable;
         await LoadCountsAsync(accounting);
         return View(rows);
     }
     [HttpPost, ValidateAntiForgeryToken]
     public Task<IActionResult> RecordPaid(int id, string bankRef) => Save(actor => compensations.RecordPaidAsync(id, bankRef, actor));
     [HttpPost, ValidateAntiForgeryToken]
-    public Task<IActionResult> Reject(int id, string reason) => Save(actor => compensations.RejectAsync(id, reason, actor));
-    private async Task<IActionResult> Save(Func<Actor, Task<Payment>> action)
+    public Task<IActionResult> Reject(int id, string reason) => Save(actor => compensations.RejectAsync(id, reason, actor), rejectable: true);
+    private async Task<IActionResult> Save(Func<Actor, Task<Payment>> action, bool rejectable = false)
     {
         if (User.EmployeePosition() != EmployeePosition.Accountant) return Forbid();
         try
@@ -30,6 +32,6 @@ public class CompensationsController(ApplicationDbContext db, CompensationServic
             await action(await CurrentActorAsync()); TempData["Success"] = L["Đã lưu thay đổi."].Value;
         }
         catch (BookingException ex) { TempData["Error"] = L[ex.ResourceKey, ex.Arguments].Value; }
-        return RedirectToAction(nameof(Index));
+        return rejectable ? RedirectToAction(nameof(Index), new { rejectable = true }) : RedirectToAction(nameof(Index));
     }
 }
