@@ -273,3 +273,33 @@ Các dữ liệu nổi bật: QA001; chủ `0977065014`, hồ sơ #7, cơ sở #
 `database/tests/data_consistency.sql` chạy khi app QA đã dừng: **35/35 OK trên cả hai database**, không sửa dữ liệu để làm script xanh. `HomestayBooking_ConstraintTest` không để lại dòng nghiệp vụ sau test. Chi tiết ở `data-inventory.txt`, `*-consistency-final.log` và TRX SQL.
 
 Các app 5014/5015/5016/5017 và browser do phiên QA mở được dừng bằng PID/session cụ thể. Không dùng pkill/killall, không dừng/xóa SQL container, không dừng app 5011. Không push/merge. Bằng chứng chỉ có ở thư mục tạm trên máy này.
+
+## 12. Sửa sau báo cáo và kiểm lại (20/10/2026)
+
+Người dùng chốt: **giấy tờ đối tác nhận PDF** (bill và ảnh homestay vẫn chỉ nhận ảnh); **màn nhân viên tạo hồ sơ đối tác hộ để sau** (ra mắt với luồng tự đăng ký `/Partner`, đã chạy trọn ở mục 4).
+
+| Việc | Sửa | Kiểm |
+|---|---|---|
+| Upload nhận ảnh hỏng, đuôi/MIME sai, tên `../` (chặn Go) | `ReceiptFileStore`: tên file trần (không thư mục, `..`, ký tự điều khiển); đuôi và Content-Type khai báo phải khớp nội dung (`application/octet-stream`/trống thì chỉ dựa vào nội dung); kiểm cấu trúc: PNG đủ khối IHDR→IEND đúng CRC, JPEG có SOF kích thước > 0 + SOS + EOI, WEBP RIFF khớp độ dài + khối VP8/VP8L/VP8X; PDF (chỉ giấy tờ) `%PDF-` + đối tượng + `%%EOF`. Ghi đúng phần byte đã kiểm, không đọc lại request | `UploadValidationTests` (16 ca) + test cũ đổi sang file thật nhỏ (`TestFiles`); HTTP thật trên `HomestayBooking_PreLaunch`, bảng dưới |
+| Giao diện quảng cáo PDF nhưng không nhận | Lưu giấy tờ gọi `SaveAsync(..., allowPdf: true)`; `ContentTypeOf(.pdf) = application/pdf`; tải về dạng attachment | Tải lại PDF vừa nộp: 200, `application/pdf`, `attachment` |
+| Nút đóng 32px | Dưới 576px `.btn-close` 44×44px, biểu tượng giữ cỡ | UI Kit 375px: 44×44; 1280px giữ nguyên |
+| Thiếu header bảo mật | Middleware mặc định `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`, CSP `frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'`; trang tự đặt chặt hơn (mật khẩu tạm `no-referrer`) giữ nguyên; antiforgery không đặt SAMEORIGIN nữa | `SecurityHeadersTests`; curl trang chủ |
+
+**TC07 kiểm lại bằng multipart thật tới `/Owner/Homestays/Document/1` (chủ `0912000001`):**
+
+| File | Mong đợi | Thực tế | Kết quả |
+|---|---|---|---|
+| `qa-broken.png` | Từ chối | Từ chối – File ảnh bị hỏng hoặc không đầy đủ. | Đạt |
+| `../qa-path.png` | Từ chối | Từ chối – Tên file không hợp lệ. | Đạt |
+| `qa-disguised.exe` | Từ chối | Từ chối – Đuôi file không khớp với nội dung file. | Đạt |
+| `qa-mismatch.jpg` | Từ chối | Từ chối – Đuôi file không khớp với nội dung file. | Đạt |
+| `qa-large.png` | Từ chối | Từ chối – File phải có dung lượng từ 1 byte đến 5MB. | Đạt |
+| `qa-valid.png` | Nhận | Nhận | Đạt |
+| `qa-valid.pdf` | Nhận | Nhận | Đạt |
+| `qa-broken.pdf` | Từ chối | Từ chối – File PDF bị hỏng hoặc không đầy đủ. | Đạt |
+
+Kết quả kiểm tra sau sửa: `dotnet build -c Release` 0 cảnh báo/0 lỗi; `dotnet test` **1759 pass, 1 skip** (test hiệu năng chỉ chạy khi `RUN_PERF_TESTS=1`).
+
+**Chưa làm (ghi lại):** CSP đầy đủ cho `script-src`/`style-src` cần nonce cho script chống nháy theme inline trong `_HeadAssets`; màn tạo hồ sơ đối tác hộ.
+
+**Kết luận cập nhật: GO có điều kiện.** Lỗi chặn duy nhất (upload) đã sửa và kiểm lại đạt. Điều kiện trước khi mở cho khách thật: cấu hình TLS/proxy và chuỗi kết nối Production, khóa SePay và tài khoản ngân hàng thật, cấp quản trị viên đầu tiên theo quy trình B7, và thử một lượt trên điện thoại thật.

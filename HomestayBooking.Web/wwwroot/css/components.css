@@ -374,6 +374,23 @@
   filter: invert(1) grayscale(100%) brightness(200%);
 }
 
+/* Điện thoại: nút đóng (×) của alert, toast, modal có vùng bấm 44px (DESIGN.md), biểu tượng giữ cỡ cũ */
+@media (max-width: 575.98px) {
+  .btn-close {
+    box-sizing: border-box;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    background-size: 0.85em;
+  }
+
+  .alert-dismissible .btn-close {
+    padding: 0;
+    top: 0.25rem;
+    right: 0.25rem;
+  }
+}
+
 /* ---------- Dropdown, modal ---------- */
 .dropdown-menu {
   --bs-dropdown-bg: var(--fx-surface);

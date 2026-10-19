@@ -156,7 +156,7 @@ sqlcmd -S localhost,1433 -U sa -C -Q "CREATE DATABASE [HomestayBooking_Constrain
 cd database && sqlcmd -S localhost,1433 -U sa -C -d HomestayBooking_ConstraintTest -v TargetDb=HomestayBooking_ConstraintTest -i deploy.sql && cd ..
 ```
 
-Kết quả gần nhất (20/10/2026): 1728 pass, 1 skip.
+Kết quả gần nhất (20/10/2026): 1759 pass, 1 skip.
 
 Kiểm tra liên kết mọi trang theo từng vai trò (khi app đang chạy): `python3 -I tools/ui-crawl.py http://localhost:5011`.
 

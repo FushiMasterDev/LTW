@@ -179,6 +179,8 @@ builder.Services.AddControllersWithViews(o =>
 builder.Services.AddAntiforgery(o =>
 {
     o.HeaderName = "RequestVerificationToken";
+    // X-Frame-Options đặt chung là DENY ở middleware header bảo mật (app không dùng iframe), không để antiforgery đặt SAMEORIGIN
+    o.SuppressXFrameOptionsHeader = true;
     o.Cookie.SecurePolicy = cookieSecurePolicy;
 });
 
@@ -202,6 +204,24 @@ builder.Services.AddSwaggerGen(o =>
 });
 
 var app = builder.Build();
+
+// Header bảo mật cơ bản cho mọi phản hồi (QA trước ra mắt). CSP đầy đủ chưa bật: script chống nháy theme trong
+// _HeadAssets là inline, cần nonce trước khi siết script-src.
+app.Use(async (context, next) =>
+{
+    context.Response.OnStarting(() =>
+    {
+        // Chỉ đặt mặc định: trang nào tự đặt chặt hơn (ví dụ mật khẩu tạm dùng Referrer-Policy: no-referrer) thì giữ nguyên
+        var headers = context.Response.Headers;
+        headers.TryAdd("X-Content-Type-Options", "nosniff");
+        headers.TryAdd("X-Frame-Options", "DENY");
+        headers.TryAdd("Referrer-Policy", "strict-origin-when-cross-origin");
+        headers.TryAdd("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+        headers.TryAdd("Content-Security-Policy", "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'");
+        return Task.CompletedTask;
+    });
+    await next();
+});
 
 if (!app.Environment.IsDevelopment())
 {

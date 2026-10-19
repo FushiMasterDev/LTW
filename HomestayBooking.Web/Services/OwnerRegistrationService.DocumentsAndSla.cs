@@ -52,7 +52,7 @@ public partial class OwnerRegistrationService
         if (!Enum.IsDefined(type)) throw new BookingException("Loại giấy tờ không hợp lệ.");
         if (Path.GetFileName(file.FileName).Length > 255) throw new BookingException("Tên file quá dài.");
         if (expiryDate < VietnamTime.Today(clock)) throw new BookingException("Giấy tờ đã hết hạn.");
-        var stored = await files.SaveAsync(file, $"HS{home.Id}");
+        var stored = await files.SaveAsync(file, $"HS{home.Id}", allowPdf: true);
         try
         {
             var document = new VerificationDocument { HomestayId = home.Id, DocumentType = type,

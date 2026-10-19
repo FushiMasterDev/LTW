@@ -2994,4 +2994,22 @@
   <data name="Không lưu được, vui lòng thử lại." xml:space="preserve">
     <value>Could not save, please try again.</value>
   </data>
+  <data name="Tên file không hợp lệ." xml:space="preserve">
+    <value>Invalid file name.</value>
+  </data>
+  <data name="Chỉ nhận ảnh JPG, PNG, WEBP hoặc PDF." xml:space="preserve">
+    <value>Only JPG, PNG, WEBP images or PDF files are accepted.</value>
+  </data>
+  <data name="Đuôi file không khớp với nội dung file." xml:space="preserve">
+    <value>The file extension does not match the file content.</value>
+  </data>
+  <data name="Loại file khai báo không khớp với nội dung file." xml:space="preserve">
+    <value>The declared file type does not match the file content.</value>
+  </data>
+  <data name="File PDF bị hỏng hoặc không đầy đủ." xml:space="preserve">
+    <value>The PDF file is damaged or incomplete.</value>
+  </data>
+  <data name="File ảnh bị hỏng hoặc không đầy đủ." xml:space="preserve">
+    <value>The image file is damaged or incomplete.</value>
+  </data>
 </root>

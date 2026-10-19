@@ -11,7 +11,10 @@ public sealed class HomestayMediaPolicyTests
     public async Task PublicImageCoverSwitchAndDeleteUseSafeGeneratedPath()
     {
         using var h = await HomestayTestHost.CreateAsync();
-        var a = await h.Images.UploadAsync(h.HomeId, h.H.RoomType.Id, PartnerTestHost.Image("../../secret.png"), true, 1, h.Owner);
+        // Tên có đường dẫn bị từ chối hẳn; tên thường vẫn được lưu bằng đường dẫn sinh ra, không dùng tên khách gửi
+        await Assert.ThrowsAsync<BookingException>(() => h.Images.UploadAsync(h.HomeId, h.H.RoomType.Id, PartnerTestHost.Image("../../secret.png"), true, 1, h.Owner));
+        Assert.Empty(h.Db.HomestayImages);
+        var a = await h.Images.UploadAsync(h.HomeId, h.H.RoomType.Id, PartnerTestHost.Image("secret.png"), true, 1, h.Owner);
         Assert.StartsWith($"/uploads/homestays/{h.HomeId}/", a.Url); Assert.DoesNotContain("secret", a.Url);
         var b = await h.Images.UploadAsync(h.HomeId, null, PartnerTestHost.Image(), false, 2, h.Owner);
         await Assert.ThrowsAsync<BookingException>(() => h.Images.DeleteAsync(a.Id, h.Owner));

@@ -21,7 +21,7 @@ public sealed partial class ChangeRequestUiTests
         Assert.Contains($"data-additional-payment=\"{id}\"", before); Assert.Contains($"CR{id} {c.Code}", before);
         Assert.Contains("amount=300000", before); Assert.Contains("data-change-countdown", before);
         var token = await TestWebApplicationFactory.TokenFromAsync(customer, url);
-        var bytes = new byte[] { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0 };
+        var bytes = HomestayBooking.Tests.Services.TestFiles.Png;
         using var content = new MultipartFormDataContent();
         content.Add(new StringContent(token), "__RequestVerificationToken"); content.Add(new StringContent(id.ToString()), "requestId");
         var image = new ByteArrayContent(bytes); image.Headers.ContentType = new MediaTypeHeaderValue("image/png"); content.Add(image, "receipt", "receipt.png");

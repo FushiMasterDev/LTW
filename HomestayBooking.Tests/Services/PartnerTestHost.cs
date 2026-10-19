@@ -87,10 +87,14 @@ internal sealed class PartnerTestHost : IDisposable
             ReviewedByEmployeeId = Manager.EmployeeId, ReviewedAt = H.Clock.Now.UtcDateTime });
         await Db.SaveChangesAsync();
     }
+    /// <summary>File thật theo đuôi của tên (.jpg/.webp/.pdf, còn lại PNG), Content-Type khớp.</summary>
     public static IFormFile Image(string name = "proof.png")
     {
-        byte[] bytes = [0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A,0,0,0,0];
-        return new FormFile(new MemoryStream(bytes), 0, bytes.Length, "document", name);
+        var bytes = Path.GetExtension(name).ToLowerInvariant() switch
+        {
+            ".jpg" or ".jpeg" => TestFiles.Jpeg, ".webp" => TestFiles.Webp, ".pdf" => TestFiles.Pdf, _ => TestFiles.Png,
+        };
+        return TestFiles.Form(bytes, name, name: "document");
     }
     public void Dispose()
     {
