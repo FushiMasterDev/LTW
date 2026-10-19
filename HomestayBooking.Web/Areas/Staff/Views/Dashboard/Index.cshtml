@@ -1,33 +1,29 @@
-@model Dictionary<BookingStatus, int>
-@{
-    ViewData["Title"] = L["Tổng quan nhân viên"];
-    var groups = new (string Title, string Hint, string Icon, BookingStatus[] Statuses)[]
-    {
-        (L["Đang chờ xử lý"], L["Đơn đang giữ phòng, chờ duyệt bill hoặc chờ homestay xác nhận."], "bi-hourglass-split",
-            [BookingStatus.AwaitingPayment, BookingStatus.PaymentSubmitted, BookingStatus.Deposited]),
-        (L["Sắp đến và đang ở"], L["Đơn đã xác nhận và khách đang lưu trú."], "bi-door-open",
-            [BookingStatus.Confirmed, BookingStatus.CheckedIn]),
-        (L["Đã kết thúc"], L["Hoàn thành, hết hạn, bị từ chối, đã hủy hoặc khách không đến."], "bi-archive",
-            [BookingStatus.Completed, BookingStatus.Expired, BookingStatus.Rejected, BookingStatus.Cancelled, BookingStatus.NoShow]),
-    };
-    var waitingConfirm = Model.GetValueOrDefault(BookingStatus.Deposited);
-}
-<partial name="_PageHead" model='new PageHeadModel("Tổng quan nhân viên", "", "", L["Hệ thống đang có {0} homestay hoạt động.", (object)ViewBag.ActiveHomestayCount], ShowCreate: false)' />
-
+@using HomestayBooking.Web.Services
+@using HomestayBooking.Web.Identity
+@model StaffDashboardModel
+@{ViewData["Title"]=L["Tổng quan nhân viên"];}
+<partial name="_PageHead" model='new PageHeadModel("Tổng quan nhân viên","","","Theo dõi đơn cần xác nhận và công việc thẩm định.",Controller:"Bookings",ActionLabel:"Đặt hộ khách")' />
 <div class="row g-3 mb-4">
-    @foreach (var g in groups)
-    {
-        <div class="col-md-4"><partial name="_StatCard" model="@(new StatCardModel(g.Title, g.Statuses.Sum(s => Model.GetValueOrDefault(s)).ToString(), g.Icon, Hint: g.Hint))" /></div>
-    }
+ <div class="col-sm-6 col-xl-3"><partial name="_StatCard" model='new StatCardModel("Đơn chờ xác nhận",Model.Waiting.ToString(),"journal-check",Href:"/Staff/Bookings?Status=Deposited")' /></div>
+ <div class="col-sm-6 col-xl-3"><partial name="_StatCard" model='new StatCardModel("Yêu cầu đổi/hủy",Model.Changes.ToString(),"arrow-repeat",Href:User.EmployeePosition()==EmployeePosition.Manager ? "/Staff/ChangeApprovals" : "/Staff/ChangeRequests")' /></div>
+ <div class="col-sm-6 col-xl-3"><partial name="_StatCard" model='new StatCardModel("Quá hạn xác nhận",Model.Overdue.Count.ToString(),"alarm",Href:"#overdue")' /></div>
+ <div class="col-sm-6 col-xl-3"><partial name="_StatCard" model='new StatCardModel("Hồ sơ chờ thẩm định",Model.Registrations.ToString(),"file-earmark-person",Href:"/Staff/OwnerRegistrations")' /></div>
 </div>
-<partial name="_TaskList" model='new TaskListModel("Việc cần xử lý", new TaskListItem[] {
-    new("Đơn chờ xác nhận", L["{0} đơn đã nhận cọc đang chờ homestay xác nhận.", waitingConfirm], Value: waitingConfirm),
-    new("Gửi yêu cầu thay khách", L["Tìm đơn theo mã hoặc số điện thoại để đổi/hủy thay khách."], Url.Action("Index", "ChangeRequests")) })' />
-<h2 class="fx-section-title mt-4">@L["Đơn đặt phòng theo trạng thái"]</h2>
-@{ var rows = new List<TableRow>(); }
-@foreach (var status in groups.SelectMany(g => g.Statuses))
-{
-    Func<dynamic, IHtmlContent> badge = @<text><status-badge value="@status" /></text>;
-    rows.Add(new(new IHtmlContent[] { badge(null!), new HtmlContentBuilder().Append(Model.GetValueOrDefault(status).ToString()) }));
+<partial name="_TaskList" model='new TaskListModel("Công việc",new TaskListItem[] {new("Quản lý đơn",Href:"/Staff/Bookings"),new("Phòng trống toàn hệ thống",Href:"/Staff/Availability"),new("Khách hàng",Href:"/Staff/Customers"),new("Thẩm định hồ sơ đối tác",Href:"/Staff/OwnerRegistrations")})' />
+<section id="overdue" class="mt-4"><h2 class="h4">@L["Đơn quá 30 phút chưa xác nhận"]</h2>
+@{var rows=new List<TableRow>();}
+@foreach(var b in Model.Overdue.OrderBy(b=>b.ConfirmDeadlineAt)){
+ Func<dynamic,IHtmlContent> c0=@<text><a asp-controller="Bookings" asp-action="Details" asp-route-id="@b.Id">@b.Code</a></text>;
+ Func<dynamic,IHtmlContent> c1=@<text>@b.ContactName</text>;
+ Func<dynamic,IHtmlContent> c2=@<text>@VietnamTime.ToLocal(b.ConfirmDeadlineAt!.Value).ToString("HH:mm dd/MM/yyyy")</text>;
+ rows.Add(new(new[] {c0(null!),c1(null!),c2(null!)}));
 }
-<partial name="_DataTable" model='new DataTableModel("Đơn đặt phòng theo trạng thái", new TableColumn[] { new("Trạng thái"), new("Đơn", Numeric: true) }, rows)' />
+<partial name="_DataTable" model='new DataTableModel("Đơn quá hạn xác nhận",new TableColumn[] {new("Đơn"),new("Khách"),new("Hạn xác nhận")},rows,Empty:new EmptyStateModel("Không có đơn quá hạn xác nhận."))' />
+</section>
+<section class="mt-4"><h2 class="h4">@L["Tỷ lệ chốt của tôi"]</h2>
+<partial name="_FilterBar" model='new FilterBarModel("performance",new FilterField[] {new("from","Từ ngày",Model.From.ToString("yyyy-MM-dd"),Type:"date"),new("to","Đến ngày",Model.To.ToString("yyyy-MM-dd"),Type:"date")})' />
+@if(Model.Performance is {} p){
+ <partial name="_DescriptionList" model='new DescriptionItem[] {new("Tỷ lệ chốt",new HtmlContentBuilder().Append(p.ConversionPercent.ToString("N1")+"%")),new("Đơn tôi tạo",new HtmlContentBuilder().Append(p.Created.ToString())),new("Đơn đã xác nhận",new HtmlContentBuilder().Append(p.Confirmed.ToString()))}' />
+} else {<partial name="_EmptyState" />}
+<p class="text-muted">@L["Tỷ lệ dựa trên đơn tôi tạo trong khoảng ngày đã chọn; đơn đã xác nhận chia cho tổng đơn tạo."]</p>
+</section>

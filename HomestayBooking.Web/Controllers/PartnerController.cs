@@ -161,6 +161,33 @@ public class PartnerController(
         }
     }
 
+    [AllowAnonymous,HttpGet,ResponseCache(NoStore=true,Location=ResponseCacheLocation.None)]
+    public IActionResult Activate(int id,string? token)
+    {
+        if(User.IsActiveEmployee()) return Forbid();
+        Response.Headers["Referrer-Policy"]="no-referrer";
+        var savedToken=TempData["PartnerActivationToken:"+id] as string;
+        return View(new PartnerActivationForm {Id=id,Token=token ?? savedToken ?? "",
+            PhoneNumber=TempData["PartnerActivationPhone:"+id] as string ?? ""});
+    }
+    [AllowAnonymous,HttpPost,ValidateAntiForgeryToken,ResponseCache(NoStore=true,Location=ResponseCacheLocation.None)]
+    public async Task<IActionResult> Activate(PartnerActivationForm form)
+    {
+        if(User.IsActiveEmployee()) return Forbid();
+        Response.Headers["Referrer-Policy"]="no-referrer";
+        try {
+            if(!ModelState.IsValid) throw new BookingException("Dữ liệu không hợp lệ. Vui lòng kiểm tra lại các trường.");
+            await registrations.ActivateAsync(form.Id,form.PhoneNumber,form.Token,form.Password,SignedIn ? OwnerActor() : null);
+            TempData["Success"]=localizer["Đã kích hoạt tài khoản. Vui lòng đăng nhập để bổ sung và gửi hồ sơ."].Value;
+            return RedirectToAction("Login","Account");
+        } catch(BookingException ex) {
+            TempData["Error"]=localizer[ex.ResourceKey,ex.Arguments].Value;
+            TempData["PartnerActivationToken:"+form.Id]=form.Token;
+            TempData["PartnerActivationPhone:"+form.Id]=form.PhoneNumber;
+            return RedirectToAction(nameof(Activate),new {id=form.Id});
+        }
+    }
+
     private async Task<PartnerRegisterViewModel> FillAsync(PartnerRegisterViewModel model)
     {
         model.SignedIn = SignedIn;

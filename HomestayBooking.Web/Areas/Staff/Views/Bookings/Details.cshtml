@@ -23,7 +23,7 @@
 <div class="row g-4 mt-1">
  <div class="col-lg-7">
   <section class="fx-card p-4 mb-4"><h2 class="h5">@L["Thông tin đơn"]</h2><status-badge value="@b.Status" /><partial name="_DescriptionList" model="facts" />
-    <a asp-controller="Customers" asp-action="Details" asp-route-id="@b.CustomerId">@L["Hồ sơ khách hàng"]</a>
+    <a class="btn btn-link p-0 text-start" asp-controller="Customers" asp-action="Details" asp-route-id="@b.CustomerId">@L["Hồ sơ khách hàng"]</a>
   </section>
   <section class="fx-card p-4 mb-4"><h2 class="h5">@L["Chi phí"]</h2>
    <partial name="_PriceBreakdown" model='new PriceBreakdownModel(b.Nights.OrderBy(n=>n.Date).Select(n=>new PriceLine(n.Date.ToString("dd/MM/yyyy"),n.Price)).Concat(new PriceLine[] {new("Tổng tiền",b.TotalAmount),new("Tiền cọc",b.DepositAmount),new("Giảm giá",b.DiscountAmount),new("Phí đổi",b.ChangeFeeAmount)}).ToArray())' />

@@ -79,3 +79,16 @@ public class PartnerRegisterViewModel
 /// <param name="Editable">Còn được tải giấy tờ và gửi hồ sơ (nháp hoặc cần bổ sung).</param>
 /// <param name="Missing">Danh sách còn thiếu do SubmitAsync trả về ở lần gửi trước.</param>
 public record PartnerStatusViewModel(OwnerRegistrationView Registration, bool Editable, IReadOnlyList<string> Missing);
+
+/// <summary>Owner alone supplies their phone and new password; the service validates the private invitation token.</summary>
+public class PartnerActivationForm
+{
+    public int Id {get;set;}
+    [Required] public string Token {get;set;} = "";
+    [Required, VietnamesePhone(ErrorMessage="{0} không hợp lệ."),Display(Name="Số điện thoại đăng nhập")]
+    public string PhoneNumber {get;set;} = "";
+    [Required, StringLength(100,MinimumLength=8),DataType(DataType.Password),Display(Name="Mật khẩu")]
+    public string Password {get;set;} = "";
+    [Required,Compare(nameof(Password),ErrorMessage="Mật khẩu xác nhận không khớp."),DataType(DataType.Password),Display(Name="Xác nhận mật khẩu")]
+    public string ConfirmPassword {get;set;} = "";
+}

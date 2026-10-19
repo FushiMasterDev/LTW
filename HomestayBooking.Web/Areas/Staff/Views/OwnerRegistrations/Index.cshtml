@@ -1,0 +1,21 @@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using HomestayBooking.Web.Services
+@using HomestayBooking.Web.Identity
+@model StaffRegistrationsModel
+@{ViewData["Title"]=L["Thẩm định hồ sơ đối tác"];}
+<partial name="_PageHead" model='new PageHeadModel("Thẩm định hồ sơ đối tác","","","Ưu tiên hồ sơ quá hạn ba ngày làm việc.",ShowCreate:false)' />
+<partial name="_FilterBar" model='new FilterBarModel("registrations",new FilterField[] {
+ new("Term","Tên hoặc SĐT",Model.Query.Term,Type:"search"),
+ new("Status","Trạng thái",Options:new[] {new SelectListItem(L["Tất cả trạng thái"],"")}.Concat(Enum.GetValues<OwnerRegistrationStatus>().Select(s=>new SelectListItem(L[s.DisplayName()],s.ToString()))).ToArray()),
+ new("OverdueOnly","Chỉ quá SLA",Type:"checkbox",Options:new[] {new SelectListItem(L["Chỉ quá SLA"],"true")})})' />
+@{var rows=new List<TableRow>();}
+@foreach(var r in Model.Registrations){
+ Func<dynamic,IHtmlContent> c0=@<text><a asp-action="Details" asp-route-id="@r.Id">#@r.Id · @r.OwnerName</a><div class="text-muted">@PhoneNumberNormalizer.ToNational(r.Phone)</div></text>;
+ Func<dynamic,IHtmlContent> c1=@<text><status-badge value="@r.Status" /></text>;
+ Func<dynamic,IHtmlContent> c2=@<text>@r.DeadlineLocal?.ToString("HH:mm dd/MM/yyyy") @if(r.Overdue){<span class="badge-tone tone-rose">@L["Quá SLA"]</span>}</text>;
+ Func<dynamic,IHtmlContent> c3=@<text>@r.Reviewer</text>;
+ Func<dynamic,IHtmlContent> c4=@<text>@r.Homestays / @r.ValidDocuments</text>;
+ rows.Add(new(new[] {c0(null!),c1(null!),c2(null!),c3(null!),c4(null!)}));
+}
+<partial name="_DataTable" model='new DataTableModel("Hồ sơ đối tác",new TableColumn[] {new("Đối tác"),new("Trạng thái"),new("Hạn thẩm định"),new("Người thẩm định"),new("Cơ sở / giấy tờ hợp lệ",Numeric:true)},rows)' />
+<partial name="_Pager" model="Model.Registrations" />

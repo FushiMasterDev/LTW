@@ -1,0 +1,17 @@
+@model PartnerActivationForm
+@{Layout="_AuthLayout";ViewData["Title"]=L["Kích hoạt tài khoản đối tác"];}
+<div class="form-panel">
+ <h1>@L["Kích hoạt tài khoản đối tác"]</h1>
+ <p class="text-muted">@L["Chủ homestay tự nhập SĐT đã đăng ký và đặt mật khẩu. Không chia sẻ mật khẩu với nhân viên."]</p>
+ @if(string.IsNullOrEmpty(Model.Token)){<partial name="_Alert" model='new AlertModel(L["Thiếu liên kết mời. Liên hệ người thẩm định để được cấp lại."].Value,"warning",false)' />}
+ else {
+  <form asp-action="Activate" method="post" novalidate>
+   <input asp-for="Id" type="hidden" /><input asp-for="Token" type="hidden" />
+   <form-field asp-for="PhoneNumber" type="tel" autocomplete="tel" />
+   <form-field asp-for="Password" type="password" autocomplete="new-password" hint='@L["Ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt."]' />
+   <form-field asp-for="ConfirmPassword" type="password" autocomplete="new-password" />
+   <button type="submit" class="btn btn-brand w-100" data-loading-text="@L["Đang lưu…"]">@L["Kích hoạt tài khoản"]</button>
+  </form>
+ }
+</div>
+@section Scripts {<partial name="_ValidationScriptsPartial" />}

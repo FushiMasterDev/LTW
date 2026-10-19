@@ -59,3 +59,23 @@ Các mục sau đã có service, không cần ghi gap:
 ## G-18 — Thông báo chủ cũ không có URL (05a, 19/10/2026)
 
 **Nhỏ, còn mở cho dữ liệu cũ/nguồn tạo thông báo.** Khi rà tài khoản `0912000001`, bốn thông báo hiện có trả `Url = null`, nên trang/chuông không có liên kết để mở đơn. `BookingService.NotifyAsync` vẫn có nhánh gọi `NotificationService.Add` không truyền URL cho đơn đặt cọc/hủy. Không phân tích mã đơn từ nội dung tự do để đoán URL hoặc truy vấn lại trong UI. Các URL đã có của service khác đã được nối: `/Owner/Homestays/{id}`, `/Owner/Settlements/{id}`, nhắc nhận phòng qua `Bookings?arrivals=…`, đánh giá qua Booking Details có lối tắt tới Reviews. Bước backend sau cần bổ sung URL tại nguồn và quyết định backfill dữ liệu cũ nếu cần.
+
+## G-19 — Gửi lời mời kích hoạt đối tác (05b, 19/10/2026)
+
+**Đã nối đủ UI qua service hiện có.** Ban đầu thiếu màn nhận token/kênh gửi. 05b thêm `Partner/Activate` GET/POST gọi `OwnerRegistrationService.ActivateAsync`; chủ tự nhập SĐT và đặt mật khẩu. `InviteAsync/ResendInviteAsync` nối ở Staff; liên kết riêng được chuyển qua TempData mã hóa, hiện đúng một lần trên trang NoStore/no-referrer để nhân viên sao chép và chuyển thủ công qua kênh riêng đã thống nhất. Không in token vào log/audit/ảnh/báo cáo, không đặt mật khẩu thay chủ, không tự gửi tin ngoài app. Resend vô hiệu token cũ theo service; test đi hết cả token cũ bị chặn và token mới kích hoạt được.
+
+Kênh tự động Zalo/SMS thật vẫn là phần rút gọn đã chấp thuận; lựa chọn kênh gửi tương lai ghi trong báo cáo, không chặn UI hiện tại. Không sửa service.
+
+## G-20 — Nhãn homestay/phòng trong màn Staff (05b, 19/10/2026)
+
+**Nhỏ, còn mở.** `StaffBookingService.SearchAsync` không Include Homestay hay nhân viên đã ngừng hoạt động; `AssigneesAsync` chỉ trả người nhận hiện còn hợp lệ, không phải catalog lịch sử. `AvailabilityService.FreeRoomIdsAsync` chỉ trả ID phòng, không trả mã phòng. Không dùng catalog công khai (chỉ cơ sở đang bán) thay danh mục lịch sử và không truy vấn thêm DbContext.
+
+Danh sách đơn lọc/hiện **Mã homestay** theo ID; chi tiết vẫn có tên homestay/mã phòng hiện tại từ DetailsAsync. Phòng trống chọn lại được ghi rõ **Phòng #{ID}**. Người phụ trách ngoài danh sách nhận đơn hiển thị **Nhân viên #{ID}**, không gán nhãn “Chưa giao”. Cần DTO đọc trả tên homestay/người phụ trách lịch sử và mã phòng còn trống để nâng trải nghiệm; không chặn thao tác.
+
+## G-21 — Dữ liệu phòng trống theo đêm theo lô (05b, 19/10/2026)
+
+**Một phần về hiệu năng, còn mở.** `StaffAvailabilityAsync` trả số phòng trống cho cả khoảng (phòng trống xuyên suốt), không trả ma trận đêm. 05b gọi service một lần để kiểm khoảng tối đa 31 đêm, rồi từng đêm để hiện số đúng; không biến số của cả khoảng thành số từng đêm, không cache và không tự truy vấn tồn phòng. Bảng có thời điểm cập nhật và Làm mới. Cần API trả ma trận theo lô để giữ số truy vấn cố định trên dữ liệu lớn; chưa tuyên bố đạt NFR-02 ở tải 150 homestay/31 đêm với cách ghép này.
+
+## G-22 — Link thông báo kết quả thẩm định gửi chủ (05b, 19/10/2026)
+
+**Nhỏ, còn mở.** `OwnerRegistrationService.DecideAsync` gửi thông báo cho chủ khi NeedsRevision/Approved/Rejected nhưng URL là `RegistrationUrl(id)` = `/Staff/OwnerRegistrations/{id}`. Chủ không có policy Employee, nên không mở được URL này; màn đúng để chủ theo dõi đã có ở `/Partner/Status`. Giữ nguyên chặn quyền của Staff, không mở hồ sơ nhân viên cho chủ hoặc sửa service trong bước UI. Cần sửa URL tại nguồn theo người nhận và quyết định backfill thông báo cũ; thông báo nội bộ vẫn dùng URL Staff.

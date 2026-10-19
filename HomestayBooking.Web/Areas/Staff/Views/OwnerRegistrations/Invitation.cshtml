@@ -1,0 +1,12 @@
+@model StaffInvitationModel
+@{ViewData["Title"]=L["Lời mời kích hoạt đối tác"];}
+<partial name="_PageHead" model='new PageHeadModel("Lời mời kích hoạt đối tác","","",ShowCreate:false)' />
+<div class="fx-form-card fx-card p-4">
+ @if(Model.Url is {} url){
+  <partial name="_Alert" model='new AlertModel(L["Chỉ chuyển liên kết này riêng cho đúng chủ. Liên kết chỉ hiện một lần; không đưa vào ghi chú hoặc ảnh chụp."].Value,"warning",false)' />
+  <label for="invitation-url" class="form-label">@L["Liên kết kích hoạt riêng"]</label>
+  <textarea id="invitation-url" class="form-control" rows="5" readonly autocomplete="off" spellcheck="false">@url</textarea>
+  <p class="form-text">@L["Sao chép liên kết và gửi qua kênh riêng đã thống nhất với chủ. Chủ tự nhập SĐT và đặt mật khẩu; nhân viên không đặt thay."]</p>
+ } else {<partial name="_EmptyState" model='new EmptyStateModel("Liên kết đã được xem. Có thể tạo lại lời mời tại hồ sơ nếu chủ chưa kích hoạt.")' />}
+ <a class="btn btn-outline-secondary mt-3" asp-action="Details" asp-route-id="@Model.RegistrationId">@L["Về hồ sơ đối tác"]</a>
+</div>

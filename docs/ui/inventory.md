@@ -427,3 +427,23 @@ Bảng ở mục 4 là kiểm kê nền trước triển khai. Phía Owner đã 
 | Thông báo | `/Notifications` + chuông dùng chung | Giữ các action đọc của bước 02 | Đã rà điện thoại; URL có sẵn mở đúng, dữ liệu cũ thiếu URL ghi G-18 |
 
 Chi tiết nghiệm thu và dữ liệu thử: `docs/ui/05a-chu-homestay-report.md`.
+
+## Cập nhật sau 05b — 19/10/2026
+
+Các màn mới trong Staff dùng policy Employee; service chỉ cho Consultant/Manager/Administrator, controller chặn Accountant ở các màn nghiệp vụ này; Staff/Dashboard chuyển kế toán về Accounting/Dashboard. Không sửa policy hiện có.
+
+| Màn | Route GET | POST | Service | Trạng thái |
+|---|---|---|---|---|
+| Quản lý đơn | `/Staff/Bookings?Q&Status&HomestayId&CheckInFrom&CheckInTo&AssignedEmployeeId&Unassigned&Page` | — | StaffBookingService.SearchAsync, AssigneesAsync | Có, G-20 về nhãn catalog |
+| Chi tiết đơn | `/Staff/Bookings/{id}`, `/Staff/Bookings/Details/{id}` | Assign (`employeeId`), Status (`to`, `newRoomId`, `note`) | DetailsAsync, AssignAsync, ChangeStatusAsync | Có; Tư vấn nhận đơn chưa giao/giao lại đơn mình; xác nhận đổi trạng thái |
+| Đặt hộ | `/Staff/Bookings/Create?Phone&FullName&Email&Channel&CheckIn&CheckOut&Guests&AreaId&RoomTypeId&SpecialRequests` | Create cùng trường | CustomerService.SearchAsync, AvailabilityService.StaffAvailabilityAsync/SearchAsync, PricingService.QuoteAsync, StaffBookingService.CreateForCustomerAsync | Có; GET tìm và xem giá, POST PRG; không sửa nghiệp vụ |
+| Phòng trống | `/Staff/Availability?checkIn&checkOut&areaId&guests` | — | AvailabilityService.StaffAvailabilityAsync, SearchAsync (Areas) | Có theo đêm, NoStore, Làm mới; G-21 |
+| Khách hàng | `/Staff/Customers?q&page`, `/Staff/Customers/Details/{id}` | Update (`FullName`, `Email`, `Note`) | CustomerService.SearchAsync/DetailsAsync/UpdateAsync | Có; lịch sử đơn, ghi chú, không đổi định danh người có tài khoản |
+| Trùng phòng | `/Staff/Overbooking?id` | Report (`note`), Move (`roomId`, `note`), Replace (`roomTypeId`, `note`), Refund (`note`) | OverbookingService.ReportAsync/AlternativesAsync/MoveRoomAsync/ReplaceAsync/RefundAsync; AvailabilityService.FreeRoomIdsAsync | Có; Refund thêm Management, tất cả có xác nhận |
+| Thẩm định đối tác | `/Staff/OwnerRegistrations?Status&OverdueOnly&Term&Page`, `/{id}`, `/Details/{id}`, `/Document/{id}` | Take, Revision (`note`), Approve, Reject (`note`), Invite, ResendInvite | OwnerRegistrationQueryService.ListAsync/DetailsAsync/OpenDocumentAsync; OwnerRegistrationService.TakeAsync/RequestRevisionAsync/ApproveAsync/RejectAsync/InviteAsync/ResendInviteAsync | Có; Approve/Reject thêm Management; lời mời một lần ở `/Staff/OwnerRegistrations/Invitation/{id}` |
+| Dashboard | `/Staff/Dashboard?from&to` | — | StaffBookingService.SearchAsync, BookingChangeRequestService.PendingCountAsync, OwnerRegistrationQueryService.ListAsync, ReportService.EmployeesAsync | Có; không hiện duyệt nội dung; chuông NotificationService dùng lại bước 02 |
+| URL duyệt nội dung cũ | `/Staff/Homestays`, `/{id}`, `/Details/{id}` | — | Không gọi | NV bị chặn; QL/AD 404 tới bước 05d; không dựng màn FR-27 |
+
+Các trang dùng PageHead/FilterBar/DataTable/Pager, DescriptionList/PriceBreakdown/Timeline/BookingStepper/Steps/DateRangePicker và form-field; mẫu mới `_OverbookingAlternative` + `_RegistrationDocuments` có trong UI Kit. Tất cả POST mới có ValidateAntiForgeryToken và PRG/TempData. Hook mới của đặt hộ: `data-staff-quote-form`, `data-staff-confirmation`, `data-staff-quote-changed`.
+
+Kích hoạt lời mời (phần nối tiếp cần thiết của FR-26): GET/POST `/Partner/Activate/{id}` (POST có thể `/Partner/Activate` với hidden `Id`, `Token`, `PhoneNumber`, `Password`, `ConfirmPassword`). Gọi OwnerRegistrationService.ActivateAsync, NoStore/no-referrer; nhân viên bị chặn, chủ tự đặt mật khẩu, POST PRG và không lưu lại mật khẩu. Không gửi tin ngoài app.

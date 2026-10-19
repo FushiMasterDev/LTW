@@ -482,6 +482,8 @@
   .fx-table td::before { content: attr(data-label); color: var(--fx-muted); font-weight: 500; }
   .fx-table thead:not(:has(a)) { display: none; }
   .fx-table td.text-end .fx-table__value { text-align: right; }
+  .fx-table__value a:not(.btn), .fx-breadcrumb a, .fx-task-list a { display: inline-flex; align-items: center; min-height: 2.75rem; min-width: 2.75rem; }
+  .fx-breadcrumb .breadcrumb-item { display: flex; align-items: center; }
 }
 @media (max-width: 767.98px) {
   .fx-price-breakdown > div { grid-template-columns: minmax(0, 1fr) auto; }

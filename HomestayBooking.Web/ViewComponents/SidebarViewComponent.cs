@@ -51,6 +51,10 @@ public class SidebarViewComponent(IAuthorizationService authorization, BookingCh
                 "Staff" =>
                 [
                     new("Staff", "Dashboard", "Tổng quan", "bi-speedometer2"),
+                    new("Staff", "Bookings", "Quản lý đơn", "bi-journal-check"),
+                    new("Staff", "Availability", "Phòng trống", "bi-calendar3"),
+                    new("Staff", "Customers", "Khách hàng", "bi-people"),
+                    new("Staff", "OwnerRegistrations", "Thẩm định hồ sơ", "bi-file-earmark-person"),
                     new("Staff", "ChangeRequests", "Gửi yêu cầu thay khách", "bi-arrow-repeat"),
                     new("Staff", "ChangeApprovals", "Duyệt yêu cầu đổi/hủy", "bi-calendar-check", pendingChanges),
                 ],
@@ -68,7 +72,9 @@ public class SidebarViewComponent(IAuthorizationService authorization, BookingCh
                 _ => [new(w.Area, "Dashboard", "Tổng quan", "bi-speedometer2")],
             };
             groups.Add(new(w, links.Where(l => (l.Controller != "ChangeApprovals" || canApproveChange)
-                && (l.Controller != "AdditionalDeposits" || canConfirmChange)).ToList()));
+                && (l.Controller != "AdditionalDeposits" || canConfirmChange)
+                && (l.Area != "Staff" || user.EmployeePosition() != Models.Entities.EmployeePosition.Accountant
+                    || l.Controller is "Dashboard" or "ChangeRequests")).ToList()));
         }
         var route = ViewContext.RouteData.Values;
         return View(new SidebarModel(groups, route["area"]?.ToString(), route["controller"]?.ToString()));

@@ -4,7 +4,7 @@
 <partial name="_PageHead" model='new PageHeadModel("Xử lý trùng phòng","","",b.Code+" · "+b.Homestay.Name,ShowCreate:false)' />
 <partial name="_Breadcrumb" model='new BreadcrumbModel(new BreadcrumbItem[] {new(b.Code,Url.Action("Details","Bookings",new {id=b.Id})),new("Trùng phòng")})' />
 <partial name="_Alert" model='new AlertModel(L["Thống nhất với khách trước khi chọn phương án. Mọi thao tác được ghi lịch sử."].Value,"warning")' />
-<section class="fx-card p-4 mb-4"><h2 class="h5">@L["Đơn hiện tại"]</h2><date-range from="@b.CheckIn" to="@b.CheckOut" /><p>@b.RoomType.Name · @b.Room.RoomCode</p>
+<section class="fx-card p-4 mb-4 text-break"><h2 class="h5">@L["Đơn hiện tại"]</h2><date-range from="@b.CheckIn" to="@b.CheckOut" /><p>@b.RoomType.Name · @b.Room.RoomCode</p>
  <partial name="_PriceBreakdown" model='new PriceBreakdownModel(new PriceLine[] {new("Tổng tiền",b.TotalAmount),new("Tiền cọc",b.DepositAmount)})' />
 </section>
 @if(Model.FreeRooms.Count>0){

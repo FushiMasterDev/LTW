@@ -1,0 +1,44 @@
+@using HomestayBooking.Web.Services
+@using HomestayBooking.Web.Identity
+@model RegistrationDetails
+@{ViewData["Title"]=L["Thẩm định hồ sơ #{0}",Model.Id];}
+<partial name="_PageHead" model='new PageHeadModel(L["Thẩm định hồ sơ #{0}",Model.Id],"","",Model.OwnerName,ShowCreate:false)' />
+<partial name="_Breadcrumb" model='new BreadcrumbModel(new BreadcrumbItem[] {new("Hồ sơ đối tác",Url.Action("Index")),new("#"+Model.Id)})' />
+<status-badge value="@Model.Status" />
+@if(Model.Overdue){<partial name="_Alert" model='new AlertModel(L["Hồ sơ đã quá SLA thẩm định."].Value,"warning")' />}
+<div class="row g-4 mt-1"><div class="col-lg-7">
+ <section class="fx-card p-4 mb-4 text-break"><h2 class="h5">@L["Thông tin đối tác"]</h2>
+ <partial name="_DescriptionList" model='new DescriptionItem[] {
+ new("Họ tên",new HtmlContentBuilder().Append(Model.OwnerName)),new("Số điện thoại",new HtmlContentBuilder().Append(PhoneNumberNormalizer.ToNational(Model.Phone))),
+ new("Email",new HtmlContentBuilder().Append(Model.Email)),new("Ngân hàng",new HtmlContentBuilder().Append(Model.BankName)),new("Số tài khoản",new HtmlContentBuilder().Append(Model.BankAccountNo)),new("Chủ tài khoản",new HtmlContentBuilder().Append(Model.BankAccountName)),
+ new("Hạn thẩm định",new HtmlContentBuilder().Append(Model.DeadlineLocal?.ToString("HH:mm dd/MM/yyyy") ?? "—")),new("Người thẩm định",new HtmlContentBuilder().Append(Model.Reviewer)),new("Ghi chú",new HtmlContentBuilder().Append(Model.ReviewNote))}' />
+ </section>
+ @foreach(var h in Model.Homestays){
+ <section class="fx-card p-4 mb-4 text-break"><h2 class="h5">@h.Name</h2><p>@h.Address</p><status-badge value="@h.Status" />
+  <partial name="_RegistrationDocuments" model="h.Documents" />
+ </section>}
+ @if(Model.LegacyDocuments.Count>0){<section class="fx-card p-4 mb-4"><h2 class="h5">@L["Giấy tờ hồ sơ cũ"]</h2><partial name="_RegistrationDocuments" model="Model.LegacyDocuments" /></section>}
+</div><div class="col-lg-5">
+ <section class="fx-card p-4 mb-4"><h2 class="h5">@L["Thẩm định"]</h2>
+ @if(Model.Status==OwnerRegistrationStatus.PendingReview && User.EmployeePosition() is EmployeePosition.Consultant or EmployeePosition.Manager){
+  <form asp-action="Take" asp-route-id="@Model.Id" method="post" data-confirm="@L["Nhận thẩm định hồ sơ này?"]"><button type="submit" class="btn btn-brand" data-loading-text="@L["Đang lưu…"]">@L["Nhận thẩm định"]</button></form>
+ }
+ @if(Model.Status==OwnerRegistrationStatus.UnderReview){
+  @if(User.EmployeePosition() is EmployeePosition.Consultant or EmployeePosition.Manager){
+  <form asp-action="Revision" asp-route-id="@Model.Id" method="post" class="mb-4" data-confirm="@L["Gửi yêu cầu bổ sung cho chủ?"]"><label for="revision-note" class="form-label">@L["Nội dung cần bổ sung"]</label><textarea id="revision-note" name="note" class="form-control mb-3" required maxlength="1000"></textarea><button type="submit" class="btn btn-outline-secondary" data-loading-text="@L["Đang lưu…"]">@L["Yêu cầu bổ sung"]</button></form>
+  }
+  @if(User.IsManagement()){
+  <form asp-action="Approve" asp-route-id="@Model.Id" method="post" class="mb-4" data-confirm="@L["Duyệt hồ sơ đối tác? Homestay vẫn cần được duyệt nội dung riêng."]"><button type="submit" class="btn btn-brand" data-loading-text="@L["Đang lưu…"]">@L["Duyệt hồ sơ"]</button></form>
+  <form asp-action="Reject" asp-route-id="@Model.Id" method="post" data-confirm="@L["Từ chối hồ sơ đối tác này?"]" data-confirm-variant="danger"><label for="reject-note" class="form-label">@L["Lý do từ chối"]</label><textarea id="reject-note" name="note" class="form-control mb-3" required maxlength="1000"></textarea><button type="submit" class="btn btn-outline-danger" data-loading-text="@L["Đang lưu…"]">@L["Từ chối hồ sơ"]</button></form>
+  }
+ }
+ @if(Model.Source==OwnerRegistrationSource.EmployeeAssisted && Model.Status==OwnerRegistrationStatus.Draft && Model.AccountStatus is null){
+  <form asp-action="Invite" asp-route-id="@Model.Id" method="post" data-confirm="@L["Tạo lời mời riêng để chủ tự kích hoạt tài khoản?"]"><button type="submit" class="btn btn-brand" data-loading-text="@L["Đang lưu…"]">@L["Tạo lời mời kích hoạt"]</button></form>
+ }
+ @if(Model.Source==OwnerRegistrationSource.EmployeeAssisted && Model.Status==OwnerRegistrationStatus.WaitingOwnerActivation && Model.AccountStatus==AccountStatus.PendingActivation){
+  <form asp-action="ResendInvite" asp-route-id="@Model.Id" method="post" data-confirm="@L["Tạo lại lời mời? Liên kết cũ sẽ mất hiệu lực."]"><button type="submit" class="btn btn-outline-secondary" data-loading-text="@L["Đang lưu…"]">@L["Tạo lại lời mời"]</button></form>
+ }
+ </section>
+</div></div>
+<h2 class="h5">@L["Lịch sử hồ sơ"]</h2>
+<partial name="_Timeline" model='new TimelineModel(Events:Model.History.Select(h=>new TimelineItem(h.CreatedAt,"Cập nhật hồ sơ",L["Nhật ký #{0}",h.Id])).ToArray())' />
