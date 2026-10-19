@@ -2200,4 +2200,5 @@
   <data name="Con ngõ có đèn lồng và đường rẽ, ảnh trang trí" xml:space="preserve"><value>Lantern-lit alley with a turn, decorative image</value></data>
   <data name="Việc cần xử lý" xml:space="preserve"><value>Tasks to handle</value></data>
   <data name="Mở danh sách để đối chiếu giao dịch." xml:space="preserve"><value>Open the list to reconcile transactions.</value></data>
+  <data name="Đang xử lý..." xml:space="preserve"><value>Processing…</value></data>
 </root>

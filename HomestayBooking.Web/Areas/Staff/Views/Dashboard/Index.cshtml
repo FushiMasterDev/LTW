@@ -14,39 +14,20 @@
 }
 <partial name="_PageHead" model='new PageHeadModel("Tổng quan nhân viên", "", "", L["Hệ thống đang có {0} homestay hoạt động.", (object)ViewBag.ActiveHomestayCount], ShowCreate: false)' />
 
-@if (waitingConfirm > 0)
-{
-    <div class="alert tone-violet" role="status">
-        <i class="bi bi-wallet2" aria-hidden="true"></i>
-        <div>@L["{0} đơn đã nhận cọc đang chờ homestay xác nhận.", waitingConfirm]</div>
-    </div>
-}
-
-<h2 class="section-title mt-0"><i class="bi bi-kanban" aria-hidden="true"></i> @L["Đơn đặt phòng theo trạng thái"]</h2>
-<div class="row g-3">
+<div class="row g-3 mb-4">
     @foreach (var g in groups)
     {
-        var total = g.Statuses.Sum(s => Model.GetValueOrDefault(s));
-        <div class="col-lg-4">
-            <section class="card-soft status-group" aria-labelledby="group-@g.Statuses[0]">
-                <div class="d-flex justify-content-between align-items-start gap-3">
-                    <div>
-                        <h2 id="group-@g.Statuses[0]">@g.Title</h2>
-                        <p class="small text-muted mb-0">@g.Hint</p>
-                    </div>
-                    <span class="icon-chip" aria-hidden="true"><i class="bi @g.Icon"></i></span>
-                </div>
-                <div class="status-total mt-3">@total</div>
-                <ul class="status-list">
-                    @foreach (var status in g.Statuses)
-                    {
-                        <li>
-                            <span class="badge-tone @status.ToneClass()">@L[status.DisplayName()]</span>
-                            <span class="count">@Model.GetValueOrDefault(status)</span>
-                        </li>
-                    }
-                </ul>
-            </section>
-        </div>
+        <div class="col-md-4"><partial name="_StatCard" model="@(new StatCardModel(g.Title, g.Statuses.Sum(s => Model.GetValueOrDefault(s)).ToString(), g.Icon, Hint: g.Hint))" /></div>
     }
 </div>
+<partial name="_TaskList" model='new TaskListModel("Việc cần xử lý", new TaskListItem[] {
+    new("Đơn chờ xác nhận", L["{0} đơn đã nhận cọc đang chờ homestay xác nhận.", waitingConfirm], Value: waitingConfirm),
+    new("Gửi yêu cầu thay khách", L["Tìm đơn theo mã hoặc số điện thoại để đổi/hủy thay khách."], Url.Action("Index", "ChangeRequests")) })' />
+<h2 class="fx-section-title mt-4">@L["Đơn đặt phòng theo trạng thái"]</h2>
+@{ var rows = new List<TableRow>(); }
+@foreach (var status in groups.SelectMany(g => g.Statuses))
+{
+    Func<dynamic, IHtmlContent> badge = @<text><status-badge value="@status" /></text>;
+    rows.Add(new(new IHtmlContent[] { badge(null!), new HtmlContentBuilder().Append(Model.GetValueOrDefault(status).ToString()) }));
+}
+<partial name="_DataTable" model='new DataTableModel("Đơn đặt phòng theo trạng thái", new TableColumn[] { new("Trạng thái"), new("Đơn", Numeric: true) }, rows)' />
