@@ -17,7 +17,7 @@ Luật chung, kiến trúc component và ràng buộc nằm ở `docs/prompts/ui
 | 7 | `05b-nhan-vien.md` | Màn mới cho nhân viên | Có |
 | 8 | `05c-ke-toan.md` | Màn mới cho kế toán | Có |
 | 9 | `05d-quan-ly.md` | Màn mới cho quản lý/quản trị + báo cáo | Có |
-| 9b | `../b9-backend-gaps-05.md` | **Backend B9:** lấp gap ghi ở bước 05 (G-16 danh mục trình sửa chủ, G-17 số đơn chờ của chủ, G-18 link thông báo, G-19+) rồi nối UI. Chạy sau 05d (chốt 19/10) | Backend + nối UI |
+| 9b | `../b9-backend-gaps-05.md` | **Backend B9:** lấp gap ghi ở bước 05 (G-16 → G-25, trừ G-19) rồi nối UI và sửa điểm yếu sau review. Chạy sau 05d (chốt 19/10) | Backend + nối UI |
 | 10 | `06-qa.md` | Kiểm tra toàn bộ, báo cáo QA | Chỉ sửa lỗi |
 | — | `sua-loi.md` | Mẫu giao danh sách lỗi sau review | Có |
 
