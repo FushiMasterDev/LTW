@@ -138,6 +138,19 @@ builder.Services.ConfigureApplicationCookie(o =>
     o.Cookie.HttpOnly = true;
     o.Cookie.SameSite = SameSiteMode.Lax;
     o.Cookie.SecurePolicy = cookieSecurePolicy;
+    // Web API (/api/...) trả 401/403 thay vì chuyển hướng sang trang đăng nhập/không có quyền
+    o.Events.OnRedirectToLogin = ctx =>
+    {
+        if (ctx.Request.Path.StartsWithSegments("/api")) ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        else ctx.Response.Redirect(ctx.RedirectUri);
+        return Task.CompletedTask;
+    };
+    o.Events.OnRedirectToAccessDenied = ctx =>
+    {
+        if (ctx.Request.Path.StartsWithSegments("/api")) ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+        else ctx.Response.Redirect(ctx.RedirectUri);
+        return Task.CompletedTask;
+    };
 });
 
 // Không mã hóa chữ tiếng Việt thành &#x...; trong HTML (Razor vẫn chống XSS với các ký tự đặc biệt)

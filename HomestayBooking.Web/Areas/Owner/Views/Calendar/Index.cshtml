@@ -13,7 +13,8 @@ var selectedBlocks=Model.Nights.Where(n=>n.RoomId==Model.RoomId && n.State==Home
         <noscript><button type="submit" class="btn btn-outline-secondary">@L["Xem lịch"]</button></noscript>
     </form>
     @if(Model.RoomId is int room) {
-    <form asp-action="Create" method="post" data-owner-block data-date-required="@L["Chọn đủ ngày bắt đầu và kết thúc."]">
+    <form asp-action="Create" method="post" data-owner-block data-date-required="@L["Chọn đủ ngày bắt đầu và kết thúc."]"
+          data-block-api="@Url.Content("~/api/rooms/")@room/blocks" data-done="@L["Đã khóa ngày phòng."]" data-failed="@L["Không lưu được, vui lòng thử lại."]">
         <input type="hidden" name="homestayId" value="@Model.HomestayId" /><input type="hidden" name="roomId" value="@room" />
         <partial name="_DateRangePicker" model='new DateRangePickerModel("owner-block", CheckInName:"start", CheckOutName:"end")' />
         <details class="my-3"><summary class="py-3">@L["Lý do và ghi chú (không bắt buộc)"]</summary>
@@ -22,8 +23,9 @@ var selectedBlocks=Model.Nights.Where(n=>n.RoomId==Model.RoomId && n.State==Home
         </details>
         <div class="fx-form-actions"><button type="submit" class="btn btn-brand" data-loading-text="@L["Đang lưu…"]">@L["Xác nhận khóa ngày"]</button></div>
     </form>
+    <div data-owner-unlock-slot>
     @if(selectedBlocks.Count>0) {
-    <form asp-action="Unlock" method="post" class="mt-4">
+    <form asp-action="Unlock" method="post" class="mt-4" data-unlock-api="@Url.Content("~/api/rooms/")@room/blocks/" data-done="@L["Đã mở khóa ngày phòng."]" data-failed="@L["Không lưu được, vui lòng thử lại."]">
         <input type="hidden" name="homestayId" value="@Model.HomestayId" /><input type="hidden" name="roomId" value="@room" /><input type="hidden" name="month" value="@Model.Calendar.Month.ToString("yyyy-MM")" />
         <label class="form-label" for="unlock-block">@L["Khoảng khóa cần mở"]</label><select class="form-select mb-3" id="unlock-block" name="blockId" required>
         <option value="">@L["Chọn khoảng khóa"]</option>
@@ -33,9 +35,10 @@ var selectedBlocks=Model.Nights.Where(n=>n.RoomId==Model.RoomId && n.State==Home
         <button type="submit" class="btn btn-outline-secondary" data-loading-text="@L["Đang lưu…"]">@L["Xác nhận mở khóa"]</button>
     </form>
     }
+    </div>
     }
 </div>
-<partial name="_RoomCalendar" model="Model.Calendar" />
+<div data-owner-calendar-slot><partial name="_RoomCalendar" model="Model.Calendar" /></div>
 }
 @section Head { <link rel="stylesheet" href="~/lib/flatpickr/flatpickr.min.css" /> }
 @section Scripts {

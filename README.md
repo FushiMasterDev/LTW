@@ -127,9 +127,15 @@ Toàn bộ có trên `/swagger`. Trả JSON; lỗi trả `ProblemDetails` (400/4
 | GET | `/api/rooms/{roomTypeId}/quote?checkIn=&checkOut=` | Báo giá từng đêm, tổng tiền, cọc, số phòng còn trống | Công khai |
 | GET | `/api/bookings/{code}?phone=` | Tra cứu đơn bằng mã + SĐT | Công khai |
 | GET | `/api/notifications/unread-count` | Số thông báo chưa đọc | Đã đăng nhập |
+| POST | `/api/bookings/{id}/confirm` | Xác nhận đơn đã đặt cọc (body tùy chọn `{ "roomId": 12 }`) | Chủ homestay của đơn |
+| POST | `/api/bookings/{id}/reject` | Từ chối đơn, body `{ "reason": "..." }`, hoàn 100% cọc | Chủ homestay của đơn |
+| POST | `/api/rooms/{roomId}/blocks` | Khóa đêm `[start, end)`, body `{ "start", "end", "reason": "OtherChannel"/"Maintenance", "note" }`; trùng thì 409 kèm danh sách đêm | Chủ homestay của phòng |
+| DELETE | `/api/rooms/{roomId}/blocks/{blockId}` | Mở khóa | Chủ homestay của phòng |
 | POST | `/api/bank-webhook/sepay` | Nhận giao dịch tiền vào từ SePay (khóa API) | Máy chủ ngân hàng |
 
-Các thao tác ghi (đặt phòng, xác nhận/từ chối, hủy, khóa ngày) đi qua form MVC có antiforgery.
+- API ghi dùng cookie đăng nhập nên phải gửi token chống giả mạo qua header `RequestVerificationToken` (lấy từ input `__RequestVerificationToken` trên trang); thiếu token trả 400. Chưa đăng nhập trả 401, sai vai trò trả 403, đơn/phòng của chủ khác trả 404.
+- Lịch phòng của chủ (`/Owner/Calendar`) gọi API khóa/mở ngày bằng AJAX, không tải lại trang; không có JavaScript thì form vẫn gửi thường.
+- Đặt phòng, hủy/đổi đơn của khách và các thao tác nội bộ khác đi qua form MVC có antiforgery.
 
 ## 6. Kiểm thử
 
@@ -150,7 +156,7 @@ sqlcmd -S localhost,1433 -U sa -C -Q "CREATE DATABASE [HomestayBooking_Constrain
 cd database && sqlcmd -S localhost,1433 -U sa -C -d HomestayBooking_ConstraintTest -v TargetDb=HomestayBooking_ConstraintTest -i deploy.sql && cd ..
 ```
 
-Kết quả gần nhất (20/10/2026): 1724 pass, 1 skip.
+Kết quả gần nhất (20/10/2026): 1728 pass, 1 skip.
 
 Kiểm tra liên kết mọi trang theo từng vai trò (khi app đang chạy): `python3 -I tools/ui-crawl.py http://localhost:5011`.
 

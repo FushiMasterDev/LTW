@@ -1,5 +1,6 @@
 // Lịch chỉ chọn ô và phát sự kiện để màn nghiệp vụ ghép lại ở bước 05; không tự khóa/đổi phòng.
-document.querySelectorAll('[data-room-calendar]').forEach(root => {
+// Gắn sự kiện cho một lịch; owner-calendar.js gọi lại sau khi thay lịch mới qua AJAX (window.fxRoomCalendar.init).
+function fxInitRoomCalendar(root) {
   root.querySelectorAll('[data-calendar-room]').forEach(room => {
     const cells = [...room.querySelectorAll('[data-calendar-night]:not(:disabled)')];
     const focus = index => { cells.forEach((cell, i) => { cell.tabIndex = i === index ? 0 : -1; }); cells[index]?.focus(); };
@@ -19,10 +20,11 @@ document.querySelectorAll('[data-room-calendar]').forEach(root => {
       });
     });
   });
-});
+  if (root.dataset.rangeSelection === 'true') fxInitRangeSelection(root);
+}
 
 // Tùy chọn kéo chọn khoảng đêm cho Owner/UI Kit; không ghi dữ liệu.
-document.querySelectorAll('[data-room-calendar][data-range-selection="true"]').forEach(root => {
+function fxInitRangeSelection(root) {
   let first, last, pointer, dragged = false;
   const selectable = cell => cell?.matches('[data-calendar-night]:not(:disabled)[data-state="Free"]');
   const clear = () => root.querySelectorAll('[data-calendar-night]').forEach(cell => cell.setAttribute('aria-pressed', 'false'));
@@ -59,4 +61,7 @@ document.querySelectorAll('[data-room-calendar][data-range-selection="true"]').f
   });
   root.addEventListener('pointercancel', () => { first = last = null; pointer = null; clear(); });
   root.addEventListener('click', event => { if (dragged) { event.preventDefault(); event.stopImmediatePropagation(); dragged=false; } },true);
-});
+}
+
+window.fxRoomCalendar = { init: fxInitRoomCalendar };
+document.querySelectorAll('[data-room-calendar]').forEach(fxInitRoomCalendar);

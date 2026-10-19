@@ -2991,4 +2991,7 @@
   <data name="Kế toán xác nhận thay chủ" xml:space="preserve"><value>Accountant confirmed on owner's behalf</value></data>
   <data name="Mã khu vực" xml:space="preserve"><value>Area ID</value></data>
   <data name="Đang so sánh với bản nội dung lưu trước khi vào hàng chờ. Bản lưu gồm thông tin và danh sách tệp, không sao lưu nội dung file đã xóa." xml:space="preserve"><value>Comparing against content saved before review. The snapshot includes details and file metadata; it does not back up deleted files.</value></data>
+  <data name="Không lưu được, vui lòng thử lại." xml:space="preserve">
+    <value>Could not save, please try again.</value>
+  </data>
 </root>
