@@ -447,3 +447,17 @@ Các màn mới trong Staff dùng policy Employee; service chỉ cho Consultant/
 Các trang dùng PageHead/FilterBar/DataTable/Pager, DescriptionList/PriceBreakdown/Timeline/BookingStepper/Steps/DateRangePicker và form-field; mẫu mới `_OverbookingAlternative` + `_RegistrationDocuments` có trong UI Kit. Tất cả POST mới có ValidateAntiForgeryToken và PRG/TempData. Hook mới của đặt hộ: `data-staff-quote-form`, `data-staff-confirmation`, `data-staff-quote-changed`.
 
 Kích hoạt lời mời (phần nối tiếp cần thiết của FR-26): GET/POST `/Partner/Activate/{id}` (POST có thể `/Partner/Activate` với hidden `Id`, `Token`, `PhoneNumber`, `Password`, `ConfirmPassword`). Gọi OwnerRegistrationService.ActivateAsync, NoStore/no-referrer; nhân viên bị chặn, chủ tự đặt mật khẩu, POST PRG và không lưu lại mật khẩu. Không gửi tin ngoài app.
+
+## Cập nhật sau 05c — 19/10/2026
+
+Các route kế toán kế thừa area Accounting và policy Accounting. Chỉ Accountant gửi/mở lại/ghi nhận đã chi; Accountant/Manager/Administrator đọc và lập nháp theo quyền service.
+
+| Màn | GET | POST (antiforgery + PRG/TempData) | Service | Trạng thái |
+|---|---|---|---|---|
+| Đối soát chủ homestay | `/Accounting/Settlements?year&month&periodNo&homestayId&status&page` | GenerateRecent; Generate (`year`, `month`, `periodNo`, `homestayId?`) | SettlementService.ListAsync/GeneratePeriodAsync/GenerateAsync | Có; kỳ gần nhất lùi đúng grace, không gọi hàm job |
+| Chi tiết đối soát | `/Accounting/Settlements/{id}`, `/Details/{id}` | Send, RecordPaid (`bankRef`), Reopen (`reason`) | DetailsAsync/SendAsync/RecordPaidAsync/ReopenAsync | Có; snapshot, khoản bù chi riêng, Timeline audit; xác nhận chủ vẫn tại Owner (G-23) |
+| Khoản bù trùng phòng | `/Accounting/Compensations` | RecordPaid (`bankRef`); Reject (`reason`) chỉ nối endpoint, không hiện form trên Completed | CompensationService.PendingAsync/RecordPaidAsync/RejectAsync | Chi được; thiếu read danh sách trước Completed cho form từ chối (G-24) |
+| Dashboard Accounting | `/Accounting/Dashboard` | — | AccountingService cũ; SettlementService.ListAsync tất cả trang Draft/Sent/Confirmed | Có số kỳ và tổng tiền chờ gửi/chờ chi |
+| Rà bước 04 | Transactions, Receipts, Refunds, AdditionalDeposits giữ route/model/form cũ | Giữ | Giữ | Thiếu liên kết đối soát thật trong dữ liệu đã nạp, chưa thêm shortcut (G-25) |
+
+Các màn mới dùng PageHead, Tabs, FilterBar, DataTable/Pager, PriceBreakdown, Breadcrumb, Timeline, Alert, EmptyState, money/status-badge. Không thêm component/CSS/JS/thư viện/ảnh. Báo cáo nghiệm thu: `docs/ui/05c-ke-toan-report.md`.

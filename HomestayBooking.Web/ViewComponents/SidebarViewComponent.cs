@@ -46,6 +46,8 @@ public class SidebarViewComponent(IAuthorizationService authorization, BookingCh
                     new("Accounting", "AdditionalDeposits", "Cọc bổ sung", "bi-wallet2", additionalCount),
                     new("Accounting", "Receipts", "Bill chờ duyệt", "bi-receipt", counts?.PendingReceipts),
                     new("Accounting", "Transactions", "Giao dịch cần xử lý", "bi-bank", counts?.OpenTransactions),
+                    new("Accounting", "Settlements", "Đối soát chủ homestay", "bi-journal-check"),
+                    new("Accounting", "Compensations", "Khoản bù trùng phòng", "bi-cash-stack"),
                     new("Accounting", "Refunds", "Chờ hoàn tiền", "bi-arrow-counterclockwise", counts?.PendingRefunds),
                 ],
                 "Staff" =>

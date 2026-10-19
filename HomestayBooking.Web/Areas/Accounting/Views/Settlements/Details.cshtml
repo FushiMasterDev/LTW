@@ -1,0 +1,72 @@
+@model AccountingSettlementDetails
+@{
+    var d = Model.Details;
+    var s = d.Settlement;
+    ViewData["Title"] = L["Chi tiết đối soát"];
+    var canWrite = User.EmployeePosition() == EmployeePosition.Accountant;
+    var rows = new List<TableRow>();
+    var compensationRows = new List<TableRow>();
+}
+<partial name="_PageHead" model='new PageHeadModel("Chi tiết đối soát", "", "", L["Kỳ {0} · {1}/{2}", s.PeriodNo, s.Month, s.Year], ShowCreate: false)' />
+<partial name="_Tabs" model='TabsModel.Accounting(User, ViewData["Counts"] as AccountingCounts, "Settlements")' />
+<partial name="_Breadcrumb" model='new BreadcrumbModel(new BreadcrumbItem[] { new("Đối soát chủ homestay", Url.Action("Index")), new("Chi tiết đối soát") })' />
+<div class="d-flex flex-wrap gap-3 align-items-center mb-4"><status-badge value="@s.Status" /><span>@L["Homestay #{0}", s.HomestayId] · #@s.Id</span></div>
+@if (d.UnclosedBookingCodes.Count > 0) { <partial name="_Alert" model='new AlertModel(L["Còn đơn chưa chốt trong kỳ: {0}.", string.Join(", ", d.UnclosedBookingCodes)], "warning", false)' /> }
+<h2 class="h5">@L["Các đơn trong kỳ"]</h2>
+@foreach (var line in d.Lines)
+{
+    Func<dynamic, IHtmlContent> code = @<text>@line.BookingCode</text>;
+    Func<dynamic, IHtmlContent> room = @<text><money value="@line.Item.RoomAmount" /></text>;
+    Func<dynamic, IHtmlContent> deposit = @<text><money value="@line.Item.DepositAmount" /></text>;
+    Func<dynamic, IHtmlContent> commission = @<text><money value="@line.Item.CommissionAmount" /></text>;
+    Func<dynamic, IHtmlContent> discount = @<text><money value="@line.Item.DiscountAmount" /></text>;
+    Func<dynamic, IHtmlContent> compensation = @<text>
+        @foreach (var payment in d.Compensations.Where(p => p.BookingId == line.Item.BookingId))
+        { <div><money value="@payment.Amount" /> <status-badge value="@payment.Status" /></div> }
+    </text>;
+    Func<dynamic, IHtmlContent> payout = @<text><money value="@line.Item.PayoutAmount" /></text>;
+    rows.Add(new(new IHtmlContent[] { code(null!), room(null!), deposit(null!), commission(null!), discount(null!), compensation(null!), payout(null!) }));
+}
+<partial name="_DataTable" model='new DataTableModel("Các đơn trong kỳ", new TableColumn[] { new("Mã đơn"), new("Tiền phòng", Numeric: true), new("Cọc", Numeric: true), new("Hoa hồng", Numeric: true), new("Giảm giá", Numeric: true), new("Khoản bù chi riêng", Numeric: true), new("Phải trả chủ", Numeric: true) }, rows)' />
+<div class="fx-card p-4 mt-3" data-settlement-totals="@s.Id">
+    <h2 class="h5">@L["Tổng đối soát"]</h2>
+    <partial name="_PriceBreakdown" model='new PriceBreakdownModel(new PriceLine[] { new("Tổng tiền phòng", s.TotalRoomAmount), new("Tiền giữ lại", s.TotalRetained), new("Hoa hồng", s.TotalCommission), new("Phải trả chủ", s.PayoutAmount) })' />
+</div>
+<h2 class="h5 mt-4">@L["Khoản bù"]</h2>
+<p class="text-muted">@L["Khoản bù được chi riêng, không cộng vào số được nhận trong bảng đối soát."]</p>
+@foreach (var p in d.Compensations)
+{
+    Func<dynamic, IHtmlContent> code = @<text>@p.Booking.Code</text>;
+    Func<dynamic, IHtmlContent> amount = @<text><money value="@p.Amount" /></text>;
+    Func<dynamic, IHtmlContent> status = @<text><status-badge value="@p.Status" /></text>;
+    compensationRows.Add(new(new IHtmlContent[] { code(null!), amount(null!), status(null!) }));
+}
+<partial name="_DataTable" model='new DataTableModel("Khoản bù", new TableColumn[] { new("Mã đơn"), new("Số tiền", Numeric: true), new("Trạng thái") }, compensationRows)' />
+@if (s.Status == SettlementStatus.Sent) { <p class="mt-4 text-muted">@L["Chủ xác nhận số liệu trong khu Chủ homestay. Xác nhận của chủ là tùy chọn trước khi chuyển tiền."]</p> }
+@if (canWrite && SettlementService.CanTransition(s.Status, SettlementStatus.Sent))
+{
+    <form asp-action="Send" asp-route-id="@s.Id" method="post" class="mt-4" data-confirm="@L["Gửi bảng đối soát cho chủ homestay?"]"><button type="submit" class="btn btn-brand" disabled="@(d.UnclosedBookingCodes.Count > 0 || d.Lines.Count == 0)" data-loading-text="@L["Đang lưu…"]">@L["Gửi chủ"]</button></form>
+}
+@if (canWrite && SettlementService.CanTransition(s.Status, SettlementStatus.Paid))
+{
+    <div class="fx-card fx-form-card mt-4">
+        <h2 class="h5">@L["Ghi nhận đã chuyển tiền"]</h2><p>@L["Số tiền chuyển"]: <money value="@s.PayoutAmount" /></p>
+        <p class="form-text">@L["Ghi nhận toàn bộ số phải trả chủ. Ngày ghi nhận do hệ thống lưu khi xác nhận."]</p>
+        <form asp-action="RecordPaid" asp-route-id="@s.Id" method="post" data-confirm="@L["Xác nhận đã chuyển đủ tiền cho chủ homestay?"]">
+            <label for="paid-reference" class="form-label">@L["Mã tham chiếu ngân hàng"]</label><input id="paid-reference" name="bankRef" class="form-control" maxlength="100" required="@(s.PayoutAmount > 0)" autocomplete="off" spellcheck="false" />
+            <div class="fx-form-actions"><button type="submit" class="btn btn-brand" data-loading-text="@L["Đang lưu…"]">@L["Ghi nhận đã chuyển tiền"]</button></div>
+        </form>
+    </div>
+}
+@if (s.PaidAt is { } paid) { <div class="fx-card p-4 mt-4"><p>@L["Đã chuyển tiền"]: @VietnamTime.ToLocal(paid).ToString("HH:mm dd/MM/yyyy")</p><p class="mb-0">@L["Mã tham chiếu ngân hàng"]: @s.PaidBankRef</p></div> }
+@if (canWrite && SettlementService.CanTransition(s.Status, SettlementStatus.Draft))
+{
+    <details class="fx-card p-4 mt-4"><summary class="fw-semibold">@L["Mở lại đối soát"]</summary>
+        <form asp-action="Reopen" asp-route-id="@s.Id" method="post" class="fx-form-card mt-3" data-confirm="@L["Mở lại sẽ đưa bảng về nháp và tính lại số liệu. Tiếp tục?"]" data-confirm-variant="danger">
+            <label for="reopen-reason" class="form-label">@L["Lý do mở lại"]</label><textarea id="reopen-reason" name="reason" class="form-control" required maxlength="500" rows="3"></textarea>
+            <div class="fx-form-actions"><button type="submit" class="btn btn-outline-danger" data-loading-text="@L["Đang lưu…"]">@L["Mở lại đối soát"]</button></div>
+        </form>
+    </details>
+}
+<h2 class="h5 mt-4">@L["Lịch sử trạng thái"]</h2>
+<partial name="_Timeline" model='new TimelineModel(Events: Model.History)' />

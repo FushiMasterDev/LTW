@@ -79,3 +79,15 @@ Danh sách đơn lọc/hiện **Mã homestay** theo ID; chi tiết vẫn có tê
 ## G-22 — Link thông báo kết quả thẩm định gửi chủ (05b, 19/10/2026)
 
 **Nhỏ, còn mở.** `OwnerRegistrationService.DecideAsync` gửi thông báo cho chủ khi NeedsRevision/Approved/Rejected nhưng URL là `RegistrationUrl(id)` = `/Staff/OwnerRegistrations/{id}`. Chủ không có policy Employee, nên không mở được URL này; màn đúng để chủ theo dõi đã có ở `/Partner/Status`. Giữ nguyên chặn quyền của Staff, không mở hồ sơ nhân viên cho chủ hoặc sửa service trong bước UI. Cần sửa URL tại nguồn theo người nhận và quyết định backfill thông báo cũ; thông báo nội bộ vẫn dùng URL Staff.
+
+## G-23 — Xác nhận chủ và ngày/số tiền chuyển đối soát (05c, 19/10/2026)
+
+**Một phần, còn mở so với prompt 05c; giữ nghiệp vụ B5/D15.** `SettlementService.ConfirmAsync` chỉ nhận Actor Owner đúng cơ sở, không cho Accountant xác nhận thay chủ. `RecordPaidAsync(id, bankRef, actor)` ghi toàn bộ PayoutAmount và PaidAt = đồng hồ hệ thống, không nhận số tiền/ngày chuyển thực tế. UI kế toán không giả Actor Owner, không thêm form nhập số tiền/ngày rồi bỏ qua dữ liệu: hiển thị số phải trả từ service, giải thích ngày ghi nhận tự lưu; chủ xác nhận tại màn Owner hiện có. Sent hoặc Confirmed đều được chi theo D15; Paid bất biến, không hiện mở lại. Nếu cần chuyển từng phần/ngày thực tế hoặc xác nhận thay chủ, cần quyết định nghiệp vụ và backend riêng; không sửa service trong 05c.
+
+## G-24 — Danh sách khoản bù được phép từ chối (05c, 19/10/2026)
+
+**Một phần, còn mở.** `CompensationService.PendingAsync` chỉ trả Compensation Submitted của đơn thay thế Completed, chưa thay tiếp. `RejectAsync` lại cấm đơn Completed. Không có API đọc danh sách khoản bù trước Completed cho kế toán, vì vậy không thể dựng form từ chối hợp lệ từ dữ liệu hiện có. 05c nối POST Reject qua service, antiforgery/PRG và kiểm quyền Accountant nhưng ẩn nút từ chối trên danh sách chờ chi; không mở UI nhập ID tùy ý hoặc thêm truy vấn nghiệp vụ. Muốn có form lý do + xác nhận danger cho khoản bù trước Completed cần backend trả danh sách được kiểm quyền, sau đó mới nối UI. Chi khoản bù có mã ngân hàng đã làm được.
+
+## G-25 — Liên kết đơn/giao dịch sang đối soát và nhãn homestay (05c, 19/10/2026)
+
+**Nhỏ, còn mở.** `ReceiptRow`, `RefundRow`, `BankTransactionRow`/`TransactionProcessViewModel` chưa có SettlementId hoặc HomestayId + CheckOut. AdditionalDeposits có Booking nhưng truy vấn hiện có không nạp SettlementItem. Không đoán kỳ từ ngày giao dịch, không coi kỳ theo CheckOut là bằng chứng đơn đã vào bảng, không thêm query vào controller/view. Chưa hiện lối tắt đối soát trên bốn màn bước 04. `SettlementService.ListAsync` không Include Homestay, nên danh sách/chi tiết kế toán dùng “Homestay #{ID}” và bộ lọc Mã homestay; không lấy catalog công khai đã lọc Active thay danh mục lịch sử. Cần DTO read trả liên kết đối soát thật và tên homestay lịch sử để hoàn thiện.

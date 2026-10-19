@@ -2750,4 +2750,52 @@
   <data name="Nhân viên: phương án thay thế và giấy tờ" xml:space="preserve">
     <value>Staff: alternatives and documents</value>
   </data>
+  <data name="Đối soát chủ homestay" xml:space="preserve"><value>Owner settlements</value></data>
+  <data name="Khoản bù trùng phòng" xml:space="preserve"><value>Overbooking compensation</value></data>
+  <data name="Kiểm tra số liệu từng kỳ, gửi chủ và ghi nhận chuyển tiền." xml:space="preserve"><value>Review period totals, send to owners and record transfers.</value></data>
+  <data name="Lập bảng đối soát gần nhất" xml:space="preserve"><value>Generate latest settlements</value></data>
+  <data name="Đang lập đối soát…" xml:space="preserve"><value>Generating settlements…</value></data>
+  <data name="Lập hoặc cập nhật các bảng nháp của kỳ gần nhất đã hết thời gian chờ?" xml:space="preserve"><value>Generate or update drafts for the latest period past its grace period?</value></data>
+  <data name="Kỳ 1 (01–15)" xml:space="preserve"><value>Period 1 (01–15)</value></data>
+  <data name="Kỳ 2 (16–cuối tháng)" xml:space="preserve"><value>Period 2 (16–month end)</value></data>
+  <data name="Để lọc theo kỳ, chọn đủ năm, tháng và kỳ đối soát." xml:space="preserve"><value>To filter by period, select a year, month and period number.</value></data>
+  <data name="Lập đối soát theo kỳ hoặc homestay" xml:space="preserve"><value>Generate by period or homestay</value></data>
+  <data name="Lập hoặc cập nhật bảng nháp theo kỳ đã chọn?" xml:space="preserve"><value>Generate or update drafts for the selected period?</value></data>
+  <data name="Để trống để lập cho tất cả homestay trong kỳ. Bảng đã gửi giữ nguyên số liệu." xml:space="preserve"><value>Leave blank for all homestays in the period. Sent settlements keep their snapshot.</value></data>
+  <data name="Lập đối soát" xml:space="preserve"><value>Generate settlement</value></data>
+  <data name="Phải trả chủ" xml:space="preserve"><value>Owner payout</value></data>
+  <data name="Tổng đối soát" xml:space="preserve"><value>Settlement totals</value></data>
+  <data name="Chủ xác nhận số liệu trong khu Chủ homestay. Xác nhận của chủ là tùy chọn trước khi chuyển tiền." xml:space="preserve"><value>Owners confirm figures in the Owner workspace. Owner confirmation is optional before payment.</value></data>
+  <data name="Gửi bảng đối soát cho chủ homestay?" xml:space="preserve"><value>Send this settlement to the owner?</value></data>
+  <data name="Gửi chủ" xml:space="preserve"><value>Send to owner</value></data>
+  <data name="Ghi nhận đã chuyển tiền" xml:space="preserve"><value>Record transfer</value></data>
+  <data name="Số tiền chuyển" xml:space="preserve"><value>Transfer amount</value></data>
+  <data name="Ghi nhận toàn bộ số phải trả chủ. Ngày ghi nhận do hệ thống lưu khi xác nhận." xml:space="preserve"><value>Record the full owner payout. The system saves the recording date when you confirm.</value></data>
+  <data name="Xác nhận đã chuyển đủ tiền cho chủ homestay?" xml:space="preserve"><value>Confirm the full payout has been transferred to the owner?</value></data>
+  <data name="Mã tham chiếu ngân hàng" xml:space="preserve"><value>Bank transfer reference</value></data>
+  <data name="Mở lại đối soát" xml:space="preserve"><value>Reopen settlement</value></data>
+  <data name="Mở lại sẽ đưa bảng về nháp và tính lại số liệu. Tiếp tục?" xml:space="preserve"><value>Reopening returns this settlement to draft and recalculates it. Continue?</value></data>
+  <data name="Lý do mở lại" xml:space="preserve"><value>Reason for reopening</value></data>
+  <data name="Khoản bù chờ chi cho đơn thay thế đã hoàn thành, chưa bị thay tiếp." xml:space="preserve"><value>Pending compensation for completed replacement bookings that have not been replaced again.</value></data>
+  <data name="Xác nhận đã chi khoản bù này cho chủ homestay?" xml:space="preserve"><value>Confirm this compensation has been paid to the owner?</value></data>
+  <data name="Ghi nhận đã chi" xml:space="preserve"><value>Record payment</value></data>
+  <data name="Đơn đã hoàn thành không được từ chối khoản bù thủ công." xml:space="preserve"><value>Compensation for completed bookings cannot be rejected manually.</value></data>
+  <data name="Kỳ chờ gửi" xml:space="preserve"><value>Draft settlements</value></data>
+  <data name="Kỳ chờ chuyển tiền" xml:space="preserve"><value>Settlements awaiting payment</value></data>
+  <data name="Tổng kỳ chờ gửi" xml:space="preserve"><value>Total draft payouts</value></data>
+  <data name="Tổng kỳ chờ chuyển tiền" xml:space="preserve"><value>Total payouts awaiting payment</value></data>
+  <data name="Kỳ chờ chuyển tiền gồm bảng đã gửi và bảng chủ đã xác nhận." xml:space="preserve"><value>Settlements awaiting payment include sent and owner-confirmed settlements.</value></data>
+  <data name="Xem kỳ chủ đã xác nhận" xml:space="preserve"><value>View owner-confirmed settlements</value></data>
+  <data name="Vui lòng chọn đủ năm, tháng và kỳ đối soát." xml:space="preserve"><value>Select a year, month and period number.</value></data>
+  <data name="Đã kiểm tra kỳ đối soát: {0} bảng có dữ liệu." xml:space="preserve"><value>Period checked: {0} settlements with data.</value></data>
+  <data name="Cập nhật đối soát" xml:space="preserve"><value>Settlement updated</value></data>
+  <data name="Đã gửi chủ" xml:space="preserve"><value>Sent to owner</value></data>
+  <data name="Chủ đã xác nhận" xml:space="preserve"><value>Owner confirmed</value></data>
+  <data name="Đã chuyển tiền" xml:space="preserve"><value>Transferred</value></data>
+  <data name="Đã mở lại" xml:space="preserve"><value>Reopened</value></data>
+  <data name="Chủ phản hồi sai lệch" xml:space="preserve"><value>Owner reported a discrepancy</value></data>
+  <data name="Khoản bù chi riêng" xml:space="preserve"><value>Separate compensation</value></data>
+  <data name="Lịch sử trạng thái" xml:space="preserve"><value>Status history</value></data>
+  <data name="Tháng" xml:space="preserve"><value>Month</value></data>
+  <data name="Cọc" xml:space="preserve"><value>Deposit</value></data>
 </root>

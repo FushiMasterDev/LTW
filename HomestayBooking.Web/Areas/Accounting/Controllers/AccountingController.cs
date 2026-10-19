@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using HomestayBooking.Web.Data;
 using HomestayBooking.Web.Identity;
 using HomestayBooking.Web.Models;
@@ -27,6 +28,10 @@ public abstract class AccountingController : Controller
         var personId = User.PersonId();
         return Db.Employees.Where(e => e.PersonId == personId).Select(e => e.Id).SingleAsync();
     }
+
+    // Identity lookup only; services recheck the active account and employee.
+    protected async Task<Actor> CurrentActorAsync() => new(ActorType.Employee,
+        User.FindFirstValue(ClaimTypes.NameIdentifier), await CurrentEmployeeIdAsync());
 
     /// <summary>Số việc đang chờ cho thanh tab — mỗi trang kế toán đều hiện.</summary>
     protected async Task LoadCountsAsync(AccountingService accounting)

@@ -1,3 +1,4 @@
+@model AccountingSettlementSummary
 @using HomestayBooking.Web.Identity
 @{
     ViewData["Title"] = L["Kế toán"];
@@ -25,3 +26,11 @@
 <partial name="_TaskList" model='new TaskListModel("Việc cần xử lý", cards.Where(c => c.Controller != "AdditionalDeposits" || (User.IsInRole(AppRoles.Employee) && User.EmployeePosition() == EmployeePosition.Accountant)).Select(c => new TaskListItem(c.Label, c.Hint, Url.Action("Index", c.Controller), int.Parse(c.Value))).ToArray())' />
 
 <div class="fx-card p-4 mt-4"><partial name="_PriceBreakdown" model='new PriceBreakdownModel(new PriceLine[] { new("Cần hoàn", counts.PendingRefundAmount) })' /></div>
+
+<div class="row g-3 mt-1">
+    <div class="col-md-6"><partial name="_StatCard" model='new StatCardModel("Kỳ chờ gửi", Model.DraftCount.ToString(), "journal-check", Url.Action("Index", "Settlements", new { status = "Draft" }))' /></div>
+    <div class="col-md-6"><partial name="_StatCard" model='new StatCardModel("Kỳ chờ chuyển tiền", Model.AwaitingPaymentCount.ToString(), "bank", Url.Action("Index", "Settlements", new { status = "Sent" }))' /></div>
+</div>
+<div class="fx-card p-4 mt-4"><partial name="_PriceBreakdown" model='new PriceBreakdownModel(new PriceLine[] { new("Tổng kỳ chờ gửi", Model.DraftAmount), new("Tổng kỳ chờ chuyển tiền", Model.AwaitingPaymentAmount) })' /></div>
+<p class="form-text mt-2">@L["Kỳ chờ chuyển tiền gồm bảng đã gửi và bảng chủ đã xác nhận."]</p>
+<p><a asp-controller="Settlements" asp-action="Index" asp-route-status="Confirmed" class="btn btn-outline-brand">@L["Xem kỳ chủ đã xác nhận"]</a> <a asp-controller="Compensations" asp-action="Index" class="btn btn-outline-brand">@L["Khoản bù trùng phòng"]</a></p>

@@ -1,0 +1,42 @@
+@model AccountingSettlementList
+@{
+    ViewData["Title"] = L["Đối soát chủ homestay"];
+    var latest = Model.LatestPeriod;
+    var rows = new List<TableRow>();
+    var statuses = new List<SelectListItem> { new(L["Tất cả"], "") };
+    statuses.AddRange(Enum.GetValues<SettlementStatus>().Select(s => new SelectListItem(L[HomestayBooking.Web.TagHelpers.StatusBadgeTagHelper.Describe(s).Label], s.ToString())));
+}
+<partial name="_PageHead" model='new PageHeadModel("Đối soát chủ homestay", "", "", L["Kiểm tra số liệu từng kỳ, gửi chủ và ghi nhận chuyển tiền."], ShowCreate: false)' />
+<partial name="_Tabs" model='TabsModel.Accounting(User, ViewData["Counts"] as AccountingCounts, "Settlements")' />
+<div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+    <form asp-action="GenerateRecent" method="post" data-confirm="@L["Lập hoặc cập nhật các bảng nháp của kỳ gần nhất đã hết thời gian chờ?"]"><button type="submit" class="btn btn-brand" data-loading-text="@L["Đang lập đối soát…"]">@L["Lập bảng đối soát gần nhất"]</button></form>
+    <span class="text-muted">@L["Kỳ {0} · {1}/{2}", latest.PeriodNo, latest.Month, latest.Year] · @latest.Start.ToString("dd/MM") – @latest.End.ToString("dd/MM/yyyy")</span>
+</div>
+<partial name="_FilterBar" model='new FilterBarModel("accounting-settlements", new FilterField[] {
+    new("year", "Năm", Type: "number"), new("month", "Tháng", Type: "number"),
+    new("periodNo", "Kỳ đối soát", Options: new SelectListItem[] { new(L["Tất cả"], ""), new(L["Kỳ 1 (01–15)"], "1"), new(L["Kỳ 2 (16–cuối tháng)"], "2") }),
+    new("homestayId", "Mã homestay", Type: "number"), new("status", "Trạng thái", Options: statuses) })' />
+<p class="form-text">@L["Để lọc theo kỳ, chọn đủ năm, tháng và kỳ đối soát."]</p>
+@foreach (var s in Model.Rows)
+{
+    Func<dynamic, IHtmlContent> period = @<text><a class="btn btn-link px-0" asp-action="Details" asp-route-id="@s.Id">@L["Kỳ {0} · {1}/{2}", s.PeriodNo, s.Month, s.Year]</a><div class="text-muted">@L["Homestay #{0}", s.HomestayId]</div></text>;
+    Func<dynamic, IHtmlContent> status = @<text><status-badge value="@s.Status" /></text>;
+    Func<dynamic, IHtmlContent> room = @<text><money value="@s.TotalRoomAmount" /></text>;
+    Func<dynamic, IHtmlContent> commission = @<text><money value="@s.TotalCommission" /></text>;
+    Func<dynamic, IHtmlContent> payout = @<text><money value="@s.PayoutAmount" /></text>;
+    rows.Add(new(new IHtmlContent[] { period(null!), status(null!), room(null!), commission(null!), payout(null!) }));
+}
+<partial name="_DataTable" model='new DataTableModel("Đối soát chủ homestay", new TableColumn[] { new("Kỳ đối soát"), new("Trạng thái"), new("Tiền phòng", Numeric: true), new("Hoa hồng", Numeric: true), new("Phải trả chủ", Numeric: true) }, rows, Model.Rows)' />
+<details class="fx-card p-4 mt-4">
+    <summary class="fw-semibold">@L["Lập đối soát theo kỳ hoặc homestay"]</summary>
+    <form asp-action="Generate" method="post" class="fx-form-card mt-3" data-confirm="@L["Lập hoặc cập nhật bảng nháp theo kỳ đã chọn?"]">
+        <div class="row g-3 mb-3">
+            <div class="col-sm-4"><label for="generate-year" class="form-label">@L["Năm"]</label><input id="generate-year" name="year" type="number" class="form-control" min="2020" max="2100" required value="@latest.Year" /></div>
+            <div class="col-sm-4"><label for="generate-month" class="form-label">@L["Tháng"]</label><input id="generate-month" name="month" type="number" class="form-control" min="1" max="12" required value="@latest.Month" /></div>
+            <div class="col-sm-4"><label for="generate-period" class="form-label">@L["Kỳ đối soát"]</label><select id="generate-period" name="periodNo" class="form-select"><option value="1" selected="@(latest.PeriodNo == 1)">@L["Kỳ 1 (01–15)"]</option><option value="2" selected="@(latest.PeriodNo == 2)">@L["Kỳ 2 (16–cuối tháng)"]</option></select></div>
+        </div>
+        <label for="generate-home" class="form-label">@L["Mã homestay"]</label><input id="generate-home" name="homestayId" type="number" min="1" class="form-control" aria-describedby="generate-hint" />
+        <p id="generate-hint" class="form-text">@L["Để trống để lập cho tất cả homestay trong kỳ. Bảng đã gửi giữ nguyên số liệu."]</p>
+        <div class="fx-form-actions"><button type="submit" class="btn btn-brand" data-loading-text="@L["Đang lập đối soát…"]">@L["Lập đối soát"]</button></div>
+    </form>
+</details>

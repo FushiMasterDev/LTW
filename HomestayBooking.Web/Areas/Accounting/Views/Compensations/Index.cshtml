@@ -1,0 +1,27 @@
+@model IReadOnlyList<Payment>
+@{
+    ViewData["Title"] = L["Khoản bù trùng phòng"];
+    var rows = new List<TableRow>();
+    var canWrite = User.EmployeePosition() == EmployeePosition.Accountant;
+}
+<partial name="_PageHead" model='new PageHeadModel("Khoản bù trùng phòng", "", "", L["Khoản bù chờ chi cho đơn thay thế đã hoàn thành, chưa bị thay tiếp."], ShowCreate: false)' />
+<partial name="_Tabs" model='TabsModel.Accounting(User, ViewData["Counts"] as AccountingCounts, "Compensations")' />
+<p class="text-muted">@L["Khoản bù được chi riêng, không cộng vào số được nhận trong bảng đối soát."]</p>
+@foreach (var p in Model)
+{
+    Func<dynamic, IHtmlContent> code = @<text>@p.Booking.Code<div class="text-muted">@L["Homestay #{0}", p.Booking.HomestayId]</div></text>;
+    Func<dynamic, IHtmlContent> amount = @<text><money value="@p.Amount" /></text>;
+    Func<dynamic, IHtmlContent> status = @<text><status-badge value="@p.Status" /></text>;
+    Func<dynamic, IHtmlContent> actions = @<text>
+        @if (canWrite)
+        {
+            <form asp-action="RecordPaid" asp-route-id="@p.Id" method="post" class="d-flex flex-column gap-2" data-confirm="@L["Xác nhận đã chi khoản bù này cho chủ homestay?"]">
+                <label class="form-label mb-0" for="compensation-ref-@p.Id">@L["Mã tham chiếu ngân hàng"]</label><input id="compensation-ref-@p.Id" name="bankRef" class="form-control" required maxlength="100" autocomplete="off" spellcheck="false" />
+                <button type="submit" class="btn btn-brand" data-loading-text="@L["Đang lưu…"]">@L["Ghi nhận đã chi"]</button>
+            </form>
+        }
+    </text>;
+    rows.Add(new(new IHtmlContent[] { code(null!), amount(null!), status(null!), actions(null!) }));
+}
+<partial name="_DataTable" model='new DataTableModel("Khoản bù trùng phòng", new TableColumn[] { new("Mã đơn"), new("Số tiền", Numeric: true), new("Trạng thái"), new("Thao tác") }, rows)' />
+<p class="form-text mt-3">@L["Đơn đã hoàn thành không được từ chối khoản bù thủ công."]</p>

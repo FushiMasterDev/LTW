@@ -27,6 +27,8 @@ public record TabsModel(string Label, IReadOnlyList<TabItem> Items)
             user.IsInRole(AppRoles.Employee) && user.EmployeePosition() == EmployeePosition.Accountant),
         Tab("Receipts", "Bill chờ duyệt", counts?.PendingReceipts, "receipt"),
         Tab("Transactions", "Giao dịch cần xử lý", counts?.OpenTransactions, "bank"),
+        Tab("Settlements", "Đối soát chủ homestay", null, "journal-check"),
+        Tab("Compensations", "Khoản bù trùng phòng", null, "cash-stack"),
         Tab("Refunds", "Chờ hoàn tiền", counts?.PendingRefunds, "arrow-counterclockwise"),
         ]);
     }
