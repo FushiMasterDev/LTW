@@ -54,7 +54,12 @@ public class BankWebhookController : ControllerBase
             return Ok(new { success = true });
         }
 
-        var local = DateTime.ParseExact(payload.TransactionDate, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+        if (!DateTime.TryParseExact(payload.TransactionDate, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var local))
+        {
+            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Invalid transaction date",
+                detail: "transactionDate must be a valid date in yyyy-MM-dd HH:mm:ss format (Vietnam time).");
+        }
         var result = await _matching.ProcessAsync(new IncomingBankTransaction(
             BankProvider.SePay,
             payload.Id.ToString(CultureInfo.InvariantCulture),
