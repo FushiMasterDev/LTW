@@ -2,7 +2,7 @@
 
 > Chạy trong **phiên Codex mới**, **sau khi bước 05d đã commit và được review**. Không chạy song song với bất kỳ bước UI nào, vì bước này sửa `Services/`.
 >
-> Ngày 19/10/2026, người dùng chốt làm backend cho các gap ghi lại trong bước 05: G-16 → G-25 (trừ G-19), và mọi gap mới mà 05d ghi thêm vào `docs/ui/backend-gaps.md`. Sau phần backend, nối kết quả vào đúng chỗ UI đang làm tạm và sửa các điểm yếu ở mục "Sửa các điểm yếu".
+> Ngày 19/10/2026, người dùng chốt làm backend cho các gap ghi lại trong bước 05: G-16 → G-25 (trừ G-19), G-26, G-27 của 05d, và mọi gap mới khác vào `docs/ui/backend-gaps.md`. Sau phần backend, nối kết quả vào đúng chỗ UI đang làm tạm và sửa các điểm yếu ở mục "Sửa các điểm yếu".
 
 Đọc:
 - `QUY_TRINH_BTL.md` (bảng FR, mục 7.x, mục 7.10 của B8);
@@ -53,6 +53,12 @@ Style viết như B8: primary constructor, record DTO, kiểm quyền qua `Actor
 2. **Bảng giao dịch kế toán (`/Accounting/Transactions`) 1280px:** cột thời gian xuống dòng giữa giờ và ngày ("09:01 / 21/08/2026"). Giữ giờ và ngày trên cùng một dòng (ví dụ `NoWrap` của cột hoặc định dạng gọn hơn).
 3. **Chi tiết đối soát kế toán:** ô "Khoản bù chi riêng" để trống thay vì `0đ` — hiện `<money>` 0 nhất quán với các cột khác. Trạng thái rỗng của bảng khoản bù đang là một thẻ lồng trong thẻ bảng — dùng biến thể rỗng gọn trong bảng của `_DataTable`/`_EmptyState` (sửa ở component nếu là lỗi chung).
 4. **Danh sách đơn Staff:** cột "Mã homestay" hiện "#6" và bộ lọc "Mã homestay" bắt gõ số (xử lý cùng G-20 ở trên).
+5. **Báo cáo Admin (`/Admin/Reports`) khi khoảng ngày không có dữ liệu:** các biểu đồ vẫn vẽ trục 0–1 rỗng và bảng toàn 0. Khi không có dữ liệu thì hiện `_EmptyState` thay cho biểu đồ rỗng (giữ thẻ số liệu). Kiểm thêm: seed có dữ liệu năm 2026 (77 đơn) nhưng năm 2027–2028 hiện 0; ghi rõ trong báo cáo dữ liệu seed thực có ở những năm nào, không bịa dữ liệu.
+6. **Dashboard Admin:** nút "Xem báo cáo" dùng icon dấu cộng (nghĩa "tạo mới"); đổi sang icon phù hợp hành động xem (ví dụ `bar-chart` hoặc `arrow-right`). Trạng thái rỗng của bảng "Hợp đồng sắp hết hạn" cũng là thẻ lồng trong thẻ: dùng cùng cách sửa với điểm 3.
+
+### Dữ liệu thử để nghiệm thu 05d (người dùng chốt 19/10/2026)
+
+Báo cáo 05d chưa nghiệm thu được **tạo hợp đồng** và **duyệt nội dung thành công** vì thiếu dữ liệu đủ điều kiện. Ở bước này **được phép** chuẩn bị dữ liệu thử trong database Development, nhưng **chỉ qua luồng thật của app** (ví dụ chủ `0912000001` đổi địa chỉ một homestay qua trình sửa để đưa nó về chờ duyệt; hoàn tất một hồ sơ đối tác thử qua `/Partner` → thẩm định → kích hoạt để có chủ đủ điều kiện ký hợp đồng). Không sửa dữ liệu bằng SQL trực tiếp. Sau đó đăng nhập `QL001` tạo/gia hạn một hợp đồng và duyệt một nội dung. Ghi mọi dữ liệu thử vào báo cáo. Giữ đơn demo `FJ261019-001`.
 
 Cập nhật `docs/ui/backend-gaps.md`: mục nào xong ghi "Xong (B9)" kèm tên method. Thêm mục 7.11 "Backend bổ sung cho giao diện (B9)" vào `QUY_TRINH_BTL.md`. Ghi quyết định vào `docs/ui/decisions.md`.
 
