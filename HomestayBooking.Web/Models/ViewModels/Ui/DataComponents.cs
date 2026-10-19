@@ -101,3 +101,8 @@ public record TaskListItem(string Label, string? Hint = null, string? Href = nul
 /// <param name="Title">Khóa resource của tiêu đề danh sách.</param>
 /// <param name="Items">Các tác vụ hoặc liên kết do view ghép từ dữ liệu có sẵn.</param>
 public record TaskListModel(string Title, IReadOnlyList<TaskListItem> Items);
+
+/// <param name="Row">Dữ liệu bill đã nạp bởi controller.</param>
+/// <param name="AlertMinutes">Ngưỡng cảnh báo giờ làm việc đang có.</param>
+/// <param name="Preview">UI Kit chỉ xem thông tin; không tải ảnh thật hoặc dựng form ghi dữ liệu.</param>
+public record ReceiptReviewModel(ReceiptRow Row, int AlertMinutes, bool Preview = false);

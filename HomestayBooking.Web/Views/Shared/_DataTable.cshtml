@@ -25,9 +25,9 @@
                 <tr>
                     @for (var i = 0; i < Model.Columns.Count; i++)
                     {
-                        <td data-label="@L[Model.Columns[i].Label]" class="@(Model.Columns[i].Numeric ? "text-end" : null) @(Model.Columns[i].NoWrap ? "fx-table__nowrap" : null)">@(i < row.Cells.Count ? row.Cells[i] : null)</td>
+                        <td data-label="@L[Model.Columns[i].Label]" class="@(Model.Columns[i].Numeric ? "text-end" : null) @(Model.Columns[i].NoWrap ? "fx-table__nowrap" : null)"><div class="fx-table__value">@(i < row.Cells.Count ? row.Cells[i] : null)</div></td>
                     }
-                    @if (actions) { <td data-label="@L["Thao tác"]">@if (row.Actions is not null) { <partial name="_RowActions" model="row.Actions" /> }</td> }
+                    @if (actions) { <td data-label="@L["Thao tác"]"><div class="fx-table__value">@if (row.Actions is not null) { <partial name="_RowActions" model="row.Actions" /> }</div></td> }
                 </tr>
             }
         </tbody>

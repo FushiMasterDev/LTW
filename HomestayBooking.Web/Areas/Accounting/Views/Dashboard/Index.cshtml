@@ -7,17 +7,21 @@
         ("AdditionalDeposits", L["Cọc bổ sung"], L["Khoản nộp thêm cho yêu cầu đổi, chờ kế toán xác nhận."], "bi-wallet2", "tone-violet", counts.PendingAdditionalDeposits.ToString()),
         ("Receipts", L["Bill chờ duyệt"], L["Khách tải ảnh bill vì giao dịch không tự khớp được."], "bi-receipt", "tone-amber", counts.PendingReceipts.ToString()),
         ("Transactions", L["Giao dịch cần xử lý"], L["Chuyển thiếu, đến muộn hoặc không đọc được mã đơn."], "bi-bank", "tone-rose", counts.OpenTransactions.ToString()),
-        ("Refunds", L["Chờ hoàn tiền"], L["Tổng {0:N0}đ cần chuyển trả khách.", counts.PendingRefundAmount], "bi-arrow-counterclockwise", "tone-sky", counts.PendingRefunds.ToString()),
+        ("Refunds", L["Chờ hoàn tiền"], L["Chờ hoàn tiền"], "bi-arrow-counterclockwise", "tone-sky", counts.PendingRefunds.ToString()),
     };
 }
 <partial name="_PageHead" model='new PageHeadModel("Kế toán", "", "", L["Phần lớn tiền cọc được tự khớp qua QR MB. Ở đây chỉ còn các trường hợp cần người xử lý."], ShowCreate: false)' />
 <partial name="_Tabs" model="@TabsModel.Accounting(User, ViewData["Counts"] as AccountingCounts, ViewContext.RouteData.Values["controller"]?.ToString())" />
 
-<div class="row g-3">
+<div class="row g-3 mb-4">
     @foreach (var card in cards.Where(c => c.Controller != "AdditionalDeposits" || (User.IsInRole(AppRoles.Employee) && User.EmployeePosition() == EmployeePosition.Accountant)))
     {
-        <div class="col-md-4">
+        <div class="col-sm-6 col-xl-3">
             <partial name="_StatCard" model="@(new StatCardModel(card.Label, card.Value, card.Icon, Url.Action("Index", card.Controller), card.Hint))" />
         </div>
     }
 </div>
+
+<partial name="_TaskList" model='new TaskListModel("Việc cần xử lý", cards.Where(c => c.Controller != "AdditionalDeposits" || (User.IsInRole(AppRoles.Employee) && User.EmployeePosition() == EmployeePosition.Accountant)).Select(c => new TaskListItem(c.Label, c.Hint, Url.Action("Index", c.Controller), int.Parse(c.Value))).ToArray())' />
+
+<div class="fx-card p-4 mt-4"><partial name="_PriceBreakdown" model='new PriceBreakdownModel(new PriceLine[] { new("Cần hoàn", counts.PendingRefundAmount) })' /></div>

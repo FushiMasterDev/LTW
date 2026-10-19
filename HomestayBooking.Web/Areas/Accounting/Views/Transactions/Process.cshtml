@@ -4,50 +4,56 @@
     ViewData["Title"] = L["Xử lý giao dịch"];
     var suggestedCode = t.BookingCode ?? Model.Suggestions.FirstOrDefault()?.Code;
 }
+<partial name="_PageHead" model='new PageHeadModel("Xử lý giao dịch", "", "", ShowCreate: false)' />
+<partial name="_Breadcrumb" model='new BreadcrumbModel(new BreadcrumbItem[] { new("Giao dịch ngân hàng", Url.Action("Index")), new("Xử lý giao dịch") })' />
 <partial name="_Tabs" model="@TabsModel.Accounting(User, ViewData["Counts"] as AccountingCounts, ViewContext.RouteData.Values["controller"]?.ToString())" />
 <div class="row g-4">
     <div class="col-lg-5">
-        <div class="card-soft p-4 h-100">
-            <span class="icon-chip icon-chip-lg @t.MatchStatus.ToneClass() mb-3" aria-hidden="true"><i class="bi bi-bank"></i></span>
-            <h1 class="h4 mb-1">@L["Xử lý giao dịch"]</h1>
-            <p class="mb-3"><span class="badge-tone @t.MatchStatus.ToneClass()">@L[t.MatchStatus.DisplayName()]</span></p>
+        <div class="fx-card p-4 h-100">
+            <span class="fx-icon-chip fx-icon-chip-lg @t.MatchStatus.ToneClass() mb-3" aria-hidden="true"><i class="bi bi-bank"></i></span>
+
+            <p class="mb-3"><status-badge value="@t.MatchStatus" /></p>
             <p class="small text-muted">@L[t.MatchStatus.Hint()]</p>
-            <dl class="receipt-facts">
-                <dt>@L["Số tiền"]</dt>
-                <dd class="fs-5 fw-bold">@t.Amount.ToString("N0")đ</dd>
-                <dt>@L["Thời gian"]</dt>
-                <dd>@VietnamTime.ToLocal(t.TransactionTime).ToString("HH:mm dd/MM/yyyy")</dd>
-                <dt>@L["Nội dung"]</dt>
-                <dd class="text-break">@(t.TransferContent ?? "—")</dd>
-                <dt>@L["Mã giao dịch"]</dt>
-                <dd>@t.Provider · @t.ProviderTransactionId</dd>
-                @if (t.BookingCode is not null)
+            @{
+    var facts = new List<DescriptionItem>();
+
+                Func<dynamic, IHtmlContent> fact0 = @<text><money value="@t.Amount" /></text>;
+    facts.Add(new("Số tiền", fact0(null!)));
+                Func<dynamic, IHtmlContent> fact1 = @<text>@VietnamTime.ToLocal(t.TransactionTime).ToString("HH:mm dd/MM/yyyy")</text>;
+    facts.Add(new("Thời gian", fact1(null!)));
+                Func<dynamic, IHtmlContent> fact2 = @<text>@(t.TransferContent ?? "—")</text>;
+    facts.Add(new("Nội dung", fact2(null!)));
+                Func<dynamic, IHtmlContent> fact3 = @<text>@t.Provider · @t.ProviderTransactionId</text>;
+    facts.Add(new("Mã giao dịch", fact3(null!)));
+                if (t.BookingCode is not null)
                 {
-                    <dt>@L["Đơn đọc được"]</dt>
-                    <dd><span class="booking-code">@t.BookingCode</span> · @L[t.BookingStatus!.Value.DisplayName()] · @L["cần {0:N0}đ", t.BookingAmountDue ?? 0]</dd>
+                    Func<dynamic, IHtmlContent> fact4 = @<text><span class="fx-code">@t.BookingCode</span> · @L[t.BookingStatus!.Value.DisplayName()] · @L["cần {0:N0}đ", t.BookingAmountDue ?? 0]</text>;
+    facts.Add(new("Đơn đọc được", fact4(null!)));
                 }
-                @if (t.Note is not null)
+                if (t.Note is not null)
                 {
-                    <dt>@L["Ghi chú"]</dt>
-                    <dd>@t.Note</dd>
+                    Func<dynamic, IHtmlContent> fact5 = @<text>@t.Note</text>;
+    facts.Add(new("Ghi chú", fact5(null!)));
                 }
-            </dl>
+
+}
+<partial name="_DescriptionList" model="facts" />
             <a class="btn btn-outline-secondary btn-sm" asp-action="Index"><i class="bi bi-arrow-left" aria-hidden="true"></i> @L["Quay lại"]</a>
         </div>
     </div>
     <div class="col-lg-7 d-flex flex-column gap-3">
-        <section class="card-soft p-4" aria-labelledby="match-title">
+        <section class="fx-card p-4" aria-labelledby="match-title">
             <h2 id="match-title" class="h6"><i class="bi bi-link-45deg text-brand" aria-hidden="true"></i> @L["Khớp với đơn"]</h2>
             <p class="small text-muted">@L["Chỉ khớp được đơn còn chờ thanh toán và số tiền đủ cọc. Đơn chuyển ngay sang Đã đặt cọc."]</p>
             @if (Model.Suggestions.Count > 0)
             {
                 <div class="small fw-semibold mb-1">@L["Gợi ý theo số tiền và thời gian"]</div>
-                <ul class="list-unstyled suggestion-list mb-3">
+                <ul class="list-unstyled fx-suggestion-list mb-3">
                     @foreach (var s in Model.Suggestions)
                     {
                         <li>
-                            <button type="button" class="suggestion" data-fill="#bookingCode" data-value="@s.Code">
-                                <span class="booking-code">@s.Code</span>
+                            <button type="button" class="fx-suggestion" data-fill="#bookingCode" data-value="@s.Code">
+                                <span class="fx-code">@s.Code</span>
                                 <span>@s.ContactName · @PhoneNumberNormalizer.ToNational(s.ContactPhone)</span>
                                 <span class="text-muted">@s.HomestayName · @L["cần {0:N0}đ", s.AmountDue]</span>
                             </button>
@@ -65,11 +71,11 @@
                     <input id="matchNote" name="note" class="form-control" maxlength="200" />
                 </div>
                 <div class="col-12">
-                    <button type="submit" class="btn btn-brand" data-loading-text="@L["Đang khớp..."]"><i class="bi bi-link-45deg" aria-hidden="true"></i> @L["Khớp và duyệt cọc"]</button>
+                    <button type="submit" class="btn btn-brand text-nowrap flex-shrink-0" data-loading-text="@L["Đang khớp..."]"><i class="bi bi-link-45deg" aria-hidden="true"></i> @L["Khớp và duyệt cọc"]</button>
                 </div>
             </form>
         </section>
-        <section class="card-soft p-4" aria-labelledby="refund-title">
+        <section class="fx-card p-4" aria-labelledby="refund-title">
             <h2 id="refund-title" class="h6"><i class="bi bi-arrow-counterclockwise text-brand" aria-hidden="true"></i> @L["Đã chuyển trả khách"]</h2>
             <p class="small text-muted">@L["Chuyển trả đúng {0:N0}đ về tài khoản đã gửi, rồi ghi mã giao dịch chuyển trả.", t.Amount]</p>
             <form asp-action="Refund" asp-route-id="@t.Id" method="post" class="row g-2" data-confirm="@L["Xác nhận đã chuyển trả {0:N0}đ?", t.Amount]">
@@ -86,9 +92,9 @@
                 </div>
             </form>
         </section>
-        <section class="card-soft p-4" aria-labelledby="ignore-title">
+        <section class="fx-card p-4" aria-labelledby="ignore-title">
             <h2 id="ignore-title" class="h6"><i class="bi bi-eye-slash text-brand" aria-hidden="true"></i> @L["Không liên quan đặt phòng"]</h2>
-            <form asp-action="Ignore" asp-route-id="@t.Id" method="post" class="d-flex gap-2" data-confirm="@L["Bỏ qua giao dịch này?"]">
+            <form asp-action="Ignore" asp-route-id="@t.Id" method="post" class="d-flex flex-column flex-sm-row gap-2" data-confirm="@L["Bỏ qua giao dịch này?"]">
                 <label for="ignoreNote" class="visually-hidden">@L["Lý do bỏ qua"]</label>
                 <input id="ignoreNote" name="note" class="form-control" required maxlength="200" placeholder="@L["Lý do, ví dụ: tiền thu khác của Fuji"]" />
                 <button type="submit" class="btn btn-outline-secondary text-nowrap">@L["Bỏ qua"]</button>

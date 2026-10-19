@@ -6,49 +6,19 @@
 <partial name="_PageHead" model="@(new PageHeadModel(L["Hoàn tiền"], "bi-arrow-counterclockwise", "tone-sky", L["Đơn hủy hoặc bị homestay từ chối đã chốt số tiền hoàn. Chuyển khoản cho khách rồi ghi lại mã giao dịch."], ShowCreate: false))" />
 <partial name="_Tabs" model="@TabsModel.Accounting(User, ViewData["Counts"] as AccountingCounts, ViewContext.RouteData.Values["controller"]?.ToString())" />
 
-<form method="get" class="card-soft filter-bar row g-2 mx-0" role="search">
-    <div class="col-sm-4 col-md-3">
-        <label for="done" class="visually-hidden">@L["Trạng thái"]</label>
-        <select id="done" name="done" class="form-select">
-            <option value="false" selected="@(!done)">@L["Chờ hoàn"]</option>
-            <option value="true" selected="@done">@L["Đã hoàn"]</option>
-        </select>
-    </div>
-    <div class="col-sm-8 col-md-6">
-        <label for="q" class="visually-hidden">@L["Tìm theo mã đơn, tên hoặc SĐT khách"]</label>
-        <div class="input-group">
-            <span class="input-group-text" aria-hidden="true"><i class="bi bi-search"></i></span>
-            <input type="search" id="q" name="q" value="@ViewData["Query"]" class="form-control" placeholder="@L["Tìm theo mã đơn, tên hoặc SĐT khách"]" />
-        </div>
-    </div>
-    <div class="col-md-3 d-grid">
-        <button type="submit" class="btn btn-brand"><i class="bi bi-funnel" aria-hidden="true"></i> @L["Lọc"]</button>
-    </div>
-</form>
+<partial name="_FilterBar" model='new FilterBarModel("accounting-refunds-filter", new FilterField[] {
+    new("done", "Trạng thái", Options: new[] { new SelectListItem(L["Chờ hoàn"], "false", !done), new SelectListItem(L["Đã hoàn"], "true", done) }),
+    new("q", "Tìm theo mã đơn, tên hoặc SĐT khách", ViewData["Query"]?.ToString(), Type: "search") })' />
 
-<div class="card-soft overflow-hidden">
-    <div class="table-responsive">
-        <table class="table table-modern align-middle">
-            <thead>
-                <tr>
-                    <th scope="col">@L["Đơn"]</th>
-                    <th scope="col">@L["Khách"]</th>
-                    <th scope="col" class="text-end">@L["Khách đã chuyển"]</th>
-                    <th scope="col" class="text-end">@L["Cần hoàn"]</th>
-                    <th scope="col">@L["Lý do"]</th>
-                    <th scope="col" class="text-end">@(done ? L["Đã hoàn"] : L["Ghi nhận"])</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var r in Model)
+@{ var rows = new List<TableRow>(); }
+@foreach (var r in Model)
                 {
-                    <tr>
-                        <td class="text-nowrap"><span class="booking-code fw-semibold">@r.BookingCode</span>
-                            <div><span class="badge-tone @r.Status.ToneClass()">@L[r.Status.DisplayName()]</span></div></td>
-                        <td>@r.ContactName<div class="small text-muted">@PhoneNumberNormalizer.ToNational(r.ContactPhone) · @r.HomestayName</div></td>
-                        <td class="text-end text-nowrap">@r.AmountPaid.ToString("N0")đ</td>
-                        <td class="text-end text-nowrap fw-semibold">@r.RefundAmount.ToString("N0")đ</td>
-                        <td class="small">@(r.CancelReason ?? "—")
+                    Func<dynamic, IHtmlContent> cell0 = @<text><span class="fx-code fw-semibold">@r.BookingCode</span>
+                            <div><status-badge value="@r.Status" /></div></text>;
+                        Func<dynamic, IHtmlContent> cell1 = @<text>@r.ContactName<div class="small text-muted">@PhoneNumberNormalizer.ToNational(r.ContactPhone) · @r.HomestayName</div></text>;
+                        Func<dynamic, IHtmlContent> cell2 = @<text><money value="@r.AmountPaid" /></text>;
+                        Func<dynamic, IHtmlContent> cell3 = @<text><money value="@r.RefundAmount" /></text>;
+                        Func<dynamic, IHtmlContent> cell4 = @<text>@(r.CancelReason ?? "—")
                             @if (r.CancelledAt is { } at)
                             {
                                 <div class="text-muted">@L["Hủy lúc {0}", VietnamTime.ToLocal(at).ToString("HH:mm dd/MM")]</div>
@@ -56,10 +26,8 @@
                             @if (!done && r.DepositTransferContent is not null)
                             {
                                 <div class="text-muted">@L["Cọc nhận từ: {0}", r.DepositTransferContent]</div>
-                            }
-                        </td>
-                        <td class="text-end">
-                            @if (done)
+                            }</text>;
+                        Func<dynamic, IHtmlContent> cell5 = @<text>@if (done)
                             {
                                 <div class="small text-nowrap">@r.RefundBankRef</div>
                                 <div class="small text-muted text-nowrap">@r.RefundedBy · @(r.RefundedAt is { } rt ? VietnamTime.ToLocal(rt).ToString("dd/MM") : "")</div>
@@ -69,19 +37,11 @@
                                 <form asp-action="Record" asp-route-id="@r.BookingId" method="post" class="d-flex gap-2 justify-content-end"
                                       data-confirm="@L["Xác nhận đã chuyển hoàn {0:N0}đ cho đơn {1}?", r.RefundAmount, r.BookingCode]">
                                     <label for="ref-@r.BookingId" class="visually-hidden">@L["Mã giao dịch chuyển trả"]</label>
-                                    <input id="ref-@r.BookingId" name="bankRef" class="form-control form-control-sm refund-ref" required maxlength="100" placeholder="@L["Mã giao dịch"]" />
+                                    <input id="ref-@r.BookingId" name="bankRef" class="form-control form-control-sm fx-refund-ref" required maxlength="100" placeholder="@L["Mã giao dịch"]" />
                                     <button type="submit" class="btn btn-sm btn-brand text-nowrap">@L["Đã hoàn"]</button>
                                 </form>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-    @if (Model.Count == 0)
-    {
-        <partial name="_EmptyState" />
-    }
-</div>
+                            }</text>;
+                    rows.Add(new TableRow(new IHtmlContent[] { cell0(null!), cell1(null!), cell2(null!), cell3(null!), cell4(null!), cell5(null!) }));
+}
+<partial name="_DataTable" model='new DataTableModel("Hoàn tiền", new TableColumn[] { new("Đơn"), new("Khách"), new("Khách đã chuyển", Numeric: true), new("Cần hoàn", Numeric: true), new("Lý do"), new(done ? "Đã hoàn" : "Ghi nhận") }, rows)' />
 <partial name="_Pager" model="Model" />

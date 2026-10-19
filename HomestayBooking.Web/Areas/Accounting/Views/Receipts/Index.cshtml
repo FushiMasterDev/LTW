@@ -24,86 +24,13 @@
 
 @if (Model.Count == 0)
 {
-    <div class="card-soft"><partial name="_EmptyState" /></div>
+    <div class="fx-card"><partial name="_EmptyState" /></div>
 }
 <div class="row g-3">
     @foreach (var r in Model)
     {
-        var overdue = r.Status == PaymentStatus.Submitted && r.OfficeMinutesWaiting >= alertMinutes;
-        var amountOk = r.Amount == r.AmountDue;
         <div class="col-lg-6">
-            <article class="card-soft receipt-card h-100 @(overdue ? "is-overdue" : "")">
-                <a class="receipt-thumb" href="@Url.Action("Receipt", "Bookings", new { area = "", paymentId = r.PaymentId })" target="_blank" rel="noopener"
-                   aria-label="@L["Xem ảnh bill đơn {0}", r.BookingCode]">
-                    <img src="@Url.Action("Receipt", "Bookings", new { area = "", paymentId = r.PaymentId })" alt="@L["Ảnh bill đơn {0}", r.BookingCode]" loading="lazy" />
-                </a>
-                <div class="receipt-body">
-                    <div class="d-flex justify-content-between align-items-start gap-2">
-                        <div>
-                            <h2 class="h6 mb-0 booking-code">@r.BookingCode</h2>
-                            <div class="small text-muted">@r.HomestayName</div>
-                        </div>
-                        <span class="badge-tone @r.BookingStatus.ToneClass()">@L[r.BookingStatus.DisplayName()]</span>
-                    </div>
-                    <dl class="receipt-facts">
-                        <dt>@L["Khách"]</dt>
-                        <dd>@r.ContactName · @PhoneNumberNormalizer.ToNational(r.ContactPhone)</dd>
-                        <dt>@L["Số tiền"]</dt>
-                        <dd>
-                            <strong>@r.Amount.ToString("N0")đ</strong>
-                            @if (!amountOk)
-                            {
-                                <span class="text-danger small">(@L["cần {0:N0}đ", r.AmountDue])</span>
-                            }
-                        </dd>
-                        <dt>@L["Nội dung"]</dt>
-                        <dd class="text-break">@(r.TransferContent ?? "—")</dd>
-                        <dt>@L["Gửi lúc"]</dt>
-                        <dd>
-                            @VietnamTime.ToLocal(r.SubmittedAt).ToString("HH:mm dd/MM")
-                            @if (r.Status == PaymentStatus.Submitted)
-                            {
-                                <span class="small @(overdue ? "text-danger fw-semibold" : "text-muted")">
-                                    · @L["chờ {0:0} phút giờ làm việc", r.OfficeMinutesWaiting]
-                                </span>
-                            }
-                        </dd>
-                        @if (r.PreviousRejections > 0)
-                        {
-                            <dt>@L["Đã từ chối"]</dt>
-                            <dd class="text-danger">@L["{0} lần trước — từ chối lần này thì đơn hết hạn", r.PreviousRejections]</dd>
-                        }
-                        @if (r.Status != PaymentStatus.Submitted)
-                        {
-                            <dt>@L["Người duyệt"]</dt>
-                            <dd>@r.ReviewedBy · @(r.ReviewedAt is { } at ? VietnamTime.ToLocal(at).ToString("HH:mm dd/MM") : "")</dd>
-                        }
-                        @if (r.RejectReason is not null)
-                        {
-                            <dt>@L["Lý do"]</dt>
-                            <dd>@r.RejectReason</dd>
-                        }
-                    </dl>
-                    @if (r.Status == PaymentStatus.Submitted)
-                    {
-                        <div class="d-flex flex-wrap gap-2 mt-auto">
-                            <form asp-action="Approve" asp-route-id="@r.PaymentId" method="post"
-                                  data-confirm="@L["Duyệt bill {0:N0}đ cho đơn {1}?", r.Amount, r.BookingCode]">
-                                <button type="submit" class="btn btn-sm btn-success" data-loading-text="@L["Đang duyệt..."]">
-                                    <i class="bi bi-check2" aria-hidden="true"></i> @L["Duyệt"]
-                                </button>
-                            </form>
-                            <form asp-action="Reject" asp-route-id="@r.PaymentId" method="post" class="d-flex gap-2 flex-grow-1"
-                                  data-confirm="@L["Từ chối bill đơn {0}?", r.BookingCode]">
-                                <label for="reason-@r.PaymentId" class="visually-hidden">@L["Lý do từ chối"]</label>
-                                <input id="reason-@r.PaymentId" name="reason" class="form-control form-control-sm" list="reject-reasons"
-                                       placeholder="@L["Lý do từ chối"]" required maxlength="500" />
-                                <button type="submit" class="btn btn-sm btn-outline-danger text-nowrap">@L["Từ chối"]</button>
-                            </form>
-                        </div>
-                    }
-                </div>
-            </article>
+            <partial name="_ReceiptReview" model="@(new ReceiptReviewModel(r, alertMinutes))" />
         </div>
     }
 </div>

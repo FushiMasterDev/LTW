@@ -463,3 +463,8 @@
         <div class="fx-booking-detail__history"><partial name="_Timeline" model='new TimelineModel()' /></div>
     </div>
 </section>
+
+<section class="uikit-section" aria-label="Duyệt bill">
+    <h2 class="fx-section-title">Mẫu bill minh họa, không tải ảnh hoặc gửi thao tác</h2>
+    <partial name="_ReceiptReview" model='new ReceiptReviewModel(new ReceiptRow(0, "UIKIT-BILL", BookingStatus.PaymentSubmitted, "Nguyễn Thu Hà", "0987000001", "Mẫu homestay", 300000, 400000, "Nội dung mẫu dài để kiểm tra xuống dòng", PaymentStatus.Submitted, DateTime.UtcNow, DateTime.UtcNow.AddMinutes(15), 1, null, null, null) { OfficeMinutesWaiting = 60 }, 30, Preview: true)' />
+</section>

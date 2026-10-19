@@ -2201,4 +2201,10 @@
   <data name="Việc cần xử lý" xml:space="preserve"><value>Tasks to handle</value></data>
   <data name="Mở danh sách để đối chiếu giao dịch." xml:space="preserve"><value>Open the list to reconcile transactions.</value></data>
   <data name="Đang xử lý..." xml:space="preserve"><value>Processing…</value></data>
+  <data name="Giả lập tiền vào" xml:space="preserve"><value>Simulate incoming funds</value></data>
+  <data name="Giả lập tiền vào tài khoản MB" xml:space="preserve"><value>Simulate funds into the MB account</value></data>
+  <data name="Tạo một giao dịch tiền vào giống webhook SePay, đi qua đúng logic tự khớp. Chỉ có ở môi trường Development." xml:space="preserve"><value>Create an incoming transaction through the same matching flow as a SePay webhook. Available only in Development.</value></data>
+  <data name="Thử nhập thiếu tiền (Underpaid) hoặc dư tiền để xem các trường hợp." xml:space="preserve"><value>Try a smaller or larger amount to inspect matching outcomes.</value></data>
+  <data name="Đổi số khác để thử trường hợp sai tài khoản (Ignored)." xml:space="preserve"><value>Change the account number to test an incorrect account (Ignored).</value></data>
+  <data name="Gửi giao dịch" xml:space="preserve"><value>Send transaction</value></data>
 </root>

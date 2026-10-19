@@ -3,25 +3,35 @@
 @{ ViewData["Title"] = L["Cọc bổ sung"]; }
 <partial name="_PageHead" model="@(new PageHeadModel(L["Cọc bổ sung"], "bi-wallet2", "tone-violet", L["Nộp đúng hạn vẫn được xác nhận sau hạn. Đối chiếu tiền trước khi áp dụng đổi đơn."], ShowCreate: false))" />
 <partial name="_Tabs" model="@TabsModel.Accounting(User, ViewData["Counts"] as AccountingCounts, ViewContext.RouteData.Values["controller"]?.ToString())" />
-@if (Model.Count == 0) { <div class="card-soft p-3"><partial name="_EmptyState" /></div> }
+@if (Model.Count == 0) { <div class="fx-card p-4"><partial name="_EmptyState" /></div> }
 @foreach (var p in Model)
 {
     var request = p.ChangeRequest!;
     var submitted = p.Method == PaymentMethod.BankAutoMatch ? p.BankTransaction?.TransactionTime ?? p.SubmittedAt : p.SubmittedAt;
-    <article class="card-soft p-3 mb-3" data-additional-review="@request.Id">
+    <article class="fx-card p-4 mb-3" data-additional-review="@request.Id">
         <h2 class="h6">@p.Booking.Code · CR@(request.Id) · @p.Booking.Homestay.Name</h2>
-        <dl class="row">
-            <dt class="col-sm-4">@L["Số tiền"]</dt><dd class="col-sm-8">@p.Amount.ToString("N0")đ</dd>
-            <dt class="col-sm-4">@L["Cách nộp"]</dt><dd class="col-sm-8">@L[p.Method == PaymentMethod.BankAutoMatch ? "Giao dịch ngân hàng" : "Ảnh bill"]</dd>
-            <dt class="col-sm-4">@L["Nộp lúc"]</dt><dd class="col-sm-8">@VietnamTime.ToLocal(submitted).ToString("HH:mm dd/MM/yyyy")</dd>
-            <dt class="col-sm-4">@L["Hạn nộp"]</dt><dd class="col-sm-8">@(request.PaymentDeadlineAt is { } at ? VietnamTime.ToLocal(at).ToString("HH:mm dd/MM/yyyy") : "—")</dd>
-            <dt class="col-sm-4">@L["Ghi chú duyệt"]</dt><dd class="col-sm-8">@request.DecisionNote</dd>
-            @if (p.BankTransaction is { } tx) { <dt class="col-sm-4">@L["Giao dịch ngân hàng"]</dt><dd class="col-sm-8">@tx.ProviderTransactionId · @tx.TransferContent</dd> }
-        </dl>
+        @{
+    var facts = new List<DescriptionItem>();
+
+            Func<dynamic, IHtmlContent> fact0 = @<text><money value="@p.Amount" /></text>;
+    facts.Add(new("Số tiền", fact0(null!)));
+            Func<dynamic, IHtmlContent> fact1 = @<text>@L[p.Method == PaymentMethod.BankAutoMatch ? "Giao dịch ngân hàng" : "Ảnh bill"]</text>;
+    facts.Add(new("Cách nộp", fact1(null!)));
+            Func<dynamic, IHtmlContent> fact2 = @<text>@VietnamTime.ToLocal(submitted).ToString("HH:mm dd/MM/yyyy")</text>;
+    facts.Add(new("Nộp lúc", fact2(null!)));
+            Func<dynamic, IHtmlContent> fact3 = @<text>@(request.PaymentDeadlineAt is { } at ? VietnamTime.ToLocal(at).ToString("HH:mm dd/MM/yyyy") : "—")</text>;
+    facts.Add(new("Hạn nộp", fact3(null!)));
+            Func<dynamic, IHtmlContent> fact4 = @<text>@request.DecisionNote</text>;
+    facts.Add(new("Ghi chú duyệt", fact4(null!)));
+            if (p.BankTransaction is { } tx) { Func<dynamic, IHtmlContent> fact5 = @<text>@tx.ProviderTransactionId · @tx.TransferContent</text>;
+    facts.Add(new("Giao dịch ngân hàng", fact5(null!))); }
+
+}
+<partial name="_DescriptionList" model="facts" />
         @if (p.ReceiptImageUrl is not null)
         { <p><a asp-area="" asp-controller="Bookings" asp-action="Receipt" asp-route-paymentId="@p.Id" target="_blank" rel="noopener">@L["Xem ảnh đã gửi"]</a></p> }
-        <form asp-action="Confirm" asp-route-id="@request.Id" method="post" class="d-flex gap-2 mb-2"><label for="confirm-@request.Id" class="visually-hidden">@L["Ghi chú xác nhận tiền"]</label><input id="confirm-@request.Id" name="Note" class="form-control" required maxlength="500" placeholder="@L["Ghi chú xác nhận tiền"]" /><button class="btn btn-success" type="submit">@L["Xác nhận"]</button></form>
-        <form asp-action="Reject" asp-route-id="@request.Id" method="post" class="d-flex gap-2"><label for="reject-@request.Id" class="visually-hidden">@L["Lý do từ chối"]</label><input id="reject-@request.Id" name="Note" class="form-control" required maxlength="500" placeholder="@L["Lý do từ chối"]" /><button class="btn btn-outline-danger" type="submit">@L["Từ chối"]</button></form>
+        <form asp-action="Confirm" asp-route-id="@request.Id" method="post" class="d-flex flex-column flex-sm-row gap-2 mb-2"><label for="confirm-@request.Id" class="visually-hidden">@L["Ghi chú xác nhận tiền"]</label><input id="confirm-@request.Id" name="Note" class="form-control" required maxlength="500" placeholder="@L["Ghi chú xác nhận tiền"]" /><button class="btn btn-brand text-nowrap flex-shrink-0" type="submit" data-loading-text="@L["Đang xử lý..."]">@L["Xác nhận"]</button></form>
+        <form data-confirm="@L["Bạn có chắc muốn tiếp tục?"]" data-confirm-variant="danger" asp-action="Reject" asp-route-id="@request.Id" method="post" class="d-flex flex-column flex-sm-row gap-2"><label for="reject-@request.Id" class="visually-hidden">@L["Lý do từ chối"]</label><input id="reject-@request.Id" name="Note" class="form-control" required maxlength="500" placeholder="@L["Lý do từ chối"]" /><button class="btn btn-outline-danger text-nowrap flex-shrink-0" type="submit" data-loading-text="@L["Đang xử lý..."]">@L["Từ chối"]</button></form>
     </article>
 }
 <partial name="_Pager" model="Model" />

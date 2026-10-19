@@ -15,7 +15,7 @@
                         @if (field.Type == "checkbox" && field.Options is { } choices)
                         {
                             var chosen = Context.Request.Query[field.Name];
-                            <fieldset class="fx-filter__choices"><legend class="form-label">@L[field.Label]</legend>
+                            <fieldset class="fx-filter__choices"><legend class="@(choices.Count == 1 && choices[0].Text == field.Label ? "visually-hidden" : "form-label")">@L[field.Label]</legend>
                             @for (var i = 0; i < choices.Count; i++)
                             {
                                 var option = choices[i];

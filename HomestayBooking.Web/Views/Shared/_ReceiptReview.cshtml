@@ -1,0 +1,84 @@
+@using Microsoft.AspNetCore.Html
+@using HomestayBooking.Web.Identity
+@using HomestayBooking.Web.Services
+@model ReceiptReviewModel
+@{
+    var r = Model.Row;
+    var overdue = r.Status == PaymentStatus.Submitted && r.OfficeMinutesWaiting >= Model.AlertMinutes;
+    var amountOk = r.Amount == r.AmountDue;
+}
+            <article class="fx-card fx-receipt h-100 @(overdue ? "is-overdue" : "")">
+                @if (!Model.Preview)
+                {
+                <a class="fx-receipt__thumb" href="@Url.Action("Receipt", "Bookings", new { area = "", paymentId = r.PaymentId })" target="_blank" rel="noopener"
+                   aria-label="@L["Xem ảnh bill đơn {0}", r.BookingCode]">
+                    <img src="@Url.Action("Receipt", "Bookings", new { area = "", paymentId = r.PaymentId })" alt="@L["Ảnh bill đơn {0}", r.BookingCode]" loading="lazy" width="120" height="180" />
+                </a>
+                }
+                <div class="fx-receipt__body">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div>
+                            <h2 class="h6 mb-0 fx-code">@r.BookingCode</h2>
+                            <div class="small text-muted">@r.HomestayName</div>
+                        </div>
+                        <status-badge value="@r.BookingStatus" />
+                    </div>
+                    @{
+    var facts = new List<DescriptionItem>();
+
+                        Func<dynamic, IHtmlContent> fact0 = @<text>@r.ContactName · @PhoneNumberNormalizer.ToNational(r.ContactPhone)</text>;
+    facts.Add(new("Khách", fact0(null!)));
+                        Func<dynamic, IHtmlContent> fact1 = @<text><strong><money value="@r.Amount" /></strong>
+                            @if (!amountOk)
+                            {
+                                <span class="text-danger small">(@L["cần {0:N0}đ", r.AmountDue])</span>
+                            }</text>;
+    facts.Add(new("Số tiền", fact1(null!)));
+                        Func<dynamic, IHtmlContent> fact2 = @<text>@(r.TransferContent ?? "—")</text>;
+    facts.Add(new("Nội dung", fact2(null!)));
+                        Func<dynamic, IHtmlContent> fact3 = @<text>@VietnamTime.ToLocal(r.SubmittedAt).ToString("HH:mm dd/MM")
+                            @if (r.Status == PaymentStatus.Submitted)
+                            {
+                                <span class="small @(overdue ? "text-danger fw-semibold" : "text-muted")">
+                                    · @L["chờ {0:0} phút giờ làm việc", r.OfficeMinutesWaiting]
+                                </span>
+                            }</text>;
+    facts.Add(new("Gửi lúc", fact3(null!)));
+                        if (r.PreviousRejections > 0)
+                        {
+                            Func<dynamic, IHtmlContent> fact4 = @<text>@L["{0} lần trước — từ chối lần này thì đơn hết hạn", r.PreviousRejections]</text>;
+    facts.Add(new("Đã từ chối", fact4(null!)));
+                        }
+                        if (r.Status != PaymentStatus.Submitted)
+                        {
+                            Func<dynamic, IHtmlContent> fact5 = @<text>@r.ReviewedBy · @(r.ReviewedAt is { } at ? VietnamTime.ToLocal(at).ToString("HH:mm dd/MM") : "")</text>;
+    facts.Add(new("Người duyệt", fact5(null!)));
+                        }
+                        if (r.RejectReason is not null)
+                        {
+                            Func<dynamic, IHtmlContent> fact6 = @<text>@r.RejectReason</text>;
+    facts.Add(new("Lý do", fact6(null!)));
+                        }
+
+}
+<partial name="_DescriptionList" model="facts" />
+                    @if (!Model.Preview && r.Status == PaymentStatus.Submitted)
+                    {
+                        <div class="d-flex flex-wrap gap-2 mt-auto">
+                            <form asp-action="Approve" asp-route-id="@r.PaymentId" method="post"
+                                  data-confirm="@L["Duyệt bill {0:N0}đ cho đơn {1}?", r.Amount, r.BookingCode]">
+                                <button type="submit" class="btn btn-sm btn-brand" data-loading-text="@L["Đang duyệt..."]">
+                                    <i class="bi bi-check2" aria-hidden="true"></i> @L["Duyệt"]
+                                </button>
+                            </form>
+                            <form data-confirm-variant="danger" asp-action="Reject" asp-route-id="@r.PaymentId" method="post" class="d-flex flex-wrap gap-2 flex-grow-1"
+                                  data-confirm="@L["Từ chối bill đơn {0}?", r.BookingCode]">
+                                <label for="reason-@r.PaymentId" class="visually-hidden">@L["Lý do từ chối"]</label>
+                                <input id="reason-@r.PaymentId" name="reason" class="form-control form-control-sm" list="reject-reasons"
+                                       placeholder="@L["Lý do từ chối"]" required maxlength="500" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger text-nowrap">@L["Từ chối"]</button>
+                            </form>
+                        </div>
+                    }
+                </div>
+            </article>
