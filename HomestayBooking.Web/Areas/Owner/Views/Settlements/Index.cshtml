@@ -1,0 +1,13 @@
+@model PaginatedList<Settlement>
+@{ ViewData["Title"]=L["Đối soát"]; var rows=new List<TableRow>(); }
+<partial name="_PageHead" model='new PageHeadModel("Đối soát", "", "", L["Các bảng đối soát Fuji đã gửi cho bạn."],ShowCreate:false)' />
+<partial name="_FilterBar" model='new FilterBarModel("owner-settlements",new FilterField[] {new("status","Trạng thái",Options:new SelectListItem[] {new(L["Tất cả"],""),new(L["Đã gửi"],"Sent"),new(L["Đã xác nhận"],"Confirmed"),new(L["Đã thanh toán"],"Paid")})})' />
+@foreach(var s in Model) {
+    Func<dynamic,IHtmlContent> period = @<text><a class="btn btn-link px-0" asp-action="Details" asp-route-id="@s.Id">@L["Kỳ {0} · {1}/{2}",s.PeriodNo,s.Month,s.Year]</a><div class="text-muted">@L["Homestay #{0}",s.HomestayId]</div></text>;
+    Func<dynamic,IHtmlContent> status = @<text><status-badge value="@s.Status" /></text>;
+    Func<dynamic,IHtmlContent> commission = @<text><money value="@s.TotalCommission" /></text>;
+    Func<dynamic,IHtmlContent> payout = @<text><money value="@s.PayoutAmount" /></text>;
+    rows.Add(new(new IHtmlContent[] {period(null!),status(null!),commission(null!),payout(null!)}));
+}
+<partial name="_DataTable" model='new DataTableModel("Đối soát",new TableColumn[] {new("Kỳ đối soát"),new("Trạng thái"),new("Hoa hồng",Numeric:true),new("Số được nhận",Numeric:true)},rows)' />
+<partial name="_Pager" model="Model" />

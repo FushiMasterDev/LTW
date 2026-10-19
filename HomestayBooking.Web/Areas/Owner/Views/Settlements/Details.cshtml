@@ -1,0 +1,38 @@
+@using HomestayBooking.Web.Services
+@model SettlementDetails
+@{ var s=Model.Settlement; ViewData["Title"]=L["Chi tiết đối soát"]; var rows=new List<TableRow>(); }
+<partial name="_PageHead" model='new PageHeadModel("Chi tiết đối soát", "", "", L["Kỳ {0} · {1}/{2}",s.PeriodNo,s.Month,s.Year], ShowCreate:false)' />
+<partial name="_Breadcrumb" model='new BreadcrumbModel(new BreadcrumbItem[] {new("Đối soát",Url.Action("Index")),new("Chi tiết đối soát")})' />
+<div class="mb-3"><status-badge value="@s.Status" /></div>
+<partial name="_PriceBreakdown" model='new PriceBreakdownModel(new PriceLine[] {new("Tổng tiền phòng",s.TotalRoomAmount),new("Tiền giữ lại",s.TotalRetained),new("Hoa hồng",s.TotalCommission),new("Số được nhận",s.PayoutAmount)})' />
+<h2 class="h5 mt-4">@L["Các đơn trong kỳ"]</h2>
+@foreach(var line in Model.Lines) {
+    Func<dynamic,IHtmlContent> code = @<text><a class="btn btn-link px-0" asp-controller="Bookings" asp-action="Details" asp-route-id="@line.Item.BookingId">@line.BookingCode</a></text>;
+    Func<dynamic,IHtmlContent> amount = @<text><money value="@line.Item.RoomAmount" /></text>;
+    Func<dynamic,IHtmlContent> rate = @<text>@((line.Item.CommissionRate*100).ToString("0.##"))%</text>;
+    Func<dynamic,IHtmlContent> commission = @<text><money value="@line.Item.CommissionAmount" /></text>;
+    Func<dynamic,IHtmlContent> payout = @<text><money value="@line.Item.PayoutAmount" /></text>;
+    rows.Add(new(new IHtmlContent[] {code(null!),amount(null!),rate(null!),commission(null!),payout(null!)}));
+}
+<partial name="_DataTable" model='new DataTableModel("Các đơn trong kỳ",new TableColumn[] {new("Mã đơn"),new("Tiền phòng",Numeric:true),new("Tỷ lệ hoa hồng",Numeric:true),new("Hoa hồng",Numeric:true),new("Số được nhận",Numeric:true)},rows)' />
+<h2 class="h5 mt-4">@L["Khoản bù"]</h2>
+<p class="text-muted">@L["Khoản bù được chi riêng, không cộng vào số được nhận trong bảng đối soát."]</p>
+@{ var compensationRows=new List<TableRow>(); }
+@foreach(var p in Model.Compensations) {
+    Func<dynamic,IHtmlContent> code = @<text>@p.Booking.Code</text>;
+    Func<dynamic,IHtmlContent> amount = @<text><money value="@p.Amount" /></text>;
+    Func<dynamic,IHtmlContent> status = @<text><status-badge value="@p.Status" /></text>;
+    compensationRows.Add(new(new IHtmlContent[] {code(null!),amount(null!),status(null!)}));
+}
+<partial name="_DataTable" model='new DataTableModel("Khoản bù",new TableColumn[] {new("Mã đơn"),new("Số tiền",Numeric:true),new("Trạng thái")},compensationRows)' />
+@if(s.Status==SettlementStatus.Sent) {
+    <form asp-action="Confirm" asp-route-id="@s.Id" method="post" class="mt-4" data-confirm="@L["Xác nhận số liệu đối soát này?"]"><button type="submit" class="btn btn-brand" data-loading-text="@L["Đang lưu…"]">@L["Xác nhận đối soát"]</button></form>
+}
+<div class="fx-form-card fx-card mt-4">
+<form asp-action="Discrepancy" asp-route-id="@s.Id" method="post" data-owner-form>
+    <label class="form-label" for="settlement-note">@L["Phản hồi sai lệch"]</label><textarea class="form-control" id="settlement-note" name="note" required maxlength="500" aria-describedby="note-hint"></textarea>
+    <p class="form-text" id="note-hint">@L["Nêu mã đơn và số liệu cần kiểm tra, tối đa 500 ký tự."]</p>
+    <div class="fx-form-actions"><button type="submit" class="btn btn-brand" data-loading-text="@L["Đang lưu…"]">@L["Gửi phản hồi"]</button></div>
+</form>
+</div>
+@section Scripts { <script src="~/js/components/owner-forms.js" asp-append-version="true"></script> }
