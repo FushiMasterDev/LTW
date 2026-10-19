@@ -55,3 +55,7 @@ Các mục sau đã có service, không cần ghi gap:
 **Một phần, còn mở.** `OwnerScheduleService.ReadAsync` chỉ trả Confirmed/CheckedIn, không có Deposited. `BookingService` không có API danh sách/đếm đơn của chủ. `StaffBookingService.SearchAsync` chỉ cho nhân viên, không được gọi bằng quyền giả Employee. Danh sách Owner/Bookings là truy vấn controller cũ, chưa có service đọc tương ứng.
 
 05a: dashboard có số khách đến hôm nay qua `OwnerScheduleService`, lối tắt tới `/Owner/Bookings?status=Deposited`, không dựng số đơn chờ hoặc thêm truy vấn. Cần service `OwnerBookingSummaryAsync(actor)` hoặc API đếm Deposited kiểm quyền theo chủ để hoàn thiện số đơn chờ trên dashboard.
+
+## G-18 — Thông báo chủ cũ không có URL (05a, 19/10/2026)
+
+**Nhỏ, còn mở cho dữ liệu cũ/nguồn tạo thông báo.** Khi rà tài khoản `0912000001`, bốn thông báo hiện có trả `Url = null`, nên trang/chuông không có liên kết để mở đơn. `BookingService.NotifyAsync` vẫn có nhánh gọi `NotificationService.Add` không truyền URL cho đơn đặt cọc/hủy. Không phân tích mã đơn từ nội dung tự do để đoán URL hoặc truy vấn lại trong UI. Các URL đã có của service khác đã được nối: `/Owner/Homestays/{id}`, `/Owner/Settlements/{id}`, nhắc nhận phòng qua `Bookings?arrivals=…`, đánh giá qua Booking Details có lối tắt tới Reviews. Bước backend sau cần bổ sung URL tại nguồn và quyết định backfill dữ liệu cũ nếu cần.

@@ -22,8 +22,6 @@ public class CalendarController(HomestayContentService content, RoomBlockService
         if (homestayId is int id && !homes.Any(h => h.Id == id)) return NotFound();
         var today = VietnamTime.Today(clock);
         var date = RoomCalendarModel.ParseMonth(month, today);
-        // Guard navigation at DateOnly boundaries before building padded weeks.
-        if (date.Year is < 1900 or > 2100) return BadRequest();
         var shape = new RoomCalendarModel(date, []);
         var nights = homestayId is int home ? await blocks.CalendarAsync(home, shape.Days.First(), shape.Days.Last().AddDays(1), Actor) : [];
         var rooms = nights.Select(n => new CalendarRoom(n.RoomId,n.RoomCode)).Distinct().ToList();
@@ -46,7 +44,7 @@ public class CalendarController(HomestayContentService content, RoomBlockService
         } catch (RoomBlockConflictException ex) {
             TempData["Error"] = L["Lịch phòng bị trùng: {0}. Vui lòng chọn khoảng ngày khác.", string.Join("; ",ex.Conflicts.Select(c=>$"{c.Date:dd/MM/yyyy}: {c.Code}"))].Value;
         } catch (BookingException ex) { TempData["Error"] = L[ex.ResourceKey, ex.Arguments].Value; }
-        return RedirectToAction(nameof(Index), new { homestayId,roomId, month=start.ToString("yyyy-MM") });
+        return RedirectToAction(nameof(Index), new { homestayId,roomId, month=(start.Year is >= 2 and <= 9998 ? start : VietnamTime.Today(clock)).ToString("yyyy-MM") });
     }
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Unlock(int homestayId, int roomId, int blockId, string? month)

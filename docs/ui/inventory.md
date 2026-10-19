@@ -410,3 +410,20 @@ Hệ quả:
 - **Đếm view:** `find Views Areas -name '*.cshtml' | wc -l` cho ra 67.
 - **CSS:** script `css_usage.py` (scratchpad, không commit) tách class rồi tìm nguyên từ trong `.cshtml`, `.cs` và `wwwroot/js`. Phần "chết thật" đã loại các class do Tag Helper, Bootstrap hoặc `site.js` sinh lúc chạy.
 - **Mã hex:** `grep -c '#[0-9a-fA-F]\{3,6\}\b' wwwroot/css/*.css`.
+
+## Cập nhật sau 05a — 19/10/2026
+
+Bảng ở mục 4 là kiểm kê nền trước triển khai. Phía Owner đã có các route sau, cùng policy `ApprovedOwner`; riêng Dashboard vẫn giữ role Owner để chủ chưa duyệt xem hồ sơ.
+
+| Màn | Route GET | POST | Trạng thái |
+|---|---|---|---|
+| Homestay của tôi | `/Owner/Homestays`, `/Owner/Homestays/Edit/{id}?tab=…`, alias `/Owner/Homestays/{id}` | Content, Location, Price, RoomType, AddRoom, Room, Active, Upload, Image, Policy, RemovePolicy, Document, DeleteDocument | Có; tiện nghi/tạo loại phòng/đổi danh mục còn G-16 |
+| Giấy tờ riêng tư | `/Owner/Homestays/OpenDocument/{id}` | — | Có, quyền qua OwnerRegistrationQueryService |
+| Lịch phòng | `/Owner/Calendar?homestayId=…&roomId=…&month=yyyy-MM` | Create, Unlock | Có, khóa/mở 3 thao tác |
+| Lịch nhận–trả | `/Owner/Schedule?period=today|tomorrow|week`, hỗ trợ `date` cho link nhắc cũ | — | Có |
+| Đối soát | `/Owner/Settlements`, `/Owner/Settlements/Details/{id}`, alias `/Owner/Settlements/{id}` | Confirm, Discrepancy | Có; chủ không thấy nháp |
+| Đánh giá | `/Owner/Reviews?homestayId=…&page=…` | Reply | Có; tên khách vẫn dùng fallback G-15 |
+| Dashboard | `/Owner/Dashboard` | — | Có lối tắt và lượt nhận hôm nay; thiếu số đơn Deposited qua service (G-17) |
+| Thông báo | `/Notifications` + chuông dùng chung | Giữ các action đọc của bước 02 | Đã rà điện thoại; URL có sẵn mở đúng, dữ liệu cũ thiếu URL ghi G-18 |
+
+Chi tiết nghiệm thu và dữ liệu thử: `docs/ui/05a-chu-homestay-report.md`.

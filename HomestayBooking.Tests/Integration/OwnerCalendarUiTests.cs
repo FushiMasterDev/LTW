@@ -60,4 +60,19 @@ public sealed class OwnerCalendarUiTests : IClassFixture<TestWebApplicationFacto
         Assert.False(factory.WithDb(db=>db.RoomBlocks.Any(b=>b.Id==block.Id)));
         // InMemory does not run SQL cascade deletes. The browser smoke verifies released nights on SQL Server.
     }
+    [Fact]
+    public async Task MissingDates_ReturnsToValidCalendarWithError_AndCreatesNoBlock()
+    {
+        using var factory=new TestWebApplicationFactory();
+        var client=await factory.SignInByPhoneAsync("0912000001");
+        var room=factory.WithDb(db=>db.Rooms.Where(r=>r.RoomType.Homestay.Owner.Person.PhoneNumber=="+84912000001").Select(r=>new {r.Id,r.RoomType.HomestayId}).First());
+        var before=factory.WithDb(db=>db.RoomBlocks.Count());
+        var token=await TestWebApplicationFactory.TokenFromAsync(client,$"/Owner/Calendar?homestayId={room.HomestayId}");
+        var result=await client.PostAsync("/Owner/Calendar/Create",Form(token,("homestayId",room.HomestayId.ToString()),("roomId",room.Id.ToString())));
+        Assert.Equal(HttpStatusCode.Redirect,result.StatusCode);
+        var page=await client.GetAsync(result.Headers.Location);
+        Assert.Equal(HttpStatusCode.OK,page.StatusCode);
+        Assert.Contains("Khoảng khóa, lý do hoặc ghi chú không hợp lệ",await page.Content.ReadAsStringAsync());
+        Assert.Equal(before,factory.WithDb(db=>db.RoomBlocks.Count()));
+    }
 }

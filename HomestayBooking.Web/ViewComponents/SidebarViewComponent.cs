@@ -59,6 +59,11 @@ public class SidebarViewComponent(IAuthorizationService authorization, BookingCh
                 [
                     new("Owner", "Dashboard", "Tổng quan", "bi-speedometer2"),
                     new("Owner", "Bookings", "Đơn đặt phòng", "bi-journal-check"),
+                    new("Owner", "Homestays", "Homestay của tôi", "bi-house-gear"),
+                    new("Owner", "Calendar", "Lịch phòng", "bi-calendar3"),
+                    new("Owner", "Schedule", "Lịch nhận–trả", "bi-calendar-check"),
+                    new("Owner", "Settlements", "Đối soát", "bi-receipt"),
+                    new("Owner", "Reviews", "Đánh giá của khách", "bi-chat-square-text"),
                 ],
                 _ => [new(w.Area, "Dashboard", "Tổng quan", "bi-speedometer2")],
             };

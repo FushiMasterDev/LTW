@@ -2382,4 +2382,5 @@
   <data name="Địa chỉ hoặc khu vực không hợp lệ." xml:space="preserve"><value>Invalid address or area.</value></data>
   <data name="Ảnh phải gắn loại phòng thuộc cùng homestay." xml:space="preserve"><value>The image must be assigned to a room type in the same homestay.</value></data>
   <data name="Lịch phòng bị trùng: {0}. Vui lòng chọn khoảng ngày khác." xml:space="preserve"><value>Room dates conflict: {0}. Choose another date range.</value></data>
+  <data name="Lượt nhận phòng hôm nay" xml:space="preserve"><value>Check-ins today</value></data>
 </root>

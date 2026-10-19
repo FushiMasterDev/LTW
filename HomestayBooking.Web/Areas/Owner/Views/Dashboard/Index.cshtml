@@ -26,20 +26,26 @@
 }
 
 <div class="row g-3 mb-4">
-    <div class="col-sm-4">
+    <div class="col-sm-6 col-xl-3">
         <partial name="_StatCard" model='new StatCardModel("Homestay", homestays.Count.ToString(), "houses")' />
     </div>
-    <div class="col-sm-4">
+    <div class="col-sm-6 col-xl-3">
         <partial name="_StatCard" model='new StatCardModel("Đang hoạt động", activeCount.ToString(), "toggle-on")' />
     </div>
-    <div class="col-sm-4">
+    <div class="col-sm-6 col-xl-3">
         <partial name="_StatCard" model='new StatCardModel("Phòng", roomCount.ToString(), "door-closed")' />
     </div>
+    @if (Model.ArrivalsToday is int arrivals) {
+    <div class="col-sm-6 col-xl-3"><partial name="_StatCard" model='new StatCardModel("Lượt nhận phòng hôm nay", arrivals.ToString(), "calendar-check", Url.Action("Index","Schedule"))' /></div>
+    }
 </div>
 
 @if (User.IsApprovedOwner())
 {
-<partial name="_TaskList" model='new TaskListModel("Việc cần xử lý", new TaskListItem[] { new("Đơn đặt phòng", L["Đơn đã đặt cọc của homestay bạn. Xác nhận trong 30 phút sau khi khách đặt cọc."], Url.Action("Index", "Bookings")) })' />
+<partial name="_TaskList" model='new TaskListModel("Việc cần xử lý", new TaskListItem[] { new("Đơn đặt phòng", L["Đơn đã đặt cọc của homestay bạn. Xác nhận trong 30 phút sau khi khách đặt cọc."], Url.Action("Index", "Bookings", new {status=BookingStatus.Deposited})),
+    new("Homestay của tôi",Href:Url.Action("Index","Homestays")),new("Lịch phòng",Href:Url.Action("Index","Calendar")),
+    new("Lịch nhận–trả",Href:Url.Action("Index","Schedule")),new("Đối soát",Href:Url.Action("Index","Settlements")),
+    new("Đánh giá của khách",Href:Url.Action("Index","Reviews")),new("Thông báo",Href:"/Notifications") })' />
 }
 
 <h2 class="fx-section-title"><i class="bi bi-house-gear" aria-hidden="true"></i> @L["Homestay của tôi"]</h2>
