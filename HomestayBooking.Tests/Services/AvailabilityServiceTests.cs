@@ -10,6 +10,27 @@ namespace HomestayBooking.Tests.Services;
 
 public sealed class AvailabilityServiceTests
 {
+    [Fact]
+    public async Task ThirtyOneNightStaffQuoteKeepsTypesAndEffectivePriceVersionsSeparate()
+    {
+        using var h = await BackofficeTestHost.CreateAsync();
+        var other = await h.TypeAsync(200000);
+        var start = h.Today.AddDays(1);
+        h.Db.RoomTypePrices.Add(new RoomTypePrice
+        {
+            RoomTypeId = h.H.RoomType.Id, DayType = DayType.Weekday,
+            EffectiveFrom = start.AddDays(3), Price = 900000,
+        });
+        await h.Db.SaveChangesAsync();
+        var middle = start.AddDays(15);
+        var end = start.AddDays(31);
+        var first = await h.H.Pricing().QuoteAsync(h.H.RoomType.Id, start, middle);
+        var second = await h.H.Pricing().QuoteAsync(h.H.RoomType.Id, middle, end);
+        var offers = await h.Availability().StaffAvailabilityAsync(start, end, null, 2, h.Consultant);
+        Assert.Equal(first.Total + second.Total, offers.Single(o => o.RoomTypeId == h.H.RoomType.Id).TotalPrice);
+        Assert.Equal(31 * 200000m, offers.Single(o => o.RoomTypeId == other.Id).TotalPrice);
+    }
+
     [Theory]
     [InlineData(null, true)] [InlineData(1000000, true)] [InlineData(700000, false)]
     public async Task ThreeNightSearchDisplaysAndFiltersNightlyAverage(int? maximum, bool included)

@@ -121,7 +121,8 @@ public class AvailabilityService(ApplicationDbContext db, TimeProvider clock, IO
     }
 
     // Nạp giá/ngày lễ một lần và đêm bị chiếm một lần cho cả danh sách, không gọi QuoteAsync trong vòng lặp.
-    private async Task<(List<AvailabilityOffer> Offers, List<Homestay> Homes)> LoadAsync(HomestaySearchQuery query)
+    private async Task<(List<AvailabilityOffer> Offers, List<Homestay> Homes)> LoadAsync(HomestaySearchQuery query,
+        bool includeHomeContent = true)
     {
         var roomsQuery = SellableRooms(checkOut: query.HasDates ? query.CheckOut : null, guests: query.Guests);
         if (query.AreaId is int area) roomsQuery = roomsQuery.Where(r => r.RoomType.Homestay.AreaId == area);
@@ -135,19 +136,23 @@ public class AvailabilityService(ApplicationDbContext db, TimeProvider clock, IO
             roomsQuery = roomsQuery.Where(r => r.RoomType.Homestay.HomestayAmenities.Any(a => a.AmenityId == amenity));
         var rooms = await roomsQuery.Select(r => new { r.Id, r.RoomTypeId }).ToListAsync();
         var typeIds = rooms.Select(r => r.RoomTypeId).Distinct().ToArray();
-        var types = await db.RoomTypes.AsNoTracking().Where(t => typeIds.Contains(t.Id))
-            .Include(t => t.Homestay).ThenInclude(h => h.Area)
-            .Include(t => t.Homestay).ThenInclude(h => h.Images)
-            .Include(t => t.Homestay).ThenInclude(h => h.HomestayAmenities).ThenInclude(a => a.Amenity).AsSplitQuery().ToListAsync();
+        var typesQuery = db.RoomTypes.AsNoTracking().Where(t => typeIds.Contains(t.Id))
+            .Include(t => t.Homestay).ThenInclude(h => h.Area).AsQueryable();
+        if (includeHomeContent)
+            typesQuery = typesQuery.Include(t => t.Homestay).ThenInclude(h => h.Images)
+                .Include(t => t.Homestay).ThenInclude(h => h.HomestayAmenities).ThenInclude(a => a.Amenity);
+        var types = await typesQuery.AsSplitQuery().ToListAsync();
         var homes = types.Select(t => t.Homestay).DistinctBy(h => h.Id).ToList();
         var homeIds = homes.Select(h => h.Id).ToArray();
         var ratings = await ReviewRatings.Summaries(db.Reviews.Where(r => homeIds.Contains(r.HomestayId))).ToDictionaryAsync(r => r.Id);
         var prices = await db.RoomTypePrices.AsNoTracking().Where(p => typeIds.Contains(p.RoomTypeId)).ToListAsync();
+        var pricesByType = prices.GroupBy(p => p.RoomTypeId).ToDictionary(g => g.Key, g => g.ToList());
         var occupied = new HashSet<int>(); var holidays = new HashSet<DateOnly>();
         if (query.HasDates)
         {
-            var ids = rooms.Select(r => r.Id).ToArray();
-            occupied = (await NightsDuring(query.CheckIn!.Value, query.CheckOut!.Value).Where(n => ids.Contains(n.RoomId))
+            // Reuse the sellable scope as a SQL join instead of a large OPENJSON room-id filter.
+            // This matches the batched night matrix and keeps the query stable at 1,500+ rooms.
+            occupied = (await NightsDuring(query.CheckIn!.Value, query.CheckOut!.Value).Where(n => roomsQuery.Any(r => r.Id == n.RoomId))
                 .Select(n => n.RoomId).Distinct().ToListAsync()).ToHashSet();
             holidays = (await db.Holidays.Where(h => h.Date >= query.CheckIn && h.Date < query.CheckOut).Select(h => h.Date).ToListAsync()).ToHashSet();
         }
@@ -158,7 +163,8 @@ public class AvailabilityService(ApplicationDbContext db, TimeProvider clock, IO
             decimal? price;
             if (query.HasDates)
             {
-                try { price = PricingService.QuoteFromPrices(type.Id, query.CheckIn!.Value, query.CheckOut!.Value, prices,
+                try { price = PricingService.QuoteFromPrices(type.Id, query.CheckIn!.Value, query.CheckOut!.Value,
+                    pricesByType.GetValueOrDefault(type.Id) ?? [],
                     holidays, options.Value.DepositRate, Math.Max(31, options.Value.MaxNights)).Total; }
                 catch (BookingException) { continue; }
             }
@@ -208,7 +214,7 @@ public class AvailabilityService(ApplicationDbContext db, TimeProvider clock, IO
     {
         await PartnerServiceSupport.EmployeeAsync(db, actor, EmployeePosition.Consultant, EmployeePosition.Manager, EmployeePosition.Administrator);
         ValidateStaffDates(checkIn, checkOut, guests);
-        return (await LoadAsync(new() { CheckIn = checkIn, CheckOut = checkOut, AreaId = areaId, Guests = guests })).Offers
+        return (await LoadAsync(new() { CheckIn = checkIn, CheckOut = checkOut, AreaId = areaId, Guests = guests }, includeHomeContent: false)).Offers
             .OrderBy(o => o.HomestayName).ThenBy(o => o.RoomTypeName).ToList();
     }
 
@@ -220,7 +226,7 @@ public class AvailabilityService(ApplicationDbContext db, TimeProvider clock, IO
 
     internal async Task<List<AvailabilityOffer>> AlternativesAsync(Booking booking)
     {
-        var offers = (await LoadAsync(new() { CheckIn = booking.CheckIn, CheckOut = booking.CheckOut, Guests = booking.Guests })).Offers;
+        var offers = (await LoadAsync(new() { CheckIn = booking.CheckIn, CheckOut = booking.CheckOut, Guests = booking.Guests }, includeHomeContent: false)).Offers;
         return offers.Where(o => o.FreeRooms > 0).OrderBy(o => o.HomestayId == booking.HomestayId ? 0 : o.AreaId == booking.Homestay.AreaId ? 1 : 2)
             .ThenBy(o => o.TotalPrice).ThenByDescending(o => o.Rating).ToList();
     }
