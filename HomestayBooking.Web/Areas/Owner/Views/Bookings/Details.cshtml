@@ -8,64 +8,57 @@
 }
 <partial name="_PageHead" model="@(new PageHeadModel(L["Đơn {0}", b.Code], b.Status.Icon(), b.Status.ToneClass(), b.Homestay.Name, ShowCreate: false))" />
 
+<partial name="_Breadcrumb" model='new BreadcrumbModel(new BreadcrumbItem[] { new("Đơn đặt phòng", Url.Action("Index")), new(b.Code) })' />
 <p><a asp-action="Index"><i class="bi bi-arrow-left" aria-hidden="true"></i> @L["Về danh sách đơn"]</a></p>
 
-<div class="row g-3">
-    <div class="col-lg-7">
-        <div class="card-soft p-3 mb-3">
-            <dl class="row mb-0">
-                <dt class="col-sm-4">@L["Trạng thái"]</dt>
-                <dd class="col-sm-8"><span class="badge-tone @b.Status.ToneClass()">@L[b.Status.DisplayName()]</span></dd>
-                <dt class="col-sm-4">@L["Khách"]</dt>
-                <dd class="col-sm-8">@b.ContactName · @PhoneNumberNormalizer.ToNational(b.ContactPhone) · @L["{0} khách", b.Guests]</dd>
-                <dt class="col-sm-4">@L["Phòng"]</dt>
-                <dd class="col-sm-8">@b.RoomType.Name · @b.Room.RoomCode</dd>
-                <dt class="col-sm-4">@L["Ngày ở"]</dt>
-                <dd class="col-sm-8">@b.CheckIn.ToString("dd/MM/yyyy") – @b.CheckOut.ToString("dd/MM/yyyy")</dd>
-                <dt class="col-sm-4">@L["Tổng tiền"]</dt>
-                <dd class="col-sm-8">@b.TotalAmount.ToString("N0")đ</dd>
-                <dt class="col-sm-4">@L["Tiền cọc"]</dt>
-                <dd class="col-sm-8">@b.DepositAmount.ToString("N0")đ</dd>
-                @if (b.Status == BookingStatus.Deposited && b.ConfirmDeadlineAt is { } deadline)
+<div class="fx-booking-detail">
+    <section class="fx-booking-detail__facts">
+        <div class="fx-card p-3 mb-3">
+            @{
+    var facts = new List<DescriptionItem>();
+
+                Func<dynamic, IHtmlContent> fact0 = @<text><status-badge value="@b.Status" /></text>;
+    facts.Add(new("Trạng thái", fact0(null!)));
+                Func<dynamic, IHtmlContent> fact1 = @<text>@b.ContactName · @PhoneNumberNormalizer.ToNational(b.ContactPhone) · @L["{0} khách", b.Guests]</text>;
+    facts.Add(new("Khách", fact1(null!)));
+                Func<dynamic, IHtmlContent> fact2 = @<text>@b.RoomType.Name · @b.Room.RoomCode</text>;
+    facts.Add(new("Phòng", fact2(null!)));
+                Func<dynamic, IHtmlContent> fact3 = @<text>@b.CheckIn.ToString("dd/MM/yyyy") – @b.CheckOut.ToString("dd/MM/yyyy")</text>;
+    facts.Add(new("Ngày ở", fact3(null!)));
+                Func<dynamic, IHtmlContent> fact4 = @<text><money value="@b.TotalAmount" /></text>;
+    facts.Add(new("Tổng tiền", fact4(null!)));
+                Func<dynamic, IHtmlContent> fact5 = @<text><money value="@b.DepositAmount" /></text>;
+    facts.Add(new("Tiền cọc", fact5(null!)));
+                if (b.Status == BookingStatus.Deposited && b.ConfirmDeadlineAt is { } deadline)
                 {
-                    <dt class="col-sm-4">@L["Hạn xác nhận"]</dt>
-                    <dd class="col-sm-8">@VietnamTime.ToLocal(deadline).ToString("HH:mm dd/MM/yyyy")</dd>
+                    Func<dynamic, IHtmlContent> fact6 = @<text>@VietnamTime.ToLocal(deadline).ToString("HH:mm dd/MM/yyyy")</text>;
+    facts.Add(new("Hạn xác nhận", fact6(null!)));
                 }
-                @if (!string.IsNullOrWhiteSpace(b.SpecialRequests))
+                if (!string.IsNullOrWhiteSpace(b.SpecialRequests))
                 {
-                    <dt class="col-sm-4">@L["Yêu cầu đặc biệt"]</dt>
-                    <dd class="col-sm-8">@b.SpecialRequests</dd>
+                    Func<dynamic, IHtmlContent> fact7 = @<text>@b.SpecialRequests</text>;
+    facts.Add(new("Yêu cầu đặc biệt", fact7(null!)));
                 }
-                @if (b.CancelReason is not null)
+                if (b.CancelReason is not null)
                 {
-                    <dt class="col-sm-4">@L["Lý do"]</dt>
-                    <dd class="col-sm-8">@b.CancelReason</dd>
+                    Func<dynamic, IHtmlContent> fact8 = @<text>@b.CancelReason</text>;
+    facts.Add(new("Lý do", fact8(null!)));
                 }
-            </dl>
+
+}
+<partial name="_DescriptionList" model="facts" />
         </div>
 
-        <h2 class="section-title h5">@L["Yêu cầu đổi"]</h2>
+    </section>
+    <section class="fx-booking-detail__history">
+        <h2 class="fx-section-title h5">@L["Yêu cầu đổi"]</h2>
         <partial name="_Timeline" model="@(new TimelineModel(Changes: Model.ChangeHistory))" />
-        <h2 class="section-title h5">@L["Lịch sử"]</h2>
-        <div class="card-soft p-3">
-            <ul class="list-unstyled mb-0">
-                @foreach (var h in b.Histories.OrderBy(h => h.ChangedAt))
-                {
-                    <li class="mb-1">
-                        <span class="text-muted small">@VietnamTime.ToLocal(h.ChangedAt).ToString("HH:mm dd/MM")</span>
-                        @L[h.ToStatus.DisplayName()]
-                        @if (h.Note is not null)
-                        {
-                            <span class="text-muted">— @h.Note</span>
-                        }
-                    </li>
-                }
-            </ul>
-        </div>
-    </div>
+        <h2 class="fx-section-title h5">@L["Lịch sử"]</h2>
+        <partial name="_Timeline" model='new TimelineModel(Events: b.Histories.OrderBy(h => h.ChangedAt).Select(h => new TimelineItem(h.ChangedAt, h.ToStatus.DisplayName(), h.Note)).ToArray())' />
+    </section>
 
-    <div class="col-lg-5">
-        <div class="card-soft p-3">
+    <aside class="fx-booking-detail__actions">
+        <div class="fx-card p-3">
             <h2 class="h5">@L["Thao tác"]</h2>
             @switch (b.Status)
             {
@@ -82,13 +75,13 @@
                                 }
                             </select>
                         }
-                        <button type="submit" class="btn btn-brand w-100"><i class="bi bi-check2-circle" aria-hidden="true"></i> @L["Xác nhận đơn"]</button>
+                        <button type="submit" data-loading-text="@L["Đang xử lý..."]" class="btn btn-brand w-100"><i class="bi bi-check2-circle" aria-hidden="true"></i> @L["Xác nhận đơn"]</button>
                     </form>
                     <form asp-action="Reject" asp-route-id="@b.Id" method="post"
-                          data-confirm="@L["Từ chối đơn {0}? Fuji sẽ hoàn 100% tiền cọc cho khách.", b.Code]">
+                          data-confirm-variant="danger" data-confirm="@L["Từ chối đơn {0}? Fuji sẽ hoàn 100% tiền cọc cho khách.", b.Code]">
                         <label for="reason" class="form-label">@L["Lý do từ chối"]</label>
                         <textarea id="reason" name="reason" class="form-control mb-2" rows="2" required maxlength="500"></textarea>
-                        <button type="submit" class="btn btn-outline-danger w-100"><i class="bi bi-x-circle" aria-hidden="true"></i> @L["Từ chối đơn"]</button>
+                        <button type="submit" data-loading-text="@L["Đang xử lý..."]" class="btn btn-outline-danger w-100"><i class="bi bi-x-circle" aria-hidden="true"></i> @L["Từ chối đơn"]</button>
                     </form>
                     break;
                 case BookingStatus.Confirmed:
@@ -96,7 +89,7 @@
                     @if (Model.Today >= b.CheckIn)
                     {
                         <form asp-action="CheckIn" asp-route-id="@b.Id" method="post" class="mb-2">
-                            <button type="submit" class="btn btn-brand w-100"><i class="bi bi-door-open" aria-hidden="true"></i> @L["Khách đã nhận phòng"]</button>
+                            <button type="submit" data-loading-text="@L["Đang xử lý..."]" class="btn btn-brand w-100"><i class="bi bi-door-open" aria-hidden="true"></i> @L["Khách đã nhận phòng"]</button>
                         </form>
                     }
                     else
@@ -106,8 +99,8 @@
                     @if (Model.Today > b.CheckIn)
                     {
                         <form asp-action="NoShow" asp-route-id="@b.Id" method="post"
-                              data-confirm="@L["Đánh dấu khách không đến đơn {0}? Khách sẽ không được hoàn cọc.", b.Code]">
-                            <button type="submit" class="btn btn-outline-danger w-100"><i class="bi bi-person-x" aria-hidden="true"></i> @L["Khách không đến"]</button>
+                              data-confirm-variant="danger" data-confirm="@L["Đánh dấu khách không đến đơn {0}? Khách sẽ không được hoàn cọc.", b.Code]">
+                            <button type="submit" data-loading-text="@L["Đang xử lý..."]" class="btn btn-outline-danger w-100"><i class="bi bi-person-x" aria-hidden="true"></i> @L["Khách không đến"]</button>
                         </form>
                     }
                     else
@@ -118,7 +111,7 @@
                 case BookingStatus.CheckedIn:
                     <form asp-action="Complete" asp-route-id="@b.Id" method="post"
                           data-confirm="@L["Hoàn thành đơn {0}?", b.Code]">
-                        <button type="submit" class="btn btn-brand w-100"><i class="bi bi-trophy" aria-hidden="true"></i> @L["Khách đã trả phòng"]</button>
+                        <button type="submit" data-loading-text="@L["Đang xử lý..."]" class="btn btn-brand w-100"><i class="bi bi-trophy" aria-hidden="true"></i> @L["Khách đã trả phòng"]</button>
                     </form>
                     break;
                 default:
@@ -126,5 +119,5 @@
                     break;
             }
         </div>
-    </div>
+    </aside>
 </div>

@@ -455,3 +455,11 @@
         <div class="fx-form-actions"><button type="button" class="btn btn-brand">@L["Lưu"]</button><button type="button" class="btn btn-outline-secondary">@L["Hủy"]</button></div>
     </div>
 </section>
+
+<section class="uikit-section" aria-label="Bố cục chi tiết nội bộ">
+    <div class="fx-booking-detail">
+        <div class="fx-booking-detail__facts fx-card p-4"><partial name="_DescriptionList" model='new DescriptionItem[] { new("Khách", new HtmlContentBuilder().Append("Nguyễn Thu Hà")), new("Phòng", new HtmlContentBuilder().Append("Phòng gia đình")) }' /></div>
+        <div class="fx-booking-detail__actions fx-card p-4"><button type="button" class="btn btn-brand w-100">@L["Xác nhận đơn"]</button></div>
+        <div class="fx-booking-detail__history"><partial name="_Timeline" model='new TimelineModel()' /></div>
+    </div>
+</section>

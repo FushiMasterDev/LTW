@@ -1059,3 +1059,17 @@
   .fx-form-actions > .btn { flex: 1; min-height: 2.75rem; }
   .fx-table .btn { min-height: 2.75rem; }
 }
+
+.fx-booking-detail { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; grid-template-areas: "facts" "actions" "history"; }
+.fx-booking-detail__facts { grid-area: facts; min-width: 0; }
+.fx-booking-detail__history { grid-area: history; min-width: 0; }
+.fx-booking-detail__actions { grid-area: actions; min-width: 0; }
+.fx-booking-detail__actions .btn { min-height: 2.75rem; }
+@media (min-width: 992px) {
+  .fx-booking-detail { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); grid-template-areas: "facts actions" "history actions"; align-items: start; }
+}
+.fx-empty { border-radius: var(--fx-radius); }
+.fx-booking-detail__history .fx-timeline { margin-bottom: 1.5rem; }
+@media (max-width: 575.98px) {
+  .fx-description > div { grid-template-columns: minmax(5rem, 1fr) minmax(0, 2fr); gap: .75rem; }
+}

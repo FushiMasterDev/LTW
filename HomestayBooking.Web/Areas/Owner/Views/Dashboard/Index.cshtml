@@ -1,3 +1,4 @@
+@using HomestayBooking.Web.Identity
 @using HomestayBooking.Web.Areas.Owner.Controllers
 @model OwnerDashboardViewModel
 @{
@@ -36,45 +37,26 @@
     </div>
 </div>
 
-<h2 class="section-title"><i class="bi bi-house-gear" aria-hidden="true"></i> @L["Homestay của tôi"]</h2>
-<div class="card-soft overflow-hidden">
-    <div class="table-responsive">
-        <table class="table table-modern">
-            <thead>
-                <tr>
-                    <th scope="col">@L["Homestay"]</th>
-                    <th scope="col">@L["Khu vực"]</th>
-                    <th scope="col" class="text-end">@L["Số phòng"]</th>
-                    <th scope="col" class="text-end">@L["Trạng thái"]</th>
-                    <th scope="col" class="text-end"><span class="visually-hidden">@L["Thao tác"]</span></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var h in homestays)
+@if (User.IsApprovedOwner())
+{
+<partial name="_TaskList" model='new TaskListModel("Việc cần xử lý", new TaskListItem[] { new("Đơn đặt phòng", L["Đơn đã đặt cọc của homestay bạn. Xác nhận trong 30 phút sau khi khách đặt cọc."], Url.Action("Index", "Bookings")) })' />
+}
+
+<h2 class="fx-section-title"><i class="bi bi-house-gear" aria-hidden="true"></i> @L["Homestay của tôi"]</h2>
+@{ var rows = new List<TableRow>(); }
+@foreach (var h in homestays)
                 {
-                    <tr>
-                        <td class="fw-semibold">@h.Name</td>
-                        <td><i class="bi bi-geo-alt text-muted me-1" aria-hidden="true"></i>@h.AreaName</td>
-                        <td class="text-end"><span class="count-pill">@h.RoomCount</span></td>
-                        <td class="text-end">
-                            <span class="badge-tone @h.Status.ToneClass()">@L[h.Status.DisplayName()]</span>
-                        </td>
-                        <td class="text-end">
-                            @if (h.Status == HomestayStatus.Active)
+                    Func<dynamic, IHtmlContent> cell0 = @<text>@h.Name</text>;
+                        Func<dynamic, IHtmlContent> cell1 = @<text><i class="bi bi-geo-alt text-muted me-1" aria-hidden="true"></i>@h.AreaName</text>;
+                        Func<dynamic, IHtmlContent> cell2 = @<text><span class="fx-count">@h.RoomCount</span></text>;
+                        Func<dynamic, IHtmlContent> cell3 = @<text><status-badge value="@h.Status" /></text>;
+                        Func<dynamic, IHtmlContent> cell4 = @<text>@if (h.Status == HomestayStatus.Active)
                             {
                                 <a class="btn btn-sm btn-outline-secondary text-nowrap" asp-area="" asp-controller="Homestays" asp-action="Details" asp-route-id="@h.Id"
                                    aria-label="@L["Xem trang khách của {0}", h.Name]">
                                     <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> @L["Xem trang khách"]
                                 </a>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-    @if (homestays.Count == 0)
-    {
-        <partial name="_EmptyState" />
-    }
-</div>
+                            }</text>;
+                    rows.Add(new TableRow(new IHtmlContent[] { cell0(null!), cell1(null!), cell2(null!), cell3(null!), cell4(null!) }));
+}
+<partial name="_DataTable" model='new DataTableModel("Tổng quan chủ homestay", new TableColumn[] { new("Homestay"), new("Khu vực"), new("Số phòng", Numeric: true), new("Trạng thái", Numeric: true), new("Thao tác") }, rows)' />

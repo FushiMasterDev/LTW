@@ -11,69 +11,26 @@
 }
 <partial name="_PageHead" model="@(new PageHeadModel(L["Đơn đặt phòng"], "bi-journal-check", "tone-violet", L["Đơn đã đặt cọc của homestay bạn. Xác nhận trong 30 phút sau khi khách đặt cọc."], ShowCreate: false))" />
 
-<form method="get" class="card-soft filter-bar row g-2 mx-0" role="search">
-    <div class="col-sm-4 col-md-3">
-        <label for="status" class="visually-hidden">@L["Trạng thái"]</label>
-        <select id="status" name="status" class="form-select">
-            <option value="">@L["Tất cả trạng thái"]</option>
-            @foreach (var s in statuses)
-            {
-                <option value="@s" selected="@(status == s)">@L[s.DisplayName()]</option>
-            }
-        </select>
-    </div>
-    <div class="col-sm-8 col-md-6">
-        <label for="q" class="visually-hidden">@L["Tìm theo mã đơn, tên hoặc SĐT khách"]</label>
-        <div class="input-group">
-            <span class="input-group-text" aria-hidden="true"><i class="bi bi-search"></i></span>
-            <input type="search" id="q" name="q" value="@ViewData["Query"]" class="form-control" placeholder="@L["Tìm theo mã đơn, tên hoặc SĐT khách"]" />
-        </div>
-    </div>
-    <div class="col-md-3 d-grid">
-        <button type="submit" class="btn btn-brand"><i class="bi bi-funnel" aria-hidden="true"></i> @L["Lọc"]</button>
-    </div>
-</form>
+<partial name="_FilterBar" model='new FilterBarModel("owner-booking-filter", new FilterField[] {
+    new("status", "Trạng thái", Options: new[] { new SelectListItem(L["Tất cả trạng thái"], "") }.Concat(statuses.Select(v => new SelectListItem(L[v.DisplayName()], v.ToString(), v == status))).ToArray()),
+    new("q", "Tìm theo mã đơn, tên hoặc SĐT khách", ViewData["Query"]?.ToString(), Type: "search") })' />
 
-<div class="card-soft overflow-hidden">
-    <div class="table-responsive">
-        <table class="table table-modern align-middle">
-            <thead>
-                <tr>
-                    <th scope="col">@L["Đơn"]</th>
-                    <th scope="col">@L["Khách"]</th>
-                    <th scope="col">@L["Phòng"]</th>
-                    <th scope="col">@L["Ngày ở"]</th>
-                    <th scope="col" class="text-end">@L["Tổng tiền"]</th>
-                    <th scope="col" class="text-end"><span class="visually-hidden">@L["Thao tác"]</span></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var r in Model)
+@{ var rows = new List<TableRow>(); }
+@foreach (var r in Model)
                 {
-                    <tr>
-                        <td class="text-nowrap"><span class="booking-code fw-semibold">@r.Code</span>
-                            <div><span class="badge-tone @r.Status.ToneClass()">@L[r.Status.DisplayName()]</span></div>
+                    Func<dynamic, IHtmlContent> cell0 = @<text><span class="fx-code fw-semibold">@r.Code</span>
+                            <div><status-badge value="@r.Status" /></div>
                             @if (r.Status == BookingStatus.Deposited && r.ConfirmDeadlineAt is { } deadline)
                             {
                                 <div class="small text-muted">@L["Hạn xác nhận {0}", VietnamTime.ToLocal(deadline).ToString("HH:mm dd/MM")]</div>
-                            }
-                        </td>
-                        <td>@r.ContactName<div class="small text-muted">@PhoneNumberNormalizer.ToNational(r.ContactPhone) · @L["{0} khách", r.Guests]</div></td>
-                        <td>@r.RoomTypeName<div class="small text-muted">@r.HomestayName · @r.RoomCode</div></td>
-                        <td class="text-nowrap">@r.CheckIn.ToString("dd/MM") – @r.CheckOut.ToString("dd/MM/yyyy")</td>
-                        <td class="text-end text-nowrap">@r.TotalAmount.ToString("N0")đ</td>
-                        <td class="text-end">
-                            <a class="btn btn-sm btn-outline-secondary text-nowrap" asp-action="Details" asp-route-id="@r.Id"
-                               aria-label="@L["Xem đơn {0}", r.Code]">@L["Xem"]</a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-    @if (Model.Count == 0)
-    {
-        <partial name="_EmptyState" />
-    }
-</div>
+                            }</text>;
+                        Func<dynamic, IHtmlContent> cell1 = @<text>@r.ContactName<div class="small text-muted">@PhoneNumberNormalizer.ToNational(r.ContactPhone) · @L["{0} khách", r.Guests]</div></text>;
+                        Func<dynamic, IHtmlContent> cell2 = @<text>@r.RoomTypeName<div class="small text-muted">@r.HomestayName · @r.RoomCode</div></text>;
+                        Func<dynamic, IHtmlContent> cell3 = @<text>@r.CheckIn.ToString("dd/MM") – @r.CheckOut.ToString("dd/MM/yyyy")</text>;
+                        Func<dynamic, IHtmlContent> cell4 = @<text><money value="@r.TotalAmount" /></text>;
+                        Func<dynamic, IHtmlContent> cell5 = @<text><a class="btn btn-sm btn-outline-secondary text-nowrap" asp-action="Details" asp-route-id="@r.Id"
+                               aria-label="@L["Xem đơn {0}", r.Code]">@L["Xem"]</a></text>;
+                    rows.Add(new TableRow(new IHtmlContent[] { cell0(null!), cell1(null!), cell2(null!), cell3(null!), cell4(null!), cell5(null!) }));
+}
+<partial name="_DataTable" model='new DataTableModel("Đơn đặt phòng", new TableColumn[] { new("Đơn"), new("Khách"), new("Phòng"), new("Ngày ở"), new("Tổng tiền", Numeric: true), new("Thao tác") }, rows)' />
 <partial name="_Pager" model="Model" />
