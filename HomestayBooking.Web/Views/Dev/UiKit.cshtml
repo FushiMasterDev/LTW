@@ -439,6 +439,11 @@
     <p>Gallery ở mục Gallery phía trên dùng cùng module lập phương. Mẫu này chỉ để kiểm tra component.</p>
 </section>
 
+<section class="fx-card p-4 mb-4" id="staff-components">
+ <h2 class="h4">@L["Nhân viên: phương án thay thế và giấy tờ"]</h2>
+ <partial name="_OverbookingAlternative" model='new OverbookingAlternativeModel(0,new OverbookingAlternative(new AvailabilityOffer(0,"Homestay mẫu UI Kit",0,"Khu vực mẫu",0,"Phòng đôi",0,2,1,2,1500000m,null,0),200000m),Preview:true)' />
+ <partial name="_RegistrationDocuments" model="Array.Empty<RegistrationDocument>()" />
+</section>
 @section Scripts {
     <script src="~/js/components/payment-qr.js" asp-append-version="true"></script>
     <script src="~/js/components/room-calendar.js" asp-append-version="true"></script>

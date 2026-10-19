@@ -1,0 +1,29 @@
+@using HomestayBooking.Web.Identity
+@model StaffCustomerForm
+@{var d=Model.Details!;var c=d.Customer;ViewData["Title"]=L["Hồ sơ khách hàng"];}
+<partial name="_PageHead" model='new PageHeadModel("Hồ sơ khách hàng","","",c.FullName,ShowCreate:false)' />
+<partial name="_Breadcrumb" model='new BreadcrumbModel(new BreadcrumbItem[] {new("Khách hàng",Url.Action("Index")),new(c.FullName ?? c.PhoneNumber)})' />
+<div class="fx-form-card fx-card p-4 mb-4">
+ <partial name="_DescriptionList" model='new DescriptionItem[] {
+  new("Số điện thoại",new HtmlContentBuilder().Append(PhoneNumberNormalizer.ToNational(c.PhoneNumber))),
+  new("CCCD",new HtmlContentBuilder().Append(c.CitizenId ?? "—")),new("Mã sinh viên",new HtmlContentBuilder().Append(c.StudentId ?? "—"))}' />
+ <form asp-action="Update" asp-route-id="@c.Id" method="post" data-owner-form>
+  @if(c.HasAccount){
+   <p class="text-muted">@L["Khách đã có tài khoản phải tự sửa họ tên/email."]</p>
+   <form-field asp-for="FullName" readonly="readonly" /><form-field asp-for="Email" type="email" readonly="readonly" />
+  } else {<form-field asp-for="FullName" autocomplete="name" /><form-field asp-for="Email" type="email" autocomplete="email" />}
+  <form-field asp-for="Note" type="textarea" />
+  <div class="fx-form-actions"><button type="submit" class="btn btn-brand" data-loading-text="@L["Đang lưu…"]">@L["Lưu khách hàng"]</button></div>
+ </form>
+</div>
+<h2 class="h5">@L["Lịch sử đặt phòng"]</h2>
+@{var rows=new List<TableRow>();}
+@foreach(var b in d.Bookings){
+ Func<dynamic,IHtmlContent> c0=@<text><a asp-controller="Bookings" asp-action="Details" asp-route-id="@b.Id">@b.Code</a></text>;
+ Func<dynamic,IHtmlContent> c1=@<text><status-badge value="@b.Status" /></text>;
+ Func<dynamic,IHtmlContent> c2=@<text><date-range from="@b.CheckIn" to="@b.CheckOut" /></text>;
+ Func<dynamic,IHtmlContent> c3=@<text><money value="@b.TotalAmount" /></text>;
+ rows.Add(new(new[] {c0(null!),c1(null!),c2(null!),c3(null!)}));
+}
+<partial name="_DataTable" model='new DataTableModel("Lịch sử đặt phòng",new TableColumn[] {new("Đơn"),new("Trạng thái"),new("Ngày ở"),new("Tổng tiền",Numeric:true)},rows)' />
+@section Scripts {<partial name="_ValidationScriptsPartial" /><script src="~/js/components/owner-forms.js" asp-append-version="true"></script>}

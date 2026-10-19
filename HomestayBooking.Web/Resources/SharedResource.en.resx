@@ -2383,4 +2383,371 @@
   <data name="Ảnh phải gắn loại phòng thuộc cùng homestay." xml:space="preserve"><value>The image must be assigned to a room type in the same homestay.</value></data>
   <data name="Lịch phòng bị trùng: {0}. Vui lòng chọn khoảng ngày khác." xml:space="preserve"><value>Room dates conflict: {0}. Choose another date range.</value></data>
   <data name="Lượt nhận phòng hôm nay" xml:space="preserve"><value>Check-ins today</value></data>
+
+  <data name="Báo sự cố trùng phòng cho quản lý?" xml:space="preserve">
+    <value>Report this overbooking incident to management?</value>
+  </data>
+  <data name="Báo trùng phòng" xml:space="preserve">
+    <value>Report overbooking</value>
+  </data>
+  <data name="Chi phí" xml:space="preserve">
+    <value>Costs</value>
+  </data>
+  <data name="Chuyển phòng" xml:space="preserve">
+    <value>Move room</value>
+  </data>
+  <data name="Chuyển phòng cùng loại" xml:space="preserve">
+    <value>Move to a room of the same type</value>
+  </data>
+  <data name="Chuyển phòng cùng loại? Giá và cọc giữ nguyên." xml:space="preserve">
+    <value>Move to a room of the same type? Price and deposit stay the same.</value>
+  </data>
+  <data name="Chênh lệch" xml:space="preserve">
+    <value>Difference</value>
+  </data>
+  <data name="Chưa có khách theo SĐT này. Hồ sơ khách mới sẽ được tạo cùng đơn." xml:space="preserve">
+    <value>No customer found for this phone. A customer profile will be created with the booking.</value>
+  </data>
+  <data name="Chưa giao" xml:space="preserve">
+    <value>Unassigned</value>
+  </data>
+  <data name="Chưa hỗ trợ gửi lời mời kích hoạt. Vui lòng chờ hoàn thiện luồng kích hoạt của chủ." xml:space="preserve">
+    <value>Activation invitations are unavailable until the owner activation flow is ready.</value>
+  </data>
+  <data name="Chỉ cập nhật sau khi liên hệ chủ homestay." xml:space="preserve">
+    <value>Update only after contacting the homestay owner.</value>
+  </data>
+  <data name="Chỉ dùng khi không tìm được phương án. Khoản hoàn chờ kế toán chuyển trả và khách được cấp voucher xin lỗi." xml:space="preserve">
+    <value>Use only when no alternative is available. Accounting will process the refund; an apology voucher will be issued.</value>
+  </data>
+  <data name="Chỉ quá SLA" xml:space="preserve">
+    <value>Overdue only</value>
+  </data>
+  <data name="Chọn phương án thay thế" xml:space="preserve">
+    <value>Choose this alternative</value>
+  </data>
+  <data name="Cơ sở / giấy tờ hợp lệ" xml:space="preserve">
+    <value>Properties / valid documents</value>
+  </data>
+  <data name="Cập nhật lúc {0}" xml:space="preserve">
+    <value>Updated at {0}</value>
+  </data>
+  <data name="Duyệt hồ sơ" xml:space="preserve">
+    <value>Approve registration</value>
+  </data>
+  <data name="Duyệt hồ sơ đối tác? Homestay vẫn cần được duyệt nội dung riêng." xml:space="preserve">
+    <value>Approve this partner registration? Homestay content still needs separate approval.</value>
+  </data>
+  <data name="Dữ liệu không hợp lệ. Vui lòng kiểm tra lại các trường." xml:space="preserve">
+    <value>Invalid input. Please check the fields.</value>
+  </data>
+  <data name="Ghi chú đã thống nhất với khách" xml:space="preserve">
+    <value>Note confirming agreement with the customer</value>
+  </data>
+  <data name="Giao đơn" xml:space="preserve">
+    <value>Assign booking</value>
+  </data>
+  <data name="Giá đêm" xml:space="preserve">
+    <value>Nightly price</value>
+  </data>
+  <data name="Giảm giá" xml:space="preserve">
+    <value>Discount</value>
+  </data>
+  <data name="Giấy tờ hồ sơ cũ" xml:space="preserve">
+    <value>Legacy registration documents</value>
+  </data>
+  <data name="Giữ phòng hiện tại" xml:space="preserve">
+    <value>Keep the current room</value>
+  </data>
+  <data name="Gửi yêu cầu bổ sung cho chủ?" xml:space="preserve">
+    <value>Request additional information from the owner?</value>
+  </data>
+  <data name="Hoàn tiền do trùng phòng" xml:space="preserve">
+    <value>Refund for overbooking</value>
+  </data>
+  <data name="Hạn thẩm định" xml:space="preserve">
+    <value>Review deadline</value>
+  </data>
+  <data name="Họ tên khách" xml:space="preserve">
+    <value>Customer name</value>
+  </data>
+  <data name="Hồ sơ khách hàng" xml:space="preserve">
+    <value>Customer profile</value>
+  </data>
+  <data name="Hồ sơ đã quá SLA thẩm định." xml:space="preserve">
+    <value>This registration has passed its review deadline.</value>
+  </data>
+  <data name="Hủy do trùng phòng, hoàn 100% tiền đã chuyển và cấp voucher xin lỗi?" xml:space="preserve">
+    <value>Cancel for overbooking, refund the full transferred amount and issue an apology voucher?</value>
+  </data>
+  <data name="Khách đã có tài khoản phải tự sửa họ tên/email." xml:space="preserve">
+    <value>Customers with an account must update their own name and email.</value>
+  </data>
+  <data name="Kênh liên hệ" xml:space="preserve">
+    <value>Contact channel</value>
+  </data>
+  <data name="Làm mới" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Lý do không có phương án" xml:space="preserve">
+    <value>Reason no alternative is available</value>
+  </data>
+  <data name="Lưu khách hàng" xml:space="preserve">
+    <value>Save customer</value>
+  </data>
+  <data name="Lịch sử hồ sơ" xml:space="preserve">
+    <value>Registration history</value>
+  </data>
+  <data name="Lịch sử đặt phòng" xml:space="preserve">
+    <value>Booking history</value>
+  </data>
+  <data name="Mã homestay" xml:space="preserve">
+    <value>Homestay ID</value>
+  </data>
+  <data name="Mã sinh viên" xml:space="preserve">
+    <value>Student ID</value>
+  </data>
+  <data name="Mã đơn, tên hoặc SĐT" xml:space="preserve">
+    <value>Booking code, name or phone</value>
+  </data>
+  <data name="Người phụ trách" xml:space="preserve">
+    <value>Assignee</value>
+  </data>
+  <data name="Người thẩm định" xml:space="preserve">
+    <value>Reviewer</value>
+  </data>
+  <data name="Nhận phòng từ" xml:space="preserve">
+    <value>Check-in from</value>
+  </data>
+  <data name="Nhận phòng đến" xml:space="preserve">
+    <value>Check-in through</value>
+  </data>
+  <data name="Nhận phụ trách đơn này?" xml:space="preserve">
+    <value>Take responsibility for this booking?</value>
+  </data>
+  <data name="Nhận thẩm định" xml:space="preserve">
+    <value>Take for review</value>
+  </data>
+  <data name="Nhận thẩm định hồ sơ này?" xml:space="preserve">
+    <value>Take this registration for review?</value>
+  </data>
+  <data name="Nhận đơn" xml:space="preserve">
+    <value>Claim booking</value>
+  </data>
+  <data name="Nhật ký #{0}" xml:space="preserve">
+    <value>Audit entry #{0}</value>
+  </data>
+  <data name="Nội dung cần bổ sung" xml:space="preserve">
+    <value>Additional information needed</value>
+  </data>
+  <data name="Phòng #{0}" xml:space="preserve">
+    <value>Room #{0}</value>
+  </data>
+  <data name="Phòng khi xác nhận" xml:space="preserve">
+    <value>Room on confirmation</value>
+  </data>
+  <data name="Phòng trống" xml:space="preserve">
+    <value>Available rooms</value>
+  </data>
+  <data name="Phòng trống toàn hệ thống" xml:space="preserve">
+    <value>System-wide room availability</value>
+  </data>
+  <data name="Phương án thay thế" xml:space="preserve">
+    <value>Alternatives</value>
+  </data>
+  <data name="Quá SLA" xml:space="preserve">
+    <value>Overdue</value>
+  </data>
+  <data name="Quản lý đơn" xml:space="preserve">
+    <value>Booking management</value>
+  </data>
+  <data name="Thay đơn bằng phương án này? Cọc chuyển sang đơn mới, khách không nộp thêm cọc; phần tăng do Fuji bù." xml:space="preserve">
+    <value>Replace the booking with this alternative? The deposit transfers, no extra deposit is required, and Fuji covers the increase.</value>
+  </data>
+  <data name="Thông tin đơn" xml:space="preserve">
+    <value>Booking information</value>
+  </data>
+  <data name="Thông tin đối tác" xml:space="preserve">
+    <value>Partner information</value>
+  </data>
+  <data name="Thẩm định" xml:space="preserve">
+    <value>Review</value>
+  </data>
+  <data name="Thẩm định hồ sơ #{0}" xml:space="preserve">
+    <value>Review registration #{0}</value>
+  </data>
+  <data name="Thẩm định hồ sơ đối tác" xml:space="preserve">
+    <value>Partner registration review</value>
+  </data>
+  <data name="Thống nhất với khách trước khi chọn phương án. Mọi thao tác được ghi lịch sử." xml:space="preserve">
+    <value>Agree with the customer before choosing an alternative. All actions are recorded.</value>
+  </data>
+  <data name="Tiền hoàn" xml:space="preserve">
+    <value>Refund amount</value>
+  </data>
+  <data name="Trùng phòng" xml:space="preserve">
+    <value>Overbooking</value>
+  </data>
+  <data name="Trạng thái mới" xml:space="preserve">
+    <value>New status</value>
+  </data>
+  <data name="Trống / tổng" xml:space="preserve">
+    <value>Available / total</value>
+  </data>
+  <data name="Tên hoặc SĐT" xml:space="preserve">
+    <value>Name or phone</value>
+  </data>
+  <data name="Tên, SĐT hoặc email" xml:space="preserve">
+    <value>Name, phone or email</value>
+  </data>
+  <data name="Tìm khách và xem báo giá" xml:space="preserve">
+    <value>Find customer and view quote</value>
+  </data>
+  <data name="Tạo khoản hoàn tiền" xml:space="preserve">
+    <value>Create refund</value>
+  </data>
+  <data name="Tạo đơn đặt hộ" xml:space="preserve">
+    <value>Create assisted booking</value>
+  </data>
+  <data name="Tạo đơn đặt hộ với thông tin và báo giá trên?" xml:space="preserve">
+    <value>Create an assisted booking with the information and quote shown?</value>
+  </data>
+  <data name="Từ chối hồ sơ" xml:space="preserve">
+    <value>Reject registration</value>
+  </data>
+  <data name="Từ chối hồ sơ đối tác này?" xml:space="preserve">
+    <value>Reject this partner registration?</value>
+  </data>
+  <data name="Từ ngày" xml:space="preserve">
+    <value>From date</value>
+  </data>
+  <data name="Tỷ lệ chốt" xml:space="preserve">
+    <value>Conversion rate</value>
+  </data>
+  <data name="Tỷ lệ chốt của tôi" xml:space="preserve">
+    <value>My conversion rate</value>
+  </data>
+  <data name="Tỷ lệ dựa trên đơn tôi tạo trong khoảng ngày đã chọn; đơn đã xác nhận chia cho tổng đơn tạo." xml:space="preserve">
+    <value>Based on bookings I created in the selected dates: confirmed bookings divided by all created bookings.</value>
+  </data>
+  <data name="Xem giấy tờ" xml:space="preserve">
+    <value>View document</value>
+  </data>
+  <data name="Xác nhận giao đơn cho người đã chọn?" xml:space="preserve">
+    <value>Assign this booking to the selected employee?</value>
+  </data>
+  <data name="Xác nhận đặt hộ" xml:space="preserve">
+    <value>Confirm assisted booking</value>
+  </data>
+  <data name="Xác nhận đổi trạng thái? Từ chối đơn sẽ tạo khoản hoàn theo nghiệp vụ hiện có." xml:space="preserve">
+    <value>Confirm the status change? Rejecting the booking creates a refund under the existing rules.</value>
+  </data>
+  <data name="Xử lý trùng phòng" xml:space="preserve">
+    <value>Resolve overbooking</value>
+  </data>
+  <data name="Yêu cầu bổ sung" xml:space="preserve">
+    <value>Request revision</value>
+  </data>
+  <data name="Đang tạo đơn…" xml:space="preserve">
+    <value>Creating booking…</value>
+  </data>
+  <data name="Điện thoại" xml:space="preserve">
+    <value>Phone</value>
+  </data>
+  <data name="Đã tìm thấy khách. Kiểm tra thông tin trước khi tạo đơn." xml:space="preserve">
+    <value>Customer found. Check the details before creating the booking.</value>
+  </data>
+
+  <data name="Đơn hiện tại" xml:space="preserve">
+    <value>Current booking</value>
+  </data>
+  <data name="Đơn quá 30 phút chưa xác nhận" xml:space="preserve">
+    <value>Bookings unconfirmed after 30 minutes</value>
+  </data>
+  <data name="Đơn tôi tạo" xml:space="preserve">
+    <value>Bookings I created</value>
+  </data>
+  <data name="Đơn đã có người phụ trách." xml:space="preserve">
+    <value>This booking already has an assignee.</value>
+  </data>
+  <data name="Đơn đã xác nhận" xml:space="preserve">
+    <value>Confirmed bookings</value>
+  </data>
+  <data name="Đặt hộ khách" xml:space="preserve">
+    <value>Book for a customer</value>
+  </data>
+  <data name="Đến ngày" xml:space="preserve">
+    <value>To date</value>
+  </data>
+  <data name="Đối tác" xml:space="preserve">
+    <value>Partner</value>
+  </data>
+  <data name="Đổi trạng thái" xml:space="preserve">
+    <value>Change status</value>
+  </data>
+  <data name="Đơn quá hạn xác nhận" xml:space="preserve">
+    <value>Overdue confirmations</value>
+  </data>
+  <data name="Không có đơn quá hạn xác nhận." xml:space="preserve">
+    <value>No overdue confirmations.</value>
+  </data>
+  <data name="Theo dõi đơn cần xác nhận và công việc thẩm định." xml:space="preserve">
+    <value>Track bookings awaiting confirmation and partner reviews.</value>
+  </data>
+  <data name="Quá hạn xác nhận" xml:space="preserve">
+    <value>Overdue confirmations</value>
+  </data>
+  <data name="Hồ sơ chờ thẩm định" xml:space="preserve">
+    <value>Registrations awaiting review</value>
+  </data>
+  <data name="Tìm khách theo SĐT, chọn phòng và xem giá trước khi tạo đơn." xml:space="preserve">
+    <value>Find the customer by phone, select a room and review the price before booking.</value>
+  </data>
+  <data name="Số phòng đang bán còn trống theo từng đêm. Ngày trả không tính là đêm ở." xml:space="preserve">
+    <value>Available rooms for sale by night. Check-out is not counted as a night.</value>
+  </data>
+  <data name="Phòng trống theo đêm" xml:space="preserve">
+    <value>Availability by night</value>
+  </data>
+  <data name="Ưu tiên hồ sơ quá hạn ba ngày làm việc." xml:space="preserve">
+    <value>Prioritize registrations overdue after three business days.</value>
+  </data>
+  <data name="Chưa có phương án thay thế." xml:space="preserve">
+    <value>No alternative available.</value>
+  </data>
+  <data name="Chưa có giấy tờ." xml:space="preserve">
+    <value>No documents available.</value>
+  </data>
+  <data name="Cập nhật hồ sơ" xml:space="preserve">
+    <value>Registration updated</value>
+  </data>
+  <data name="Thẩm định hồ sơ" xml:space="preserve">
+    <value>Registration review</value>
+  </data>
+  <data name="Thông tin đã thay đổi. Xem báo giá lại trước khi tạo đơn." xml:space="preserve"><value>Information changed. Review the quote again before creating the booking.</value></data>
+  <data name="Nhân viên #{0}" xml:space="preserve"><value>Employee #{0}</value></data>
+  <data name="Chưa có tài khoản" xml:space="preserve"><value>No account</value></data>
+  <data name="Đã có tài khoản" xml:space="preserve"><value>Has an account</value></data>
+  <data name="Công việc" xml:space="preserve"><value>Tasks</value></data>
+  <data name="Yêu cầu đổi/hủy" xml:space="preserve"><value>Change/cancellation requests</value></data>
+  <data name="Đêm lưu trú" xml:space="preserve"><value>Stay night</value></data>
+  <data name="Lời mời kích hoạt đối tác" xml:space="preserve"><value>Partner activation invitation</value></data>
+  <data name="Tạo lời mời riêng để chủ tự kích hoạt tài khoản?" xml:space="preserve"><value>Create a private invitation for the owner to activate their account?</value></data>
+  <data name="Tạo lời mời kích hoạt" xml:space="preserve"><value>Create activation invitation</value></data>
+  <data name="Tạo lại lời mời? Liên kết cũ sẽ mất hiệu lực." xml:space="preserve"><value>Create a new invitation? The old link will become invalid.</value></data>
+  <data name="Tạo lại lời mời" xml:space="preserve"><value>Reissue invitation</value></data>
+  <data name="Chỉ chuyển liên kết này riêng cho đúng chủ. Liên kết chỉ hiện một lần; không đưa vào ghi chú hoặc ảnh chụp." xml:space="preserve"><value>Share this link privately with the correct owner. It is shown once; do not include it in notes or screenshots.</value></data>
+  <data name="Liên kết kích hoạt riêng" xml:space="preserve"><value>Private activation link</value></data>
+  <data name="Sao chép liên kết và gửi qua kênh riêng đã thống nhất với chủ. Chủ tự nhập SĐT và đặt mật khẩu; nhân viên không đặt thay." xml:space="preserve"><value>Copy the link and send it through the private channel agreed with the owner. The owner enters their phone and sets their own password.</value></data>
+  <data name="Liên kết đã được xem. Có thể tạo lại lời mời tại hồ sơ nếu chủ chưa kích hoạt." xml:space="preserve"><value>This link has already been viewed. Reissue an invitation from the registration if the owner has not activated.</value></data>
+  <data name="Về hồ sơ đối tác" xml:space="preserve"><value>Back to partner registration</value></data>
+  <data name="Đã kích hoạt tài khoản. Vui lòng đăng nhập để bổ sung và gửi hồ sơ." xml:space="preserve"><value>Account activated. Please sign in to complete and submit your registration.</value></data>
+  <data name="Kích hoạt tài khoản đối tác" xml:space="preserve"><value>Activate partner account</value></data>
+  <data name="Chủ homestay tự nhập SĐT đã đăng ký và đặt mật khẩu. Không chia sẻ mật khẩu với nhân viên." xml:space="preserve"><value>The owner enters their registered phone and sets a password. Do not share passwords with staff.</value></data>
+  <data name="Thiếu liên kết mời. Liên hệ người thẩm định để được cấp lại." xml:space="preserve"><value>Invitation link missing. Contact your reviewer for a new link.</value></data>
+  <data name="Kích hoạt tài khoản" xml:space="preserve"><value>Activate account</value></data>
+  <data name="Tìm khách" xml:space="preserve"><value>Find customer</value></data>
+  <data name="Nhân viên: phương án thay thế và giấy tờ" xml:space="preserve">
+    <value>Staff: alternatives and documents</value>
+  </data>
 </root>

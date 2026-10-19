@@ -1,0 +1,16 @@
+@using HomestayBooking.Web.Services
+@using HomestayBooking.Web.Identity
+@model PaginatedList<CustomerInfo>
+@{ViewData["Title"]=L["Khách hàng"];}
+<partial name="_PageHead" model='new PageHeadModel("Khách hàng","","",ShowCreate:false)' />
+<partial name="_FilterBar" model='new FilterBarModel("customers",new FilterField[] {new("q","Tên, SĐT hoặc email",Type:"search")})' />
+@{var rows=new List<TableRow>();}
+@foreach(var c in Model){
+ Func<dynamic,IHtmlContent> c0=@<text><a asp-action="Details" asp-route-id="@c.Id">@c.FullName</a></text>;
+ Func<dynamic,IHtmlContent> c1=@<text>@PhoneNumberNormalizer.ToNational(c.PhoneNumber)</text>;
+ Func<dynamic,IHtmlContent> c2=@<text>@c.Email</text>;
+ Func<dynamic,IHtmlContent> c3=@<text>@L[c.HasAccount ? "Đã có tài khoản" : "Chưa có tài khoản"]</text>;
+ rows.Add(new(new[] {c0(null!),c1(null!),c2(null!),c3(null!)}));
+}
+<partial name="_DataTable" model='new DataTableModel("Khách hàng",new TableColumn[] {new("Khách"),new("Số điện thoại"),new("Email"),new("Tài khoản")},rows)' />
+<partial name="_Pager" model="Model" />

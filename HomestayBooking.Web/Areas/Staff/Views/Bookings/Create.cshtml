@@ -1,0 +1,44 @@
+@using HomestayBooking.Web.Services
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model StaffCreateForm
+@{ViewData["Title"]=L["Đặt hộ khách"];}
+<partial name="_PageHead" model='new PageHeadModel("Đặt hộ khách","","","Tìm khách theo SĐT, chọn phòng và xem giá trước khi tạo đơn.",ShowCreate:false)' />
+<partial name="_Steps" model='new StepsModel("Đặt hộ khách",new[] {"Khách hàng","Chọn phòng","Xác nhận"},Model.Quote is null ? 0 : 2)' />
+<div class="fx-form-card fx-card p-4 mt-4">
+ <form asp-action="Create" method="get" data-staff-quote-form>
+  <form-field asp-for="Phone" type="tel" autocomplete="tel" />
+  <button type="submit" formnovalidate class="btn btn-outline-secondary mb-3">@L["Tìm khách"]</button>
+  @if(!string.IsNullOrWhiteSpace(Model.Phone)) {
+   <partial name="_Alert" model='new AlertModel(Model.Customers.Count>0 ? L["Đã tìm thấy khách. Kiểm tra thông tin trước khi tạo đơn."].Value : L["Chưa có khách theo SĐT này. Hồ sơ khách mới sẽ được tạo cùng đơn."].Value)' />
+  }
+  <form-field asp-for="FullName" autocomplete="name" />
+  <form-field asp-for="Email" type="email" autocomplete="email" />
+  <form-field asp-for="Channel" type="select" asp-items='new[] {new SelectListItem(L["Điện thoại"],"Phone"),new SelectListItem("Zalo","Zalo"),new SelectListItem("Messenger","Messenger"),new SelectListItem(L["Khác"],"Other")}' />
+  <partial name="_DateRangePicker" model='new DateRangePickerModel("staff-create",Model.CheckIn,Model.CheckOut)' />
+  <form-field asp-for="Guests" type="number" min="1" max="20" />
+  <form-field asp-for="AreaId" type="select" placeholder='@L["Tất cả khu vực"]' asp-items="Model.Areas.Select(a=>new SelectListItem(a.Name,a.Id.ToString()))" />
+  <form-field asp-for="RoomTypeId" type="select" placeholder='@L["Chọn phòng"]' asp-items='Model.Offers.Where(o=>o.FreeRooms>0).Select(o=>new SelectListItem(o.HomestayName+" · "+o.RoomTypeName+" · "+L["Còn {0} phòng",o.FreeRooms],o.RoomTypeId.ToString()))' />
+  <form-field asp-for="SpecialRequests" type="textarea" />
+  <div class="fx-form-actions"><button type="submit" formnovalidate class="btn btn-outline-secondary">@L["Tìm khách và xem báo giá"]</button></div>
+ </form>
+ @if(Model.Quote is {} q) {
+  <section data-staff-confirmation>
+  <h2 class="h5 mt-4">@L["Xác nhận đặt hộ"]</h2><p>@Model.Offers.Single(o=>o.RoomTypeId==Model.RoomTypeId).HomestayName · @Model.Offers.Single(o=>o.RoomTypeId==Model.RoomTypeId).RoomTypeName</p>
+  <partial name="_DescriptionList" model='new DescriptionItem[] {
+   new("Khách",new HtmlContentBuilder().Append(Model.FullName+" · "+Model.Phone)),
+   new("Ngày ở",new HtmlContentBuilder().Append($"{Model.CheckIn:dd/MM/yyyy} – {Model.CheckOut:dd/MM/yyyy}")),
+   new("Số khách",new HtmlContentBuilder().Append(Model.Guests.ToString())),
+   new("Kênh liên hệ",new HtmlContentBuilder().Append(L[Model.Channel switch {SourceChannel.Phone=>"Điện thoại",SourceChannel.Other=>"Khác",_=>Model.Channel.ToString()}]))}' />
+  <partial name="_PriceBreakdown" model='new PriceBreakdownModel(q.Nights.Select(n=>new PriceLine(n.Date.ToString("dd/MM/yyyy"),n.Price)).Concat(new PriceLine[] {new("Tổng tiền",q.Total),new("Tiền cọc",q.Deposit)}).ToArray())' />
+  <form asp-action="Create" method="post" data-confirm="@L["Tạo đơn đặt hộ với thông tin và báo giá trên?"]">
+   <input name="Phone" value="@Model.Phone" type="hidden" /><input name="FullName" value="@Model.FullName" type="hidden" /><input name="Email" value="@Model.Email" type="hidden" /><input name="Channel" value="@Model.Channel" type="hidden" />
+   <input name="CheckIn" value='@Model.CheckIn.ToString("yyyy-MM-dd")' type="hidden" /><input name="CheckOut" value='@Model.CheckOut.ToString("yyyy-MM-dd")' type="hidden" />
+   <input name="Guests" value="@Model.Guests" type="hidden" /><input name="AreaId" value="@Model.AreaId" type="hidden" /><input name="RoomTypeId" value="@Model.RoomTypeId" type="hidden" /><input name="SpecialRequests" value="@Model.SpecialRequests" type="hidden" />
+   <div class="fx-form-actions"><button class="btn btn-brand" type="submit" data-loading-text="@L["Đang tạo đơn…"]">@L["Tạo đơn đặt hộ"]</button></div>
+  </form>
+  </section>
+  <p hidden role="status" class="text-muted mt-3" data-staff-quote-changed>@L["Thông tin đã thay đổi. Xem báo giá lại trước khi tạo đơn."]</p>
+ }
+</div>
+@section Head {<link rel="stylesheet" href="~/lib/flatpickr/flatpickr.min.css" />}
+@section Scripts {<partial name="_ValidationScriptsPartial" /><script src="~/lib/flatpickr/flatpickr.min.js"></script><script src="~/lib/flatpickr/l10n/vn.min.js"></script><script src="~/js/components/staff-booking.js" asp-append-version="true"></script><script src="~/js/components/date-range-picker.js" asp-append-version="true"></script>}

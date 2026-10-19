@@ -1,0 +1,22 @@
+@using HomestayBooking.Web.Services
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model StaffAvailabilityModel
+@{ViewData["Title"]=L["Phòng trống toàn hệ thống"];}
+<partial name="_PageHead" model='new PageHeadModel("Phòng trống toàn hệ thống","","","Số phòng đang bán còn trống theo từng đêm. Ngày trả không tính là đêm ở.",ShowCreate:false)' />
+<partial name="_FilterBar" model='new FilterBarModel("availability",new FilterField[] {
+ new("checkIn","Ngày nhận phòng",Model.CheckIn.ToString("yyyy-MM-dd"),Type:"date"),new("checkOut","Ngày trả phòng",Model.CheckOut.ToString("yyyy-MM-dd"),Type:"date"),
+ new("areaId","Khu vực",Options:new[] {new SelectListItem(L["Tất cả khu vực"],"")}.Concat(Model.Areas.Select(a=>new SelectListItem(a.Name,a.Id.ToString()))).ToArray()),new("guests","Số khách",Model.Guests.ToString(),Type:"number")})' />
+<div class="d-flex flex-wrap align-items-center gap-3 mb-4"><a class="btn btn-outline-secondary" asp-action="Index" asp-route-checkIn='@Model.CheckIn.ToString("yyyy-MM-dd")' asp-route-checkOut='@Model.CheckOut.ToString("yyyy-MM-dd")' asp-route-areaId="@Model.AreaId" asp-route-guests="@Model.Guests">@L["Làm mới"]</a><p class="text-muted mb-0">@L["Cập nhật lúc {0}",VietnamTime.ToLocal(Model.UpdatedAt).ToString("HH:mm:ss dd/MM/yyyy")]</p></div>
+@{var rows=new List<TableRow>();}
+@foreach(var n in Model.Nights.OrderBy(n=>n.Offer.HomestayName).ThenBy(n=>n.Offer.RoomTypeName).ThenBy(n=>n.Night)) {
+ var o=n.Offer;
+ Func<dynamic,IHtmlContent> c0=@<text>@o.HomestayName<div class="text-muted">@o.AreaName</div></text>;
+ Func<dynamic,IHtmlContent> c1=@<text>@o.RoomTypeName</text>;
+ Func<dynamic,IHtmlContent> c2=@<text>@n.Night.ToString("dd/MM/yyyy")</text>;
+ Func<dynamic,IHtmlContent> c3=@<text>@o.FreeRooms / @o.TotalRooms</text>;
+ Func<dynamic,IHtmlContent> c4=@<text><money value="@(o.TotalPrice ?? 0)" /></text>;
+ rows.Add(new(new[] {c0(null!),c1(null!),c2(null!),c3(null!),c4(null!)}));
+}
+<partial name="_DataTable" model='new DataTableModel("Phòng trống theo đêm",new TableColumn[] {new("Homestay"),new("Loại phòng"),new("Đêm lưu trú"),new("Trống / tổng",Numeric:true),new("Giá đêm",Numeric:true)},rows)' />
+
+<partial name="_Pager" model="Model.Nights" />

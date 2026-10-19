@@ -1,0 +1,61 @@
+@using HomestayBooking.Web.Identity
+@using HomestayBooking.Web.Services
+@model StaffBookingModel
+@{
+ var b=Model.Details.Booking; ViewData["Title"]=L["Đơn {0}",b.Code];
+ var facts=new List<DescriptionItem> {
+    new("Khách",new HtmlContentBuilder().Append(b.ContactName+" · "+PhoneNumberNormalizer.ToNational(b.ContactPhone))),
+    new("Homestay",new HtmlContentBuilder().Append(b.Homestay.Name)),
+    new("Phòng",new HtmlContentBuilder().Append(b.RoomType.Name+" · "+b.Room.RoomCode)),
+    new("Ngày ở",new HtmlContentBuilder().Append($"{b.CheckIn:dd/MM/yyyy} – {b.CheckOut:dd/MM/yyyy}")),
+    new("Người phụ trách",new HtmlContentBuilder().Append(b.AssignedEmployeeId is null ? L["Chưa giao"].Value : Model.Assignees.FirstOrDefault(a=>a.EmployeeId==b.AssignedEmployeeId)?.EmployeeCode ?? L["Nhân viên #{0}",b.AssignedEmployeeId].Value)),
+    new("Yêu cầu đặc biệt",new HtmlContentBuilder().Append(b.SpecialRequests ?? "—"))
+ };
+ var targets=new List<BookingStatus>();
+ if(b.Status==BookingStatus.Deposited) targets.AddRange(new[] {BookingStatus.Confirmed,BookingStatus.Rejected});
+ if(b.Status==BookingStatus.Confirmed && Model.Today>=b.CheckIn) targets.Add(BookingStatus.CheckedIn);
+ if(b.Status==BookingStatus.Confirmed && Model.Today>b.CheckIn) targets.Add(BookingStatus.NoShow);
+ if(b.Status==BookingStatus.CheckedIn) targets.Add(BookingStatus.Completed);
+}
+<partial name="_PageHead" model='new PageHeadModel(L["Đơn {0}",b.Code],"","",b.Homestay.Name,ShowCreate:false)' />
+<partial name="_Breadcrumb" model='new BreadcrumbModel(new BreadcrumbItem[] {new("Quản lý đơn",Url.Action("Index")),new(b.Code)})' />
+<partial name="_BookingStepper" model="new BookingStepperModel(b.Status)" />
+<div class="row g-4 mt-1">
+ <div class="col-lg-7">
+  <section class="fx-card p-4 mb-4"><h2 class="h5">@L["Thông tin đơn"]</h2><status-badge value="@b.Status" /><partial name="_DescriptionList" model="facts" />
+    <a asp-controller="Customers" asp-action="Details" asp-route-id="@b.CustomerId">@L["Hồ sơ khách hàng"]</a>
+  </section>
+  <section class="fx-card p-4 mb-4"><h2 class="h5">@L["Chi phí"]</h2>
+   <partial name="_PriceBreakdown" model='new PriceBreakdownModel(b.Nights.OrderBy(n=>n.Date).Select(n=>new PriceLine(n.Date.ToString("dd/MM/yyyy"),n.Price)).Concat(new PriceLine[] {new("Tổng tiền",b.TotalAmount),new("Tiền cọc",b.DepositAmount),new("Giảm giá",b.DiscountAmount),new("Phí đổi",b.ChangeFeeAmount)}).ToArray())' />
+  </section>
+ </div>
+ <div class="col-lg-5">
+  <section class="fx-card p-4 mb-4"><h2 class="h5">@L["Giao đơn"]</h2>
+   @if(User.IsManagement() || b.AssignedEmployeeId==Model.EmployeeId) {
+    <form asp-action="Assign" asp-route-id="@b.Id" method="post" data-confirm="@L["Xác nhận giao đơn cho người đã chọn?"]">
+     <label for="employeeId" class="form-label">@L["Người phụ trách"]</label><select name="employeeId" id="employeeId" class="form-select mb-3" required>
+      @foreach(var a in Model.Assignees) {<option value="@a.EmployeeId" selected="@(a.EmployeeId==b.AssignedEmployeeId)">@a.EmployeeCode · @a.FullName</option>}
+     </select><button class="btn btn-brand" type="submit" data-loading-text="@L["Đang lưu…"]">@L["Giao đơn"]</button>
+    </form>
+   } else if(b.AssignedEmployeeId is null) {
+    <form asp-action="Assign" asp-route-id="@b.Id" method="post" data-confirm="@L["Nhận phụ trách đơn này?"]"><input type="hidden" name="employeeId" value="@Model.EmployeeId" /><button class="btn btn-brand" type="submit" data-loading-text="@L["Đang lưu…"]">@L["Nhận đơn"]</button></form>
+   } else {<p>@L["Đơn đã có người phụ trách."]</p>}
+  </section>
+  @if(targets.Count>0) {
+   <section class="fx-card p-4 mb-4"><h2 class="h5">@L["Đổi trạng thái"]</h2><p class="text-muted">@L["Chỉ cập nhật sau khi liên hệ chủ homestay."]</p>
+    <form asp-action="Status" asp-route-id="@b.Id" method="post" data-confirm="@L["Xác nhận đổi trạng thái? Từ chối đơn sẽ tạo khoản hoàn theo nghiệp vụ hiện có."]">
+     <label for="to" class="form-label">@L["Trạng thái mới"]</label><select id="to" name="to" class="form-select mb-3">@foreach(var s in targets){<option value="@s">@L[s.DisplayName()]</option>}</select>
+     @if(b.Status==BookingStatus.Deposited){<label for="newRoomId" class="form-label">@L["Phòng khi xác nhận"]</label><select id="newRoomId" name="newRoomId" class="form-select mb-3"><option value="">@L["Giữ phòng hiện tại"]</option>@foreach(var r in Model.FreeRooms){<option value="@r">@L["Phòng #{0}",r]</option>}</select>}
+     <label for="note" class="form-label">@L["Ghi chú"]</label><textarea id="note" name="note" class="form-control mb-3" required maxlength="500"></textarea>
+     <button class="btn btn-brand" type="submit" data-loading-text="@L["Đang lưu…"]">@L["Đổi trạng thái"]</button>
+    </form>
+   </section>
+  }
+  @if(b.Status is BookingStatus.Deposited or BookingStatus.Confirmed){<p><a class="btn btn-outline-secondary" asp-controller="ChangeRequests" asp-action="Create" asp-route-id="@b.Id">@L["Gửi yêu cầu thay khách"]</a></p>}
+  @if(b.Status==BookingStatus.Confirmed && Model.Today<b.CheckOut){
+   <section class="fx-card p-4 mb-4"><h2 class="h5">@L["Báo trùng phòng"]</h2><form asp-controller="Overbooking" asp-action="Report" asp-route-id="@b.Id" method="post" data-confirm="@L["Báo sự cố trùng phòng cho quản lý?"]"><label for="incident-note" class="form-label">@L["Lý do"]</label><textarea id="incident-note" name="note" class="form-control mb-3" required maxlength="400"></textarea><button type="submit" class="btn btn-outline-danger" data-loading-text="@L["Đang lưu…"]">@L["Báo trùng phòng"]</button></form></section>
+  }
+ </div>
+</div>
+<h2 class="h5">@L["Lịch sử"]</h2>
+<partial name="_Timeline" model='new TimelineModel(Events:Model.Details.History.Select(h=>new TimelineItem(h.ChangedAt,h.ToStatus.DisplayName(),h.Note)).ToArray())' />

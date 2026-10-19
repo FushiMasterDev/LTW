@@ -1,0 +1,12 @@
+@model OverbookingAlternativeModel
+@{var o=Model.Alternative.Offer;}
+<section class="fx-card p-4 mb-4">
+ <h2 class="h5">@o.HomestayName · @o.RoomTypeName</h2><p class="text-muted">@o.AreaName · @L["Còn {0} phòng",o.FreeRooms]</p>
+ <partial name="_PriceBreakdown" model='new PriceBreakdownModel(new PriceLine[] {new("Tổng tiền mới",o.TotalPrice!.Value),new("Chênh lệch",Model.Alternative.Difference)})' />
+ @if(!Model.Preview && !Model.SameRoomType){
+ <form asp-area="Staff" asp-controller="Overbooking" asp-action="Replace" asp-route-id="@Model.BookingId" method="post" data-confirm="@L["Thay đơn bằng phương án này? Cọc chuyển sang đơn mới, khách không nộp thêm cọc; phần tăng do Fuji bù."]">
+ <input type="hidden" name="roomTypeId" value="@o.RoomTypeId" /><label class="form-label" for="replace-note-@o.RoomTypeId">@L["Ghi chú đã thống nhất với khách"]</label><textarea id="replace-note-@o.RoomTypeId" name="note" class="form-control mb-3" required maxlength="400"></textarea>
+ <button type="submit" class="btn btn-brand" data-loading-text="@L["Đang lưu…"]">@L["Chọn phương án thay thế"]</button>
+ </form>
+ }
+</section>
