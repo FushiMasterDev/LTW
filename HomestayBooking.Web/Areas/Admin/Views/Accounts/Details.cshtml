@@ -1,0 +1,26 @@
+@using HomestayBooking.Web.Identity
+@using HomestayBooking.Web.Services
+@model AccountSummary
+@{ ViewData["Title"]=Model.FullName; var canWrite=User.EmployeePosition()==EmployeePosition.Administrator; }
+<partial name="_PageHead" model='new PageHeadModel(Model.FullName ?? Model.EmployeeCode ?? "Nhân viên","","",Model.EmployeeCode,ShowCreate:false)' />
+<partial name="_Breadcrumb" model='new BreadcrumbModel(new BreadcrumbItem[] {new("Tài khoản nhân viên",Url.Action("Index")),new(Model.EmployeeCode ?? "Nhân viên")})' />
+<div class="fx-card p-4 mb-4"><partial name="_DescriptionList" model='new DescriptionItem[] {
+new("Số điện thoại",new HtmlContentBuilder().Append(Model.Phone)),new("Email",new HtmlContentBuilder().Append(Model.Email ?? "—")),new("Phòng ban",new HtmlContentBuilder().Append(Model.Department ?? "—")),
+new("Chức vụ",new HtmlContentBuilder().Append(Model.Position is {} p ? L[AdminLabels.Label(p)].Value:"—")) }' />
+<status-badge value="@Model.Status" /> <status-badge value="@Model.EmploymentStatus" /></div>
+@if(canWrite) {
+<section class="fx-card fx-form-card mb-4"><h2 class="fx-section-title">@L["Chức vụ và việc làm"]</h2>
+<form asp-action="Employment" asp-route-id="@Model.Id" method="post" data-confirm='@L["Cập nhật chức vụ và trạng thái làm việc? Thay đổi có thể vô hiệu phiên đăng nhập."]' data-confirm-variant="danger">
+<label for="employment-position" class="form-label">@L["Chức vụ"]</label><select id="employment-position" name="position" class="form-select mb-3">@foreach(var p in Enum.GetValues<EmployeePosition>()) { <option value="@p" selected="@(p==Model.Position)">@L[AdminLabels.Label(p)]</option> }</select>
+<label for="employment-status" class="form-label">@L["Trạng thái làm việc"]</label><select id="employment-status" name="employment" class="form-select mb-3">@foreach(var s in Enum.GetValues<EmploymentStatus>()) { <option value="@s" selected="@(s==Model.EmploymentStatus)">@L[AdminLabels.Label(s)]</option> }</select>
+<div class="fx-form-actions"><button class="btn btn-brand" type="submit" data-loading-text='@L["Đang lưu…"]'>@L["Lưu thay đổi"]</button></div></form></section>
+@if(Model.Status is AccountStatus.Active or AccountStatus.Locked) {
+<section class="fx-card fx-form-card mb-4"><h2 class="fx-section-title">@L[Model.Status==AccountStatus.Locked ? "Mở khóa tài khoản":"Khóa tài khoản"]</h2>
+<form asp-action="Lock" asp-route-id="@Model.Id" method="post" data-confirm='@L["Xác nhận thay đổi khóa tài khoản?"]' data-confirm-variant="danger">
+<input type="hidden" name="locked" value="@(Model.Status==AccountStatus.Active ? "true":"false")" />
+<label for="lock-reason" class="form-label">@L["Lý do"]</label><textarea id="lock-reason" name="reason" class="form-control mb-3" maxlength="1000" rows="3" required></textarea>
+<button type="submit" class="btn btn-outline-danger" data-loading-text='@L["Đang lưu…"]'>@L[Model.Status==AccountStatus.Locked ? "Mở khóa tài khoản":"Khóa tài khoản"]</button></form></section>
+}
+<section class="fx-card fx-form-card"><h2 class="fx-section-title">@L["Đặt lại mật khẩu"]</h2><p class="text-muted">@L["Mật khẩu tạm chỉ hiện một lần. Chuyển riêng cho nhân viên và yêu cầu đổi mật khẩu sau khi đăng nhập."]</p>
+<form asp-action="ResetPassword" asp-route-id="@Model.Id" method="post" data-confirm='@L["Đặt lại mật khẩu của nhân viên này?"]' data-confirm-variant="danger"><button class="btn btn-outline-danger" type="submit" data-loading-text='@L["Đang lưu…"]'>@L["Đặt lại mật khẩu"]</button></form></section>
+}

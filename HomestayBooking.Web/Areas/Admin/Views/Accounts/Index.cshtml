@@ -1,0 +1,14 @@
+@using HomestayBooking.Web.Identity
+@model AdminAccountList
+@{ ViewData["Title"]=L["Tài khoản nhân viên"]; var rows=new List<TableRow>(); }
+<partial name="_PageHead" model='new PageHeadModel("Tài khoản nhân viên","","","Quản lý được xem; chỉ Quản trị viên thay đổi tài khoản.",ShowCreate:User.EmployeePosition()==EmployeePosition.Administrator,ActionLabel:"Tạo nhân viên")' />
+<partial name="_FilterBar" model='new FilterBarModel("accounts-filter",new FilterField[] {
+new("term","Tìm nhân viên",Type:"search"),
+new("position","Chức vụ",Options:new[] {new SelectListItem("Tất cả","")}.Concat(Enum.GetValues<EmployeePosition>().Select(s=>new SelectListItem(AdminLabels.Label(s),s.ToString()))).ToArray()),
+new("status","Trạng thái tài khoản",Options:new[] {new SelectListItem("Tất cả","")}.Concat(Enum.GetValues<AccountStatus>().Select(s=>new SelectListItem(AdminLabels.Label(s),s.ToString()))).ToArray()) })' />
+@foreach(var e in Model.Rows) {
+Func<dynamic,IHtmlContent> person=@<text><a asp-action="Details" asp-route-id="@e.Id" class="fw-semibold">@e.FullName</a><div class="text-muted">@e.EmployeeCode · @e.Phone</div></text>;
+Func<dynamic,IHtmlContent> state=@<text><status-badge value="@e.Status" /> <status-badge value="@e.EmploymentStatus" /></text>;
+rows.Add(new(new IHtmlContent[] {person(null!),new HtmlContentBuilder().Append(e.Position is {} p ? L[AdminLabels.Label(p)].Value:""),new HtmlContentBuilder().Append(e.Department ?? "—"),state(null!)}));
+}
+<partial name="_DataTable" model='new DataTableModel("Tài khoản nhân viên",new TableColumn[] {new("Nhân viên"),new("Chức vụ"),new("Phòng ban"),new("Trạng thái")},rows,Model.Rows)' />

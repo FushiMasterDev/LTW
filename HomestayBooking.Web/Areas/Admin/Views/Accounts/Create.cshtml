@@ -1,0 +1,13 @@
+@model EmployeeCreateForm
+@{ ViewData["Title"]=L["Tạo nhân viên"]; }
+<partial name="_PageHead" model='new PageHeadModel("Tạo nhân viên","","",ShowCreate:false)' />
+<partial name="_Breadcrumb" model='new BreadcrumbModel(new BreadcrumbItem[] {new("Tài khoản nhân viên",Url.Action("Index")),new("Tạo nhân viên")})' />
+<div class="fx-card fx-form-card"><p class="text-muted">@L["Mật khẩu tạm được sinh ngẫu nhiên và chỉ hiện một lần sau khi lưu."]</p>
+<form asp-action="Create" method="post">
+<form-field asp-for="EmployeeCode" autocomplete="off" /><form-field asp-for="FullName" autocomplete="name" />
+<form-field asp-for="Phone" type="tel" autocomplete="tel" /><form-field asp-for="Email" type="email" autocomplete="email" />
+<form-field asp-for="Position" type="select" asp-items='Enum.GetValues<EmployeePosition>().Select(p=>new SelectListItem(L[AdminLabels.Label(p)],p.ToString()))' />
+<form-field asp-for="Department" autocomplete="organization-title" />
+<div class="fx-form-actions"><button class="btn btn-brand" type="submit" data-loading-text='@L["Đang lưu…"]'>@L["Tạo nhân viên"]</button><a asp-action="Index" class="btn btn-outline-secondary">@L["Hủy"]</a></div>
+</form></div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }
