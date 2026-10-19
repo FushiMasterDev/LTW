@@ -43,3 +43,15 @@ Các mục sau đã có service, không cần ghi gap:
 ## G-15 — Bổ sung từ bước 03y (18/10/2026)
 
 `ReviewService.ListAsync` chưa nạp tên hiển thị của người viết (không Include Booking/Customer). Yêu cầu avatar theo chữ cái đầu tên vì vậy chỉ thực hiện khi tên đã có trong model; với dữ liệu hiện tại, `_ReviewCard` dùng nhãn “Khách đã lưu trú” và chữ K, không dựng tên giả hoặc gọi DbContext trong view. Đây là gap nhỏ về trình bày, không chặn đặt phòng. Một bước backend sau có thể trả tên hiển thị đã được phép công khai trong DTO đánh giá; bước 03y không sửa service/entity/controller để lấy thêm tên.
+
+## G-16 — Danh mục đầy đủ cho trình sửa Owner (05a, 19/10/2026)
+
+**Một phần, còn mở.** `HomestayContentService.EditorAsync` trả các AmenityIds đã chọn và CategoryId của từng loại phòng, nhưng không có tên/tuỳ chọn của danh mục tiện nghi, danh mục loại phòng đầy đủ. `AvailabilityService.SearchAsync` chỉ trả tiện nghi/danh mục gắn cơ sở Active (có lọc), không phải danh mục quản lý. Không dùng danh mục bị lọc để ghi đè lựa chọn của chủ và không truy vấn DbContext trong controller mới.
+
+05a: sửa thông tin loại phòng hiện có, mã phòng, thêm phòng, bật/tắt và giá vẫn làm được; giữ CategoryId và AmenityIds. Tab tiện nghi hiển thị trạng thái chưa hỗ trợ; chưa tạo loại phòng hoặc đổi danh mục. Khu vực lấy từ `AvailabilityService.SearchAsync(...).Areas` (danh sách này không lọc Active); địa chỉ/khu vực/toạ độ vẫn sửa qua service. Cần backend bổ sung DTO catalog được kiểm quyền cho editor, kèm nhãn tiện nghi đang chọn; sau đó nối các phần còn thiếu. Không sửa Services/Data/Entities trong bước UI.
+
+## G-17 — Số đơn chờ xác nhận của chủ (05a, 19/10/2026)
+
+**Một phần, còn mở.** `OwnerScheduleService.ReadAsync` chỉ trả Confirmed/CheckedIn, không có Deposited. `BookingService` không có API danh sách/đếm đơn của chủ. `StaffBookingService.SearchAsync` chỉ cho nhân viên, không được gọi bằng quyền giả Employee. Danh sách Owner/Bookings là truy vấn controller cũ, chưa có service đọc tương ứng.
+
+05a: dashboard có số khách đến hôm nay qua `OwnerScheduleService`, lối tắt tới `/Owner/Bookings?status=Deposited`, không dựng số đơn chờ hoặc thêm truy vấn. Cần service `OwnerBookingSummaryAsync(actor)` hoặc API đếm Deposited kiểm quyền theo chủ để hoàn thiện số đơn chờ trên dashboard.

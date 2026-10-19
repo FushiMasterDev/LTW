@@ -1,0 +1,31 @@
+@model OwnerEditorModel
+<p class="text-muted">@L["Thay chính sách tạo phiên bản mới. Đơn cũ giữ chính sách đã chốt."]</p>
+@foreach (var scope in Enum.GetValues<PolicyScope>()) {
+    var policy = Model.Home.Policies.SingleOrDefault(p => p.Scope == scope);
+    <section class="mb-4 border-bottom pb-4">
+    <h2 class="h5">@L[scope == PolicyScope.All ? "Chính sách chung" : "Chính sách ngày lễ"]</h2>
+    @if (policy is not null) {
+        <partial name="_PriceBreakdown" model='new PriceBreakdownModel(Rules:policy.Rules.Select(r=>new PolicyRuleView(r.MinDaysBefore,r.RefundPercent)).ToList())' />
+        <form asp-action="RemovePolicy" asp-route-id="@Model.Home.Id" method="post" data-confirm="@L["Gỡ chính sách riêng để dùng chính sách mặc định?"]" class="mb-3">
+            <input type="hidden" name="scope" value="@scope" /><button class="btn btn-outline-danger" type="submit">@L["Gỡ chính sách riêng"]</button>
+        </form>
+    }
+    <form asp-action="Policy" asp-route-id="@Model.Home.Id" method="post" data-owner-form>
+        <input type="hidden" name="scope" value="@scope" />
+        <label class="form-label" for="policy-name-@scope">@L["Tên chính sách"]</label><input class="form-control mb-3" id="policy-name-@scope" name="name" value="@policy?.Name" maxlength="100" required autocomplete="off" />
+        <p class="small text-muted">@L["Cần mốc 0 ngày. Tỷ lệ hoàn từ 0 đến 100 và không giảm khi hủy sớm hơn."]</p>
+        <div data-policy-rules data-scope="@scope">
+        @foreach(var rule in policy?.Rules ?? new List<HomestayBooking.Web.Services.CancellationRuleInput> { new(0,0) }) {
+            var index = (policy?.Rules.ToList().IndexOf(rule) ?? 0);
+            <div class="row g-2 mb-3" data-policy-rule>
+                <div class="col-6"><label class="form-label" for="days-@scope-@index">@L["Trước ngày nhận (ngày)"]</label><input class="form-control" id="days-@scope-@index" name="minDaysBefore" type="number" value="@rule.MinDaysBefore" min="0" required inputmode="numeric" /></div>
+                <div class="col-6"><label class="form-label" for="refund-@scope-@index">@L["Hoàn tiền (%)"]</label><input class="form-control" id="refund-@scope-@index" name="refundPercent" type="number" value="@rule.RefundPercent" min="0" max="100" required inputmode="numeric" /></div>
+                <div><button class="btn btn-outline-secondary" type="button" data-remove-rule>@L["Bỏ mốc"]</button></div>
+            </div>
+        }
+        </div>
+        <button class="btn btn-outline-secondary" type="button" data-add-rule>@L["Thêm mốc"]</button>
+        <div class="fx-form-actions"><button class="btn btn-brand" type="submit" data-loading-text="@L["Đang lưu…"]">@L["Lưu chính sách"]</button></div>
+    </form>
+    </section>
+}

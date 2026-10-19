@@ -2209,4 +2209,177 @@
   <data name="Gửi giao dịch" xml:space="preserve"><value>Send transaction</value></data>
   <data name="cần" xml:space="preserve"><value>needs</value></data>
   <data name="Chuyển trả đúng số tiền này về tài khoản đã gửi, rồi ghi mã giao dịch chuyển trả." xml:space="preserve"><value>Return exactly this amount to the sending account, then record the refund transaction reference.</value></data>
+  <data name="7 ngày tới" xml:space="preserve"><value>Next 7 days</value></data>
+  <data name="Bỏ mốc" xml:space="preserve"><value>Remove threshold</value></data>
+  <data name="Chi tiết đối soát" xml:space="preserve"><value>Settlement details</value></data>
+  <data name="Chính sách chung" xml:space="preserve"><value>General policy</value></data>
+  <data name="Chính sách ngày lễ" xml:space="preserve"><value>Holiday policy</value></data>
+  <data name="Chưa có danh mục tiện nghi cho trình sửa." xml:space="preserve"><value>The editor's amenity catalog is not available.</value></data>
+  <data name="Chưa có đánh giá." xml:space="preserve"><value>No reviews yet.</value></data>
+  <data name="Chỉnh sửa" xml:space="preserve"><value>Edit</value></data>
+  <data name="Chỉnh sửa homestay" xml:space="preserve"><value>Edit homestay</value></data>
+  <data name="Chọn khoảng khóa" xml:space="preserve"><value>Select a blocked period</value></data>
+  <data name="Chọn làm ảnh bìa" xml:space="preserve"><value>Set as cover</value></data>
+  <data name="Chọn phòng → chọn khoảng ngày → xác nhận. Ngày kết thúc không tính là đêm khóa." xml:space="preserve"><value>Select a room → choose dates → confirm. The end date is not a blocked night.</value></data>
+  <data name="Các bảng đối soát Fuji đã gửi cho bạn." xml:space="preserve"><value>Settlements Fuji has sent to you.</value></data>
+  <data name="Các tiện nghi hiện tại được giữ nguyên. Vui lòng liên hệ Fuji nếu cần thay đổi." xml:space="preserve"><value>Current amenities are preserved. Contact Fuji to request changes.</value></data>
+  <data name="Các đơn trong kỳ" xml:space="preserve"><value>Bookings in this period</value></data>
+  <data name="Cần mốc 0 ngày. Tỷ lệ hoàn từ 0 đến 100 và không giảm khi hủy sớm hơn." xml:space="preserve"><value>Include a 0-day threshold. Refunds must be between 0 and 100% and must not decrease for earlier cancellations.</value></data>
+  <data name="Diện tích (m²)" xml:space="preserve"><value>Area (m²)</value></data>
+  <data name="Dùng làm ảnh bìa" xml:space="preserve"><value>Use as cover</value></data>
+  <data name="Giá hiện hành" xml:space="preserve"><value>Current rates</value></data>
+  <data name="Giá mỗi đêm (đ)" xml:space="preserve"><value>Nightly rate (VND)</value></data>
+  <data name="Giá mới áp dụng từ ngày hiệu lực. Giá đã có hiệu lực được giữ nguyên; đơn cũ giữ giá đã chốt." xml:space="preserve"><value>New rates apply from their effective date. Effective rates are preserved; existing bookings keep their agreed rates.</value></data>
+  <data name="Giá sắp áp dụng" xml:space="preserve"><value>Upcoming rates</value></data>
+  <data name="Giấy tờ" xml:space="preserve"><value>Documents</value></data>
+  <data name="Giờ nhận phòng" xml:space="preserve"><value>Check-in time</value></data>
+  <data name="Giờ trả phòng" xml:space="preserve"><value>Check-out time</value></data>
+  <data name="Gỡ chính sách riêng" xml:space="preserve"><value>Remove custom policy</value></data>
+  <data name="Gỡ chính sách riêng để dùng chính sách mặc định?" xml:space="preserve"><value>Remove the custom policy and use the default?</value></data>
+  <data name="Gửi phản hồi" xml:space="preserve"><value>Send feedback</value></data>
+  <data name="Gửi trả lời" xml:space="preserve"><value>Send reply</value></data>
+  <data name="Hoa hồng" xml:space="preserve"><value>Commission</value></data>
+  <data name="Homestay #{0}" xml:space="preserve"><value>Homestay #{0}</value></data>
+  <data name="Hoàn tiền (%)" xml:space="preserve"><value>Refund (%)</value></data>
+  <data name="Hôm nay" xml:space="preserve"><value>Today</value></data>
+  <data name="Hướng dẫn nhận phòng" xml:space="preserve"><value>Check-in instructions</value></data>
+  <data name="Khoản bù" xml:space="preserve"><value>Compensation</value></data>
+  <data name="Khoản bù được chi riêng, không cộng vào số được nhận trong bảng đối soát." xml:space="preserve"><value>Compensation is paid separately and is not added to the settlement payout.</value></data>
+  <data name="Khoảng khóa cần mở" xml:space="preserve"><value>Blocked period to unlock</value></data>
+  <data name="Khoảng khóa, lý do hoặc ghi chú không hợp lệ; không khóa ngày quá khứ." xml:space="preserve"><value>Invalid dates, reason or note. Past nights cannot be blocked.</value></data>
+  <data name="Khoảng ngày" xml:space="preserve"><value>Date period</value></data>
+  <data name="Khác" xml:space="preserve"><value>Other</value></data>
+  <data name="Khách từ kênh khác" xml:space="preserve"><value>Guests from another channel</value></data>
+  <data name="Khách đến hôm nay" xml:space="preserve"><value>Arrivals today</value></data>
+  <data name="Không tìm thấy giấy tờ." xml:space="preserve"><value>Document not found.</value></data>
+  <data name="Không tìm thấy phòng." xml:space="preserve"><value>Room not found.</value></data>
+  <data name="Không tìm thấy ảnh." xml:space="preserve"><value>Image not found.</value></data>
+  <data name="Kinh độ" xml:space="preserve"><value>Longitude</value></data>
+  <data name="Kỳ {0} · {1}/{2}" xml:space="preserve"><value>Period {0} · {1}/{2}</value></data>
+  <data name="Kỳ đối soát" xml:space="preserve"><value>Settlement period</value></data>
+  <data name="Lý do và ghi chú (không bắt buộc)" xml:space="preserve"><value>Reason and note (optional)</value></data>
+  <data name="Lưu chính sách" xml:space="preserve"><value>Save policy</value></data>
+  <data name="Lưu giá" xml:space="preserve"><value>Save rate</value></data>
+  <data name="Lưu loại phòng" xml:space="preserve"><value>Save room type</value></data>
+  <data name="Lưu mã phòng" xml:space="preserve"><value>Save room code</value></data>
+  <data name="Lưu trú" xml:space="preserve"><value>Stay</value></data>
+  <data name="Lưu ảnh" xml:space="preserve"><value>Save image</value></data>
+  <data name="Lịch nhận–trả" xml:space="preserve"><value>Arrivals and departures</value></data>
+  <data name="Lịch phòng" xml:space="preserve"><value>Room calendar</value></data>
+  <data name="Mã phòng" xml:space="preserve"><value>Room code</value></data>
+  <data name="Mã phòng mới" xml:space="preserve"><value>New room code</value></data>
+  <data name="Mô tả" xml:space="preserve"><value>Description</value></data>
+  <data name="Mô tả và thông tin phòng được áp dụng ngay sau khi lưu." xml:space="preserve"><value>Descriptions and room information apply immediately after saving.</value></data>
+  <data name="Mở bán loại phòng" xml:space="preserve"><value>Enable room type</value></data>
+  <data name="Mở bán phòng" xml:space="preserve"><value>Enable room</value></data>
+  <data name="Mức giá" xml:space="preserve"><value>Rate category</value></data>
+  <data name="Ngày hiệu lực" xml:space="preserve"><value>Effective date</value></data>
+  <data name="Ngày hết hạn" xml:space="preserve"><value>Expiry date</value></data>
+  <data name="Ngày mai" xml:space="preserve"><value>Tomorrow</value></data>
+  <data name="Ngừng bán" xml:space="preserve"><value>Unavailable for sale</value></data>
+  <data name="Ngừng bán loại phòng" xml:space="preserve"><value>Disable room type</value></data>
+  <data name="Ngừng bán phòng" xml:space="preserve"><value>Disable room</value></data>
+  <data name="Nêu mã đơn và số liệu cần kiểm tra, tối đa 500 ký tự." xml:space="preserve"><value>Include the booking code and figures to check, up to 500 characters.</value></data>
+  <data name="Phòng và giá" xml:space="preserve"><value>Rooms and rates</value></data>
+  <data name="Phản hồi sai lệch" xml:space="preserve"><value>Report a discrepancy</value></data>
+  <data name="Quy tắc hủy không hợp lệ." xml:space="preserve"><value>Invalid cancellation rules.</value></data>
+  <data name="Số khách tối đa" xml:space="preserve"><value>Maximum guests</value></data>
+  <data name="Số được nhận" xml:space="preserve"><value>Payout amount</value></data>
+  <data name="Thay chính sách tạo phiên bản mới. Đơn cũ giữ chính sách đã chốt." xml:space="preserve"><value>Replacing a policy creates a new version. Existing bookings keep their agreed policy.</value></data>
+  <data name="Thay đổi trạng thái bán? Hãy kiểm tra các đơn sắp tới." xml:space="preserve"><value>Change availability? Please check upcoming bookings.</value></data>
+  <data name="Thay đổi địa chỉ hoặc tọa độ sẽ đưa homestay đang hoạt động về chờ Quản lý duyệt. Các đơn đã có vẫn được giữ." xml:space="preserve"><value>Changing the address or coordinates returns an active homestay to manager review. Existing bookings are preserved.</value></data>
+  <data name="Thêm mốc" xml:space="preserve"><value>Add threshold</value></data>
+  <data name="Thêm phòng" xml:space="preserve"><value>Add room</value></data>
+  <data name="Thông tin" xml:space="preserve"><value>Information</value></data>
+  <data name="Thông tin không hợp lệ. Vui lòng kiểm tra các trường và thử lại." xml:space="preserve"><value>Invalid information. Check the fields and try again.</value></data>
+  <data name="Thứ tự" xml:space="preserve"><value>Display order</value></data>
+  <data name="Tiền giữ lại" xml:space="preserve"><value>Retained amount</value></data>
+  <data name="Tiền phòng" xml:space="preserve"><value>Room amount</value></data>
+  <data name="Toàn homestay" xml:space="preserve"><value>Entire homestay</value></data>
+  <data name="Trước ngày nhận (ngày)" xml:space="preserve"><value>Days before check-in</value></data>
+  <data name="Trả lời của bạn" xml:space="preserve"><value>Your reply</value></data>
+  <data name="Trả lời đánh giá" xml:space="preserve"><value>Reply to review</value></data>
+  <data name="Tên chính sách" xml:space="preserve"><value>Policy name</value></data>
+  <data name="Tạo loại phòng và đổi danh mục cần danh mục quản lý đầy đủ. Vui lòng liên hệ Fuji." xml:space="preserve"><value>Creating room types or changing categories requires the full management catalog. Contact Fuji.</value></data>
+  <data name="Tải giấy phép kinh doanh hoặc giấy PCCC mới sẽ đưa homestay đang hoạt động về chờ Quản lý duyệt." xml:space="preserve"><value>Uploading a new business license or fire safety certificate returns an active homestay to manager review.</value></data>
+  <data name="Tải giấy tờ" xml:space="preserve"><value>Download document</value></data>
+  <data name="Tải ảnh lên" xml:space="preserve"><value>Upload image</value></data>
+  <data name="Tối đa 1000 ký tự. Trả lời sẽ hiển thị công khai." xml:space="preserve"><value>Up to 1000 characters. Replies are public.</value></data>
+  <data name="Tỷ lệ hoa hồng" xml:space="preserve"><value>Commission rate</value></data>
+  <data name="Vui lòng chọn file." xml:space="preserve"><value>Please select a file.</value></data>
+  <data name="Vĩ độ" xml:space="preserve"><value>Latitude</value></data>
+  <data name="Xem lịch" xml:space="preserve"><value>View calendar</value></data>
+  <data name="Xem và trả lời đánh giá" xml:space="preserve"><value>View and reply to reviews</value></data>
+  <data name="Xác nhận khóa ngày" xml:space="preserve"><value>Confirm blocked dates</value></data>
+  <data name="Xác nhận mở khóa" xml:space="preserve"><value>Confirm unlock</value></data>
+  <data name="Xác nhận sẽ mở toàn bộ phần còn lại của khóa này, kể cả ngày ngoài tháng đang xem." xml:space="preserve"><value>Confirmation unlocks all remaining nights in this block, including dates outside the displayed month.</value></data>
+  <data name="Xác nhận số liệu đối soát này?" xml:space="preserve"><value>Confirm these settlement figures?</value></data>
+  <data name="Xác nhận đối soát" xml:space="preserve"><value>Confirm settlement</value></data>
+  <data name="Xóa giấy tờ" xml:space="preserve"><value>Delete document</value></data>
+  <data name="Xóa giấy tờ này?" xml:space="preserve"><value>Delete this document?</value></data>
+  <data name="Xóa ảnh" xml:space="preserve"><value>Delete image</value></data>
+  <data name="Xóa ảnh này?" xml:space="preserve"><value>Delete this image?</value></data>
+  <data name="Đang bán" xml:space="preserve"><value>Available for sale</value></data>
+  <data name="Đang chờ Quản lý duyệt" xml:space="preserve"><value>Awaiting manager review</value></data>
+  <data name="Đang lưu…" xml:space="preserve"><value>Saving…</value></data>
+  <data name="Đang tải lên…" xml:space="preserve"><value>Uploading…</value></data>
+  <data name="Đã gửi" xml:space="preserve"><value>Sent</value></data>
+  <data name="Đã gửi trả lời đánh giá." xml:space="preserve"><value>Review reply sent.</value></data>
+  <data name="Đã khóa ngày phòng." xml:space="preserve"><value>Room dates blocked.</value></data>
+  <data name="Đã mở khóa ngày phòng." xml:space="preserve"><value>Room dates unlocked.</value></data>
+  <data name="Đã thanh toán" xml:space="preserve"><value>Paid</value></data>
+  <data name="Đơn sắp tới cần kiểm tra: {0}" xml:space="preserve"><value>Upcoming bookings to check: {0}</value></data>
+  <data name="Đối soát" xml:space="preserve"><value>Settlements</value></data>
+  <data name="Ảnh bìa" xml:space="preserve"><value>Cover image</value></data>
+  <data name="Ảnh homestay {0}" xml:space="preserve"><value>Image of {0}</value></data>
+  <data name="Chờ xử lý" xml:space="preserve"><value>Pending</value></data>
+  <data name="Chọn đủ ngày bắt đầu và kết thúc." xml:space="preserve"><value>Select both the start and end dates.</value></data>
+  <data name="Kéo qua các đêm trống để chọn khoảng khóa. Bạn cũng có thể dùng bộ chọn ngày ở trên." xml:space="preserve"><value>Drag across available nights to select a block. You can also use the date picker above.</value></data>
+  <data name="Đã chọn {0} đêm. Xác nhận để khóa." xml:space="preserve"><value>Selected {0} nights. Confirm to block.</value></data>
+  <data name="Bạn không có quyền quản lý homestay này." xml:space="preserve"><value>You do not have permission to manage this homestay.</value></data>
+  <data name="Bạn không có quyền xem đối soát của chủ này." xml:space="preserve"><value>You cannot view this owner's settlements.</value></data>
+  <data name="Bảng đối soát hoặc đơn vừa được người khác xử lý, vui lòng tải lại." xml:space="preserve"><value>The settlement or booking was just updated. Reload and try again.</value></data>
+  <data name="Bảng đối soát không thuộc homestay của bạn." xml:space="preserve"><value>This settlement does not belong to your homestay.</value></data>
+  <data name="Bảng đối soát đã được xử lý hoặc không thể chuyển trạng thái này." xml:space="preserve"><value>The settlement has been processed or cannot move to this status.</value></data>
+  <data name="Chỉ chủ homestay được trả lời đánh giá của mình." xml:space="preserve"><value>Only the homestay owner can reply to this review.</value></data>
+  <data name="Chủ không được xem bảng nháp." xml:space="preserve"><value>Owners cannot view draft settlements.</value></data>
+  <data name="Còn đơn chưa chốt trong kỳ: {0}." xml:space="preserve"><value>Unclosed bookings remain in this period: {0}.</value></data>
+  <data name="Cần đủ ba giá ngày thường, cuối tuần và ngày lễ lớn hơn 0." xml:space="preserve"><value>Provide positive weekday, weekend and holiday rates.</value></data>
+  <data name="Danh mục loại phòng không tồn tại." xml:space="preserve"><value>Room category not found.</value></data>
+  <data name="Giá phải lớn hơn 0, ngày hiệu lực không ở quá khứ." xml:space="preserve"><value>The rate must be positive and the effective date cannot be in the past.</value></data>
+  <data name="Homestay đã kết thúc hợp tác." xml:space="preserve"><value>This homestay partnership has ended.</value></data>
+  <data name="Khoảng lịch phòng phải từ 1 đến 62 ngày." xml:space="preserve"><value>The calendar period must be between 1 and 62 days.</value></data>
+  <data name="Khóa ngày đã kết thúc, không cần mở khóa." xml:space="preserve"><value>This blocked period has ended and does not need unlocking.</value></data>
+  <data name="Không có hồ sơ tạo thay còn mở để sửa." xml:space="preserve"><value>No open assisted registration is available for editing.</value></data>
+  <data name="Không gửi bảng đối soát rỗng." xml:space="preserve"><value>An empty settlement cannot be sent.</value></data>
+  <data name="Không sửa giá đã có hiệu lực; hãy thêm giá cho ngày mới." xml:space="preserve"><value>Effective rates cannot be edited. Add a rate for a new date.</value></data>
+  <data name="Không sửa liên kết giấy tờ lịch sử của hồ sơ cũ." xml:space="preserve"><value>Historical document links cannot be changed.</value></data>
+  <data name="Không thể tắt phòng hoặc loại phòng cuối cùng đang bán của homestay hoạt động. Vui lòng dùng khóa ngày hoặc đề nghị Quản lý tạm ngưng homestay." xml:space="preserve"><value>The last sellable room or room type of an active homestay cannot be disabled. Block dates or ask a manager to suspend the homestay.</value></data>
+  <data name="Không tìm thấy bảng đối soát." xml:space="preserve"><value>Settlement not found.</value></data>
+  <data name="Không tìm thấy homestay." xml:space="preserve"><value>Homestay not found.</value></data>
+  <data name="Không tìm thấy khóa ngày." xml:space="preserve"><value>Blocked period not found.</value></data>
+  <data name="Không tìm thấy đánh giá." xml:space="preserve"><value>Review not found.</value></data>
+  <data name="Không xóa giấy tờ của cơ sở đang hoạt động, tạm ngưng hoặc đã kết thúc." xml:space="preserve"><value>Documents cannot be deleted for active, suspended or ended homestays.</value></data>
+  <data name="Không xóa hoặc chuyển liên kết giấy tờ lịch sử." xml:space="preserve"><value>Historical documents cannot be deleted or reassigned.</value></data>
+  <data name="Không xóa ảnh bìa duy nhất của homestay đang hoạt động; hãy chọn ảnh bìa khác trước." xml:space="preserve"><value>Select another cover before deleting the cover of an active homestay.</value></data>
+  <data name="Kỳ chưa kết thúc thời gian chờ đối soát." xml:space="preserve"><value>The settlement grace period has not ended.</value></data>
+  <data name="Kỳ đối soát không hợp lệ." xml:space="preserve"><value>Invalid settlement period.</value></data>
+  <data name="Mã giao dịch tối đa 100 ký tự." xml:space="preserve"><value>Transaction references cannot exceed 100 characters.</value></data>
+  <data name="Mã phòng phải có từ 1 đến 20 ký tự." xml:space="preserve"><value>Room codes must contain 1 to 20 characters.</value></data>
+  <data name="Mã phòng đã có trong loại phòng." xml:space="preserve"><value>This room code already exists in the room type.</value></data>
+  <data name="Phạm vi chính sách không hợp lệ." xml:space="preserve"><value>Invalid policy scope.</value></data>
+  <data name="Quy tắc hủy cần mốc 0, không trùng ngày, tỷ lệ 0–100 và không giảm khi hủy sớm hơn." xml:space="preserve"><value>Cancellation rules need a 0-day threshold, unique days, and refund rates from 0 to 100% that do not decrease for earlier cancellation.</value></data>
+  <data name="Thông tin loại phòng không hợp lệ." xml:space="preserve"><value>Invalid room type information.</value></data>
+  <data name="Thứ tự ảnh không được âm." xml:space="preserve"><value>Image display order cannot be negative.</value></data>
+  <data name="Tiện nghi không tồn tại." xml:space="preserve"><value>Amenity not found.</value></data>
+  <data name="Tên homestay phải có từ 1 đến 200 ký tự." xml:space="preserve"><value>Homestay names must contain 1 to 200 characters.</value></data>
+  <data name="Tên hoặc phạm vi chính sách không hợp lệ." xml:space="preserve"><value>Invalid policy name or scope.</value></data>
+  <data name="Tên loại phòng đã có trong homestay." xml:space="preserve"><value>This room type name already exists in the homestay.</value></data>
+  <data name="Tư vấn chỉ được sửa homestay nháp hoặc chờ duyệt trước khi chủ kích hoạt." xml:space="preserve"><value>Consultants can only edit draft or pending homestays before owner activation.</value></data>
+  <data name="Tọa độ không hợp lệ." xml:space="preserve"><value>Invalid coordinates.</value></data>
+  <data name="Vui lòng nhập lý do ẩn hoặc hiện đánh giá." xml:space="preserve"><value>Enter a reason for hiding or showing the review.</value></data>
+  <data name="Vui lòng nhập lý do/ghi chú từ 1 đến {0} ký tự." xml:space="preserve"><value>Enter a reason or note between 1 and {0} characters.</value></data>
+  <data name="Địa chỉ hoặc khu vực không hợp lệ." xml:space="preserve"><value>Invalid address or area.</value></data>
+  <data name="Ảnh phải gắn loại phòng thuộc cùng homestay." xml:space="preserve"><value>The image must be assigned to a room type in the same homestay.</value></data>
+  <data name="Lịch phòng bị trùng: {0}. Vui lòng chọn khoảng ngày khác." xml:space="preserve"><value>Room dates conflict: {0}. Choose another date range.</value></data>
 </root>

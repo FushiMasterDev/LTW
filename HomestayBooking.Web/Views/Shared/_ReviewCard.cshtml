@@ -9,4 +9,5 @@
     </div>
     @if (!string.IsNullOrEmpty(Model.Comment)) { <p>@Model.Comment</p> }
     @if (!string.IsNullOrEmpty(Model.Reply)) { <div class="stay-reviews__reply"><p class="fw-semibold mb-1">@L["Chủ homestay trả lời"]</p><p>@Model.Reply</p></div> }
+    @if (Model.Actions is not null) { <div class="mt-3">@Model.Actions</div> }
 </li>

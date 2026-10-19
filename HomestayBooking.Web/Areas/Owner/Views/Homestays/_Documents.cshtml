@@ -1,0 +1,18 @@
+@model OwnerEditorModel
+<partial name="_Alert" model='new AlertModel(L["Tải giấy phép kinh doanh hoặc giấy PCCC mới sẽ đưa homestay đang hoạt động về chờ Quản lý duyệt."].Value)' />
+<form asp-action="Document" asp-route-id="@Model.Home.Id" method="post" enctype="multipart/form-data" data-owner-form>
+    <label class="form-label" for="document-type">@L["Loại giấy tờ"]</label><select class="form-select mb-3" id="document-type" name="type">@foreach(var type in Enum.GetValues<DocumentType>()) { <option value="@type">@L[type.DisplayName()]</option> }</select>
+    <partial name="_UploadZone" model='new UploadZoneModel("owner-document")' />
+    <label class="form-label" for="document-expiry">@L["Ngày hết hạn"]</label><input class="form-control mb-3" type="date" id="document-expiry" name="expiry" />
+    <div class="fx-form-actions"><button type="submit" class="btn btn-brand" data-loading-text="@L["Đang tải lên…"]">@L["Tải giấy tờ lên"]</button></div>
+</form>
+@foreach(var d in Model.Home.Documents) {
+    <section class="mt-3 border-top pt-3">
+    <h2 class="h6">@L[d.Type.DisplayName()]</h2><p>@d.OriginalFileName</p>
+    @if (d.ExpiryDate is {} expiry) { <p>@L["Ngày hết hạn"]: @expiry.ToString("dd/MM/yyyy")</p> }
+    <a asp-action="OpenDocument" asp-route-id="@d.Id" class="btn btn-outline-secondary">@L["Tải giấy tờ"]</a>
+    @if (Model.Home.Status is HomestayStatus.Draft or HomestayStatus.PendingReview) {
+        <form asp-action="DeleteDocument" asp-route-id="@Model.Home.Id" method="post" class="mt-2" data-confirm="@L["Xóa giấy tờ này?"]"><input type="hidden" name="documentId" value="@d.Id" /><button type="submit" class="btn btn-outline-danger">@L["Xóa giấy tờ"]</button></form>
+    }
+    </section>
+}

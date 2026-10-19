@@ -26,6 +26,17 @@ public class StatusBadgeTagHelper(IStringLocalizer<SharedResource> localizer) : 
         HomestayStatus s => new(s.DisplayName(), s.ToneClass(), null),
         OwnerRegistrationStatus s => new(s.DisplayName(), s.ToneClass(), null),
         BankMatchStatus s => new(s.DisplayName(), s.ToneClass(), null),
+        SettlementStatus s => s switch {
+            SettlementStatus.Draft => new("Bản nháp", "tone-slate", null),
+            SettlementStatus.Sent => new("Đã gửi", "tone-sky", null),
+            SettlementStatus.Confirmed => new("Đã xác nhận", "tone-emerald", null),
+            _ => new("Đã thanh toán", "tone-emerald", null),
+        },
+        PaymentStatus s => s switch {
+            PaymentStatus.Submitted => new("Chờ xử lý", "tone-amber", null),
+            PaymentStatus.Approved => new("Đã xác nhận", "tone-emerald", null),
+            _ => new("Đã từ chối", "tone-rose", null),
+        },
         VoucherStatus s => new(s.DisplayName(), s.ToneClass(), null),
         // _ChangeHistory hiện dùng một tone cố định cho yêu cầu đổi/hủy
         ChangeRequestStatus s => new(s.DisplayName(), "tone-sky", null),

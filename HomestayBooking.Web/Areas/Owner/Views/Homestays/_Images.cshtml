@@ -1,0 +1,25 @@
+@model OwnerEditorModel
+<form asp-action="Upload" asp-route-id="@Model.Home.Id" method="post" enctype="multipart/form-data" data-owner-form>
+    <partial name="_UploadZone" model='new UploadZoneModel("owner-image", AllowPdf:false)' />
+    <label class="form-label" for="image-type">@L["Loại phòng"]</label><select class="form-select mb-3" id="image-type" name="typeId"><option value="">@L["Toàn homestay"]</option>@foreach(var t in Model.Home.RoomTypes) { <option value="@t.Id">@t.Name</option> }</select>
+    <label class="form-label" for="image-order">@L["Thứ tự"]</label><input class="form-control mb-3" id="image-order" name="sortOrder" type="number" min="0" value="0" inputmode="numeric" />
+    <div class="form-check mb-3"><input class="form-check-input" id="image-cover" type="checkbox" name="cover" value="true" /><label class="form-check-label py-3" for="image-cover">@L["Dùng làm ảnh bìa"]</label></div>
+    <div class="fx-form-actions"><button type="submit" class="btn btn-brand" data-loading-text="@L["Đang tải lên…"]">@L["Tải ảnh lên"]</button></div>
+</form>
+@foreach(var i in Model.Home.Images) {
+<section class="mt-4 border-top pt-3">
+    <img src="@i.Url.Thumbnail()" alt="@L["Ảnh homestay {0}", Model.Home.Name]" width="480" height="320" class="img-fluid rounded-4" loading="lazy" />
+    @if(i.IsCover) { <p class="mt-2">@L["Ảnh bìa"]</p> }
+    <form asp-action="Image" asp-route-id="@Model.Home.Id" method="post" class="my-3" data-owner-form>
+        <input type="hidden" name="imageId" value="@i.Id" /><input type="hidden" name="operation" value="update" />
+        <label class="form-label" for="image-type-@i.Id">@L["Loại phòng"]</label><select class="form-select mb-2" id="image-type-@i.Id" name="typeId"><option value="">@L["Toàn homestay"]</option>@foreach(var t in Model.Home.RoomTypes) { <option value="@t.Id" selected="@(i.RoomTypeId==t.Id)">@t.Name</option> }</select>
+        <label class="form-label" for="image-order-@i.Id">@L["Thứ tự"]</label><input class="form-control mb-2" id="image-order-@i.Id" name="sortOrder" type="number" min="0" value="@i.SortOrder" inputmode="numeric" />
+        <button type="submit" class="btn btn-outline-secondary" data-loading-text="@L["Đang lưu…"]">@L["Lưu ảnh"]</button>
+    </form>
+    <form asp-action="Image" asp-route-id="@Model.Home.Id" method="post" class="d-flex flex-wrap gap-2">
+        <input type="hidden" name="imageId" value="@i.Id" />
+        @if(!i.IsCover) { <button class="btn btn-outline-secondary" name="operation" value="cover" type="submit">@L["Chọn làm ảnh bìa"]</button> }
+        <button class="btn btn-outline-danger" name="operation" value="delete" type="submit" data-confirm="@L["Xóa ảnh này?"]">@L["Xóa ảnh"]</button>
+    </form>
+</section>
+}

@@ -1,0 +1,14 @@
+@model OwnerHomestaysModel
+@{ ViewData["Title"] = L["Homestay của tôi"]; var rows = new List<TableRow>(); }
+<partial name="_PageHead" model='new PageHeadModel("Homestay của tôi", "", "", ShowCreate: false)' />
+<partial name="_FilterBar" model='new FilterBarModel("owner-homes", new FilterField[] { new("q", "Tìm theo tên", Model.Query) })' />
+@foreach (var h in Model.Homes) {
+    Func<dynamic,IHtmlContent> name = @<text><a class="btn btn-link px-0" asp-action="Edit" asp-route-id="@h.Id">@h.Name</a><div class="small text-muted">@h.AreaName</div></text>;
+    Func<dynamic,IHtmlContent> status = @<text><status-badge value="@h.Status" /></text>;
+    Func<dynamic,IHtmlContent> rooms = @<text>@h.RoomCount</text>;
+    Func<dynamic,IHtmlContent> actions = @<text><a class="btn btn-outline-secondary" asp-action="Edit" asp-route-id="@h.Id" aria-label="@L["Sửa {0}", h.Name]">@L["Chỉnh sửa"]</a></text>;
+    rows.Add(new(new IHtmlContent[] { name(null!), status(null!), rooms(null!), actions(null!) }));
+}
+<partial name="_DataTable" model='new DataTableModel("Homestay của tôi", new TableColumn[] { new("Homestay"),new("Trạng thái"),new("Số phòng",Numeric:true),new("Thao tác") }, rows)' />
+
+<partial name="_Pager" model="Model.Homes" />

@@ -12,6 +12,9 @@ public record CalendarRoom(int Id, string Code);
 /// <summary>Lưới tháng bắt đầu thứ Hai; chỉ dựng dữ liệu hiển thị, không truy vấn hoặc thay đổi lịch.</summary>
 public record RoomCalendarModel
 {
+    /// <summary>Cho phép kéo chọn nhiều đêm trống; vẫn giữ chọn ngày bằng bàn phím và bộ chọn ngày của form.</summary>
+    public bool RangeSelection { get; init; }
+    public DateOnly? MinSelectableDate { get; init; }
     public DateOnly Month { get; }
     public IReadOnlyList<CalendarRoom> Rooms { get; }
     public IReadOnlyList<DateOnly> Days { get; }

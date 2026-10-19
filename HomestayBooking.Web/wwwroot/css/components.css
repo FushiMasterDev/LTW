@@ -1027,3 +1027,6 @@
 
 .fx-table__value { min-width: 0; }
 .fx-task-list + .fx-section-title { margin-top: 1.5rem; }
+
+/* Kéo chọn khoảng đêm là tùy chọn của RoomCalendar; vùng ngoài ô vẫn cuộn được. */
+.fx-room-calendar[data-range-selection="true"] [data-calendar-night] { touch-action: none; user-select: none; }

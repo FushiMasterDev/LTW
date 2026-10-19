@@ -20,3 +20,43 @@ document.querySelectorAll('[data-room-calendar]').forEach(root => {
     });
   });
 });
+
+// Tùy chọn kéo chọn khoảng đêm cho Owner/UI Kit; không ghi dữ liệu.
+document.querySelectorAll('[data-room-calendar][data-range-selection="true"]').forEach(root => {
+  let first, last, pointer, dragged = false;
+  const selectable = cell => cell?.matches('[data-calendar-night]:not(:disabled)[data-state="Free"]');
+  const clear = () => root.querySelectorAll('[data-calendar-night]').forEach(cell => cell.setAttribute('aria-pressed', 'false'));
+  root.addEventListener('pointerdown', event => {
+    const cell = event.target.closest('[data-calendar-night]');
+    if (!selectable(cell) || event.button !== 0) return;
+    first = last = cell; pointer = event.pointerId; dragged = false;
+    cell.setPointerCapture(pointer);
+  });
+  root.addEventListener('pointermove', event => {
+    if (!first || event.pointerId !== pointer) return;
+    const cell = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-calendar-night]');
+    if (!selectable(cell) || cell.dataset.roomId !== first.dataset.roomId) return;
+    last = cell; dragged ||= first !== last;
+    const dates = [first.dataset.date,last.dataset.date].sort();
+    clear();
+    root.querySelectorAll('[data-calendar-night]').forEach(n => {
+      if (n.dataset.roomId === first.dataset.roomId && n.dataset.date >= dates[0] && n.dataset.date <= dates[1]) n.setAttribute('aria-pressed','true');
+    });
+  });
+  root.addEventListener('pointerup', event => {
+    if (!first || event.pointerId !== pointer) return;
+    if (dragged) {
+      const dates = [first.dataset.date,last.dataset.date].sort();
+      const cells = [...root.querySelectorAll('[data-calendar-night]')].filter(n => n.dataset.roomId === first.dataset.roomId && n.dataset.date >= dates[0] && n.dataset.date <= dates[1]);
+      if (cells.every(selectable)) {
+        const end = new Date(dates[1] + 'T12:00:00'); end.setDate(end.getDate()+1);
+        const endKey = `${end.getFullYear()}-${String(end.getMonth()+1).padStart(2,'0')}-${String(end.getDate()).padStart(2,'0')}`;
+        root.querySelector('[data-calendar-selection]').textContent = root.dataset.rangeSelected.replace('{0}',cells.length);
+        root.dispatchEvent(new CustomEvent('fx:room-range-selected',{bubbles:true,detail:{roomId:Number(first.dataset.roomId),start:dates[0],end:endKey}}));
+      } else clear();
+    }
+    first = last = null; pointer = null;
+  });
+  root.addEventListener('pointercancel', () => { first = last = null; pointer = null; clear(); });
+  root.addEventListener('click', event => { if (dragged) { event.preventDefault(); event.stopImmediatePropagation(); dragged=false; } },true);
+});

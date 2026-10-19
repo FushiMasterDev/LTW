@@ -135,6 +135,11 @@
             </div>
         }
     }
+    <h3 class="h6 mt-3">Đối soát và khoản bù (05a)</h3>
+    <div class="d-flex flex-wrap gap-2">
+        @foreach(var value in Enum.GetValues<SettlementStatus>()) { <status-badge value="value" /> }
+        @foreach(var value in Enum.GetValues<PaymentStatus>()) { <status-badge value="value" /> }
+    </div>
 </section>
 
 <section id="money" class="uikit-section" aria-labelledby="money-title">
@@ -394,7 +399,7 @@
         var month = RoomCalendarModel.ParseMonth(Context.Request.Query["month"], today);
         var nightsForKit = new[] { new CalendarNight(1, "101", month.AddDays(3), CalendarNightState.Booked, "FJ-DEMO"), new CalendarNight(1, "101", month.AddDays(4), CalendarNightState.Blocked, "BL1", BlockReason: RoomBlockReason.Maintenance), new CalendarNight(1, "101", month.AddDays(5), CalendarNightState.Blocked, "BL2", BlockReason: RoomBlockReason.OtherChannel), new CalendarNight(1, "101", month.AddDays(6), CalendarNightState.ChangeRequestHeld, "CR12") };
     }
-    <partial name="_RoomCalendar" model='new RoomCalendarModel(month, nightsForKit, new[] { new CalendarRoom(1, "101"), new CalendarRoom(2, "102") })' />
+    <partial name="_RoomCalendar" model='new RoomCalendarModel(month, nightsForKit, new[] { new CalendarRoom(1, "101"), new CalendarRoom(2, "102") }) { RangeSelection = true }' />
     <div class="mt-4"><partial name="_RoomCalendar" model='new RoomCalendarModel(month, Array.Empty<CalendarNight>())' /></div>
 </section>
 
@@ -417,7 +422,8 @@
     <h2 id="review-cards-title">Thẻ đánh giá minh họa: tên và tên không được nạp</h2>
     <ul class="uikit-room-options">
         <partial name="_ReviewCard" model='new ReviewCardModel(4, DateTime.UtcNow, "Nội dung minh họa để kiểm tra cách xuống dòng, không dùng như đánh giá thật.", null, "Nguyễn Mẫu")' />
-        <partial name="_ReviewCard" model='new ReviewCardModel(5, DateTime.UtcNow, null, null)' />
+        @{ Func<dynamic,IHtmlContent> reviewActions = @<text><label for="kit-owner-reply" class="form-label">@L["Trả lời đánh giá"]</label><textarea id="kit-owner-reply" class="form-control" disabled></textarea><div class="fx-form-actions"><button type="button" class="btn btn-brand" disabled>@L["Gửi trả lời"]</button></div></text>; }
+        <partial name="_ReviewCard" model='new ReviewCardModel(5, DateTime.UtcNow, null, null, Actions:reviewActions(null!))' />
     </ul>
 </section>
 

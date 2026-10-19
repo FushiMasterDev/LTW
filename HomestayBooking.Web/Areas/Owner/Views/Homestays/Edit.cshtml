@@ -1,0 +1,40 @@
+@model OwnerEditorModel
+@{ ViewData["Title"] = Model.Home.Name; var h = Model.Home;
+var tabs = new[] { ("info","Thông tin"), ("location","Địa chỉ"), ("rooms","Phòng và giá"), ("images","Ảnh"), ("amenities","Tiện nghi"), ("policy","Chính sách hủy"), ("documents","Giấy tờ") }; }
+<partial name="_PageHead" model='new PageHeadModel(h.Name, "", "", ShowCreate:false)' />
+<partial name="_Breadcrumb" model='new BreadcrumbModel(new BreadcrumbItem[] { new("Homestay của tôi",Url.Action("Index")),new(h.Name) })' />
+<div class="mb-3"><status-badge value="@h.Status" /></div>
+<partial name="_Tabs" model='new TabsModel("Chỉnh sửa homestay", tabs.Select(t => new TabItem(t.Item2, Url.Action("Edit",new {id=h.Id,tab=t.Item1})!,Model.Tab==t.Item1)).ToList())' />
+<div class="fx-form-card fx-card">
+@if (Model.Tab == "info") {
+    <p class="text-muted">@L["Mô tả và thông tin phòng được áp dụng ngay sau khi lưu."]</p>
+    <form asp-action="Content" asp-route-id="@h.Id" method="post" data-owner-form>
+        <form-field asp-for="Content.Name" autocomplete="off" />
+        <form-field asp-for="Content.ContactPhone" type="tel" autocomplete="tel" />
+        <form-field asp-for="Content.CheckinTime" type="time" />
+        <form-field asp-for="Content.CheckoutTime" type="time" />
+        <form-field asp-for="Content.DescriptionHtml" type="textarea" />
+        <form-field asp-for="Content.CheckinGuideHtml" type="textarea" />
+        <partial name="_OwnerSave" />
+    </form>
+} else if (Model.Tab == "location") {
+    <partial name="_Alert" model='new AlertModel(L["Thay đổi địa chỉ hoặc tọa độ sẽ đưa homestay đang hoạt động về chờ Quản lý duyệt. Các đơn đã có vẫn được giữ."].Value)' />
+    <form asp-action="Location" asp-route-id="@h.Id" method="post" data-owner-form>
+        <form-field asp-for="Location.AreaId" type="select" asp-items="Model.Areas.Select(a=>new SelectListItem(a.Name,a.Id.ToString()))" />
+        <form-field asp-for="Location.Address" autocomplete="street-address" />
+        <form-field asp-for="Location.Latitude" type="number" step="any" min="-90" max="90" />
+        <form-field asp-for="Location.Longitude" type="number" step="any" min="-180" max="180" />
+        <partial name="_OwnerSave" />
+    </form>
+} else if (Model.Tab == "rooms") { <partial name="_Rooms" model="Model" />
+} else if (Model.Tab == "images") { <partial name="_Images" model="Model" />
+} else if (Model.Tab == "amenities") {
+    <partial name="_EmptyState" model='new EmptyStateModel("Chưa có danh mục tiện nghi cho trình sửa.", "Các tiện nghi hiện tại được giữ nguyên. Vui lòng liên hệ Fuji nếu cần thay đổi.", "stars")' />
+} else if (Model.Tab == "policy") { <partial name="_Policies" model="Model" />
+} else if (Model.Tab == "documents") { <partial name="_Documents" model="Model" /> }
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/components/upload-zone.js" asp-append-version="true"></script>
+    <script src="~/js/components/owner-forms.js" asp-append-version="true"></script>
+}
