@@ -34,6 +34,11 @@ public class SidebarViewComponent(IAuthorizationService authorization, BookingCh
                 "Admin" =>
                 [
                     new("Admin", "Dashboard", "Tổng quan", "bi-speedometer2"),
+                    new("Admin", "Contracts", "Đối tác và hợp đồng", "bi-file-earmark-text"),
+                    new("Admin", "Homestays", "Duyệt nội dung", "bi-house-check"),
+                    new("Staff", "OwnerRegistrations", "Thẩm định hồ sơ", "bi-file-earmark-person"),
+                    new("Admin", "Reports", "Báo cáo", "bi-bar-chart"),
+                    new("Admin", "Accounts", "Tài khoản nhân viên", "bi-person-gear"),
                     new("Admin", "Areas", "Khu vực", "bi-geo-alt"),
                     new("Admin", "RoomCategories", "Loại phòng", "bi-grid-3x3-gap"),
                     new("Admin", "Amenities", "Tiện nghi", "bi-stars"),

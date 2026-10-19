@@ -461,3 +461,20 @@ Các route kế toán kế thừa area Accounting và policy Accounting. Chỉ A
 | Rà bước 04 | Transactions, Receipts, Refunds, AdditionalDeposits giữ route/model/form cũ | Giữ | Giữ | Thiếu liên kết đối soát thật trong dữ liệu đã nạp, chưa thêm shortcut (G-25) |
 
 Các màn mới dùng PageHead, Tabs, FilterBar, DataTable/Pager, PriceBreakdown, Breadcrumb, Timeline, Alert, EmptyState, money/status-badge. Không thêm component/CSS/JS/thư viện/ảnh. Báo cáo nghiệm thu: `docs/ui/05c-ke-toan-report.md`.
+
+## Cập nhật sau 05d — 19/10/2026
+
+Các màn mới kế thừa AdminController: area Admin, policy Management. Base AdminServiceController chỉ tra định danh EmployeeId; mọi dữ liệu nghiệp vụ đọc/ghi qua service. Mỗi POST mới có ValidateAntiForgeryToken, PRG và TempData cho Alerts.
+
+| Màn | GET | POST / trường | Service và tình trạng |
+|---|---|---|---|
+| Đối tác/hợp đồng | `/Admin/Contracts?status&search&expiringWithinDays&page`, `/Create?homestayId`, `/{id}`, `/Details/{id}` | Create: HomestayId, ContractNo, StartDate, EndDate, CommissionPercent; Extend: endDate; Terminate: reason | ContractService.ListAsync/DetailsAsync/CreateAsync/ExtendAsync/TerminateAsync, ContractEligibility cho nhãn hiệu lực; có xác nhận gia hạn/chấm dứt, lý do bắt buộc |
+| Duyệt nội dung | `/Admin/Homestays`, `/{id}`, `/Details/{id}`, `/Document/{id}` | Approve; Reject: reason; Resume: reason | HomestayReviewService.PendingAsync/PendingDetailsAsync/ApproveAsync/RejectAsync/ResumeAsync; HomestayContentService.EditorAsync; OwnerRegistrationQueryService.OpenDocumentAsync; so sánh trước/sau còn G-26 |
+| URL thông báo cũ | `/Staff/Homestays`, `/{id}`, `/Details/{id}` | Không có | QL/AD chuyển tới Admin; NV vẫn bị chặn Management |
+| Hồ sơ đối tác | Sidebar Admin → `/Staff/OwnerRegistrations`; từ Approved có nút tạo hợp đồng theo homestay | Giữ 05b | Dùng lại màn 05b, không dựng màn thẩm định khác |
+| Báo cáo | `/Admin/Reports?tab=overview|bookings|finance|employees|homestays&from&to` | Không có | Đủ năm ReportService API; lát tháng qua BookingsAsync/FinancialAsync; _Tabs, _StatCard, _ReportChart và bảng thay thế; tỷ lệ service trả nguyên |
+| Tài khoản nhân viên | `/Admin/Accounts?term&position&status&page`, `/Details/{id}`, `/Create`, `/TemporaryPassword` | Create: EmployeeCode, FullName, Phone, Email, Position, Department; Employment: position, employment; Lock: locked, reason; ResetPassword | AccountAdminService đủ năm API. Manager chỉ đọc; Administrator ghi. Mật khẩu TempData một lần, NoStore, sao chép; đọc/Position còn G-27 |
+| Dashboard | `/Admin`, `/Admin/Dashboard` | Không có | ReportService.ManagementAsync tháng hiện tại; ContractService.ListAsync hết hạn 30 ngày; PendingAsync; OwnerRegistrationQueryService.ListAsync PendingReview/UnderReview; lối tắt các màn mới |
+| Danh mục | Amenities, Areas, Holidays, RoomCategories giữ route/model/form | Delete giữ nguyên | Đã rà cả bốn đi qua CatalogDeletionService; sửa câu xác nhận Amenities, không hứa xóa cascade |
+
+Component mới `_ReportChart`, model `ReportChartModel/ReportChartSeries`, mẫu UI Kit và badge ContractStatus/AccountStatus/EmploymentStatus. Chữ mới có EN. Báo cáo nghiệm thu/gap/dữ liệu thử: `docs/ui/05d-quan-ly-report.md`. Mục ẩn/hiện đánh giá FR-06 của bảng kiểm kê nền không nằm trong bảy màn của prompt 05d hiện hành; chưa triển khai trong lượt này.

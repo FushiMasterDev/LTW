@@ -1,40 +1,13 @@
-@{
-    ViewData["Title"] = L["Tổng quan quản trị"];
-    var stats = new (string Label, object Value, string Icon, string Tone)[]
-    {
-        (L["Homestay"], ViewBag.HomestayCount, "bi-houses", "tone-sky"),
-        (L["Phòng"], ViewBag.RoomCount, "bi-door-closed", "tone-emerald"),
-        (L["Chủ homestay"], ViewBag.OwnerCount, "bi-person-badge", "tone-teal"),
-        (L["Nhân viên"], ViewBag.StaffCount, "bi-headset", "tone-orange"),
-        (L["Hồ sơ Owner chờ duyệt"], ViewBag.PendingOwnerCount, "bi-person-check", "tone-rose"),
-        (L["Đơn chờ xác nhận"], ViewBag.PendingBookingCount, "bi-hourglass-split", "tone-amber"),
-    };
-    var links = new (string Controller, string Label, string Hint, string Icon, string Tone)[]
-    {
-        ("Areas", L["Khu vực"], L["Quận, huyện có homestay"], "bi-geo-alt", "tone-sky"),
-        ("RoomCategories", L["Loại phòng"], L["Phòng đôi, gia đình, nguyên căn..."], "bi-grid-3x3-gap", "tone-emerald"),
-        ("Amenities", L["Tiện nghi"], L["Wifi, bể bơi, BBQ..."], "bi-stars", "tone-amber"),
-        ("Holidays", L["Ngày lễ"], L["Ngày áp giá lễ"], "bi-calendar-heart", "tone-rose"),
-    };
-}
-<partial name="_PageHead" model='new PageHeadModel("Tổng quan quản trị", "", "", L["Theo dõi nhanh hệ thống và quản lý danh mục dùng chung."], ShowCreate: false)' />
-
-<div class="row g-3 mb-2">
-    @foreach (var s in stats)
-    {
-        <div class="col-sm-6 col-xl-4">
-            <partial name="_StatCard" model="@(new StatCardModel(s.Label, Convert.ToString(s.Value) ?? "0", s.Icon))" />
-        </div>
-    }
-</div>
-
-<div class="row g-4 mt-2">
-    <div class="col-lg-6">
-        <partial name="_TaskList" model='new TaskListModel("Việc cần xử lý", new TaskListItem[] {
-            new("Hồ sơ Owner chờ duyệt", Value: (int)ViewBag.PendingOwnerCount),
-            new("Đơn chờ xác nhận", Value: (int)ViewBag.PendingBookingCount) })' />
-    </div>
-    <div class="col-lg-6">
-        <partial name="_TaskList" model='new TaskListModel("Danh mục", links.Select(link => new TaskListItem(link.Label, link.Hint, Url.Action("Index", link.Controller))).ToArray())' />
-    </div>
-</div>
+@model AdminDashboardModel
+@{ViewData["Title"]=L["Tổng quan quản trị"];var f=Model.Report.Finance;var rows=new List<TableRow>();}
+<partial name="_PageHead" model='new PageHeadModel("Tổng quan quản trị","","",L["Kỳ {0} – {1}",Model.Query.From.ToString("dd/MM/yyyy"),Model.Query.To.ToString("dd/MM/yyyy")],Action:"Index",Controller:"Reports",ActionLabel:"Xem báo cáo")' />
+<div class="row g-3 mb-4">
+<div class="col-sm-6 col-xl-4"><partial name="_StatCard" model='new StatCardModel("Tổng đơn",Model.Report.Bookings.Total.ToString("N0"),"journal-check")' /></div>
+<div class="col-sm-6 col-xl-4"><partial name="_StatCard" model='new StatCardModel("Tiền phòng hoàn thành",f.CompletedRoomAmount.ToString("N0",System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))+"đ","cash-stack",Hint:"Số liệu tạm tính")' /></div>
+<div class="col-sm-6 col-xl-4"><partial name="_StatCard" model='new StatCardModel("Hoa hồng",f.Commission.ToString("N0",System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))+"đ","graph-up",Hint:"Số liệu tạm tính")' /></div></div>
+<div class="row g-4 mb-4"><div class="col-lg-6"><partial name="_TaskList" model='new TaskListModel("Việc cần xử lý",new TaskListItem[] {
+new("Nội dung chờ duyệt",Href:Url.Action("Index","Homestays"),Value:Model.PendingContent),new("Hồ sơ chờ thẩm định",Href:Url.Action("Index","OwnerRegistrations",new {area="Staff"}),Value:Model.PendingRegistrations),new("Hợp đồng hết hạn trong 30 ngày",Href:Url.Action("Index","Contracts",new {expiringWithinDays=30}),Value:Model.Expiring.TotalCount) })' /></div>
+<div class="col-lg-6"><partial name="_TaskList" model='new TaskListModel("Lối tắt quản lý",new TaskListItem[] {new("Báo cáo",Href:Url.Action("Index","Reports")),new("Đối tác và hợp đồng",Href:Url.Action("Index","Contracts")),new("Tài khoản nhân viên",Href:Url.Action("Index","Accounts")),new("Danh mục",Href:Url.Action("Index","Amenities"))})' /></div></div>
+<h2 class="fx-section-title">@L["Hợp đồng sắp hết hạn"]</h2>
+@foreach(var c in Model.Expiring){Func<dynamic,IHtmlContent> link=@<text><a asp-controller="Contracts" asp-action="Details" asp-route-id="@c.Id">@c.ContractNo</a><div>@c.HomestayName</div></text>;rows.Add(new(new IHtmlContent[] {link(null!),new HtmlContentBuilder().Append(c.OwnerName),new HtmlContentBuilder().Append(c.EndDate.ToString("dd/MM/yyyy"))}));}
+<partial name="_DataTable" model='new DataTableModel("Hợp đồng sắp hết hạn",new TableColumn[] {new("Hợp đồng / đối tác"),new("Chủ homestay"),new("Ngày hết hạn")},rows)' />

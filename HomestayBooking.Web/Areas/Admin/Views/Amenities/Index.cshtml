@@ -12,7 +12,7 @@
                 {
                     var used = counts.GetValueOrDefault(entry.Id);
                     var confirm = used > 0
-                        ? L["Xóa \"{0}\"? Tiện nghi này sẽ bị gỡ khỏi {1} homestay.", entry.Name, used]
+                        ? L["Xóa \"{0}\"? Tiện nghi đang được {1} homestay sử dụng; thao tác xóa sẽ bị chặn.", entry.Name, used]
                         : L["Xóa \"{0}\"?", entry.Name];
                     Func<dynamic, IHtmlContent> cell0 = @<text><div class="d-flex align-items-center gap-3">
                                 <span class="fx-icon-chip @tones[entry.Id % tones.Length]" aria-hidden="true"><i class="bi @(entry.Icon ?? "bi-question-circle")"></i></span>
