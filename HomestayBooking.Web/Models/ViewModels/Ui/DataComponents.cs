@@ -91,3 +91,13 @@ public record SkeletonModel(bool Cards = false, int Count = 3);
 /// <param name="Message">Khóa resource của lời giải thích.</param>
 /// <param name="Reference">Mã đối chiếu cho bộ phận hỗ trợ, không dịch.</param>
 public record StatusPageModel(int? Code, string Title, string Message, string? Reference = null);
+
+/// <param name="Label">Khóa resource của tác vụ hoặc liên kết.</param>
+/// <param name="Hint">Mô tả đã dịch, chỉ lấy từ dữ liệu trang đang có.</param>
+/// <param name="Href">Đường dẫn sẵn có; null khi chưa có màn xử lý trong phạm vi hiện tại.</param>
+/// <param name="Value">Số lượng thật tùy chọn, không tự tải dữ liệu.</param>
+public record TaskListItem(string Label, string? Hint = null, string? Href = null, int? Value = null);
+
+/// <param name="Title">Khóa resource của tiêu đề danh sách.</param>
+/// <param name="Items">Các tác vụ hoặc liên kết do view ghép từ dữ liệu có sẵn.</param>
+public record TaskListModel(string Title, IReadOnlyList<TaskListItem> Items);

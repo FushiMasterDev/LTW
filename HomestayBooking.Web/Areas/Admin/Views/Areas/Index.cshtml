@@ -6,37 +6,15 @@
 <partial name="_PageHead" model="@(new PageHeadModel(L["Khu vực"], "bi-geo-alt", "tone-sky", L["Quận, huyện có homestay"]))" />
 <partial name="_CatalogSearch" />
 
-<div class="card-soft overflow-hidden">
-    <div class="table-responsive">
-        <table class="table table-modern">
-            <thead>
-                <tr>
-                    <th scope="col">@L["Tên khu vực"]</th>
-                    <th scope="col" class="d-none d-md-table-cell">@L["Tỉnh/thành"]</th>
-                    <th scope="col" class="d-none d-md-table-cell">@L["Nhóm khu vực"]</th>
-                    <th scope="col" class="text-end d-none d-sm-table-cell">@L["Số homestay"]</th>
-                    <th scope="col" class="text-end">@L["Thao tác"]</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
+@{ var rows = new List<TableRow>(); }
+@foreach (var entry in Model)
                 {
-                    <tr>
-                        <td class="fw-semibold">@item.Name</td>
-                        <td class="d-none d-md-table-cell">@item.Province</td>
-                        <td class="d-none d-md-table-cell">@L[item.AreaGroup.DisplayName()]</td>
-                        <td class="text-end d-none d-sm-table-cell"><span class="count-pill tone-sky">@counts.GetValueOrDefault(item.Id)</span></td>
-                        <td class="text-end">
-                            <partial name="_RowActions" model="@(new RowActionsModel(item.Id.ToString(), item.Name, L["Xóa \"{0}\"?", item.Name]))" />
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-    @if (Model.Count == 0)
-    {
-        <partial name="_EmptyState" />
-    }
-</div>
+                    Func<dynamic, IHtmlContent> cell0 = @<text>@entry.Name</text>;
+                        Func<dynamic, IHtmlContent> cell1 = @<text>@entry.Province</text>;
+                        Func<dynamic, IHtmlContent> cell2 = @<text>@L[entry.AreaGroup.DisplayName()]</text>;
+                        Func<dynamic, IHtmlContent> cell3 = @<text><span class="fx-count tone-sky">@counts.GetValueOrDefault(entry.Id)</span></text>;
+                        Func<dynamic, IHtmlContent> cell4 = @<text><partial name="_RowActions" model="@(new RowActionsModel(entry.Id.ToString(), entry.Name, L["Xóa \"{0}\"?", entry.Name]))" /></text>;
+                    rows.Add(new TableRow(new IHtmlContent[] { cell0(null!), cell1(null!), cell2(null!), cell3(null!), cell4(null!) }));
+}
+<partial name="_DataTable" model='new DataTableModel("Khu vực", new TableColumn[] { new("Tên khu vực"), new("Tỉnh/thành"), new("Nhóm khu vực"), new("Số homestay", Numeric: true), new("Thao tác") }, rows)' />
 <partial name="_Pager" model="Model" />

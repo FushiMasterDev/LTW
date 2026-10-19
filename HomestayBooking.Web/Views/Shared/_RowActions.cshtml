@@ -4,7 +4,7 @@
        title="@L["Sửa"]" aria-label="@L["Sửa {0}", Model.Name]">
         <i class="bi bi-pencil-square" aria-hidden="true"></i>
     </a>
-    <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="d-inline" data-confirm="@Model.ConfirmMessage">
+    <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="d-inline" data-confirm="@Model.ConfirmMessage" data-confirm-variant="danger">
         <button type="submit" class="btn btn-icon tone-rose" title="@L["Xóa"]" aria-label="@L["Xóa {0}", Model.Name]">
             <i class="bi bi-trash3" aria-hidden="true"></i>
         </button>

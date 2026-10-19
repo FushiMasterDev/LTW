@@ -1,0 +1,18 @@
+@model TaskListModel
+<section class="fx-card fx-task-list">
+    <h2 class="fx-section-title">@L[Model.Title]</h2>
+    <ul>
+        @foreach (var item in Model.Items)
+        {
+            <li>
+                <div>
+                    @if (item.Href is not null) { <a href="@item.Href">@L[item.Label]</a> }
+                    else { <strong>@L[item.Label]</strong> }
+                    @if (!string.IsNullOrEmpty(item.Hint)) { <p class="small text-muted mb-0">@item.Hint</p> }
+                </div>
+                @if (item.Value is { } count) { <span class="fx-count">@count</span> }
+            </li>
+        }
+    </ul>
+    @if (Model.Items.Count == 0) { <partial name="_EmptyState" /> }
+</section>

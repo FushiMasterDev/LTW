@@ -2198,4 +2198,6 @@
   <data name="Homestay của đối tác" xml:space="preserve"><value>Partner homestays</value></data>
   <data name="Hồ nước và mái ngói Hà Nội trong sương bình minh, ảnh trang trí" xml:space="preserve"><value>Hanoi lake and tiled rooftops in the dawn mist, decorative image</value></data>
   <data name="Con ngõ có đèn lồng và đường rẽ, ảnh trang trí" xml:space="preserve"><value>Lantern-lit alley with a turn, decorative image</value></data>
+  <data name="Việc cần xử lý" xml:space="preserve"><value>Tasks to handle</value></data>
+  <data name="Mở danh sách để đối chiếu giao dịch." xml:space="preserve"><value>Open the list to reconcile transactions.</value></data>
 </root>

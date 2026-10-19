@@ -446,3 +446,12 @@
     <script src="~/js/components/uikit.js" asp-append-version="true"></script>
     <partial name="_ValidationScriptsPartial" />
 }
+
+<section class="uikit-section" aria-label="Danh sách tác vụ và form nội bộ">
+    <partial name="_TaskList" model='new TaskListModel("Việc cần xử lý", new TaskListItem[] { new("Đơn chờ xác nhận", Value: 0), new("Giao dịch cần xử lý", L["Mở danh sách để đối chiếu giao dịch."], "/Accounting/Transactions", 12) })' />
+    <partial name="_TaskList" model='new TaskListModel("Việc cần xử lý", Array.Empty<TaskListItem>())' />
+    <div class="fx-card fx-form-card mt-4">
+        <p>Form nội bộ rộng tối đa 40rem; cuối form có nút dính trên điện thoại.</p>
+        <div class="fx-form-actions"><button type="button" class="btn btn-brand">@L["Lưu"]</button><button type="button" class="btn btn-outline-secondary">@L["Hủy"]</button></div>
+    </div>
+</section>

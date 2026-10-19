@@ -1,13 +1,1 @@
-@* Ô tìm theo tên (GET ?q=) cho các trang danh sách *@
-<form method="get" class="card-soft filter-bar row g-2 mx-0" role="search">
-    <div class="col-sm-8 col-md-9">
-        <label for="q" class="visually-hidden">@L["Tìm theo tên"]</label>
-        <div class="input-group">
-            <span class="input-group-text" aria-hidden="true"><i class="bi bi-search"></i></span>
-            <input type="search" id="q" name="q" value="@ViewData["Query"]" class="form-control" placeholder="@L["Tìm theo tên"]" />
-        </div>
-    </div>
-    <div class="col-sm-4 col-md-3 d-grid">
-        <button type="submit" class="btn btn-brand"><i class="bi bi-search" aria-hidden="true"></i> @L["Tìm"]</button>
-    </div>
-</form>
+<partial name="_FilterBar" model='new FilterBarModel("catalog-filter", new FilterField[] { new("q", "Tìm theo tên", ViewData["Query"]?.ToString(), Type: "search") })' />

@@ -4,34 +4,22 @@
     ViewData["Title"] = L["Cấp voucher"];
     var rules = VoucherRules.Value;
 }
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card-soft p-4">
-            <span class="icon-chip icon-chip-lg tone-pink mb-3" aria-hidden="true"><i class="bi bi-ticket-perforated"></i></span>
-            <h1 class="h3 mb-1">@L["Cấp voucher"]</h1>
+<partial name="_PageHead" model='new PageHeadModel("Cấp voucher", "", "", ShowCreate: false)' />
+<partial name="_Breadcrumb" model='new BreadcrumbModel(new BreadcrumbItem[] { new("Voucher", Url.Action("Index")), new("Cấp voucher") })' />
+<div class="fx-form-card fx-card">
             <p class="text-muted small">
                 @L["Giá trị = {0:P0} tổng tiền đơn gốc, trong khoảng {1:N0}–{2:N0}đ, dùng trong {3} tháng. Khách dùng dần, mỗi đơn giảm tối đa {4:P0} hoa hồng Fuji của đơn đó.",
                     rules.IssueRate, rules.MinAmount, rules.MaxAmount, rules.ValidMonths, rules.MaxDiscountShareOfCommission]
             </p>
             <form asp-action="Create" method="post" novalidate>
                 <div asp-validation-summary="ModelOnly" class="alert tone-rose" role="alert"></div>
-                <div class="mb-3">
-                    <label asp-for="BookingCode" class="form-label"></label>
-                    <input asp-for="BookingCode" class="form-control text-uppercase" placeholder="FJ261011-001" autocomplete="off" />
-                    <span asp-validation-for="BookingCode" class="text-danger small"></span>
-                </div>
-                <div class="mb-4">
-                    <label asp-for="Reason" class="form-label"></label>
-                    <textarea asp-for="Reason" class="form-control" rows="3" placeholder="@L["Ví dụ: trùng phòng, đã chuyển khách sang homestay khác"]"></textarea>
-                    <span asp-validation-for="Reason" class="text-danger small"></span>
-                </div>
-                <div class="d-flex gap-2">
+                <form-field asp-for="BookingCode" placeholder="FJ261011-001" autocomplete="off" />
+                <form-field asp-for="Reason" type="textarea" rows="3" placeholder="@L["Ví dụ: trùng phòng, đã chuyển khách sang homestay khác"]" />
+                <div class="fx-form-actions">
                     <button type="submit" class="btn btn-brand" data-loading-text="@L["Đang cấp..."]"><i class="bi bi-gift" aria-hidden="true"></i> @L["Cấp voucher"]</button>
                     <a class="btn btn-outline-secondary" asp-action="Index">@L["Quay lại"]</a>
                 </div>
             </form>
-        </div>
-    </div>
 </div>
 
 @section Scripts {

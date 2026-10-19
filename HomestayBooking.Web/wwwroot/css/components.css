@@ -519,10 +519,11 @@
 /* ---------- Điểm đánh giá ---------- */
 .fx-rating { display: inline-flex; align-items: center; gap: .3rem; color: var(--fx-ink); font-size: .875rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 /* ---------- Ô số liệu ---------- */
-.fx-stat { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: .75rem; height: 100%; padding: 1.25rem; background: var(--fx-surface); border: 1px solid var(--fx-border); border-radius: var(--fx-radius); overflow-wrap: anywhere; box-shadow: var(--fx-shadow); }
+.fx-stat { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: start; align-items: center; gap: .75rem; height: 100%; padding: 1.25rem; background: var(--fx-surface); border: 1px solid var(--fx-border); border-radius: var(--fx-radius); overflow-wrap: anywhere; box-shadow: var(--fx-shadow); }
 .fx-stat__icon { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: var(--fx-radius-full); background: var(--fx-primary-soft); color: var(--fx-on-primary-soft); }
-.fx-stat__value { font-family: var(--fx-font-display); font-weight: 500; font-size: clamp(1.75rem, 2.5vw, 2.25rem); line-height: 1.2; font-variant-numeric: tabular-nums; }
+.fx-stat__value { grid-column: 1 / -1; font-family: var(--fx-font-display); font-weight: 500; font-size: clamp(1.75rem, 2.5vw, 2.25rem); line-height: 1.2; font-variant-numeric: tabular-nums; }
 .fx-stat__label { color: var(--fx-muted); text-decoration: none; }
+.fx-stat > small { grid-column: 1 / -1; }
 .fx-stat--linked:focus-within { outline: 2px solid var(--fx-focus); outline-offset: 3px; }
 /* ---------- Danh sách mô tả và bảng giá ---------- */
 .fx-description, .fx-price-breakdown { margin: 0; }
@@ -1038,3 +1039,23 @@
 /* Native date fields remain usable when the picker has no JavaScript. */
 .fx-dates__native { grid-template-columns: repeat(2,minmax(0,1fr)); }
 .fx-dates__native > div, .fx-dates__native input { min-width: 0; max-width: 100%; }
+
+/* Internal pages share these surfaces, task rows and mobile form actions. */
+.fx-card { background: var(--fx-surface); color: var(--fx-ink); border: 1px solid var(--fx-border); border-radius: var(--fx-radius); }
+.fx-form-card { max-width: 40rem; margin-inline: auto; padding: clamp(1rem, 3vw, 2rem); }
+.fx-form-actions { display: flex; flex-wrap: wrap; gap: .75rem; padding-top: 1rem; }
+.fx-section-title { font-family: var(--fx-font-display); font-size: 1.4rem; font-weight: 500; margin-bottom: 1.25rem; }
+.fx-task-list { padding: 1.5rem; }
+.fx-task-list ul { list-style: none; padding: 0; margin: 0; }
+.fx-task-list li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-block: 1rem; border-top: 1px solid var(--fx-border); }
+.fx-task-list li > div { min-width: 0; overflow-wrap: anywhere; }
+.fx-task-list a { font-weight: 600; }
+.fx-count { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--fx-primary); }
+.fx-code { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.fx-icon-chip { display: inline-flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; flex-shrink: 0; border-radius: var(--fx-radius-full); background: var(--fx-primary-soft); color: var(--fx-on-primary-soft); }
+.fx-table td.text-end, .fx-description money { font-variant-numeric: tabular-nums; }
+@media (max-width: 575.98px) {
+  .fx-form-actions { position: sticky; bottom: 0; z-index: 2; background: var(--fx-surface); padding: 1rem 0 max(1rem, env(safe-area-inset-bottom)); border-top: 1px solid var(--fx-border); }
+  .fx-form-actions > .btn { flex: 1; min-height: 2.75rem; }
+  .fx-table .btn { min-height: 2.75rem; }
+}

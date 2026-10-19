@@ -7,77 +7,33 @@
 }
 <partial name="_PageHead" model="@(new PageHeadModel(L["Voucher"], "bi-ticket-perforated", "tone-pink", L["Voucher xin lỗi khách khi Fuji làm hỏng đơn. Mỗi đơn dùng voucher chỉ giảm tối đa 20% hoa hồng của Fuji."], ShowCreate: true))" />
 
-<form method="get" class="card-soft filter-bar row g-2 mx-0" role="search">
-    <div class="col-sm-4 col-md-3">
-        <label for="status" class="visually-hidden">@L["Trạng thái"]</label>
-        <select id="status" name="status" class="form-select">
-            <option value="">@L["Mọi trạng thái"]</option>
-            @foreach (var s in Enum.GetValues<VoucherStatus>())
-            {
-                <option value="@s" selected="@(s == selected)">@L[s.DisplayName()]</option>
-            }
-        </select>
-    </div>
-    <div class="col-sm-8 col-md-6">
-        <label for="q" class="visually-hidden">@L["Tìm theo mã, tên hoặc SĐT khách"]</label>
-        <div class="input-group">
-            <span class="input-group-text" aria-hidden="true"><i class="bi bi-search"></i></span>
-            <input type="search" id="q" name="q" value="@ViewData["Query"]" class="form-control" placeholder="@L["Tìm theo mã, tên hoặc SĐT khách"]" />
-        </div>
-    </div>
-    <div class="col-md-3 d-grid">
-        <button type="submit" class="btn btn-brand"><i class="bi bi-funnel" aria-hidden="true"></i> @L["Lọc"]</button>
-    </div>
-</form>
+<partial name="_FilterBar" model='new FilterBarModel("voucher-filter", new FilterField[] {
+    new("status", "Trạng thái", Options: new[] { new SelectListItem(L["Mọi trạng thái"], "") }.Concat(Enum.GetValues<VoucherStatus>().Select(v => new SelectListItem(L[v.DisplayName()], v.ToString(), v == selected))).ToArray()),
+    new("q", "Tìm theo mã, tên hoặc SĐT khách", ViewData["Query"]?.ToString(), Type: "search") })' />
 
-<div class="card-soft overflow-hidden">
-    <div class="table-responsive">
-        <table class="table table-modern align-middle">
-            <thead>
-                <tr>
-                    <th scope="col">@L["Mã voucher"]</th>
-                    <th scope="col">@L["Khách hàng"]</th>
-                    <th scope="col" class="text-end">@L["Số dư / Giá trị"]</th>
-                    <th scope="col">@L["Hạn dùng"]</th>
-                    <th scope="col">@L["Lý do"]</th>
-                    <th scope="col">@L["Trạng thái"]</th>
-                    <th scope="col" class="text-end">@L["Thao tác"]</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var v in Model)
+@{ var rows = new List<TableRow>(); }
+@foreach (var v in Model)
                 {
-                    <tr>
-                        <td class="fw-semibold booking-code">@v.Code</td>
-                        <td>@v.CustomerName<div class="small text-muted">@PhoneNumberNormalizer.ToNational(v.CustomerPhone)</div></td>
-                        <td class="text-end text-nowrap">@v.Balance.ToString("N0") / @v.Amount.ToString("N0")đ
-                            <div class="small text-muted">@L["Đã dùng cho {0} đơn", v.UsedCount]</div></td>
-                        <td class="text-nowrap">@v.ExpiresOn.ToString("dd/MM/yyyy")</td>
-                        <td class="small">@v.Reason
+                    Func<dynamic, IHtmlContent> cell0 = @<text>@v.Code</text>;
+                        Func<dynamic, IHtmlContent> cell1 = @<text>@v.CustomerName<div class="small text-muted">@PhoneNumberNormalizer.ToNational(v.CustomerPhone)</div></text>;
+                        Func<dynamic, IHtmlContent> cell2 = @<text><money value="@v.Balance" /> / <money value="@v.Amount" />
+                            <div class="small text-muted">@L["Đã dùng cho {0} đơn", v.UsedCount]</div></text>;
+                        Func<dynamic, IHtmlContent> cell3 = @<text>@v.ExpiresOn.ToString("dd/MM/yyyy")</text>;
+                        Func<dynamic, IHtmlContent> cell4 = @<text>@v.Reason
                             @if (v.SourceBookingCode is not null)
                             {
-                                <div class="text-muted">@L["Đơn gốc"]: <span class="booking-code">@v.SourceBookingCode</span></div>
+                                <div class="text-muted">@L["Đơn gốc"]: <span class="fx-code">@v.SourceBookingCode</span></div>
                             }
-                            <div class="text-muted">@L["Cấp bởi {0}, {1}", v.IssuedBy, VietnamTime.ToLocal(v.IssuedAt).ToString("dd/MM/yyyy")]</div>
-                        </td>
-                        <td><span class="badge-tone @v.Status.ToneClass()">@L[v.Status.DisplayName()]</span></td>
-                        <td class="text-end">
-                            @if (v.Status is VoucherStatus.Active or VoucherStatus.UsedUp)
+                            <div class="text-muted">@L["Cấp bởi {0}, {1}", v.IssuedBy, VietnamTime.ToLocal(v.IssuedAt).ToString("dd/MM/yyyy")]</div></text>;
+                        Func<dynamic, IHtmlContent> cell5 = @<text><status-badge value="@v.Status" /></text>;
+                        Func<dynamic, IHtmlContent> cell6 = @<text>@if (v.Status is VoucherStatus.Active or VoucherStatus.UsedUp)
                             {
                                 <form asp-action="Revoke" asp-route-id="@v.Id" method="post" data-confirm="@L["Thu hồi voucher {0}?", v.Code]">
                                     <input type="hidden" name="reason" value="Quản lý thu hồi" />
                                     <button type="submit" class="btn btn-sm btn-outline-danger text-nowrap">@L["Thu hồi"]</button>
                                 </form>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-    @if (Model.Count == 0)
-    {
-        <partial name="_EmptyState" />
-    }
-</div>
+                            }</text>;
+                    rows.Add(new TableRow(new IHtmlContent[] { cell0(null!), cell1(null!), cell2(null!), cell3(null!), cell4(null!), cell5(null!), cell6(null!) }));
+}
+<partial name="_DataTable" model='new DataTableModel("Voucher", new TableColumn[] { new("Mã voucher"), new("Khách hàng"), new("Số dư / Giá trị", Numeric: true), new("Hạn dùng"), new("Lý do"), new("Trạng thái"), new("Thao tác") }, rows)' />
 <partial name="_Pager" model="Model" />

@@ -7,48 +7,26 @@
 <partial name="_PageHead" model="@(new PageHeadModel(L["Tiện nghi"], "bi-stars", "tone-amber", L["Wifi, bể bơi, BBQ..."]))" />
 <partial name="_CatalogSearch" />
 
-<div class="card-soft overflow-hidden">
-    <div class="table-responsive">
-        <table class="table table-modern">
-            <thead>
-                <tr>
-                    <th scope="col">@L["Tên tiện nghi"]</th>
-                    <th scope="col" class="text-end d-none d-sm-table-cell">@L["Số homestay"]</th>
-                    <th scope="col" class="text-end">@L["Thao tác"]</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
+@{ var rows = new List<TableRow>(); }
+@foreach (var entry in Model)
                 {
-                    var used = counts.GetValueOrDefault(item.Id);
+                    var used = counts.GetValueOrDefault(entry.Id);
                     var confirm = used > 0
-                        ? L["Xóa \"{0}\"? Tiện nghi này sẽ bị gỡ khỏi {1} homestay.", item.Name, used]
-                        : L["Xóa \"{0}\"?", item.Name];
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center gap-3">
-                                <span class="icon-chip @tones[item.Id % tones.Length]" aria-hidden="true"><i class="bi @(item.Icon ?? "bi-question-circle")"></i></span>
+                        ? L["Xóa \"{0}\"? Tiện nghi này sẽ bị gỡ khỏi {1} homestay.", entry.Name, used]
+                        : L["Xóa \"{0}\"?", entry.Name];
+                    Func<dynamic, IHtmlContent> cell0 = @<text><div class="d-flex align-items-center gap-3">
+                                <span class="fx-icon-chip @tones[entry.Id % tones.Length]" aria-hidden="true"><i class="bi @(entry.Icon ?? "bi-question-circle")"></i></span>
                                 <div>
-                                    <div class="fw-semibold">@item.Name</div>
-                                    @if (item.Icon is not null)
+                                    <div class="fw-semibold">@entry.Name</div>
+                                    @if (entry.Icon is not null)
                                     {
-                                        <code class="small text-muted d-none d-sm-inline">@item.Icon</code>
+                                        <code class="small text-muted d-none d-sm-inline">@entry.Icon</code>
                                     }
                                 </div>
-                            </div>
-                        </td>
-                        <td class="text-end d-none d-sm-table-cell"><span class="count-pill tone-amber">@used</span></td>
-                        <td class="text-end">
-                            <partial name="_RowActions" model="@(new RowActionsModel(item.Id.ToString(), item.Name, confirm))" />
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-    @if (Model.Count == 0)
-    {
-        <partial name="_EmptyState" />
-    }
-</div>
+                            </div></text>;
+                        Func<dynamic, IHtmlContent> cell1 = @<text><span class="fx-count tone-amber">@used</span></text>;
+                        Func<dynamic, IHtmlContent> cell2 = @<text><partial name="_RowActions" model="@(new RowActionsModel(entry.Id.ToString(), entry.Name, confirm))" /></text>;
+                    rows.Add(new TableRow(new IHtmlContent[] { cell0(null!), cell1(null!), cell2(null!) }));
+}
+<partial name="_DataTable" model='new DataTableModel("Tiện nghi", new TableColumn[] { new("Tên tiện nghi"), new("Số homestay", Numeric: true), new("Thao tác") }, rows)' />
 <partial name="_Pager" model="Model" />

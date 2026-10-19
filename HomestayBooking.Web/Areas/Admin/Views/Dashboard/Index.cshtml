@@ -22,25 +22,19 @@
 <div class="row g-3 mb-2">
     @foreach (var s in stats)
     {
-        <div class="col-6 col-md-4 col-xl">
+        <div class="col-sm-6 col-xl-4">
             <partial name="_StatCard" model="@(new StatCardModel(s.Label, Convert.ToString(s.Value) ?? "0", s.Icon))" />
         </div>
     }
 </div>
 
-<h2 class="section-title"><i class="bi bi-collection text-brand" aria-hidden="true"></i> @L["Danh mục"]</h2>
-<div class="row g-3">
-    @foreach (var link in links)
-    {
-        <div class="col-sm-6 col-lg-3">
-            <a class="card-soft tile-link @link.Tone" asp-controller="@link.Controller" asp-action="Index">
-                <span class="icon-chip" aria-hidden="true"><i class="bi @link.Icon"></i></span>
-                <span>
-                    <strong class="d-block">@link.Label</strong>
-                    <small class="text-muted">@link.Hint</small>
-                </span>
-                <i class="bi bi-chevron-right tile-arrow" aria-hidden="true"></i>
-            </a>
-        </div>
-    }
+<div class="row g-4 mt-2">
+    <div class="col-lg-6">
+        <partial name="_TaskList" model='new TaskListModel("Việc cần xử lý", new TaskListItem[] {
+            new("Hồ sơ Owner chờ duyệt", Value: (int)ViewBag.PendingOwnerCount),
+            new("Đơn chờ xác nhận", Value: (int)ViewBag.PendingBookingCount) })' />
+    </div>
+    <div class="col-lg-6">
+        <partial name="_TaskList" model='new TaskListModel("Danh mục", links.Select(link => new TaskListItem(link.Label, link.Hint, Url.Action("Index", link.Controller))).ToArray())' />
+    </div>
 </div>
