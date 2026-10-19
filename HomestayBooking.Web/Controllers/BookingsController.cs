@@ -191,7 +191,7 @@ public partial class BookingsController : Controller
             var booking = await _bookings.CreateAsync(new CreateBookingRequest(
                 customer.Id, model.RoomTypeId, model.CheckIn!.Value, model.CheckOut!.Value, model.Guests,
                 model.ContactName, PhoneNumberNormalizer.ToE164(model.ContactPhone)!, model.SpecialRequests,
-                SourceChannel.Web, actor, signedIn ? model.VoucherId : null));
+                SourceChannel.Web, actor, signedIn ? model.VoucherId : null, model.SubmissionId));
             if (!signedIn)
             {
                 // Cùng cơ chế với tra cứu mã đơn + SĐT để khách xem đơn, nộp cọc ngay trong phiên này.

@@ -8,6 +8,7 @@ public record StaffBookingsModel(StaffBookingQuery Query, PaginatedList<Booking>
 public record StaffBookingModel(StaffBookingDetails Details, IReadOnlyList<BookingAssignee> Assignees, IReadOnlyList<AvailableRoom> FreeRooms, int? EmployeeId, DateOnly Today);
 public class StaffCreateForm
 {
+    public Guid SubmissionId { get; set; } = Guid.NewGuid();
     [Required, Display(Name="Số điện thoại")] public string Phone { get; set; } = "";
     [Required, StringLength(100), Display(Name="Họ tên khách")] public string FullName { get; set; } = "";
     [EmailAddress, StringLength(256), Display(Name="Email")] public string? Email { get; set; }

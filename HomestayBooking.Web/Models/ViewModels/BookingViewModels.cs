@@ -7,6 +7,7 @@ namespace HomestayBooking.Web.Models.ViewModels;
 
 public class BookingCreateViewModel
 {
+    public Guid SubmissionId { get; set; } = Guid.NewGuid();
     public int RoomTypeId { get; set; }
 
     [Required(ErrorMessage = "Vui lòng nhập {0}.")]

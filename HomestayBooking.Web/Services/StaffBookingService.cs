@@ -19,7 +19,7 @@ public class StaffBookingQuery
 }
 
 public record StaffBookingInput(string Phone, string FullName, string? Email, int RoomTypeId, DateOnly CheckIn, DateOnly CheckOut,
-    int Guests, string? SpecialRequests, SourceChannel Channel);
+    int Guests, string? SpecialRequests, SourceChannel Channel, Guid? SubmissionId = null);
 
 public record StaffBookingDetails(Booking Booking, IReadOnlyList<BookingStatusHistory> History,
     IReadOnlyList<BookingChangeRequest> Changes, IReadOnlyList<Payment> Payments, IReadOnlyList<AuditLog> Audit);
@@ -69,7 +69,8 @@ public class StaffBookingService(ApplicationDbContext db, BookingService booking
         if (string.IsNullOrEmpty(name) || name.Length > 100) throw new BookingException("Vui lòng nhập họ tên khách từ 1 đến 100 ký tự.");
         var customer = await guests.FindOrCreateAsync(input.Phone, name, input.Email, actor);
         return await bookings.CreateAsync(new CreateBookingRequest(customer.Id, input.RoomTypeId, input.CheckIn, input.CheckOut,
-            input.Guests, name, PhoneNumberNormalizer.ToE164(input.Phone)!, input.SpecialRequests, input.Channel, actor));
+            input.Guests, name, PhoneNumberNormalizer.ToE164(input.Phone)!, input.SpecialRequests, input.Channel, actor,
+            SubmissionId: input.SubmissionId));
     }
 
     public async Task<PaginatedList<Booking>> SearchAsync(StaffBookingQuery query, Actor actor)

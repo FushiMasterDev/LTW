@@ -66,7 +66,7 @@ public class BookingsController(ApplicationDbContext db, StaffBookingService boo
     {
         Booking? booking=null;
         await SaveAsync(async () => booking=await bookings.CreateForCustomerAsync(new(form.Phone,form.FullName,form.Email,
-            form.RoomTypeId ?? 0,form.CheckIn,form.CheckOut,form.Guests,form.SpecialRequests,form.Channel),await CurrentActorAsync()));
+            form.RoomTypeId ?? 0,form.CheckIn,form.CheckOut,form.Guests,form.SpecialRequests,form.Channel,form.SubmissionId),await CurrentActorAsync()));
         return booking is not null ? RedirectToAction(nameof(Details),new {id=booking.Id}) : RedirectToAction(nameof(Create),
             new {form.Phone,form.FullName,form.Email,form.Channel,form.CheckIn,form.CheckOut,form.Guests,form.AreaId,form.RoomTypeId,form.SpecialRequests});
     }

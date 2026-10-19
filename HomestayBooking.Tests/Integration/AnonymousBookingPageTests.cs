@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.RegularExpressions;
 using HomestayBooking.Web.Models.Entities;
 
 namespace HomestayBooking.Tests.Integration;
@@ -29,5 +30,19 @@ public sealed class AnonymousBookingPageTests(TestWebApplicationFactory factory)
         }));
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(before, factory.WithDb(db => db.Bookings.Count()));
+    }
+
+    [Fact]
+    public async Task EachBookingFormHasItsOwnSubmissionId()
+    {
+        var client = factory.CreateClient();
+        var type = RoomTypeId();
+        var html = await client.GetStringAsync($"/Bookings/Create?roomTypeId={type}");
+        var submission = Regex.Match(html, "name=\"SubmissionId\"[^>]*value=\"([^\"]+)\"").Groups[1].Value;
+        Assert.True(Guid.TryParse(submission, out _));
+        var second = await client.GetStringAsync($"/Bookings/Create?roomTypeId={type}");
+        var nextSubmission = Regex.Match(second, "name=\"SubmissionId\"[^>]*value=\"([^\"]+)\"").Groups[1].Value;
+        Assert.True(Guid.TryParse(nextSubmission, out _));
+        Assert.NotEqual(submission, nextSubmission);
     }
 }

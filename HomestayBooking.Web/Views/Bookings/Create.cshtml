@@ -33,6 +33,7 @@
 
 <form asp-action="Create" method="post" novalidate id="bookingForm" class="booking-layout">
     <input type="hidden" asp-for="RoomTypeId" />
+    <input type="hidden" asp-for="SubmissionId" />
     <div class="booking-layout__main">
         <div asp-validation-summary="ModelOnly" class="alert tone-rose" role="alert"></div>
 

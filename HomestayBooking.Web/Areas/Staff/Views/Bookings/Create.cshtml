@@ -6,6 +6,7 @@
 <partial name="_Steps" model='new StepsModel("Đặt hộ khách",new[] {"Khách hàng","Chọn phòng","Xác nhận"},Model.Quote is null ? 0 : 2)' />
 <div class="fx-form-card fx-card p-4 mt-4">
  <form asp-action="Create" method="get" data-staff-quote-form>
+  <input type="hidden" asp-for="SubmissionId" />
   <form-field asp-for="Phone" type="tel" autocomplete="tel" />
   <button type="submit" formnovalidate class="btn btn-outline-secondary mb-3">@L["Tìm khách"]</button>
   @if(!string.IsNullOrWhiteSpace(Model.Phone)) {
@@ -31,6 +32,7 @@
    new("Kênh liên hệ",new HtmlContentBuilder().Append(L[Model.Channel switch {SourceChannel.Phone=>"Điện thoại",SourceChannel.Other=>"Khác",_=>Model.Channel.ToString()}]))}' />
   <partial name="_PriceBreakdown" model='new PriceBreakdownModel(q.Nights.Select(n=>new PriceLine(n.Date.ToString("dd/MM/yyyy"),n.Price)).Concat(new PriceLine[] {new("Tổng tiền",q.Total),new("Tiền cọc",q.Deposit)}).ToArray())' />
   <form asp-action="Create" method="post" data-confirm="@L["Tạo đơn đặt hộ với thông tin và báo giá trên?"]">
+   <input type="hidden" asp-for="SubmissionId" />
    <input name="Phone" value="@Model.Phone" type="hidden" /><input name="FullName" value="@Model.FullName" type="hidden" /><input name="Email" value="@Model.Email" type="hidden" /><input name="Channel" value="@Model.Channel" type="hidden" />
    <input name="CheckIn" value='@Model.CheckIn.ToString("yyyy-MM-dd")' type="hidden" /><input name="CheckOut" value='@Model.CheckOut.ToString("yyyy-MM-dd")' type="hidden" />
    <input name="Guests" value="@Model.Guests" type="hidden" /><input name="AreaId" value="@Model.AreaId" type="hidden" /><input name="RoomTypeId" value="@Model.RoomTypeId" type="hidden" /><input name="SpecialRequests" value="@Model.SpecialRequests" type="hidden" />

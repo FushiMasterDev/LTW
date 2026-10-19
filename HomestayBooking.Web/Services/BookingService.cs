@@ -17,7 +17,8 @@ public record CreateBookingRequest(
     string? SpecialRequests,
     SourceChannel SourceChannel,
     Actor Actor,
-    int? VoucherId = null);
+    int? VoucherId = null,
+    Guid? SubmissionId = null);
 
 /// <summary>
 /// Tạo đơn và đổi trạng thái đơn — mọi thay đổi trạng thái đi qua <see cref="ChangeStatusAsync"/>
@@ -81,7 +82,31 @@ public class BookingService
     public async Task<Booking> CreateAsync(CreateBookingRequest request)
     {
         await using var transaction = await _db.Database.BeginTransactionAsync();
+        if (request.SubmissionId is Guid submissionId)
+        {
+            // Serialize submissions for this customer across app instances. The audit entry and room
+            // reservation commit together, so replay also works after a restart or a cancelled stay.
+            if (_db.Database.IsSqlServer())
+                await _db.Database.ExecuteSqlInterpolatedAsync(
+                    $"SELECT [Id] FROM [Customers] WITH (UPDLOCK, HOLDLOCK) WHERE [Id] = {request.CustomerId}");
+            var marker = $"\"SubmissionId\":\"{submissionId:N}\"";
+            var recordIds = _db.AuditLogs.Where(a => a.TableName == "Bookings" && a.Action == AuditAction.Insert
+                && a.NewValues != null && a.NewValues.Contains(marker)).Select(a => a.RecordId);
+            var existing = await _db.Bookings.SingleOrDefaultAsync(b => b.CustomerId == request.CustomerId
+                && recordIds.Contains(b.Id.ToString()));
+            if (existing is not null)
+            {
+                await transaction.CommitAsync();
+                return existing;
+            }
+        }
         var booking = await CreateInTransactionAsync(request);
+        if (request.SubmissionId is Guid completedSubmission)
+        {
+            PartnerServiceSupport.Audit(_db, _clock, request.Actor, "Bookings", booking.Id.ToString(), null,
+                new { SubmissionId = completedSubmission.ToString("N"), booking.Code }, AuditAction.Insert);
+            await _db.SaveChangesAsync();
+        }
         await transaction.CommitAsync();
         return booking;
     }
