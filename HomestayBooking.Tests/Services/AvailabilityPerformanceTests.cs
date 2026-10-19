@@ -99,6 +99,10 @@ public sealed class AvailabilityPerformanceTests(ITestOutputHelper output)
             var availability = new AvailabilityService(db, clock, Options.Create(new BookingOptions()));
             var checkIn = today.AddDays(60);
             var staff = await WorstOfThreeAsync(() => availability.StaffAvailabilityAsync(checkIn, checkIn.AddDays(31), null, 2, actor));
+            var matrix = await WorstOfThreeAsync(() => availability.StaffNightAvailabilityAsync(checkIn, checkIn.AddDays(31), null, 2, actor));
+            Assert.Equal(Homestays * TypesPerHome * 31, (await availability.StaffNightAvailabilityAsync(checkIn, checkIn.AddDays(31), null, 2, actor)).Count);
+            output.WriteLine($"B9 StaffNightAvailabilityAsync 150 cơ sở × 31 đêm: chậm nhất {matrix.TotalMilliseconds:N0} ms (3 lần).");
+            Assert.True(matrix < TimeSpan.FromSeconds(5), $"Ma trận mất {matrix.TotalMilliseconds:N0} ms.");
             var search = await WorstOfThreeAsync(() => availability.SearchAsync(new HomestaySearchQuery { CheckIn = checkIn, CheckOut = checkIn.AddDays(3), Guests = 2 }));
             output.WriteLine($"FR-08 StaffAvailabilityAsync 31 đêm: chậm nhất {staff.TotalMilliseconds:N0} ms (NFR-02 ≤ 5.000 ms).");
             output.WriteLine($"FR-01 SearchAsync có ngày: chậm nhất {search.TotalMilliseconds:N0} ms (NFR-05 ≤ 3.000 ms).");

@@ -17,6 +17,14 @@ public class CompensationService(ApplicationDbContext db, AccountingService acco
             && db.Bookings.Any(b => b.ReplacedByBookingId == p.BookingId)).OrderBy(p => p.SubmittedAt).ThenBy(p => p.Id).ToListAsync();
     }
 
+    public async Task<IReadOnlyList<Payment>> RejectableAsync(Actor actor)
+    {
+        await PartnerServiceSupport.EmployeeAsync(db, actor, EmployeePosition.Accountant);
+        return await db.Payments.AsNoTracking().Include(p => p.Booking)
+            .Where(p => p.Type == PaymentType.Compensation && p.Status == PaymentStatus.Submitted && p.Booking.Status != BookingStatus.Completed)
+            .OrderBy(p => p.SubmittedAt).ThenBy(p => p.Id).ToListAsync();
+    }
+
     public Task<Payment> RecordPaidAsync(int id, string bankRef, Actor actor) => HomestayWrite.RunAsync(db, async () =>
     {
         await PartnerServiceSupport.EmployeeAsync(db, actor, EmployeePosition.Accountant);

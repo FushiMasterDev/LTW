@@ -8,7 +8,7 @@ namespace HomestayBooking.Web.Services;
 /// Việc của kế toán ngoài duyệt bill (ReceiptReviewService): xử lý giao dịch ngân hàng không tự khớp được
 /// và ghi nhận Fuji đã chuyển hoàn cọc (fuji_homestay_database_v1 mục 5.F, 9).
 /// </summary>
-public class AccountingService
+public partial class AccountingService
 {
     /// <summary>Giao dịch còn chờ kế toán: chuyển thiếu, đến muộn, không đọc được mã đơn.</summary>
     public static readonly BankMatchStatus[] OpenStatuses = [BankMatchStatus.Underpaid, BankMatchStatus.LatePayment, BankMatchStatus.Unmatched];

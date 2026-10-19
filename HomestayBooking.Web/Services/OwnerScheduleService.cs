@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HomestayBooking.Web.Services;
 
+public record OwnerBookingSummary(int PendingConfirmation, int OverdueConfirmation, int ArrivalsToday);
 public record OwnerScheduleItem(int BookingId, string Code, int HomestayId, string HomestayName, DateOnly CheckIn, DateOnly CheckOut,
     string ContactName, string ContactPhone, int Guests, string RoomCode, string? SpecialRequests);
 public record OwnerSchedule(IReadOnlyList<OwnerScheduleItem> Arrivals, IReadOnlyList<OwnerScheduleItem> Departures);
@@ -11,6 +12,20 @@ public record OwnerSchedule(IReadOnlyList<OwnerScheduleItem> Arrivals, IReadOnly
 /// <summary>FR-16: khoảng ngày lịch bao gồm hai đầu, tối đa 31 ngày; khác khoảng đêm lưu trú.</summary>
 public class OwnerScheduleService(ApplicationDbContext db, TimeProvider clock)
 {
+    public async Task<OwnerBookingSummary> OwnerBookingSummaryAsync(Actor actor)
+    {
+        var ownerId = actor.Type == ActorType.Owner && actor.AccountId is not null
+            ? await db.Owners.Where(o => o.Person.Employee == null && o.Person.Account != null
+                && o.Person.Account.Id == actor.AccountId && o.Person.Account.Status == AccountStatus.Active)
+                .Select(o => (int?)o.Id).SingleOrDefaultAsync() : null;
+        if (ownerId is null) throw new BookingException("Bạn không có quyền xem lịch nhận–trả của chủ này.");
+        var today = VietnamTime.Today(clock); var now = clock.GetUtcNow().UtcDateTime;
+        var rows = db.Bookings.AsNoTracking().Where(b => b.Homestay.OwnerId == ownerId);
+        return new(await rows.CountAsync(b => b.Status == BookingStatus.Deposited),
+            await rows.CountAsync(b => b.Status == BookingStatus.Deposited && b.ConfirmDeadlineAt < now),
+            await rows.CountAsync(b => b.Status == BookingStatus.Confirmed && b.CheckIn == today));
+    }
+
     public Task<OwnerSchedule> ReadAsync(int ownerId, Actor actor) =>
         ReadAsync(ownerId, VietnamTime.Today(clock), VietnamTime.Today(clock).AddDays(30), actor);
 

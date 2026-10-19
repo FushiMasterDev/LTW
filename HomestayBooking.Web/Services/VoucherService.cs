@@ -153,7 +153,7 @@ public class VoucherService
         };
         _db.Vouchers.Add(voucher);
         _notifications.Add([source.Account],
-            $"Fuji tặng bạn voucher {voucher.Code} trị giá {amount:N0}đ, dùng đến {voucher.ExpiresOn:dd/MM/yyyy}. Xin lỗi vì sự bất tiện.");
+            $"Fuji tặng bạn voucher {voucher.Code} trị giá {amount:N0}đ, dùng đến {voucher.ExpiresOn:dd/MM/yyyy}. Xin lỗi vì sự bất tiện.", $"/Bookings/Details/{code}");
         await _db.SaveChangesAsync();
         return voucher;
     }

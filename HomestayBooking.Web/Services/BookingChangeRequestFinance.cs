@@ -190,7 +190,7 @@ public partial class BookingChangeRequestService
                 Audit(id, Actor.System, JsonSerializer.Serialize(RequestState(old)),
                     JsonSerializer.Serialize(new { Step = "Expired", Actor = "System", Status = "Expired", ExpiredAt = now }));
                 var booking = await BookingAsync(old.BookingId);
-                _notifications.Add([booking.Customer.Person.Account?.Id], $"Yêu cầu CR{id} của đơn {booking.Code} hết hạn nộp cọc bổ sung.");
+                _notifications.Add([booking.Customer.Person.Account?.Id], $"Yêu cầu CR{id} của đơn {booking.Code} hết hạn nộp cọc bổ sung.", $"/Bookings/Details/{booking.Code}");
                 return 1;
             });
         return count;

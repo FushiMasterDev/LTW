@@ -7,6 +7,8 @@ using Microsoft.Extensions.Options;
 
 namespace HomestayBooking.Web.Services;
 
+public record AvailableRoom(int Id, string RoomCode);
+public record NightAvailability(DateOnly Night, int HomestayId, string HomestayName, int RoomTypeId, string RoomTypeName, int FreeRooms, int TotalRooms, string AreaName, decimal TotalPrice);
 public record AvailabilityOffer(int HomestayId, string HomestayName, int AreaId, string AreaName,
     int RoomTypeId, string RoomTypeName, int CategoryId, int MaxGuests, int FreeRooms, int TotalRooms,
     decimal? TotalPrice, double? Rating, int ReviewCount);
@@ -39,6 +41,54 @@ public class AvailabilityService(ApplicationDbContext db, TimeProvider clock, IO
 
     public Task<List<int>> FreeRoomIdsAsync(int typeId, DateOnly checkIn, DateOnly checkOut) =>
         SellableRooms(checkIn, checkOut).Where(r => r.RoomTypeId == typeId).OrderBy(r => r.Id).Select(r => r.Id).ToListAsync();
+
+    public async Task<IReadOnlyList<AvailableRoom>> FreeRoomsAsync(int typeId, DateOnly checkIn, DateOnly checkOut, Actor actor)
+    {
+        await StaffBookingService.EmployeeAsync(db, actor);
+        if (checkOut <= checkIn || checkOut.DayNumber - checkIn.DayNumber > options.Value.MaxNights)
+            throw new BookingException("Thời gian lưu trú không hợp lệ.");
+        return await SellableRooms(checkIn, checkOut).Where(r => r.RoomTypeId == typeId).OrderBy(r => r.RoomCode)
+            .Select(r => new AvailableRoom(r.Id, r.RoomCode)).ToListAsync();
+    }
+
+    /// <summary>Ma trận [checkIn, checkOut), bốn truy vấn dữ liệu không phụ thuộc số đêm/cơ sở; RoomNights là nguồn tồn duy nhất.</summary>
+    public async Task<IReadOnlyList<NightAvailability>> StaffNightAvailabilityAsync(DateOnly checkIn, DateOnly checkOut, int? areaId, int guests, Actor actor)
+    {
+        await StaffBookingService.EmployeeAsync(db, actor);
+        ValidateStaffDates(checkIn, checkOut, guests);
+        // Giữ điều kiện bán/đủ giá như StaffAvailabilityAsync cho từng đêm; hợp đồng có thể hết hạn giữa khoảng.
+        var today = VietnamTime.Today(clock);
+        var query = db.Rooms.AsNoTracking().Where(r => r.IsActive && r.RoomType.IsActive && r.RoomType.MaxGuests >= guests
+            && r.RoomType.Homestay.Status == HomestayStatus.Active
+            && (areaId == null || r.RoomType.Homestay.AreaId == areaId)
+            && db.Contracts.Any(c => c.HomestayId == r.RoomType.HomestayId && c.Status == ContractStatus.Active
+                && c.StartDate <= today && c.EndDate >= checkIn.AddDays(1)));
+        var rooms = await query.Select(r => new { r.Id, r.RoomTypeId, TypeName = r.RoomType.Name, r.RoomType.HomestayId,
+            HomeName = r.RoomType.Homestay.Name, AreaName = r.RoomType.Homestay.Area.Name,
+            ContractEnd = db.Contracts.Where(c => c.HomestayId == r.RoomType.HomestayId && c.Status == ContractStatus.Active && c.StartDate <= today)
+                .Max(c => (DateOnly?)c.EndDate)
+        }).ToListAsync();
+        // Query against the same sellable scope avoids a parameter per room on large installations.
+        var occupied = await NightsDuring(checkIn, checkOut).Where(n => query.Any(r => r.Id == n.RoomId))
+            .Select(n => new { n.RoomId, n.Date }).ToListAsync();
+        var taken = occupied.GroupBy(n => n.Date).ToDictionary(g => g.Key, g => g.Select(n => n.RoomId).ToHashSet());
+        var prices = await db.RoomTypePrices.AsNoTracking().Where(p => query.Any(r => r.RoomTypeId == p.RoomTypeId)).ToListAsync();
+        var pricesByType = prices.GroupBy(p => p.RoomTypeId).ToDictionary(g => g.Key, g => g.ToList());
+        var holidays = (await db.Holidays.Where(h => h.Date >= checkIn && h.Date < checkOut).Select(h => h.Date).ToListAsync()).ToHashSet();
+        var result = new List<NightAvailability>();
+        foreach (var type in rooms.GroupBy(r => new { r.HomestayId, r.HomeName, r.RoomTypeId, r.TypeName, r.ContractEnd, r.AreaName })
+            .OrderBy(g => g.Key.HomeName).ThenBy(g => g.Key.TypeName))
+            for (var night = checkIn; night < checkOut && night.AddDays(1) <= type.Key.ContractEnd; night = night.AddDays(1))
+            {
+                decimal price;
+                try { price = PricingService.QuoteFromPrices(type.Key.RoomTypeId, night, night.AddDays(1),
+                    pricesByType.GetValueOrDefault(type.Key.RoomTypeId) ?? [], holidays, options.Value.DepositRate, 31).Total; }
+                catch (BookingException) { continue; }
+                result.Add(new(night, type.Key.HomestayId, type.Key.HomeName, type.Key.RoomTypeId, type.Key.TypeName,
+                    type.Count(r => !taken.TryGetValue(night, out var busy) || !busy.Contains(r.Id)), type.Count(), type.Key.AreaName, price));
+            }
+        return result;
+    }
 
     /// <summary>
     /// Các đêm trong [from, to) không còn phòng nào của loại phòng (đơn, khóa lịch, yêu cầu đổi đều nằm ở RoomNights),

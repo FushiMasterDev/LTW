@@ -12,6 +12,8 @@ public record HomestayLocationInput(string Address, int AreaId, decimal? Latitud
 public record HomestayContentResult(Homestay Homestay, IReadOnlyList<string> UpcomingBookingCodes);
 
 public record OwnerHomestaySummary(int Id, string Name, string AreaName, HomestayStatus Status, string? CoverUrl, int RoomCount);
+public record EditorAmenity(int Id, string Name, string? Icon, bool Selected);
+public record EditorCategory(int Id, string Name);
 public record HomestayEditorPrice(int Id, DayType DayType, decimal Price, DateOnly EffectiveFrom);
 public record HomestayEditorRoom(int Id, string RoomCode, bool IsActive);
 /// <summary>CurrentPrices: giá đang áp dụng hôm nay (mỗi DayType một dòng EffectiveFrom gần nhất ≤ hôm nay); UpcomingPrices: EffectiveFrom > hôm nay.</summary>
@@ -24,7 +26,11 @@ public record HomestayEditorDocument(int Id, DocumentType Type, string? Original
 public record HomestayEditor(int Id, string Name, string Address, int AreaId, string AreaName, decimal? Latitude, decimal? Longitude,
     string? DescriptionHtml, string? CheckinGuideHtml, string? ContactPhone, TimeOnly CheckinTime, TimeOnly CheckoutTime, HomestayStatus Status,
     IReadOnlyList<int> AmenityIds, IReadOnlyList<HomestayEditorRoomType> RoomTypes, IReadOnlyList<HomestayEditorImage> Images,
-    IReadOnlyList<HomestayEditorPolicy> Policies, IReadOnlyList<HomestayEditorDocument> Documents);
+    IReadOnlyList<HomestayEditorPolicy> Policies, IReadOnlyList<HomestayEditorDocument> Documents)
+{
+    public IReadOnlyList<EditorAmenity> Amenities { get; init; } = [];
+    public IReadOnlyList<EditorCategory> Categories { get; init; } = [];
+}
 
 public class HomestayContentService(ApplicationDbContext db, HomestayAccessService access,
     NotificationService notifications, TimeProvider clock)
@@ -69,7 +75,12 @@ public class HomestayContentService(ApplicationDbContext db, HomestayAccessServi
                 .Select(i => new HomestayEditorImage(i.Id, i.Url, i.RoomTypeId, i.SortOrder, i.IsCover)).ToList(),
             home.CancellationPolicies.OrderBy(p => p.Scope).Select(p => new HomestayEditorPolicy(p.Id, p.Scope, p.Name,
                 p.Rules.OrderByDescending(r => r.MinDaysBefore).Select(r => new CancellationRuleInput(r.MinDaysBefore, r.RefundPercent)).ToList())).ToList(),
-            documents);
+            documents)
+        {
+            Amenities = await db.Amenities.AsNoTracking().OrderBy(a => a.Name)
+                .Select(a => new EditorAmenity(a.Id, a.Name, a.Icon, a.HomestayAmenities.Any(x => x.HomestayId == id))).ToListAsync(),
+            Categories = await db.RoomCategories.AsNoTracking().OrderBy(c => c.Name).Select(c => new EditorCategory(c.Id, c.Name)).ToListAsync()
+        };
     }
 
     public Task<Homestay> UpdateAsync(int id, HomestayContentInput input, Actor actor) => HomestayWrite.RunAsync(db, async () =>
@@ -106,7 +117,7 @@ public class HomestayContentService(ApplicationDbContext db, HomestayAccessServi
         var recheck = home.Status is HomestayStatus.Active or HomestayStatus.Suspended;
         if (home.Status == HomestayStatus.Active) HomestayReviewService.Move(home, HomestayStatus.PendingReview, clock);
         home.UpdatedAt = clock.GetUtcNow().UtcDateTime;
-        PartnerServiceSupport.Audit(db, clock, actor, "Homestays", id.ToString(), old, HomestayReviewService.State(home));
+        PartnerServiceSupport.Audit(db, clock, actor, "Homestays", id.ToString(), old, new { Homestay = HomestayReviewService.State(home), ChangeReason = "Thay đổi địa chỉ / vị trí" });
         var today = VietnamTime.Today(clock);
         var codes = await db.Bookings.Where(b => b.HomestayId == id && b.CheckIn >= today
             && (b.Status == BookingStatus.Confirmed || b.Status == BookingStatus.Deposited)).OrderBy(b => b.Code).Select(b => b.Code).ToListAsync();

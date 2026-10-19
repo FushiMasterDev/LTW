@@ -22,7 +22,8 @@ public record ReceiptRow(
     int PreviousRejections,
     string? ReviewedBy,
     DateTime? ReviewedAt,
-    string? RejectReason)
+    string? RejectReason,
+    int? SettlementId = null)
 {
     /// <summary>Phút giờ hành chính đã chờ — quá BookingOptions.ReceiptReviewAlertMinutes là trễ.</summary>
     public double OfficeMinutesWaiting { get; init; }
@@ -42,7 +43,8 @@ public record BankTransactionRow(
     string? Note,
     string? ProcessedBy,
     DateTime? ProcessedAt,
-    string? RefundBankRef);
+    string? RefundBankRef,
+    int? SettlementId = null);
 
 /// <summary>Đơn có thể là đích của giao dịch: còn chờ thanh toán, số tiền cần chuyển không vượt số tiền đã nhận.</summary>
 public record MatchSuggestion(string Code, string ContactName, string ContactPhone, string HomestayName, BookingStatus Status, decimal AmountDue, DateTime CreatedAt);
@@ -67,4 +69,5 @@ public record RefundRow(
     string? DepositTransferContent,
     string? RefundBankRef,
     string? RefundedBy,
-    DateTime? RefundedAt);
+    DateTime? RefundedAt,
+    int? SettlementId = null);

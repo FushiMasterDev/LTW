@@ -20,7 +20,7 @@ public class HomestayDocumentService(ApplicationDbContext db, HomestayAccessServ
                 if (type is DocumentType.BusinessLicense or DocumentType.FireSafety && home.Status is HomestayStatus.Active or HomestayStatus.Suspended)
                 {
                     if (home.Status == HomestayStatus.Active) HomestayReviewService.Move(home, HomestayStatus.PendingReview, clock);
-                    PartnerServiceSupport.Audit(db, clock, actor, "Homestays", homeId.ToString(), old, HomestayReviewService.State(home));
+                    PartnerServiceSupport.Audit(db, clock, actor, "Homestays", homeId.ToString(), old, new { Homestay = HomestayReviewService.State(home), ChangeReason = "Bổ sung giấy tờ pháp lý", DocumentId = created.Id });
                     await HomestayManagerMessages.SendAsync(db, notifications, clock, homeId, "Có giấy tờ pháp lý mới, cần duyệt lại");
                 }
                 return created;

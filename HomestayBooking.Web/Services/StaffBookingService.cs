@@ -24,6 +24,7 @@ public record StaffBookingInput(string Phone, string FullName, string? Email, in
 public record StaffBookingDetails(Booking Booking, IReadOnlyList<BookingStatusHistory> History,
     IReadOnlyList<BookingChangeRequest> Changes, IReadOnlyList<Payment> Payments, IReadOnlyList<AuditLog> Audit);
 
+public record StaffHomestayOption(int Id, string Name);
 public record BookingAssignee(int EmployeeId, string EmployeeCode, string? FullName, EmployeePosition Position);
 
 /// <summary>FR-09: nhân viên thao tác qua luật đặt phòng chung, không có đường duyệt tiền hoặc hủy trực tiếp.</summary>
@@ -42,6 +43,13 @@ public class StaffBookingService(ApplicationDbContext db, BookingService booking
                 && (e.Position == EmployeePosition.Consultant || e.Position == EmployeePosition.Manager))
             .OrderBy(e => e.Position).ThenBy(e => e.EmployeeCode)
             .Select(e => new BookingAssignee(e.Id, e.EmployeeCode, e.Person.FullName, e.Position)).ToListAsync();
+    }
+
+    public async Task<IReadOnlyList<StaffHomestayOption>> HomestaysAsync(Actor actor)
+    {
+        await EmployeeAsync(db, actor);
+        return await db.Homestays.AsNoTracking().OrderBy(h => h.Name)
+            .Select(h => new StaffHomestayOption(h.Id, h.Name)).ToListAsync();
     }
 
     internal static string RequiredNote(string? note)
@@ -67,7 +75,9 @@ public class StaffBookingService(ApplicationDbContext db, BookingService booking
     public async Task<PaginatedList<Booking>> SearchAsync(StaffBookingQuery query, Actor actor)
     {
         await EmployeeAsync(db, actor);
-        var rows = db.Bookings.AsNoTracking().Include(b => b.Customer).ThenInclude(c => c.Person).AsQueryable();
+        var rows = db.Bookings.AsNoTracking().Include(b => b.Customer).ThenInclude(c => c.Person)
+            .Include(b => b.Homestay).Include(b => b.RoomType).Include(b => b.Room)
+            .Include(b => b.AssignedEmployee).ThenInclude(e => e!.Person).AsQueryable();
         // shortcut: tìm đa trường bằng Contains, chấp nhận quét theo quy mô BTL; chưa thêm index.
         if (!string.IsNullOrWhiteSpace(query.Q))
         {
@@ -89,13 +99,14 @@ public class StaffBookingService(ApplicationDbContext db, BookingService booking
     {
         await EmployeeAsync(db, actor);
         var booking = await db.Bookings.AsNoTracking().Include(b => b.Customer).ThenInclude(c => c.Person)
-            .Include(b => b.Homestay).Include(b => b.RoomType).Include(b => b.Room).Include(b => b.Nights).AsSplitQuery().SingleOrDefaultAsync(b => b.Id == id)
+            .Include(b => b.Homestay).Include(b => b.RoomType).Include(b => b.Room)
+            .Include(b => b.AssignedEmployee).ThenInclude(e => e!.Person).Include(b => b.Nights).AsSplitQuery().SingleOrDefaultAsync(b => b.Id == id)
             ?? throw new BookingException("Không tìm thấy đơn đặt phòng.");
         return new(booking,
-            await db.BookingStatusHistories.AsNoTracking().Where(h => h.BookingId == id).OrderBy(h => h.ChangedAt).ThenBy(h => h.Id).ToListAsync(),
+            await db.BookingStatusHistories.AsNoTracking().Include(h => h.ActorAccount).ThenInclude(a => a!.Person).Where(h => h.BookingId == id).OrderBy(h => h.ChangedAt).ThenBy(h => h.Id).ToListAsync(),
             await db.BookingChangeRequests.AsNoTracking().Where(r => r.BookingId == id).OrderBy(r => r.CreatedAt).ThenBy(r => r.Id).ToListAsync(),
             await db.Payments.AsNoTracking().Where(p => p.BookingId == id).OrderBy(p => p.SubmittedAt).ThenBy(p => p.Id).ToListAsync(),
-            await db.AuditLogs.AsNoTracking().Where(a => a.TableName == "Bookings" && a.RecordId == id.ToString()).OrderBy(a => a.CreatedAt).ThenBy(a => a.Id).ToListAsync());
+            await db.AuditLogs.AsNoTracking().Include(a => a.Account).ThenInclude(a => a!.Person).Where(a => a.TableName == "Bookings" && a.RecordId == id.ToString()).OrderBy(a => a.CreatedAt).ThenBy(a => a.Id).ToListAsync());
     }
 
     public Task<Booking> AssignAsync(int id, int employeeId, Actor actor) => HomestayWrite.RunAsync(db, async () =>

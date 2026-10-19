@@ -276,7 +276,7 @@ public partial class OwnerRegistrationService(ApplicationDbContext db, UserManag
         };
         if (ownerMessage is not null)
             PartnerServiceSupport.Notify(db, notifications, clock, [registration.Owner.Person.Account?.Id],
-                $"Hồ sơ đối tác #{id} {ownerMessage}. Vui lòng xem chi tiết hồ sơ.", RegistrationUrl(id));
+                $"Hồ sơ đối tác #{id} {ownerMessage}. Vui lòng xem chi tiết hồ sơ.", "/Partner/Status");
         return registration;
     });
 

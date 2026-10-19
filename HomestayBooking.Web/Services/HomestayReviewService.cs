@@ -13,7 +13,13 @@ public record HomestayReviewResult(Homestay Homestay, IReadOnlyList<string> Miss
 }
 public record PendingHomestay(Homestay Homestay, DateTime? SubmittedAt);
 /// <summary>FirstReview = homestay chưa từng được duyệt (mới); false = duyệt lại sau khi đổi địa chỉ/giấy tờ (quyết định 16/10).</summary>
-public record PendingHomestayDetails(HomestayEditor Content, DateTime? SubmittedAt, bool FirstReview, string? OwnerName, string OwnerPhone);
+public record ReviewFieldChange(string Field, string? Before, string? After);
+public record PendingHomestayDetails(HomestayEditor Content, DateTime? SubmittedAt, bool FirstReview, string? OwnerName, string OwnerPhone)
+{
+    public string? ChangeReason { get; init; }
+    public IReadOnlyList<ReviewFieldChange> Changes { get; init; } = [];
+    public IReadOnlyList<HomestayEditorDocument> LegacyDocuments { get; init; } = [];
+}
 
 public class HomestayReviewService(ApplicationDbContext db, HomestayAccessService access,
     OwnerRegistrationService registrations, NotificationService notifications, TimeProvider clock)
@@ -88,7 +94,29 @@ public class HomestayReviewService(ApplicationDbContext db, HomestayAccessServic
         var content = await new HomestayContentService(db, access, notifications, clock).EditorAsync(id, actor, allowConsultant: false);
         var owner = await db.Homestays.AsNoTracking().Where(h => h.Id == id)
             .Select(h => new { h.Owner.Person.FullName, h.Owner.Person.PhoneNumber }).SingleAsync();
-        return new(content, pending.SubmittedAt, pending.Homestay.ApprovedAt is null, owner.FullName, owner.PhoneNumber);
+        var logs = await db.AuditLogs.AsNoTracking().Where(a => a.TableName == "Homestays" && a.RecordId == id.ToString()
+            && a.CreatedAt == pending.SubmittedAt).OrderByDescending(a => a.Id).ToListAsync();
+        var log = logs.FirstOrDefault(a => JsonStatus(a.NewValues) == "PendingReview" && JsonStatus(a.OldValues) != "PendingReview");
+        var changes = new List<ReviewFieldChange>(); string? reason = null;
+        if (log?.OldValues is { } oldJson && log.NewValues is { } newJson)
+        {
+            using var oldDoc = JsonDocument.Parse(oldJson); using var newDoc = JsonDocument.Parse(newJson);
+            static JsonElement Values(JsonElement e) => e.ValueKind == JsonValueKind.Object && e.TryGetProperty("Values", out var v) ? v : e;
+            static JsonElement Home(JsonElement e) => e.ValueKind == JsonValueKind.Object && e.TryGetProperty("Homestay", out var h) ? h : e;
+            var before = Home(Values(oldDoc.RootElement)); var after = Home(Values(newDoc.RootElement));
+            foreach (var field in new[] { "Address", "AreaId", "Latitude", "Longitude", "Name", "DescriptionHtml", "ContactPhone" })
+                if (before.ValueKind == JsonValueKind.Object && after.ValueKind == JsonValueKind.Object && before.TryGetProperty(field, out var b) && after.TryGetProperty(field, out var a) && b.ToString() != a.ToString())
+                    changes.Add(new(field, b.ValueKind == JsonValueKind.Null ? null : b.ToString(), a.ValueKind == JsonValueKind.Null ? null : a.ToString()));
+            if (Values(newDoc.RootElement).TryGetProperty("ChangeReason", out var why)) reason = why.GetString();
+            else if (changes.Any(c => new[] { "Address", "AreaId", "Latitude", "Longitude" }.Contains(c.Field))) reason = "Thay đổi địa chỉ / vị trí";
+        }
+        var today = VietnamTime.Today(clock);
+        var legacy = await db.VerificationDocuments.AsNoTracking().Where(d => d.OwnerRegistrationId != null
+            && d.OwnerRegistration!.OwnerId == pending.Homestay.OwnerId && d.OwnerRegistration.Status == OwnerRegistrationStatus.Approved
+            && (d.ExpiryDate == null || d.ExpiryDate >= today)).OrderBy(d => d.Id)
+            .Select(d => new HomestayEditorDocument(d.Id, d.DocumentType, d.OriginalFileName, d.ExpiryDate, d.CreatedAt)).ToListAsync();
+        return new(content, pending.SubmittedAt, pending.Homestay.ApprovedAt is null, owner.FullName, owner.PhoneNumber)
+        { ChangeReason = reason, Changes = changes, LegacyDocuments = legacy };
     }
 
     private static string? JsonStatus(string? json)

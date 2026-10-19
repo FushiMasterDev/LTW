@@ -1,6 +1,6 @@
 # Backend gaps cho giao diện
 
-Lập ở Bước 0 (17/10/2026), sau khi đọc method public trong `HomestayBooking.Web/Services/`. Cập nhật sau B8 (17/10/2026): mọi gap đã xử lý, xem cột "Trạng thái".
+Lập ở Bước 0 (17/10/2026), sau khi đọc method public trong `HomestayBooking.Web/Services/`. Cập nhật B9 (19/10/2026): xem trạng thái riêng từng gap; G-19 hoãn kênh thật, G-26 chỉ có phần dữ liệu audit có thể kiểm chứng.
 
 Backend đã có service cho đủ FR-01…FR-27 sau B7. Zalo/SMS thật (FR-04, FR-23) là phần rút gọn đã chấp thuận nên không ghi ở đây. Các gap dưới đây là **dữ liệu đọc hoặc quyền** mà màn cần nhưng service chưa trả, cộng thêm một lỗi đường dẫn trong thông báo.
 
@@ -50,15 +50,24 @@ Các mục sau đã có service, không cần ghi gap:
 
 05a: sửa thông tin loại phòng hiện có, mã phòng, thêm phòng, bật/tắt và giá vẫn làm được; giữ CategoryId và AmenityIds. Tab tiện nghi hiển thị trạng thái chưa hỗ trợ; chưa tạo loại phòng hoặc đổi danh mục. Khu vực lấy từ `AvailabilityService.SearchAsync(...).Areas` (danh sách này không lọc Active); địa chỉ/khu vực/toạ độ vẫn sửa qua service. Cần backend bổ sung DTO catalog được kiểm quyền cho editor, kèm nhãn tiện nghi đang chọn; sau đó nối các phần còn thiếu. Không sửa Services/Data/Entities trong bước UI.
 
+
+**Trạng thái: Xong (B9)** — HomestayContentService.EditorAsync — Amenities/Categories đầy đủ, Selected theo cơ sở.
+
 ## G-17 — Số đơn chờ xác nhận của chủ (05a, 19/10/2026)
 
 **Một phần, còn mở.** `OwnerScheduleService.ReadAsync` chỉ trả Confirmed/CheckedIn, không có Deposited. `BookingService` không có API danh sách/đếm đơn của chủ. `StaffBookingService.SearchAsync` chỉ cho nhân viên, không được gọi bằng quyền giả Employee. Danh sách Owner/Bookings là truy vấn controller cũ, chưa có service đọc tương ứng.
 
 05a: dashboard có số khách đến hôm nay qua `OwnerScheduleService`, lối tắt tới `/Owner/Bookings?status=Deposited`, không dựng số đơn chờ hoặc thêm truy vấn. Cần service `OwnerBookingSummaryAsync(actor)` hoặc API đếm Deposited kiểm quyền theo chủ để hoàn thiện số đơn chờ trên dashboard.
 
+
+**Trạng thái: Xong (B9)** — OwnerScheduleService.OwnerBookingSummaryAsync — Deposited, quá hạn và lượt nhận hôm nay đúng chủ.
+
 ## G-18 — Thông báo chủ cũ không có URL (05a, 19/10/2026)
 
 **Nhỏ, còn mở cho dữ liệu cũ/nguồn tạo thông báo.** Khi rà tài khoản `0912000001`, bốn thông báo hiện có trả `Url = null`, nên trang/chuông không có liên kết để mở đơn. `BookingService.NotifyAsync` vẫn có nhánh gọi `NotificationService.Add` không truyền URL cho đơn đặt cọc/hủy. Không phân tích mã đơn từ nội dung tự do để đoán URL hoặc truy vấn lại trong UI. Các URL đã có của service khác đã được nối: `/Owner/Homestays/{id}`, `/Owner/Settlements/{id}`, nhắc nhận phòng qua `Bookings?arrivals=…`, đánh giá qua Booking Details có lối tắt tới Reviews. Bước backend sau cần bổ sung URL tại nguồn và quyết định backfill dữ liệu cũ nếu cần.
+
+
+**Trạng thái: Xong (B9)** — BookingService.NotifyAsync/AlertOverdueConfirmationsAsync; ReceiptReviewService; BookingChangeRequestFinance; VoucherService — URL theo vai trò. Không backfill thông báo cũ.
 
 ## G-19 — Gửi lời mời kích hoạt đối tác (05b, 19/10/2026)
 
@@ -72,25 +81,43 @@ Kênh tự động Zalo/SMS thật vẫn là phần rút gọn đã chấp thu�
 
 Danh sách đơn lọc/hiện **Mã homestay** theo ID; chi tiết vẫn có tên homestay/mã phòng hiện tại từ DetailsAsync. Phòng trống chọn lại được ghi rõ **Phòng #{ID}**. Người phụ trách ngoài danh sách nhận đơn hiển thị **Nhân viên #{ID}**, không gán nhãn “Chưa giao”. Cần DTO đọc trả tên homestay/người phụ trách lịch sử và mã phòng còn trống để nâng trải nghiệm; không chặn thao tác.
 
+
+**Trạng thái: Xong (B9)** — StaffBookingService.SearchAsync/DetailsAsync/HomestaysAsync; AvailabilityService.FreeRoomsAsync — nạp tên kể cả nhân viên/cơ sở lịch sử.
+
 ## G-21 — Dữ liệu phòng trống theo đêm theo lô (05b, 19/10/2026)
 
 **Một phần về hiệu năng, còn mở.** `StaffAvailabilityAsync` trả số phòng trống cho cả khoảng (phòng trống xuyên suốt), không trả ma trận đêm. 05b gọi service một lần để kiểm khoảng tối đa 31 đêm, rồi từng đêm để hiện số đúng; không biến số của cả khoảng thành số từng đêm, không cache và không tự truy vấn tồn phòng. Bảng có thời điểm cập nhật và Làm mới. Cần API trả ma trận theo lô để giữ số truy vấn cố định trên dữ liệu lớn; chưa tuyên bố đạt NFR-02 ở tải 150 homestay/31 đêm với cách ghép này.
+
+
+**Trạng thái: Xong (B9)** — AvailabilityService.StaffNightAvailabilityAsync — tối đa 31 đêm, bốn truy vấn dữ liệu + kiểm quyền, không lặp truy vấn theo đêm.
 
 ## G-22 — Link thông báo kết quả thẩm định gửi chủ (05b, 19/10/2026)
 
 **Nhỏ, còn mở.** `OwnerRegistrationService.DecideAsync` gửi thông báo cho chủ khi NeedsRevision/Approved/Rejected nhưng URL là `RegistrationUrl(id)` = `/Staff/OwnerRegistrations/{id}`. Chủ không có policy Employee, nên không mở được URL này; màn đúng để chủ theo dõi đã có ở `/Partner/Status`. Giữ nguyên chặn quyền của Staff, không mở hồ sơ nhân viên cho chủ hoặc sửa service trong bước UI. Cần sửa URL tại nguồn theo người nhận và quyết định backfill thông báo cũ; thông báo nội bộ vẫn dùng URL Staff.
 
+
+**Trạng thái: Xong (B9)** — OwnerRegistrationService.DecideAsync — thông báo chủ dùng /Partner/Status; không backfill.
+
 ## G-23 — Xác nhận chủ và ngày/số tiền chuyển đối soát (05c, 19/10/2026)
 
 **Một phần, còn mở so với prompt 05c; giữ nghiệp vụ B5/D15.** `SettlementService.ConfirmAsync` chỉ nhận Actor Owner đúng cơ sở, không cho Accountant xác nhận thay chủ. `RecordPaidAsync(id, bankRef, actor)` ghi toàn bộ PayoutAmount và PaidAt = đồng hồ hệ thống, không nhận số tiền/ngày chuyển thực tế. UI kế toán không giả Actor Owner, không thêm form nhập số tiền/ngày rồi bỏ qua dữ liệu: hiển thị số phải trả từ service, giải thích ngày ghi nhận tự lưu; chủ xác nhận tại màn Owner hiện có. Sent hoặc Confirmed đều được chi theo D15; Paid bất biến, không hiện mở lại. Nếu cần chuyển từng phần/ngày thực tế hoặc xác nhận thay chủ, cần quyết định nghiệp vụ và backend riêng; không sửa service trong 05c.
+
+
+**Trạng thái: Xong (B9)** — SettlementService.ConfirmOnBehalfAsync; RecordPaidAsync(id, bankRef, amount, paidAt, actor) — Accountant, lý do, toàn phần, ngày UTC, audit.
 
 ## G-24 — Danh sách khoản bù được phép từ chối (05c, 19/10/2026)
 
 **Một phần, còn mở.** `CompensationService.PendingAsync` chỉ trả Compensation Submitted của đơn thay thế Completed, chưa thay tiếp. `RejectAsync` lại cấm đơn Completed. Không có API đọc danh sách khoản bù trước Completed cho kế toán, vì vậy không thể dựng form từ chối hợp lệ từ dữ liệu hiện có. 05c nối POST Reject qua service, antiforgery/PRG và kiểm quyền Accountant nhưng ẩn nút từ chối trên danh sách chờ chi; không mở UI nhập ID tùy ý hoặc thêm truy vấn nghiệp vụ. Muốn có form lý do + xác nhận danger cho khoản bù trước Completed cần backend trả danh sách được kiểm quyền, sau đó mới nối UI. Chi khoản bù có mã ngân hàng đã làm được.
 
+
+**Trạng thái: Xong (B9)** — CompensationService.RejectableAsync — đúng Submitted, Compensation, đơn chưa Completed; Accountant.
+
 ## G-25 — Liên kết đơn/giao dịch sang đối soát và nhãn homestay (05c, 19/10/2026)
 
 **Nhỏ, còn mở.** `ReceiptRow`, `RefundRow`, `BankTransactionRow`/`TransactionProcessViewModel` chưa có SettlementId hoặc HomestayId + CheckOut. AdditionalDeposits có Booking nhưng truy vấn hiện có không nạp SettlementItem. Không đoán kỳ từ ngày giao dịch, không coi kỳ theo CheckOut là bằng chứng đơn đã vào bảng, không thêm query vào controller/view. Chưa hiện lối tắt đối soát trên bốn màn bước 04. `SettlementService.ListAsync` không Include Homestay, nên danh sách/chi tiết kế toán dùng “Homestay #{ID}” và bộ lọc Mã homestay; không lấy catalog công khai đã lọc Active thay danh mục lịch sử. Cần DTO read trả liên kết đối soát thật và tên homestay lịch sử để hoàn thiện.
+
+
+**Trạng thái: Xong (B9)** — SettlementService.ListAsync/DetailsAsync nạp Homestay/Owner/Person; AccountingService.ReceiptsAsync/RefundsAsync/TransactionsAsync/TransactionAsync/AdditionalDepositsAsync dùng SettlementItem thật.
 
 ## G-26 — Lý do cụ thể và nội dung trước thay đổi khi duyệt (05d, 19/10/2026)
 
@@ -99,3 +126,13 @@ Danh sách đơn lọc/hiện **Mã homestay** theo ID; chi tiết vẫn có tê
 ## G-27 — Bộ lọc chức vụ và đọc một tài khoản nhân viên (05d, 19/10/2026)
 
 **Nhỏ về hiệu năng, còn mở.** `AccountAdminService.ListAsync` có Term/Role/Status/Page nhưng chưa có Position hoặc DetailsAsync. UI lấy mọi trang Role Employee qua service đã kiểm quyền rồi lọc chức vụ/phân trang ở bộ nhớ, chi tiết tìm trong cùng tập được phép đọc. Không lọc sau một trang (tránh bỏ sót), không dùng DbContext để đọc nghiệp vụ. Cần bổ sung Position vào AccountQuery và DetailsAsync được kiểm quyền để giữ số truy vấn ổn định khi số nhân viên lớn. Không thay đổi quyền ghi chỉ Administrator.
+
+
+**Trạng thái: Xong (B9)** — AccountAdminService.ListAsync(AccountQuery.Position), DetailsAsync — lọc trước phân trang, kiểm Management.
+
+
+### B9 — Phần đã xử lý của G-26 và giới hạn còn lại
+
+`HomestayReviewService.PendingDetailsAsync` trả `ChangeReason`, `Changes` từ audit chuyển PendingReview có cấu trúc và `LegacyDocuments` còn hạn của hồ sơ Approved cùng chủ. Nguồn ghi vị trí/giấy pháp lý ghi ChangeReason cho thao tác mới. Không đoán lý do cũ nếu thiếu audit; không có snapshot toàn bộ ảnh/phòng/giá/giấy tờ trước thay đổi. Phần snapshot lịch sử đầy đủ cần quyết định lưu phiên bản/schema, chưa làm. ApproveAsync giữ nguyên không bắt lý do mới.
+
+G-15: Xong (B9) — `ReviewService.ListAsync` nạp tên hiển thị người đánh giá qua Booking/Customer/Person; UI tiếp tục encode và fallback khi thiếu tên.

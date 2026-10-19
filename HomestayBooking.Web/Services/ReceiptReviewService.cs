@@ -61,7 +61,7 @@ public class ReceiptReviewService
         };
         booking.Payments.Add(payment);
         await _bookings.ApplyStatusAsync(booking, BookingStatus.PaymentSubmitted, actor, "Khách gửi ảnh bill.");
-        _notifications.Add(await ReviewerAccountIdsAsync(), $"Đơn {booking.Code} có ảnh bill chờ duyệt.");
+        _notifications.Add(await ReviewerAccountIdsAsync(), $"Đơn {booking.Code} có ảnh bill chờ duyệt.", "/Accounting/Receipts");
         await _db.SaveChangesAsync();
         return payment;
     }
@@ -96,7 +96,7 @@ public class ReceiptReviewService
             _db.AuditLogs.Add(new AuditLog { AccountId = accountId, TableName = "BookingChangeRequests", RecordId = requestId.ToString(),
                 Action = AuditAction.Update, CreatedAt = now,
                 NewValues = JsonSerializer.Serialize(new { Step = "AdditionalReceiptSubmitted", RequestId = requestId, payment.Amount, SubmittedAt = now }) });
-            _notifications.Add(await ReviewerAccountIdsAsync(EmployeePosition.Accountant), $"CR{requestId} đơn {request.Booking.Code} có bill cọc bổ sung chờ xác nhận.");
+            _notifications.Add(await ReviewerAccountIdsAsync(EmployeePosition.Accountant), $"CR{requestId} đơn {request.Booking.Code} có bill cọc bổ sung chờ xác nhận.", "/Accounting/AdditionalDeposits");
             await _db.SaveChangesAsync();
             if (transaction is not null) await transaction.CommitAsync();
             return payment;
@@ -148,7 +148,7 @@ public class ReceiptReviewService
             .SingleAsync();
         _notifications.Add([customer], giveUp
             ? $"Ảnh bill đơn {booking.Code} bị từ chối lần {rejections} ({payment.RejectReason}) nên đơn đã hết hạn. Nếu bạn đã chuyển tiền, vui lòng liên hệ Fuji để được hoàn."
-            : $"Ảnh bill đơn {booking.Code} chưa hợp lệ ({payment.RejectReason}). Bạn có {_options.HoldMinutes} phút để thanh toán lại.");
+            : $"Ảnh bill đơn {booking.Code} chưa hợp lệ ({payment.RejectReason}). Bạn có {_options.HoldMinutes} phút để thanh toán lại.", $"/Bookings/Details/{booking.Code}");
         await _db.SaveChangesAsync();
     }
 
@@ -200,7 +200,7 @@ public class ReceiptReviewService
         foreach (var payment in overdue)
         {
             _notifications.Add(managers,
-                $"Bill đơn {payment.Booking.Code} đã chờ duyệt quá {_options.ReceiptReviewAlertMinutes / 60} giờ làm việc.");
+                $"Bill đơn {payment.Booking.Code} đã chờ duyệt quá {_options.ReceiptReviewAlertMinutes / 60} giờ làm việc.", "/Accounting/Receipts");
             payment.ReviewAlertSentAt = now;
         }
         await _db.SaveChangesAsync();

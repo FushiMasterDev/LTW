@@ -117,3 +117,9 @@ Mỗi quyết định ghi một dòng: ngày, bước, nội dung, lý do. Dùng
 | 19/10/2026 | 05d | ReportChart là component trong UI Kit: line/miền xanh rừng cho chuỗi tháng, cột cam đất cho so sánh, tone cho sự cố; CSS token/getComputedStyle, vẽ lại khi đổi theme, 800ms/reduce; có bảng HTML và không JS vẫn đọc được bảng | Giữ DESIGN.md, Chart.js có sẵn, không thêm thư viện/ảnh |
 | 19/10/2026 | 05d | Mật khẩu tạo/reset sinh bằng RandomNumberGenerator, TempData mã hóa, trang NoStore/no-referrer đọc một lần; có sao chép và xóa giá trị DOM khi rời trang. Không bắt buộc đổi lần đầu vì backend chưa có luật này | Không ghi bí mật vào URL/log/ảnh/báo cáo, giữ shortcut B6 |
 | 19/10/2026 | 05d | Tài khoản lọc chức vụ sau khi đọc đủ mọi trang Employee qua service, chi tiết theo cùng tập (G-27). Form tạo lỗi dùng PRG/TempData giữ trường không bí mật và lỗi validation | Không bỏ sót kết quả hoặc thêm truy vấn nghiệp vụ |
+
+| 19/10/2026 | B9 | Catalog editor dùng mọi Amenities/RoomCategories tồn tại vì bảng không có cờ Active, cùng điều kiện service ghi; không dùng catalog tìm kiếm công khai | G-16; không đổi nghiệp vụ hoặc schema |
+| 19/10/2026 | B9 | Giữ quyền ghi đối soát chỉ Accountant; thêm xác nhận thay chủ có lý do. Chuyển đúng toàn bộ PayoutAmount, nhận thời điểm thực tế UTC, chặn tương lai/trước gửi hoặc xác nhận | Yêu cầu người dùng 19/10; không chi từng phần và không thêm cột số tiền |
+| 19/10/2026 | B9 | Không backfill thông báo cũ; URL mới theo vai trò, hồ sơ chủ về Partner/Status | Không đoán mã đơn từ nội dung, giữ chặn quyền Staff |
+| 19/10/2026 | B9 | G-26 chỉ so sánh trường có trong audit chuyển trạng thái, trả giấy tờ legacy đúng điều kiện activation; thiếu lịch sử thì báo chưa có. Không thêm lý do bắt buộc khi duyệt | Snapshot ảnh/phòng/giá/giấy tờ trước thay đổi chưa tồn tại; không suy diễn dữ liệu |
+| 19/10/2026 | B9 | G-19 giữ chuyển lời mời thủ công; chưa chọn SMS/Zalo thật | Chốt kênh khi triển khai theo prompt B9 |

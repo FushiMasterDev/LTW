@@ -98,7 +98,7 @@ public class ReviewService(ApplicationDbContext db, NotificationService notifica
     public async Task<ReviewPage> ListAsync(int homestayId, int? page = 1, bool includeHidden = false, Actor? actor = null)
     {
         if (includeHidden) await PartnerServiceSupport.EmployeeAsync(db, actor ?? Actor.System, EmployeePosition.Manager, EmployeePosition.Administrator);
-        var rows = db.Reviews.AsNoTracking().Where(r => r.HomestayId == homestayId && (includeHidden || !r.IsHidden));
+        var rows = db.Reviews.AsNoTracking().Include(r => r.Booking).ThenInclude(b => b.Customer).ThenInclude(c => c.Person).Where(r => r.HomestayId == homestayId && (includeHidden || !r.IsHidden));
         var summary = await ReviewRatings.Summaries(db.Reviews.Where(r => r.HomestayId == homestayId)).SingleOrDefaultAsync();
         return new(await PaginatedList<Review>.CreateAsync(rows.OrderByDescending(r => r.CreatedAt).ThenByDescending(r => r.Id), page), summary?.Rating, summary?.Count ?? 0);
     }

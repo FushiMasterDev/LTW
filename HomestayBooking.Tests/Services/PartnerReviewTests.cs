@@ -100,7 +100,9 @@ public sealed class PartnerReviewTests
         if (action == "revision") r = await h.Registrations.RequestRevisionAsync(r.Id, note, h.Consultant);
         else if (action == "reject") r = await h.Registrations.RejectAsync(r.Id, note, h.Manager);
         else r = await h.Registrations.ApproveAsync(r.Id, h.Manager);
-        var message = (await h.Db.Notifications.SingleAsync()).Message;
+        var notice = await h.Db.Notifications.SingleAsync();
+        Assert.Equal("/Partner/Status", notice.Url);
+        var message = notice.Message;
         Assert.Contains(phrase, message); Assert.DoesNotContain(note, message);
         Assert.InRange(message.Length, 1, 500);
         if (action != "approve") Assert.Equal(note, r.ReviewNote);

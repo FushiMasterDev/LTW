@@ -11,7 +11,7 @@ namespace HomestayBooking.Web.Services;
 
 public record EmployeeAccountInput(string FullName, string Phone, string? Email, string EmployeeCode, EmployeePosition Position, string Password,
     string? Department = null);
-public record AccountQuery(string? Term = null, string? Role = null, AccountStatus? Status = null, int? Page = 1);
+public record AccountQuery(string? Term = null, string? Role = null, AccountStatus? Status = null, int? Page = 1, EmployeePosition? Position = null);
 public record AccountSummary(string Id, string? FullName, string Phone, string? Email, string? EmployeeCode,
     EmployeePosition? Position, EmploymentStatus? EmploymentStatus, AccountStatus Status, IReadOnlyList<string> Roles, string? Department = null);
 
@@ -153,11 +153,25 @@ public class AccountAdminService(ApplicationDbContext db, UserManager<Applicatio
     private static string Note(string? value) => string.IsNullOrWhiteSpace(value) || value.Trim().Length > 1000
         ? throw new BookingException("Lý do phải có từ 1 đến 1000 ký tự.") : value.Trim();
 
+    private static AccountSummary Summary(ApplicationUser u) => new(u.Id, u.Person.FullName, u.Person.PhoneNumber, u.Person.Email, u.Person.Employee?.EmployeeCode,
+        u.Person.Employee?.Position, u.Person.Employee?.EmploymentStatus, u.Status, u.UserRoles.Select(r => r.Role!.Name!).Order().ToList(), u.Person.Employee?.Department);
+
+    public async Task<AccountSummary> DetailsAsync(string id, Actor actor)
+    {
+        await PartnerServiceSupport.EmployeeAsync(db, actor, EmployeePosition.Manager, EmployeePosition.Administrator);
+        var user = await db.Users.AsNoTracking().Include(u => u.Person).ThenInclude(p => p.Employee)
+            .Include(u => u.UserRoles).ThenInclude(r => r.Role).SingleOrDefaultAsync(u => u.Id == id)
+            ?? throw new BookingException("Không tìm thấy tài khoản.");
+        return Summary(user);
+    }
+
     public async Task<PaginatedList<AccountSummary>> ListAsync(AccountQuery query, Actor actor)
     {
         await PartnerServiceSupport.EmployeeAsync(db, actor, EmployeePosition.Manager, EmployeePosition.Administrator);
         if (query.Status is { } status && !Enum.IsDefined(status)) throw new BookingException("Trạng thái tài khoản không hợp lệ.");
+        if (query.Position is { } position && !Enum.IsDefined(position)) throw new BookingException("Chức vụ không hợp lệ.");
         var rows = db.Users.AsNoTracking();
+        if (query.Position is { } filter) rows = rows.Where(u => u.Person.Employee != null && u.Person.Employee.Position == filter);
         if (!string.IsNullOrWhiteSpace(query.Term))
         {
             var term = query.Term.Trim(); var phone = PhoneNumberNormalizer.ToE164(term);
@@ -168,8 +182,6 @@ public class AccountAdminService(ApplicationDbContext db, UserManager<Applicatio
         if (!string.IsNullOrWhiteSpace(query.Role)) rows = rows.Where(u => u.UserRoles.Any(r => r.Role!.Name == query.Role));
         var page = await PaginatedList<ApplicationUser>.CreateAsync(rows.Include(u => u.Person).ThenInclude(p => p.Employee)
             .Include(u => u.UserRoles).ThenInclude(r => r.Role).OrderBy(u => u.Person.FullName).ThenBy(u => u.Id), query.Page);
-        return new(page.Select(u => new AccountSummary(u.Id, u.Person.FullName, u.Person.PhoneNumber, u.Person.Email, u.Person.Employee?.EmployeeCode,
-            u.Person.Employee?.Position, u.Person.Employee?.EmploymentStatus, u.Status, u.UserRoles.Select(r => r.Role!.Name!).Order().ToList(),
-            u.Person.Employee?.Department)), page.TotalCount, page.PageIndex, page.PageSize);
+        return new(page.Select(Summary), page.TotalCount, page.PageIndex, page.PageSize);
     }
 }

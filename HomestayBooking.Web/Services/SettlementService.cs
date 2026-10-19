@@ -181,6 +181,16 @@ public class SettlementService(ApplicationDbContext db, NotificationService noti
         Audit(row, actor, old, "OwnerConfirmed"); await NotifyAccountantsAsync(row, "đã được chủ xác nhận"); return row;
     });
 
+    public Task<Settlement> ConfirmOnBehalfAsync(int id, string reason, Actor actor) => WriteAsync(async () =>
+    {
+        await PartnerServiceSupport.EmployeeAsync(db, actor, EmployeePosition.Accountant);
+        reason = RequiredNote(reason, 500);
+        var row = await LoadLockedAsync(id); EnsureTransition(row, SettlementStatus.Confirmed);
+        var old = State(row); row.Status = SettlementStatus.Confirmed; row.ConfirmedAt = row.UpdatedAt = Now;
+        Audit(row, actor, old, "AccountantConfirmedOnBehalf", $"Kế toán xác nhận thay chủ: {reason}");
+        await NotifyOwnerAsync(row, "đã được kế toán xác nhận thay chủ"); return row;
+    });
+
     public Task<Settlement> ReportDiscrepancyAsync(int id, string note, Actor actor) => WriteAsync(async () =>
     {
         note = RequiredNote(note, 500); var row = await LoadLockedAsync(id); await OwnerAsync(row.HomestayId, actor);
@@ -199,22 +209,33 @@ public class SettlementService(ApplicationDbContext db, NotificationService noti
         await NotifyOwnerAsync(row, "đã được mở lại để kế toán điều chỉnh"); return row;
     });
 
-    public Task<Settlement> RecordPaidAsync(int id, string? bankRef, Actor actor) => WriteAsync(async () =>
+    public Task<Settlement> RecordPaidAsync(int id, string? bankRef, Actor actor) => RecordPaidCoreAsync(id, bankRef, null, Now, actor);
+
+    public Task<Settlement> RecordPaidAsync(int id, string? bankRef, decimal amount, DateTime paidAt, Actor actor) =>
+        RecordPaidCoreAsync(id, bankRef, amount, paidAt, actor);
+
+    private Task<Settlement> RecordPaidCoreAsync(int id, string? bankRef, decimal? amount, DateTime paidAt, Actor actor) => WriteAsync(async () =>
     {
         var employee = await PartnerServiceSupport.EmployeeAsync(db, actor, EmployeePosition.Accountant);
         var row = await LoadLockedAsync(id); EnsureTransition(row, SettlementStatus.Paid);
+        if (amount is not null && amount != row.PayoutAmount)
+            throw new BookingException("Số tiền chuyển phải bằng đúng số phải trả ({0:N0}đ); không hỗ trợ chi từng phần.", row.PayoutAmount);
+        if (paidAt.Kind != DateTimeKind.Utc) throw new BookingException("Thời điểm chuyển tiền phải theo UTC.");
+        if (paidAt > Now) throw new BookingException("Ngày chuyển tiền không được ở tương lai.");
+        if (row.SentAt is null || paidAt < row.SentAt || row.ConfirmedAt is not null && paidAt < row.ConfirmedAt)
+            throw new BookingException("Ngày chuyển tiền không được trước thời điểm gửi/xác nhận đối soát.");
         await PartnerServiceSupport.RequireOwnerBankAsync(db, row.HomestayId);
         bankRef = string.IsNullOrWhiteSpace(bankRef) ? null : bankRef.Trim();
         if (row.PayoutAmount > 0) bankRef = AccountingService.RequireTransferReference(bankRef);
         else if (bankRef?.Length > 100) throw new BookingException("Mã giao dịch tối đa 100 ký tự.");
-        var old = State(row); row.Status = SettlementStatus.Paid; row.PaidAt = row.UpdatedAt = Now;
+        var old = State(row); row.Status = SettlementStatus.Paid; row.PaidAt = paidAt; row.UpdatedAt = Now;
         row.PaidByEmployeeId = employee.Id; row.PaidBankRef = bankRef;
-        Audit(row, actor, old, "Paid"); await NotifyOwnerAsync(row, "đã được Fuji chuyển tiền"); return row;
+        Audit(row, actor, old, "Paid", $"Số tiền: {row.PayoutAmount}; ngày chuyển UTC: {paidAt:O}"); await NotifyOwnerAsync(row, "đã được Fuji chuyển tiền"); return row;
     });
 
     public async Task<PaginatedList<Settlement>> ListAsync(SettlementQuery query, Actor actor)
     {
-        var rows = db.Settlements.AsNoTracking().AsQueryable();
+        var rows = db.Settlements.AsNoTracking().Include(s => s.Homestay).ThenInclude(h => h.Owner).ThenInclude(o => o.Person).AsQueryable();
         if (actor.Type == ActorType.Employee) await PartnerServiceSupport.EmployeeAsync(db, actor, Readers);
         else
         {
@@ -229,7 +250,8 @@ public class SettlementService(ApplicationDbContext db, NotificationService noti
 
     public async Task<SettlementDetails> DetailsAsync(int id, Actor actor)
     {
-        var row = await db.Settlements.AsNoTracking().Include(s => s.Items).ThenInclude(i => i.Booking)
+        var row = await db.Settlements.AsNoTracking().Include(s => s.Homestay).ThenInclude(h => h.Owner).ThenInclude(o => o.Person)
+            .Include(s => s.Items).ThenInclude(i => i.Booking)
             .SingleOrDefaultAsync(s => s.Id == id) ?? throw new BookingException("Không tìm thấy bảng đối soát.");
         if (actor.Type == ActorType.Employee) await PartnerServiceSupport.EmployeeAsync(db, actor, Readers);
         else { await OwnerAsync(row.HomestayId, actor); if (row.Status == SettlementStatus.Draft) throw new BookingException("Chủ không được xem bảng nháp."); }

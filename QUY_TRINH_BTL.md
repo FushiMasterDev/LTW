@@ -701,3 +701,16 @@ Lấp các gap Bước 0 kiểm kê giao diện ghi ở `docs/ui/backend-gaps.md
 - FR-16: `OwnerScheduleService.ReadAsync(actor, …)` tự suy chủ từ tài khoản.
 - FR-01/02: `HomestaySearchViewModel.Categories/Amenities` (chỉ loại phòng/tiện nghi đang có ở homestay Active); `HomestayCard.Rating/ReviewCount` lấy từ `ReviewRatings` đã nạp một lần; `AvailabilityService.BlockedDatesAsync` trả đêm hết phòng (≤ 92 đêm) cho bộ chọn ngày.
 - FR-06: `BookingDetailsViewModel.HasReview`. FR-21: `EmployeeAccountInput.Department`/`AccountSummary.Department` (≤ 100 ký tự, ghi audit).
+
+
+### 7.11. Backend bổ sung cho giao diện (B9)
+
+- FR-13: `HomestayContentService.EditorAsync` trả toàn bộ tiện nghi/danh mục loại phòng đang tồn tại, không lọc cơ sở Active; cờ Selected theo liên kết thật. Danh mục không có cờ Active nên dùng cùng điều kiện tồn tại của UpdateAsync/CreateTypeAsync/UpdateTypeAsync.
+- FR-15/16: `OwnerScheduleService.OwnerBookingSummaryAsync` kiểm tài khoản Owner Active/không Employee, đếm Deposited, quá hạn ConfirmDeadlineAt và Confirmed nhận hôm nay (VN), chỉ cơ sở của chủ.
+- FR-04/11/15/26: mọi nguồn NotificationService.Add thiếu URL được nối theo người nhận (Owner Id số, khách Code, Staff màn đơn, Accounting màn bill); DecideAsync thông báo chủ `/Partner/Status`. Không backfill thông báo cũ, không đoán từ nội dung.
+- FR-08/09: StaffBookingService nạp tên cơ sở/phòng/người phụ trách và actor lịch sử, `HomestaysAsync` trả tên mọi trạng thái; `FreeRoomsAsync` trả mã phòng. `StaffNightAvailabilityAsync` trả ma trận từng đêm ≤31, bốn query dữ liệu + query quyền cố định; giữ điều kiện bán/hợp đồng, giá mỗi đêm và RoomNights, không cache.
+- FR-18: Accountant được `ConfirmOnBehalfAsync` từ Sent với lý do 1–500, audit “Kế toán xác nhận thay chủ” và báo chủ. ConfirmAsync của chủ không đổi. RecordPaidAsync nhận số tiền đúng PayoutAmount và thời điểm UTC thực tế ≤Now, ≥SentAt và ≥ConfirmedAt nếu có. Không chi từng phần, không đổi schema; số tiền/ngày trong audit. Chỉ Accountant ghi, Manager/Administrator vẫn chỉ đọc/lập.
+- `CompensationService.RejectableAsync` cho Accountant đọc Compensation Submitted có đơn chưa Completed, đúng điều kiện RejectAsync hiện hành.
+- FR-17/18: Settlement đọc có Homestay/Owner/Person; `AccountingService.ReceiptsAsync/RefundsAsync/TransactionsAsync/TransactionAsync/AdditionalDepositsAsync` nạp SettlementId từ SettlementItem thật, kiểm Actor cho Accountant/Manager/Administrator, không suy theo ngày.
+- FR-27: PendingDetailsAsync trả lý do và so sánh trường audit hiện có, giấy tờ legacy còn hạn của hồ sơ Approved cùng chủ; không tạo snapshot lịch sử giả. FR-21: AccountQuery.Position lọc tại DB và DetailsAsync kiểm Management. FR-06: ListAsync nạp tên hiển thị người viết.
+- Kiểm chứng: B9OwnerTests, B9StaffTests, B9FinanceTests, B9AdminTests, PartnerReviewTests và AvailabilityPerformanceTests. Kết quả đo/kiểm UI xem `docs/ui/b9-backend-report.md`.

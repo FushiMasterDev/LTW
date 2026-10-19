@@ -427,25 +427,29 @@ public class BookingService
         switch (to)
         {
             case BookingStatus.Deposited:
-                _notifications.Add([accounts.Owner], $"Đơn {code} đã đặt cọc, vui lòng xác nhận trong {_options.ConfirmMinutes} phút.");
-                _notifications.Add([accounts.Customer], $"Fuji đã nhận tiền cọc đơn {code}. Đang chờ homestay xác nhận.");
+                _notifications.Add([accounts.Owner], $"Đơn {code} đã đặt cọc, vui lòng xác nhận trong {_options.ConfirmMinutes} phút.", $"/Owner/Bookings/Details/{booking.Id}");
+                _notifications.Add([accounts.Customer], $"Fuji đã nhận tiền cọc đơn {code}. Đang chờ homestay xác nhận.", $"/Bookings/Details/{code}");
                 break;
             case BookingStatus.Confirmed:
-                _notifications.Add([accounts.Customer, accounts.Staff], $"Đơn {code} đã được homestay xác nhận.");
+                _notifications.Add([accounts.Customer], $"Đơn {code} đã được homestay xác nhận.", $"/Bookings/Details/{code}");
+                _notifications.Add([accounts.Staff], $"Đơn {code} đã được homestay xác nhận.", $"/Staff/Bookings/{booking.Id}");
                 if (actor.Type == ActorType.Employee) PartnerServiceSupport.Notify(_db, _notifications, _clock, [accounts.Owner], $"Nhân viên đã xác nhận thay chủ đơn {code} sau khi liên hệ.", $"/Owner/Bookings/Details/{booking.Id}");
                 break;
             case BookingStatus.Rejected:
-                _notifications.Add([accounts.Customer, accounts.Staff], $"Homestay đã từ chối đơn {code}. Fuji sẽ hoàn 100% tiền cọc.");
+                _notifications.Add([accounts.Customer], $"Homestay đã từ chối đơn {code}. Fuji sẽ hoàn 100% tiền cọc.", $"/Bookings/Details/{code}");
+                _notifications.Add([accounts.Staff], $"Homestay đã từ chối đơn {code}. Fuji sẽ hoàn 100% tiền cọc.", $"/Staff/Bookings/{booking.Id}");
                 if (actor.Type == ActorType.Employee) PartnerServiceSupport.Notify(_db, _notifications, _clock, [accounts.Owner], $"Nhân viên đã từ chối thay chủ đơn {code} sau khi liên hệ.", $"/Owner/Bookings/Details/{booking.Id}");
                 break;
             case BookingStatus.Completed:
                 PartnerServiceSupport.Notify(_db, _notifications, _clock, [accounts.Customer], $"Đơn {code} đã hoàn thành. Mời bạn đánh giá homestay và chia sẻ trải nghiệm.", $"/Bookings/Details/{code}");
                 break;
             case BookingStatus.Expired:
-                _notifications.Add([accounts.Customer, accounts.Staff], $"Đơn {code} đã hết hạn giữ phòng vì chưa thanh toán.");
+                _notifications.Add([accounts.Customer], $"Đơn {code} đã hết hạn giữ phòng vì chưa thanh toán.", $"/Bookings/Details/{code}");
+                _notifications.Add([accounts.Staff], $"Đơn {code} đã hết hạn giữ phòng vì chưa thanh toán.", $"/Staff/Bookings/{booking.Id}");
                 break;
             case BookingStatus.Cancelled:
-                _notifications.Add([accounts.Owner, accounts.Staff], $"Đơn {code} đã bị hủy.");
+                _notifications.Add([accounts.Owner], $"Đơn {code} đã bị hủy.", $"/Owner/Bookings/Details/{booking.Id}");
+                _notifications.Add([accounts.Staff], $"Đơn {code} đã bị hủy.", $"/Staff/Bookings/{booking.Id}");
                 break;
         }
     }
@@ -519,7 +523,7 @@ public class BookingService
         {
             var recipients = item.Staff is null ? consultants : [item.Staff];
             _notifications.Add(recipients,
-                $"Đơn {item.Booking.Code} đã quá {_options.ConfirmMinutes} phút homestay chưa xác nhận. Vui lòng gọi nhắc.");
+                $"Đơn {item.Booking.Code} đã quá {_options.ConfirmMinutes} phút homestay chưa xác nhận. Vui lòng gọi nhắc.", $"/Staff/Bookings/{item.Booking.Id}");
             item.Booking.ConfirmAlertSentAt = now;
         }
         await _db.SaveChangesAsync();
