@@ -1,0 +1,15 @@
+@using HomestayBooking.Web.Services
+@model AdminContractList
+@{ ViewData["Title"] = L["Đối tác và hợp đồng"]; var rows = new List<TableRow>(); }
+<partial name="_PageHead" model='new PageHeadModel("Đối tác và hợp đồng", "", "", "Theo dõi thời hạn và hoa hồng theo từng homestay.", ActionLabel:"Tạo hợp đồng")' />
+<partial name="_FilterBar" model='new FilterBarModel("contracts-filter", new FilterField[] {
+    new("search","Tìm hợp đồng, homestay, chủ",Type:"search"),
+    new("status","Trạng thái",Options:new[] { new SelectListItem("Tất cả","") }.Concat(Enum.GetValues<ContractStatus>().Select(s=>new SelectListItem(AdminLabels.Label(s),s.ToString()))).ToArray()),
+    new("expiringWithinDays","Sắp hết hạn",Options:new[] { new SelectListItem("Tất cả",""),new SelectListItem("Trong 30 ngày","30"),new SelectListItem("Trong 7 ngày","7") }) })' />
+<p><a asp-area="Staff" asp-controller="OwnerRegistrations" asp-action="Index" asp-route-Status="Approved">@L["Hồ sơ đối tác đã duyệt"]</a></p>
+@foreach(var c in Model.Rows) {
+    Func<dynamic,IHtmlContent> identity = @<text><a asp-action="Details" asp-route-id="@c.Id" class="fw-semibold">@c.ContractNo</a><div>@c.HomestayName</div><small class="text-muted">@c.OwnerName · @c.OwnerPhone</small></text>;
+    Func<dynamic,IHtmlContent> state = @<text><status-badge value="@c.Status" /> @if(c.Status==ContractStatus.Active && c.EndDate>=Model.Today && c.EndDate<=Model.Today.AddDays(30)) { <span class="badge-tone tone-amber">@L["Sắp hết hạn"]</span> }</text>;
+    rows.Add(new(new IHtmlContent[] { identity(null!), state(null!), new HtmlContentBuilder().Append((c.CommissionRate*100).ToString("0.##")+"%"),new HtmlContentBuilder().Append(c.EndDate.ToString("dd/MM/yyyy")) }));
+}
+<partial name="_DataTable" model='new DataTableModel("Đối tác và hợp đồng",new TableColumn[] { new("Hợp đồng / đối tác"),new("Trạng thái"),new("Hoa hồng",Numeric:true),new("Ngày hết hạn") },rows,Model.Rows)' />

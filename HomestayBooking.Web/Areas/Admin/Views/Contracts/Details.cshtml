@@ -1,0 +1,27 @@
+@using HomestayBooking.Web.Services
+@model AdminContractDetails
+@{ var c=Model.Details.Contract; ViewData["Title"]=c.ContractNo;
+    var covering=ContractEligibility.Covers(Model.Today,Model.Today).Compile()(new Contract { Status=c.Status,StartDate=c.StartDate,EndDate=c.EndDate });
+    var facts=new DescriptionItem[] {
+        new("Homestay",new HtmlContentBuilder().Append(c.HomestayName)),new("Mã homestay",new HtmlContentBuilder().Append(c.HomestayId.ToString())),
+        new("Chủ homestay",new HtmlContentBuilder().Append(c.OwnerName)),new("Số điện thoại",new HtmlContentBuilder().Append(c.OwnerPhone)),
+        new("Ngày bắt đầu",new HtmlContentBuilder().Append(c.StartDate.ToString("dd/MM/yyyy"))),new("Ngày kết thúc",new HtmlContentBuilder().Append(c.EndDate.ToString("dd/MM/yyyy"))),
+        new("Hoa hồng",new HtmlContentBuilder().Append((c.CommissionRate*100).ToString("0.##")+"%")),new("Người ký",new HtmlContentBuilder().Append(Model.Details.SignedByName ?? L["Chưa có dữ liệu"].Value)) };
+}
+<partial name="_PageHead" model='new PageHeadModel(c.ContractNo,"","",c.HomestayName,ShowCreate:false)' />
+<partial name="_Breadcrumb" model='new BreadcrumbModel(new BreadcrumbItem[] { new("Đối tác và hợp đồng",Url.Action("Index")),new(c.ContractNo) })' />
+<div class="mb-4 d-flex flex-wrap gap-2"><status-badge value="@c.Status" /><span class="badge-tone @(covering ? "tone-emerald":"tone-amber")">@L[covering ? "Hiệu lực hôm nay":"Không hiệu lực hôm nay"]</span><a class="btn btn-outline-secondary" asp-controller="Homestays" asp-action="Details" asp-route-id="@c.HomestayId">@L["Xem nội dung homestay"]</a></div>
+<div class="fx-card p-4 mb-4"><partial name="_DescriptionList" model="facts" /></div>
+@if(c.Status==ContractStatus.Active) {
+@if(c.EndDate<DateOnly.MaxValue) {
+<section class="fx-card fx-form-card mb-4"><h2 class="fx-section-title">@L["Gia hạn hợp đồng"]</h2><p class="text-muted">@L["Gia hạn chỉ tăng ngày kết thúc, giữ tỷ lệ hoa hồng và snapshot của đơn cũ."]</p>
+<form asp-action="Extend" asp-route-id="@c.Id" method="post" data-confirm='@L["Xác nhận gia hạn hợp đồng?"]'>
+<label class="form-label" for="contract-end">@L["Ngày kết thúc mới"]</label><input id="contract-end" name="endDate" class="form-control mb-3" type="date" min="@c.EndDate.AddDays(1).ToString("yyyy-MM-dd")" required />
+<div class="fx-form-actions"><button class="btn btn-brand" type="submit" data-loading-text='@L["Đang lưu…"]'>@L["Gia hạn"]</button></div></form></section>
+}
+<section class="fx-card fx-form-card mb-4"><h2 class="fx-section-title">@L["Chấm dứt hợp đồng"]</h2><p class="text-muted">@L["Không thể chấm dứt khi còn đơn giữ lịch phòng. Các đơn liên quan sẽ được kiểm tra trước khi lưu."]</p>
+<form asp-action="Terminate" asp-route-id="@c.Id" method="post" data-confirm='@L["Chấm dứt hợp đồng này?"]' data-confirm-variant="danger">
+<label class="form-label" for="terminate-reason">@L["Lý do"]</label><textarea id="terminate-reason" name="reason" class="form-control mb-3" rows="3" required></textarea>
+<button class="btn btn-outline-danger" type="submit" data-loading-text='@L["Đang lưu…"]'>@L["Chấm dứt hợp đồng"]</button></form></section>
+}
+<partial name="_Timeline" model='new TimelineModel(Events:Model.Details.History.Select(h=>new TimelineItem(h.At,"Cập nhật hợp đồng",string.Join(" · ",new[] { h.EndDate?.ToString("dd/MM/yyyy"),h.Status is {} status ? L[AdminLabels.Label(status)].Value:null,h.Reason }.Where(s=>s is not null)))).ToArray())' />

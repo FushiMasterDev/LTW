@@ -22,6 +22,9 @@ public class StatusBadgeTagHelper(IStringLocalizer<SharedResource> localizer) : 
 
     public static Badge Describe(Enum value) => value switch
     {
+        ContractStatus s => new(Models.ViewModels.AdminLabels.Label(s), s == ContractStatus.Active ? "tone-emerald" : "tone-slate", null),
+        AccountStatus s => new(Models.ViewModels.AdminLabels.Label(s), s == AccountStatus.Active ? "tone-emerald" : "tone-amber", null),
+        EmploymentStatus s => new(Models.ViewModels.AdminLabels.Label(s), s == EmploymentStatus.Active ? "tone-emerald" : "tone-slate", null),
         BookingStatus s => new(s.DisplayName(), s.ToneClass(), s.Icon()),
         HomestayStatus s => new(s.DisplayName(), s.ToneClass(), null),
         OwnerRegistrationStatus s => new(s.DisplayName(), s.ToneClass(), null),

@@ -2798,4 +2798,161 @@
   <data name="Lịch sử trạng thái" xml:space="preserve"><value>Status history</value></data>
   <data name="Tháng" xml:space="preserve"><value>Month</value></data>
   <data name="Cọc" xml:space="preserve"><value>Deposit</value></data>
+  <data name="Báo cáo" xml:space="preserve"><value>Reports</value></data>
+  <data name="Chưa có dữ liệu" xml:space="preserve"><value>No data available</value></data>
+  <data name="Chấm dứt hợp đồng" xml:space="preserve"><value>Terminate contract</value></data>
+  <data name="Chấm dứt hợp đồng này?" xml:space="preserve"><value>Terminate this contract?</value></data>
+  <data name="Chất lượng homestay" xml:space="preserve"><value>Homestay quality</value></data>
+  <data name="Chỉ ký cho chủ đã được duyệt. Ngày bắt đầu không ở tương lai; hoa hồng từ 10% đến 15%." xml:space="preserve"><value>Only approved owners can sign. The start date cannot be in the future; commission must be 10–15%.</value></data>
+  <data name="Chỉ tiêu" xml:space="preserve"><value>Metric</value></data>
+  <data name="Chờ kích hoạt" xml:space="preserve"><value>Pending activation</value></data>
+  <data name="Chủ từ chối" xml:space="preserve"><value>Owner rejected</value></data>
+  <data name="Chức vụ" xml:space="preserve"><value>Position</value></data>
+  <data name="Chức vụ và việc làm" xml:space="preserve"><value>Position and employment</value></data>
+  <data name="Các chỉ tiêu tài chính (VND)" xml:space="preserve"><value>Financial metrics (VND)</value></data>
+  <data name="Cập nhật chức vụ và trạng thái làm việc? Thay đổi có thể vô hiệu phiên đăng nhập." xml:space="preserve"><value>Update position and employment status? This may invalidate active sessions.</value></data>
+  <data name="Cập nhật hợp đồng" xml:space="preserve"><value>Contract update</value></data>
+  <data name="Doanh thu thuần Fuji" xml:space="preserve"><value>Fuji net revenue</value></data>
+  <data name="Duyệt lại địa chỉ / giấy tờ" xml:space="preserve"><value>Address / document re-review</value></data>
+  <data name="Duyệt nội dung" xml:space="preserve"><value>Content review</value></data>
+  <data name="Duyệt nội dung và mở bán homestay? Service sẽ kiểm tra hợp đồng, giấy tờ và giá." xml:space="preserve"><value>Approve content and open this homestay for bookings? Contract, documents and prices will be checked.</value></data>
+  <data name="Dấu gạch ngang là chưa có dữ liệu. Biểu đồ sự cố chỉ gồm các tháng service trả về." xml:space="preserve"><value>A dash means no data. The incident chart includes only months returned by the service.</value></data>
+  <data name="Dữ liệu theo khoảng ngày Việt Nam, gồm cả ngày bắt đầu và kết thúc." xml:space="preserve"><value>Data uses Vietnam dates, including both start and end dates.</value></data>
+  <data name="Gia hạn" xml:space="preserve"><value>Extend</value></data>
+  <data name="Gia hạn chỉ tăng ngày kết thúc, giữ tỷ lệ hoa hồng và snapshot của đơn cũ." xml:space="preserve"><value>Extension moves the end date forward; commission and existing booking snapshots stay unchanged.</value></data>
+  <data name="Gia hạn hợp đồng" xml:space="preserve"><value>Extend contract</value></data>
+  <data name="Giá" xml:space="preserve"><value>Price</value></data>
+  <data name="Giá hiện tại và giá sắp tới" xml:space="preserve"><value>Current and upcoming prices</value></data>
+  <data name="Giấy tờ hiện tại" xml:space="preserve"><value>Current documents</value></data>
+  <data name="Giờ nhận / trả" xml:space="preserve"><value>Check-in / check-out time</value></data>
+  <data name="Hiệu lực hôm nay" xml:space="preserve"><value>Valid today</value></data>
+  <data name="Hiệu lực từ" xml:space="preserve"><value>Effective from</value></data>
+  <data name="Hiệu suất nhân viên" xml:space="preserve"><value>Employee performance</value></data>
+  <data name="Hoa hồng (%)" xml:space="preserve"><value>Commission (%)</value></data>
+  <data name="Homestay mới" xml:space="preserve"><value>New homestay</value></data>
+  <data name="Homestay trong báo cáo" xml:space="preserve"><value>Homestays in report</value></data>
+  <data name="Hàng chờ duyệt nội dung" xml:space="preserve"><value>Content review queue</value></data>
+  <data name="Hợp đồng / đối tác" xml:space="preserve"><value>Contract / partner</value></data>
+  <data name="Hợp đồng hết hạn trong 30 ngày" xml:space="preserve"><value>Contracts expiring within 30 days</value></data>
+  <data name="Hợp đồng sắp hết hạn" xml:space="preserve"><value>Expiring contracts</value></data>
+  <data name="Khoản bù đã chi" xml:space="preserve"><value>Compensation paid</value></data>
+  <data name="Khoảng báo cáo tối đa 366 ngày. Số liệu tài chính tạm tính theo ngày trả phòng; số đơn theo ngày tạo." xml:space="preserve"><value>Reports cover up to 366 days. Provisional finance uses check-out dates; booking counts use creation dates.</value></data>
+  <data name="Khách hủy" xml:space="preserve"><value>Customer cancelled</value></data>
+  <data name="Khóa tài khoản" xml:space="preserve"><value>Lock account</value></data>
+  <data name="Không hiệu lực hôm nay" xml:space="preserve"><value>Not valid today</value></data>
+  <data name="Không sao chép được. Hãy chọn và sao chép mật khẩu." xml:space="preserve"><value>Copy failed. Select and copy the password manually.</value></data>
+  <data name="Không thể chấm dứt khi còn đơn giữ lịch phòng. Service sẽ kiểm tra trước khi lưu." xml:space="preserve"><value>Contracts cannot be terminated while bookings still hold rooms. This is checked before saving.</value></data>
+  <data name="Kênh" xml:space="preserve"><value>Channel</value></data>
+  <data name="Kỳ {0} – {1}" xml:space="preserve"><value>Period {0} – {1}</value></data>
+  <data name="Loại ngày" xml:space="preserve"><value>Day type</value></data>
+  <data name="Lý do đưa vào hàng chờ" xml:space="preserve"><value>Reason for review</value></data>
+  <data name="Lưu thay đổi" xml:space="preserve"><value>Save changes</value></data>
+  <data name="Lượt đánh giá" xml:space="preserve"><value>Reviews</value></data>
+  <data name="Lấy mã homestay từ hồ sơ đối tác đã duyệt." xml:space="preserve"><value>Use the homestay ID from an approved partner application.</value></data>
+  <data name="Lối tắt quản lý" xml:space="preserve"><value>Management shortcuts</value></data>
+  <data name="Mật khẩu tạm" xml:space="preserve"><value>Temporary password</value></data>
+  <data name="Mật khẩu tạm chỉ hiện một lần. Chuyển riêng cho nhân viên và yêu cầu đổi mật khẩu sau khi đăng nhập." xml:space="preserve"><value>This temporary password is shown once. Share it privately and ask the employee to change it after signing in.</value></data>
+  <data name="Mật khẩu tạm được sinh ngẫu nhiên và chỉ hiện một lần sau khi lưu." xml:space="preserve"><value>A random temporary password is generated and shown once after saving.</value></data>
+  <data name="Mở khóa tài khoản" xml:space="preserve"><value>Unlock account</value></data>
+  <data name="Mở lại homestay" xml:space="preserve"><value>Resume homestay</value></data>
+  <data name="Ngày bắt đầu" xml:space="preserve"><value>Start date</value></data>
+  <data name="Ngày gửi" xml:space="preserve"><value>Submitted at</value></data>
+  <data name="Ngày kết thúc" xml:space="preserve"><value>End date</value></data>
+  <data name="Ngày kết thúc mới" xml:space="preserve"><value>New end date</value></data>
+  <data name="Người ký" xml:space="preserve"><value>Signed by</value></data>
+  <data name="Ngừng sử dụng" xml:space="preserve"><value>Disabled</value></data>
+  <data name="Nhân viên trong báo cáo" xml:space="preserve"><value>Employees in report</value></data>
+  <data name="Nội dung chờ duyệt" xml:space="preserve"><value>Content awaiting review</value></data>
+  <data name="Nội dung đang chờ Quản lý hoặc Quản trị viên duyệt." xml:space="preserve"><value>Content awaiting manager or administrator review.</value></data>
+  <data name="Phòng ban" xml:space="preserve"><value>Department</value></data>
+  <data name="Phút xác nhận trung bình" xml:space="preserve"><value>Average confirmation minutes</value></data>
+  <data name="Quyết định duyệt" xml:space="preserve"><value>Review decision</value></data>
+  <data name="Quản lý" xml:space="preserve"><value>Manager</value></data>
+  <data name="Quản lý được xem; chỉ Quản trị viên thay đổi tài khoản." xml:space="preserve"><value>Managers can view; only administrators can change accounts.</value></data>
+  <data name="Quản trị viên" xml:space="preserve"><value>Administrator</value></data>
+  <data name="Sao chép mật khẩu" xml:space="preserve"><value>Copy password</value></data>
+  <data name="Sắp hết hạn" xml:space="preserve"><value>Expiring soon</value></data>
+  <data name="Số hợp đồng" xml:space="preserve"><value>Contract number</value></data>
+  <data name="Số liệu tạm tính" xml:space="preserve"><value>Provisional figures</value></data>
+  <data name="Số liệu tạm tính; đối chiếu bảng đối soát trước khi chốt." xml:space="preserve"><value>Provisional figures; compare with settlement statements before closing.</value></data>
+  <data name="Số tiền (VND)" xml:space="preserve"><value>Amount (VND)</value></data>
+  <data name="Số đơn" xml:space="preserve"><value>Bookings</value></data>
+  <data name="Sức chứa" xml:space="preserve"><value>Capacity</value></data>
+  <data name="Sự cố theo tháng" xml:space="preserve"><value>Monthly incidents</value></data>
+  <data name="Theo dõi thời hạn và hoa hồng theo từng homestay." xml:space="preserve"><value>Track contract terms and commission by homestay.</value></data>
+  <data name="Thông tin homestay" xml:space="preserve"><value>Homestay information</value></data>
+  <data name="Tiền phòng hoàn thành" xml:space="preserve"><value>Completed room revenue</value></data>
+  <data name="Trong 30 ngày" xml:space="preserve"><value>Within 30 days</value></data>
+  <data name="Trong 7 ngày" xml:space="preserve"><value>Within 7 days</value></data>
+  <data name="Trên số đơn đã cọc, không bị thay thế." xml:space="preserve"><value>Of deposited bookings that were not replaced.</value></data>
+  <data name="Trên tổng đơn đã tạo." xml:space="preserve"><value>Of all created bookings.</value></data>
+  <data name="Trạng thái làm việc" xml:space="preserve"><value>Employment status</value></data>
+  <data name="Trạng thái tài khoản" xml:space="preserve"><value>Account status</value></data>
+  <data name="Tài chính" xml:space="preserve"><value>Finance</value></data>
+  <data name="Tài khoản nhân viên" xml:space="preserve"><value>Employee accounts</value></data>
+  <data name="Tìm hợp đồng, homestay, chủ" xml:space="preserve"><value>Find contracts, homestays or owners</value></data>
+  <data name="Tìm nhân viên" xml:space="preserve"><value>Find employees</value></data>
+  <data name="Tư vấn" xml:space="preserve"><value>Consultant</value></data>
+  <data name="Tạm ngừng làm việc" xml:space="preserve"><value>Employment suspended</value></data>
+  <data name="Tạo hợp đồng" xml:space="preserve"><value>Create contract</value></data>
+  <data name="Tạo nhân viên" xml:space="preserve"><value>Create employee</value></data>
+  <data name="Tệp" xml:space="preserve"><value>File</value></data>
+  <data name="Tổng đơn" xml:space="preserve"><value>Total bookings</value></data>
+  <data name="Từ chối nội dung" xml:space="preserve"><value>Reject content</value></data>
+  <data name="Từ chối nội dung và yêu cầu chủ chỉnh sửa?" xml:space="preserve"><value>Reject content and ask the owner to revise it?</value></data>
+  <data name="Tỷ lệ chốt (%)" xml:space="preserve"><value>Conversion (%)</value></data>
+  <data name="Tỷ lệ chốt = đơn nhân viên tạo được xác nhận / đơn nhân viên tạo. Hiển thị tỷ lệ do service trả về." xml:space="preserve"><value>Conversion = confirmed employee-created bookings / employee-created bookings. The rate is supplied by the service.</value></data>
+  <data name="Tỷ lệ chốt theo nhân viên (%)" xml:space="preserve"><value>Employee conversion (%)</value></data>
+  <data name="Tỷ lệ chủ từ chối" xml:space="preserve"><value>Owner rejection rate</value></data>
+  <data name="Tỷ lệ khách hủy" xml:space="preserve"><value>Customer cancellation rate</value></data>
+  <data name="Xem báo cáo" xml:space="preserve"><value>View reports</value></data>
+  <data name="Xem nội dung homestay" xml:space="preserve"><value>View homestay content</value></data>
+  <data name="Xác nhận gia hạn hợp đồng?" xml:space="preserve"><value>Confirm this contract extension?</value></data>
+  <data name="Xác nhận mở lại homestay?" xml:space="preserve"><value>Resume this homestay?</value></data>
+  <data name="Xác nhận thay đổi khóa tài khoản?" xml:space="preserve"><value>Confirm the account lock change?</value></data>
+  <data name="Xác nhận trong 30 phút" xml:space="preserve"><value>Confirmed within 30 minutes</value></data>
+  <data name="Đang hiển thị nội dung hiện tại. Chưa có bản trước thay đổi hoặc lý do chi tiết để so sánh địa chỉ và giấy tờ." xml:space="preserve"><value>Showing current content. Previous versions and detailed change reasons are unavailable for address and document comparison.</value></data>
+  <data name="Đang hiệu lực" xml:space="preserve"><value>Active</value></data>
+  <data name="Đang làm việc" xml:space="preserve"><value>Employed</value></data>
+  <data name="Điểm" xml:space="preserve"><value>Rating</value></data>
+  <data name="Điểm đánh giá theo homestay" xml:space="preserve"><value>Ratings by homestay</value></data>
+  <data name="Đã báo trùng phòng" xml:space="preserve"><value>Overbooking reported</value></data>
+  <data name="Đã chấm dứt" xml:space="preserve"><value>Terminated</value></data>
+  <data name="Đã hết hạn" xml:space="preserve"><value>Expired</value></data>
+  <data name="Đã khóa" xml:space="preserve"><value>Locked</value></data>
+  <data name="Đã nghỉ việc" xml:space="preserve"><value>Resigned</value></data>
+  <data name="Đã sao chép" xml:space="preserve"><value>Copied</value></data>
+  <data name="Đã thay thế" xml:space="preserve"><value>Replaced</value></data>
+  <data name="Đơn nhân viên tạo" xml:space="preserve"><value>Employee-created bookings</value></data>
+  <data name="Đơn theo trạng thái và kênh" xml:space="preserve"><value>Bookings by status and channel</value></data>
+  <data name="Đơn tạo" xml:space="preserve"><value>Created</value></data>
+  <data name="Đơn đã cọc không bị thay thế" xml:space="preserve"><value>Deposited bookings not replaced</value></data>
+  <data name="Được giao đang mở" xml:space="preserve"><value>Assigned open</value></data>
+  <data name="Được giao đã xong" xml:space="preserve"><value>Assigned finished</value></data>
+  <data name="Được xác nhận" xml:space="preserve"><value>Confirmed</value></data>
+  <data name="Đặt lại mật khẩu" xml:space="preserve"><value>Reset password</value></data>
+  <data name="Đặt lại mật khẩu của nhân viên này?" xml:space="preserve"><value>Reset this employee’s password?</value></data>
+  <data name="Đối tác và hợp đồng" xml:space="preserve"><value>Partners and contracts</value></data>
+  <data name="Ảnh hiện tại" xml:space="preserve"><value>Current photos</value></data>
+  <data name="Ảnh homestay" xml:space="preserve"><value>Homestay photo</value></data>
+  <data name="Chưa thể duyệt. Cần bổ sung: {0}" xml:space="preserve"><value>Cannot approve yet. Required: {0}</value></data>
+  <data name="Biểu đồ minh họa" xml:space="preserve"><value>Sample chart</value></data>
+  <data name="Mẫu" xml:space="preserve"><value>Sample</value></data>
+  <data name="Dữ liệu minh họa" xml:space="preserve"><value>Sample data</value></data>
+  <data name="Xu hướng theo tháng" xml:space="preserve"><value>Monthly trend</value></data>
+  <data name="Doanh thu thuần theo tháng (VND)" xml:space="preserve"><value>Monthly net revenue (VND)</value></data>
+  <data name="Lượt đặt theo tháng" xml:space="preserve"><value>Monthly bookings</value></data>
+  <data name="Hợp đồng đang hiệu lực" xml:space="preserve"><value>Valid contract</value></data>
+  <data name="Loại phòng có phòng đang bán" xml:space="preserve"><value>An active room type with active rooms</value></data>
+  <data name="Đủ ba giá hiệu lực hôm nay" xml:space="preserve"><value>All three prices effective today</value></data>
+  <data name="Chủ chưa được duyệt" xml:space="preserve"><value>Owner not approved</value></data>
+<data name="Tỷ lệ chốt = đơn nhân viên tạo được xác nhận / đơn nhân viên tạo." xml:space="preserve"><value>Conversion = confirmed employee-created bookings / employee-created bookings.</value></data>
+<data name="Dấu gạch ngang là chưa có dữ liệu. Biểu đồ sự cố chỉ gồm các tháng có sự cố." xml:space="preserve"><value>A dash means no data. The incident chart includes months with reported incidents.</value></data>
+<data name="Duyệt nội dung và mở bán homestay? Hợp đồng, giấy tờ và giá sẽ được kiểm tra." xml:space="preserve"><value>Approve content and open for bookings? Contract, documents and prices will be checked.</value></data>
+<data name="Không thể chấm dứt khi còn đơn giữ lịch phòng. Các đơn liên quan sẽ được kiểm tra trước khi lưu." xml:space="preserve"><value>Cannot terminate while bookings hold rooms. Related bookings will be checked before saving.</value></data>
+<data name="Xóa &quot;{0}&quot;? Tiện nghi đang được {1} homestay sử dụng; thao tác xóa sẽ bị chặn." xml:space="preserve"><value>Delete “{0}”? This amenity is used by {1} homestays; deletion will be blocked.</value></data>
+<data name="Hồ sơ đối tác đã duyệt" xml:space="preserve"><value>Approved partner applications</value></data>
+<data name="Website" xml:space="preserve"><value>Website</value></data>
+<data name="Zalo" xml:space="preserve"><value>Zalo</value></data>
+<data name="Messenger" xml:space="preserve"><value>Messenger</value></data>
 </root>

@@ -1,0 +1,15 @@
+@model ContractCreateForm
+@{ ViewData["Title"] = L["Tạo hợp đồng"]; }
+<partial name="_PageHead" model='new PageHeadModel("Tạo hợp đồng","","",ShowCreate:false)' />
+<partial name="_Breadcrumb" model='new BreadcrumbModel(new BreadcrumbItem[] { new("Đối tác và hợp đồng",Url.Action("Index")),new("Tạo hợp đồng") })' />
+<div class="fx-card fx-form-card">
+<p class="text-muted">@L["Chỉ ký cho chủ đã được duyệt. Ngày bắt đầu không ở tương lai; hoa hồng từ 10% đến 15%."]</p>
+<form asp-action="Create" method="post">
+<form-field asp-for="HomestayId" type="number" min="1" inputmode="numeric" hint='@L["Lấy mã homestay từ hồ sơ đối tác đã duyệt."]' />
+<form-field asp-for="ContractNo" autocomplete="off" />
+<form-field asp-for="StartDate" type="date" />
+<form-field asp-for="EndDate" type="date" />
+<form-field asp-for="CommissionPercent" type="number" min="10" max="15" step="0.01" />
+<div class="fx-form-actions"><button class="btn btn-brand" type="submit" data-loading-text='@L["Đang lưu…"]'>@L["Tạo hợp đồng"]</button><a asp-action="Index" class="btn btn-outline-secondary">@L["Hủy"]</a></div>
+</form></div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }
