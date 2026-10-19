@@ -44,8 +44,9 @@ public class BookingsController : Controller
     private Actor CurrentActor => new(ActorType.Owner, User.FindFirstValue(ClaimTypes.NameIdentifier));
 
     /// <summary>Việc cần làm trước: chờ xác nhận, rồi theo ngày nhận phòng gần nhất.</summary>
-    public async Task<IActionResult> Index(BookingStatus? status, string? q, int? page)
+    public async Task<IActionResult> Index(BookingStatus? status, string? q, int? page, DateOnly? arrivals = null)
     {
+        if (arrivals is { } date) return RedirectToAction("Index", "Schedule", new { date = date.ToString("yyyy-MM-dd") });
         var query = OwnBookings().AsNoTracking();
         if (status is not null)
         {

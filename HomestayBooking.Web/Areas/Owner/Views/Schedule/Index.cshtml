@@ -1,0 +1,18 @@
+@model OwnerScheduleModel
+@{ ViewData["Title"]=L["Lịch nhận–trả"]; }
+<partial name="_PageHead" model='new PageHeadModel("Lịch nhận–trả", "", "", ShowCreate:false)' />
+<partial name="_Tabs" model='new TabsModel("Khoảng ngày", new TabItem[] { new("Hôm nay",Url.Action("Index",new {period="today"})!,Model.Period=="today"),new("Ngày mai",Url.Action("Index",new {period="tomorrow"})!,Model.Period=="tomorrow"),new("7 ngày tới",Url.Action("Index",new {period="week"})!,Model.Period=="week") })' />
+<p class="text-muted">@Model.From.ToString("dd/MM/yyyy") – @Model.Through.ToString("dd/MM/yyyy")</p>
+@foreach(var group in new[] { (Label:"Nhận phòng", Rows:Model.Schedule.Arrivals), (Label:"Trả phòng", Rows:Model.Schedule.Departures) }) {
+    <h2 class="h5 mt-4">@L[group.Label]</h2>
+    var rows=new List<TableRow>();
+    foreach(var b in group.Rows.OrderBy(b=>group.Label=="Nhận phòng" ? b.CheckIn : b.CheckOut)) {
+        Func<dynamic,IHtmlContent> date = @<text>@((group.Label=="Nhận phòng" ? b.CheckIn : b.CheckOut).ToString("dd/MM/yyyy"))</text>;
+        Func<dynamic,IHtmlContent> guest = @<text>@b.ContactName<div><a class="btn btn-link px-0" href="tel:@b.ContactPhone">@b.ContactPhone</a></div></text>;
+        Func<dynamic,IHtmlContent> room = @<text>@b.HomestayName · @b.RoomCode</text>;
+        Func<dynamic,IHtmlContent> stay = @<text><date-range from="@b.CheckIn" to="@b.CheckOut" /></text>;
+        Func<dynamic,IHtmlContent> link = @<text><a class="btn btn-link px-0" asp-controller="Bookings" asp-action="Details" asp-route-id="@b.BookingId">@b.Code</a></text>;
+        rows.Add(new(new IHtmlContent[] {date(null!),guest(null!),room(null!),stay(null!),link(null!)}));
+    }
+    <partial name="_DataTable" model='new DataTableModel(group.Label,new TableColumn[] {new("Ngày"),new("Khách"),new("Phòng"),new("Lưu trú"),new("Mã đơn")},rows)' />
+}
