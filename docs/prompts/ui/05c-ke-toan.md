@@ -1,8 +1,8 @@
 # Bước 5c – Màn mới cho kế toán
 
-Đọc `docs/prompts/ui-rebuild.md`, `DESIGN.md`, `docs/prompts/ui/05a-chu-homestay.md` (**mục "Luật controller", áp dụng nguyên văn**), `docs/ui/inventory.md`, `docs/ui/backend-gaps.md`, `docs/ui/decisions.md`. Xem `/Dev/UiKit`.
+Đọc `docs/prompts/ui-rebuild.md`, `DESIGN.md`, `docs/prompts/ui/05a-chu-homestay.md` (**mục "Hiện trạng và luật chung" và mục "Luật controller", áp dụng nguyên văn**), `docs/ui/inventory.md`, `docs/ui/backend-gaps.md`, `docs/ui/decisions.md`. Xem `/Dev/UiKit`.
 
-Skill: `minimalist-ui`, `full-output-enforcement`.
+Skill: `minimalist-ui` (chỉ mục cấm, thông số component, icon), `ui-animation`, `full-output-enforcement`, `web-design-guidelines`.
 
 ## Các màn (area `Accounting`, policy `Accounting`, gom vào `_Tabs` của khu kế toán)
 

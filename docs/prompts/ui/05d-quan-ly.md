@@ -1,8 +1,8 @@
 # Bước 5d – Màn mới cho quản lý / quản trị viên
 
-Đọc `docs/prompts/ui-rebuild.md`, `DESIGN.md`, `docs/prompts/ui/05a-chu-homestay.md` (**mục "Luật controller", áp dụng nguyên văn**), `docs/ui/inventory.md`, `docs/ui/backend-gaps.md`, `docs/ui/decisions.md`. Xem `/Dev/UiKit`.
+Đọc `docs/prompts/ui-rebuild.md`, `DESIGN.md`, `docs/prompts/ui/05a-chu-homestay.md` (**mục "Hiện trạng và luật chung" và mục "Luật controller", áp dụng nguyên văn**), `docs/ui/inventory.md`, `docs/ui/backend-gaps.md`, `docs/ui/decisions.md`. Xem `/Dev/UiKit`.
 
-Skill: `minimalist-ui`, `dataviz` (đọc trước khi vẽ biểu đồ), `full-output-enforcement`.
+Skill: `minimalist-ui` (chỉ mục cấm, thông số component, icon), `ui-animation`, `full-output-enforcement`, `web-design-guidelines`. Dự án không có skill `dataviz`: biểu đồ theo mục "Biểu đồ" của 05a và tham khảo bản mẫu `/admin` (miền xanh rừng cho xu hướng, cột cam đất cho so sánh).
 
 ## Các màn (area `Admin`, policy `Management`; thao tác chỉ Quản trị viên được làm thì theo đúng quyền service yêu cầu)
 
@@ -14,7 +14,7 @@ Skill: `minimalist-ui`, `dataviz` (đọc trước khi vẽ biểu đồ), `full
 4. **Báo cáo (FR-20):** `ReportService.ManagementAsync/BookingsAsync/FinancialAsync/EmployeesAsync/HomestaysAsync`.
    - Một trang có `_Tabs`: Tổng quan / Đơn / Tài chính / Nhân viên / Homestay. Bộ lọc khoảng ngày dùng chung.
    - Hàng `_StatCard` + biểu đồ Chart.js (đường cho xu hướng theo thời gian, cột cho so sánh nhân viên/homestay) + bảng số liệu chi tiết bên dưới.
-   - Màu biểu đồ lấy từ biến CSS `--fx-primary` và `tone-*`, đọc qua `getComputedStyle`, vẽ lại khi đổi sáng/tối.
+   - Màu biểu đồ lấy từ biến CSS `--fx-primary`, `--fx-accent` và `tone-*`, đọc qua `getComputedStyle`, vẽ lại khi đổi sáng/tối.
    - Tỷ lệ chốt FR-20 = đơn nhân viên tạo được xác nhận / đơn nhân viên tạo. Hiện đúng như service trả về, không tự tính lại.
    - Biểu đồ có `aria-label` và bảng số liệu thay thế cho trình đọc màn hình.
 5. **Tài khoản nhân viên (FR-21):** `AccountAdminService.ListAsync/CreateEmployeeAsync/ChangeEmploymentAsync/SetLockedAsync/ResetEmployeePasswordAsync`.
@@ -22,7 +22,7 @@ Skill: `minimalist-ui`, `dataviz` (đọc trước khi vẽ biểu đồ), `full
    - Form tạo: mã nhân viên, họ tên, SĐT, email, chức vụ, phòng ban (`Department`, B8).
    - Đổi chức vụ/nghỉ việc; khóa/mở khóa và đặt lại mật khẩu đều có xác nhận. Mật khẩu tạm hiện **một lần** qua `TempData`, kèm nút sao chép.
 6. **Danh mục:** rà các màn `Amenities`, `Areas`, `Holidays`, `RoomCategories` đã chuyển ở bước 4. Bảo đảm thao tác xóa đi qua `CatalogDeletionService` và báo rõ khi mục đang được dùng.
-7. **Dashboard Admin:** số đơn/doanh thu/hoa hồng kỳ này (từ `ReportService.ManagementAsync`), hợp đồng sắp hết hạn (`ContractService.ListAsync`), nội dung chờ duyệt, hồ sơ chờ thẩm định, lối tắt tới báo cáo.
+7. **Dashboard Admin:** số đơn/doanh thu/hoa hồng kỳ này (từ `ReportService.ManagementAsync`; có thể thêm biểu đồ doanh thu và lượt đặt như bản mẫu `/admin` nếu service trả dữ liệu theo tháng), hợp đồng sắp hết hạn (`ContractService.ListAsync`), nội dung chờ duyệt, hồ sơ chờ thẩm định, lối tắt tới báo cáo.
 
 ## Kết quả bàn giao
 

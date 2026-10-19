@@ -1,8 +1,8 @@
 # Bước 5b – Màn mới cho nhân viên
 
-Đọc `docs/prompts/ui-rebuild.md`, `DESIGN.md`, `docs/prompts/ui/05a-chu-homestay.md` (**mục "Luật controller", áp dụng nguyên văn**), `docs/ui/inventory.md`, `docs/ui/backend-gaps.md`, `docs/ui/decisions.md`. Xem `/Dev/UiKit`.
+Đọc `docs/prompts/ui-rebuild.md`, `DESIGN.md`, `docs/prompts/ui/05a-chu-homestay.md` (**mục "Hiện trạng và luật chung" và mục "Luật controller", áp dụng nguyên văn**), `docs/ui/inventory.md`, `docs/ui/backend-gaps.md`, `docs/ui/decisions.md`. Xem `/Dev/UiKit`.
 
-Skill: `minimalist-ui`, `full-output-enforcement`.
+Skill: `minimalist-ui` (chỉ mục cấm, thông số component, icon), `ui-animation`, `full-output-enforcement`, `web-design-guidelines`.
 
 ## Các màn (area `Staff`, policy `Employee`; thao tác cần quyền quản lý dùng đúng policy service yêu cầu)
 
@@ -34,7 +34,7 @@ Skill: `minimalist-ui`, `full-output-enforcement`.
 
 - `dotnet build`, `dotnet test` pass.
 - Đăng nhập `NV001`: tìm đơn theo SĐT, nhận đơn, đặt hộ cho SĐT mới, xem phòng trống. Thử mở URL duyệt nội dung homestay: phải bị chặn.
-- Đăng nhập `QL001`: giao đơn cho `NV002`, thẩm định 1 hồ sơ (bản seed `0912000006` đang PendingReview), xử lý 1 ca trùng phòng.
+- Đăng nhập `QL001`: giao đơn cho `NV002`, thẩm định 1 hồ sơ (bản seed `0912000006` đang PendingReview; hồ sơ thử #1002 của SĐT `0977123456` tạo ở bước 03 cũng đang PendingReview), xử lý 1 ca trùng phòng.
 
 ## Báo cáo rồi dừng
 
