@@ -179,7 +179,14 @@ builder.Services.AddSession(o =>
 });
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(o =>
+{
+    o.SwaggerDoc("v1", new() { Title = "Fuji Homestay API", Version = "v1", Description = "API công khai cho tìm kiếm, lịch trống, báo giá, tra cứu đơn và số thông báo chưa đọc." });
+    var xml = Path.Combine(AppContext.BaseDirectory, $"{typeof(Program).Assembly.GetName().Name}.xml");
+    if (File.Exists(xml)) o.IncludeXmlComments(xml);
+    // Chỉ đưa Web API (/api/...) lên Swagger; các action MVC có attribute route (alias /{id}) không phải API
+    o.DocInclusionPredicate((_, api) => api.RelativePath?.StartsWith("api/", StringComparison.OrdinalIgnoreCase) == true);
+});
 
 var app = builder.Build();
 

@@ -8,9 +8,9 @@
     var today = VietnamTime.Today(Clock);
     var nights = q.HasDates ? q.CheckOut!.Value.DayNumber - q.CheckIn!.Value.DayNumber : 0;
     var reviews = Model.Reviews;
-    // Bộ chọn ngày ở cấp homestay chỉ khóa đêm hết phòng khi homestay bán đúng một loại phòng (endpoint tính theo loại phòng).
+    // Bộ chọn ngày ở cấp homestay chỉ khóa đêm hết phòng khi homestay bán đúng một loại phòng (API /api/rooms/{id}/availability tính theo loại phòng).
     var blockedUrl = Model.RoomTypes.Count == 1
-        ? Url.Action("BlockedDates", new { roomTypeId = Model.RoomTypes[0].Id, from = today.ToString("yyyy-MM-dd"), to = today.AddDays(92).ToString("yyyy-MM-dd") })
+        ? $"{Url.Content("~/api/rooms/")}{Model.RoomTypes[0].Id}/availability?from={today:yyyy-MM-dd}&to={today.AddDays(92):yyyy-MM-dd}"
         : null;
     var cheapest = Model.RoomTypes.Where(t => t.Quote is not null && t.FreeRooms > 0 && t.MaxGuests >= q.Guests).MinBy(t => t.Quote!.Total);
     var price = new PriceBreakdownModel(cheapest?.Quote is { } quote

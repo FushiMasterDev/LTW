@@ -184,6 +184,11 @@
             <div class="col-md-6"><form-field asp-for="Guests" min="1" max="20" /></div>
             <div class="col-md-6"><form-field asp-for="CheckIn" type="date" /></div>
             <div class="col-12"><form-field asp-for="Note" type="textarea" rows="3" hint="Tối đa 500 ký tự." /></div>
+            <div class="col-12 mb-3 fx-field">
+                <label class="form-label" for="kit-rich-text">Mô tả homestay (trình soạn thảo, <code>rich-text="true"</code>)</label>
+                <textarea class="form-control" id="kit-rich-text" rows="6" data-rich-text><p>Nhà gỗ <strong>3 tầng</strong> gần hồ Tây.</p><ul><li>Ban công nhìn hồ</li><li>Bếp chung</li></ul></textarea>
+                <div class="form-text">TinyMCE 6 (MIT) tự host; không JS vẫn là textarea. Server lọc HTML bằng HtmlSanitizer trước khi lưu.</div>
+            </div>
             <div class="col-12"><form-field asp-for="Subscribe" /></div>
         </div>
         <button type="submit" class="btn btn-brand" name="errors" value="true">Gửi thử (kiểm tra lỗi)</button>
@@ -459,6 +464,8 @@
     <script src="~/js/components/date-range-picker.js" asp-append-version="true"></script>
     <script src="~/js/components/guest-picker.js" asp-append-version="true"></script>
     <script src="~/js/components/upload-zone.js" asp-append-version="true"></script>
+    <script src="~/lib/tinymce/tinymce.min.js"></script>
+    <script src="~/js/components/rich-text.js" asp-append-version="true"></script>
     <partial name="_AutoplayScripts" />
     <script src="~/js/motion/flip-lightbox.js" asp-append-version="true"></script>
     <script src="~/js/components/uikit.js" asp-append-version="true"></script>

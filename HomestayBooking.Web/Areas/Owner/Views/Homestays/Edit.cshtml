@@ -13,8 +13,8 @@ var tabs = new[] { ("info","Thông tin"), ("location","Địa chỉ"), ("rooms",
         <form-field asp-for="Content.ContactPhone" type="tel" autocomplete="tel" />
         <form-field asp-for="Content.CheckinTime" type="time" />
         <form-field asp-for="Content.CheckoutTime" type="time" />
-        <form-field asp-for="Content.DescriptionHtml" type="textarea" />
-        <form-field asp-for="Content.CheckinGuideHtml" type="textarea" />
+        <form-field asp-for="Content.DescriptionHtml" type="textarea" rows="8" rich-text="true" />
+        <form-field asp-for="Content.CheckinGuideHtml" type="textarea" rows="6" rich-text="true" />
         <partial name="_OwnerSave" />
     </form>
 } else if (Model.Tab == "location") {
@@ -44,4 +44,6 @@ var tabs = new[] { ("info","Thông tin"), ("location","Địa chỉ"), ("rooms",
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/components/upload-zone.js" asp-append-version="true"></script>
     <script src="~/js/components/owner-forms.js" asp-append-version="true"></script>
+    <script src="~/lib/tinymce/tinymce.min.js"></script>
+    <script src="~/js/components/rich-text.js" asp-append-version="true"></script>
 }

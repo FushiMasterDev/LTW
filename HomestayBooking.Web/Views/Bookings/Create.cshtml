@@ -11,7 +11,7 @@
         ? quote.Nights.Select(n => new PriceLine($"{n.Date:dd/MM (ddd)} · {DayLabel(n.DayType)}", n.Price))
             .Append(new PriceLine("Tổng tiền phòng", quote.Total)).Append(new PriceLine("Cọc cần thanh toán ngay", quote.Deposit)).ToList()
         : null;
-    var blockedUrl = Url.Action("BlockedDates", "Homestays", new { roomTypeId = Model.RoomTypeId, from = today.ToString("yyyy-MM-dd"), to = today.AddDays(92).ToString("yyyy-MM-dd") });
+    var blockedUrl = $"{Url.Content("~/api/rooms/")}{Model.RoomTypeId}/availability?from={today:yyyy-MM-dd}&to={today.AddDays(92):yyyy-MM-dd}";
     var text = new Dictionary<string, string>
     {
         ["total"] = L["Tổng tiền phòng"], ["deposit"] = L["Cọc (30%)"], ["discount"] = L["Giảm từ voucher"],

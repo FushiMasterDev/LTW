@@ -29,6 +29,10 @@ public class FormFieldTagHelper(IHtmlGenerator generator) : TagHelper
     public int Rows { get; set; } = 4;
     public bool Autofocus { get; set; }
 
+    /// <summary>Chỉ với type="textarea": gắn data-rich-text để js/components/rich-text.js bật trình soạn thảo TinyMCE.
+    /// Không có JS thì vẫn là textarea thường; server luôn lọc HTML bằng HtmlSanitizer.</summary>
+    public bool RichText { get; set; }
+
     /// <summary>Class thêm cho khối bọc (mặc định mb-3).</summary>
     public string? Wrapper { get; set; }
 
@@ -49,6 +53,7 @@ public class FormFieldTagHelper(IHtmlGenerator generator) : TagHelper
         if (Hint is not null) controlAttributes.Add("aria-describedby", hintId);
         if (Autofocus) controlAttributes.Add("autofocus", "autofocus");
         if (tag == "textarea") controlAttributes.Add("rows", Rows.ToString());
+        if (tag == "textarea" && RichText) controlAttributes.Add("data-rich-text", "");
         foreach (var attribute in output.Attributes.Where(a => a.Name is "placeholder" or "autocomplete" or "inputmode" or "min" or "max" or "step" or "readonly" or "disabled"))
             controlAttributes.Add(attribute);
         if (tag == "input" && Placeholder is not null) controlAttributes.SetAttribute("placeholder", Placeholder);

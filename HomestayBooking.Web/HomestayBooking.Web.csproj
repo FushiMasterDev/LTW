@@ -5,6 +5,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>8f77517d-e81d-4583-8653-3e963086e2f8</UserSecretsId>
+    <!-- Mô tả XML cho Swagger (/swagger); không bắt buộc chú thích mọi public member -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591;1573</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

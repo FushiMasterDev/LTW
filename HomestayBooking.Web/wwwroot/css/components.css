@@ -1064,3 +1064,20 @@
 @media (max-width: 991.98px) {
   .fx-table td.fx-table__empty { display: block; }
 }
+
+/* ---------- Trình soạn thảo (TinyMCE, js/components/rich-text.js) ----------
+   Khung, thanh công cụ theo token để hợp ô nhập khác ở cả sáng/tối; vùng soạn trong iframe lấy màu qua content_style. */
+.fx-field .tox.tox-tinymce {
+  border: 1px solid var(--fx-border-strong);
+  border-radius: var(--fx-radius-sm);
+}
+
+.fx-field .tox:not(.tox-tinymce-inline) .tox-editor-header,
+.fx-field .tox .tox-toolbar-overlord,
+.fx-field .tox .tox-toolbar__primary {
+  background: var(--fx-surface-2);
+}
+
+.fx-field .tox .tox-edit-area::before {
+  border-color: var(--fx-focus);
+}
