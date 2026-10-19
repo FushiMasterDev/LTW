@@ -230,7 +230,9 @@ public class SettlementService(ApplicationDbContext db, NotificationService noti
         else if (bankRef?.Length > 100) throw new BookingException("Mã giao dịch tối đa 100 ký tự.");
         var old = State(row); row.Status = SettlementStatus.Paid; row.PaidAt = paidAt; row.UpdatedAt = Now;
         row.PaidByEmployeeId = employee.Id; row.PaidBankRef = bankRef;
-        Audit(row, actor, old, "Paid", $"Số tiền: {row.PayoutAmount}; ngày chuyển UTC: {paidAt:O}"); await NotifyOwnerAsync(row, "đã được Fuji chuyển tiền"); return row;
+        var vi = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+        Audit(row, actor, old, "Paid", $"Số tiền: {row.PayoutAmount.ToString("N0", vi)}đ; ngày chuyển: {VietnamTime.ToLocal(paidAt).ToString("HH:mm dd/MM/yyyy", vi)} (giờ Việt Nam)");
+        await NotifyOwnerAsync(row, "đã được Fuji chuyển tiền"); return row;
     });
 
     public async Task<PaginatedList<Settlement>> ListAsync(SettlementQuery query, Actor actor)

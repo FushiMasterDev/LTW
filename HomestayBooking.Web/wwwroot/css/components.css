@@ -17,6 +17,14 @@
   transition: none;
 }
 
+/* Bootstrap đặt outline: 0 cho .btn:focus-visible và vẽ vòng bằng --bs-btn-focus-shadow-rgb; nút dùng màu token
+   (btn-brand, nút ngôn ngữ đang chọn, link bỏ qua) không có biến đó nên mất vòng focus. Dùng chung vòng --fx-focus. */
+.btn:focus-visible,
+.btn-check:focus-visible + .btn {
+  outline: 3px solid var(--fx-focus);
+  outline-offset: 2px;
+}
+
 .btn-lg {
   min-height: 3.25rem;
   --bs-btn-font-size: 1.05rem;
@@ -25,6 +33,13 @@
 .btn-sm {
   min-height: 2.25rem;
   padding-inline: 0.75rem;
+}
+
+/* Điện thoại: vùng bấm tối thiểu 44px (DESIGN.md), kể cả nút nhỏ trong bộ lọc và thao tác dòng */
+@media (max-width: 575.98px) {
+  .btn-sm {
+    min-height: 2.75rem;
+  }
 }
 
 .btn-brand,

@@ -145,6 +145,25 @@
   border-bottom: 1px solid var(--fx-border);
 }
 
+.auth-header .lang-switch,
+.auth-header .theme-toggle,
+.auth-header .dropdown {
+  flex-shrink: 0;
+}
+
+/* Đã đăng nhập (Đổi mật khẩu, AccessDenied): logo + VI/EN + giao diện + menu tài khoản không vừa 375px.
+   Ẩn chữ thương hiệu về mặt hiển thị, giữ logo và tên đọc được cho trình đọc màn hình. */
+@media (max-width: 419.98px) {
+  .auth-header:has(.dropdown) .brand-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
 .auth-footer {
   border-top: 1px solid var(--fx-border);
   color: var(--fx-muted);

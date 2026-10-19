@@ -1637,6 +1637,9 @@
   <data name="Xem" xml:space="preserve">
     <value>View</value>
   </data>
+  <data name="Xem chi tiết" xml:space="preserve">
+    <value>View details</value>
+  </data>
   <data name="Về danh sách đơn" xml:space="preserve">
     <value>Back to bookings</value>
   </data>

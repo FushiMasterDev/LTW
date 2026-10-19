@@ -21,6 +21,11 @@ public sealed class B9FinanceTests
         var log = await h.Db.AuditLogs.OrderByDescending(a => a.Id).FirstAsync();
         Assert.Contains(row.PayoutAmount.ToString(System.Globalization.CultureInfo.InvariantCulture), log.NewValues!);
         Assert.Contains(paidAt.ToString("O").Substring(0,19), log.NewValues!);
+        var vi = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+        var note = System.Text.RegularExpressions.Regex.Unescape(log.NewValues!);
+        Assert.Contains($"Số tiền: {row.PayoutAmount.ToString("N0", vi)}đ", note);
+        Assert.Contains($"ngày chuyển: {VietnamTime.ToLocal(paidAt).ToString("HH:mm dd/MM/yyyy", vi)} (giờ Việt Nam)", note);
+        Assert.DoesNotContain("ngày chuyển UTC", note);
     }
 
     [Theory]
