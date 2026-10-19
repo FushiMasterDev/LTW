@@ -197,3 +197,5 @@
   --bs-danger-rgb: 240, 146, 138;
   --bs-info-rgb: 143, 185, 218;
 }
+
+:root { --fx-chart-fill: color-mix(in srgb, var(--fx-primary) 16%, transparent); }

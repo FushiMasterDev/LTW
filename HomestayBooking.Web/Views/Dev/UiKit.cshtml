@@ -24,6 +24,9 @@
         ("OwnerRegistrationStatus", Enum.GetValues<OwnerRegistrationStatus>().Cast<Enum>().ToArray()),
         ("BankMatchStatus", Enum.GetValues<BankMatchStatus>().Cast<Enum>().ToArray()),
         ("VoucherStatus", Enum.GetValues<VoucherStatus>().Cast<Enum>().ToArray()),
+        ("ContractStatus", Enum.GetValues<ContractStatus>().Cast<Enum>().ToArray()),
+        ("AccountStatus", Enum.GetValues<AccountStatus>().Cast<Enum>().ToArray()),
+        ("EmploymentStatus", Enum.GetValues<EmploymentStatus>().Cast<Enum>().ToArray()),
     };
     var sampleRows = new (string Code, string Guest, DateOnly In, DateOnly Out, decimal Total, BookingStatus Status)[]
     {
@@ -444,7 +447,11 @@
  <partial name="_OverbookingAlternative" model='new OverbookingAlternativeModel(0,new OverbookingAlternative(new AvailabilityOffer(0,"Homestay mẫu UI Kit",0,"Khu vực mẫu",0,"Phòng đôi",0,2,1,2,1500000m,null,0),200000m),Preview:true)' />
  <partial name="_RegistrationDocuments" model="Array.Empty<RegistrationDocument>()" />
 </section>
+<section class="uikit-section" aria-label="Biểu đồ báo cáo và bảng thay thế">
+<partial name="_ReportChart" model='new ReportChartModel("uikit-chart","Biểu đồ minh họa","bar",new[] {"A","B"},new[] {new ReportChartSeries("Mẫu",new double?[] {2,3})},new DataTableModel("Dữ liệu minh họa",new TableColumn[] {new("Mẫu"),new("Số lượng",Numeric:true)},new TableRow[] {new(new IHtmlContent[] {new HtmlContentBuilder().Append("A"),new HtmlContentBuilder().Append("2")}),new(new IHtmlContent[] {new HtmlContentBuilder().Append("B"),new HtmlContentBuilder().Append("3")})}))' />
+</section>
 @section Scripts {
+<script src="~/lib/chartjs/chart.umd.min.js"></script><script src="~/js/components/report-charts.js" asp-append-version="true"></script>
     <script src="~/js/components/payment-qr.js" asp-append-version="true"></script>
     <script src="~/js/components/room-calendar.js" asp-append-version="true"></script>
     <script src="~/lib/flatpickr/flatpickr.min.js"></script>

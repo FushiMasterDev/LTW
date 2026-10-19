@@ -1,0 +1,12 @@
+@using System.Text.Json
+@model ReportChartModel
+<section class="mb-4" aria-labelledby="@(Model.Id)-title">
+<div class="fx-card p-4 mb-3"><h2 class="fx-section-title" id="@(Model.Id)-title">@L[Model.Title]</h2>
+@if(Model.Labels.Count>0) {
+<div class="fx-report-chart" data-report-chart hidden><canvas role="img" aria-label="@L[Model.Title]" aria-describedby="@(Model.Id)-table"></canvas>
+<script type="application/json" data-chart-config>@Html.Raw(JsonSerializer.Serialize(new { Model.Type, Model.Labels, Model.Series }))</script>
+<span class="visually-hidden tone-rose" data-chart-tone="rose"></span><span class="visually-hidden tone-emerald" data-chart-tone="emerald"></span>
+</div>
+} else {<partial name="_EmptyState" />}
+</div><div id="@(Model.Id)-table"><partial name="_DataTable" model="Model.Table" /></div>
+</section>

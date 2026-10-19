@@ -1,0 +1,13 @@
+@model AdminReportModel
+@{ViewData["Title"]=L["Báo cáo"]; var q=Model.Query;
+var tabs=new[] {("overview","Tổng quan"),("bookings","Đơn"),("finance","Tài chính"),("employees","Nhân viên"),("homestays","Homestay")};}
+<partial name="_PageHead" model='new PageHeadModel("Báo cáo","","","Dữ liệu theo khoảng ngày Việt Nam, gồm cả ngày bắt đầu và kết thúc.",ShowCreate:false)' />
+<partial name="_Tabs" model='new TabsModel("Báo cáo",tabs.Select(t=>new TabItem(t.Item2,Url.Action("Index",new {tab=t.Item1,from=q.From.ToString("yyyy-MM-dd"),to=q.To.ToString("yyyy-MM-dd")})!,Model.Tab==t.Item1)).ToArray())' />
+<partial name="_FilterBar" model='new FilterBarModel("report-filter",new FilterField[] {new("from","Từ ngày",q.From.ToString("yyyy-MM-dd"),Type:"date"),new("to","Đến ngày",q.To.ToString("yyyy-MM-dd"),Type:"date")})' />
+<p class="text-muted">@L["Khoảng báo cáo tối đa 366 ngày. Số liệu tài chính tạm tính theo ngày trả phòng; số đơn theo ngày tạo."]</p>
+@if(Model.Bookings is {} bookings){<partial name="_Bookings" model="bookings" />}
+@if(Model.Finance is {} finance){<partial name="_Finance" model="finance" />}
+@if(Model.Tab=="employees" && Model.Employees is {} employees){<partial name="_Employees" model="employees" />}
+@if(Model.Tab=="homestays" && Model.Homestays is {} homestays){<partial name="_Homestays" model="homestays" />}
+@if(Model.Months is {} months){<partial name="_Trends" model="months" />}
+@section Scripts { <script src="~/lib/chartjs/chart.umd.min.js"></script><script src="~/js/components/report-charts.js" asp-append-version="true"></script> }

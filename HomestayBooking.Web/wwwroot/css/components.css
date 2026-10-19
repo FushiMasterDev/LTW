@@ -1032,3 +1032,5 @@
 
 /* Kéo chọn khoảng đêm là tùy chọn của RoomCalendar; vùng ngoài ô vẫn cuộn được. */
 .fx-room-calendar[data-range-selection="true"] [data-calendar-night] { touch-action: none; user-select: none; }
+
+.fx-report-chart { position: relative; height: 21rem; min-width: 0; }

@@ -1,0 +1,7 @@
+@using HomestayBooking.Web.Services
+@model FinancialReport
+@{var values=new (string Label,decimal Amount)[] {("Tiền phòng hoàn thành",Model.CompletedRoomAmount),("Tiền giữ lại",Model.Retained),("Hoa hồng",Model.Commission),("Doanh thu thuần Fuji",Model.FujiNet),("Khoản bù đã chi",Model.CompensationPaid)};
+var rows=new List<TableRow>(); foreach(var v in values){Func<dynamic,IHtmlContent> money=@<text><money value="@v.Amount" /></text>;rows.Add(new(new IHtmlContent[] {new HtmlContentBuilder().Append(L[v.Label].Value),money(null!)}));}}
+<div class="row g-3 mb-4">@foreach(var v in values.Take(4)){<div class="col-sm-6 col-xl-3"><partial name="_StatCard" model='new StatCardModel(v.Label,v.Amount.ToString("N0",System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))+"đ","cash-stack")' /></div>}</div>
+@if(Model.IsProvisional){<partial name="_Alert" model='new AlertModel(L["Số liệu tạm tính; đối chiếu bảng đối soát trước khi chốt."].Value,"warning")' />}
+<partial name="_ReportChart" model='new ReportChartModel("finance-chart","Các chỉ tiêu tài chính (VND)","bar",values.Select(v=>L[v.Label].Value).ToArray(),new[] {new ReportChartSeries(L["Số tiền (VND)"],values.Select(v=>(double?)v.Amount).ToArray())},new DataTableModel("Các chỉ tiêu tài chính (VND)",new TableColumn[] {new("Chỉ tiêu"),new("Số tiền",Numeric:true)},rows))' />

@@ -1,0 +1,10 @@
+@model IReadOnlyList<AdminReportMonth>
+@{var labels=Model.Select(m=>m.From.ToString("MM/yyyy")).ToArray();}
+@if(Model.Any(m=>m.NetRevenue.HasValue)) {
+var rows=new List<TableRow>();foreach(var m in Model){Func<dynamic,IHtmlContent> money=@<text><money value="@(m.NetRevenue ?? 0)" /></text>;rows.Add(new(new IHtmlContent[] {new HtmlContentBuilder().Append(m.From.ToString("dd/MM/yyyy")+" – "+m.To.ToString("dd/MM/yyyy")),money(null!)}));}
+<partial name="_ReportChart" model='new ReportChartModel("revenue-trend","Doanh thu thuần theo tháng (VND)","line",labels,new[] {new ReportChartSeries(L["Doanh thu thuần Fuji"],Model.Select(m=>(double?)m.NetRevenue).ToArray(),"primary")},new DataTableModel("Doanh thu thuần theo tháng (VND)",new TableColumn[] {new("Khoảng ngày"),new("Số tiền",Numeric:true)},rows))' />
+}
+@if(Model.Any(m=>m.Bookings.HasValue)) {
+var rows=Model.Select(m=>new TableRow(new IHtmlContent[] {new HtmlContentBuilder().Append(m.From.ToString("dd/MM/yyyy")+" – "+m.To.ToString("dd/MM/yyyy")),new HtmlContentBuilder().Append(m.Bookings?.ToString("N0"))})).ToArray();
+<partial name="_ReportChart" model='new ReportChartModel("booking-trend","Lượt đặt theo tháng","line",labels,new[] {new ReportChartSeries(L["Số đơn"],Model.Select(m=>(double?)m.Bookings).ToArray(),"primary")},new DataTableModel("Lượt đặt theo tháng",new TableColumn[] {new("Khoảng ngày"),new("Số đơn",Numeric:true)},rows))' />
+}

@@ -1,0 +1,11 @@
+@using HomestayBooking.Web.Services
+@model BookingReport
+@{string Channel(SourceChannel c) => c switch { SourceChannel.Phone=>"Điện thoại",SourceChannel.Web=>"Website",SourceChannel.Other=>"Khác",_=>c.ToString() }; var groups=Model.Breakdown.OrderBy(b=>b.Status).ThenBy(b=>b.Channel).ToArray(); var rows=new List<TableRow>();
+foreach(var g in groups){rows.Add(new(new IHtmlContent[] {new HtmlContentBuilder().Append(L[g.Status.DisplayName()].Value),new HtmlContentBuilder().Append(L[Channel(g.Channel)].Value),new HtmlContentBuilder().Append(g.Count.ToString("N0"))}));}
+}
+<div class="row g-3 mb-4"><div class="col-sm-6 col-xl-3"><partial name="_StatCard" model='new StatCardModel("Tổng đơn",Model.Total.ToString("N0"),"journal-check")' /></div>
+<div class="col-sm-6 col-xl-3"><partial name="_StatCard" model='new StatCardModel("Tỷ lệ khách hủy",Model.CancellationPercent.ToString("N1")+"%","x-circle",Hint:"Trên số đơn đã cọc, không bị thay thế.")' /></div>
+<div class="col-sm-6 col-xl-3"><partial name="_StatCard" model='new StatCardModel("Tỷ lệ chủ từ chối",Model.RejectionPercent.ToString("N1")+"%","house-x",Hint:"Trên tổng đơn đã tạo.")' /></div>
+<div class="col-sm-6 col-xl-3"><partial name="_StatCard" model='new StatCardModel("Hết hạn giữ phòng",Model.Expired.ToString("N0"),"hourglass")' /></div></div>
+<partial name="_ReportChart" model='new ReportChartModel("booking-chart","Đơn theo trạng thái và kênh","bar",groups.Select(g=>L[g.Status.DisplayName()].Value+" · "+L[Channel(g.Channel)].Value).ToArray(),new[] {new ReportChartSeries(L["Số đơn"],groups.Select(g=>(double?)g.Count).ToArray())},new DataTableModel("Đơn theo trạng thái và kênh",new TableColumn[] {new("Trạng thái"),new("Kênh"),new("Số đơn",Numeric:true)},rows))' />
+<partial name="_DescriptionList" model='new DescriptionItem[] {new("Đơn đã cọc không bị thay thế",new HtmlContentBuilder().Append(Model.DepositedCohort.ToString("N0"))),new("Khách hủy",new HtmlContentBuilder().Append(Model.CustomerCancelled.ToString("N0"))),new("Chủ từ chối",new HtmlContentBuilder().Append(Model.Rejected.ToString("N0")))}' />
