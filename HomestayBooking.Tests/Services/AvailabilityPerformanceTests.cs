@@ -23,7 +23,7 @@ public sealed class PerformanceFactAttribute : FactAttribute
 }
 
 /// <summary>Các test dùng chung ConstraintTest phải chạy tuần tự: test báo cáo kiểm database rỗng trước khi dựng dữ liệu.</summary>
-[CollectionDefinition(Name)]
+[CollectionDefinition(Name, DisableParallelization = true)]
 public sealed class ConstraintTestDatabaseCollection { public const string Name = "ConstraintTest SQL Server"; }
 
 /// <summary>NFR-02 (FR-08 ≤ 5 giây) và NFR-05 (tìm kiếm ≤ 3 giây) với dữ liệu cỡ 150 homestay, ~1.500 phòng, một năm lịch.</summary>
