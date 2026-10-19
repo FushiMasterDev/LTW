@@ -147,7 +147,7 @@ public sealed class StaffWorkspaceUiTests
         var html=await client.GetStringAsync("/Staff/Dashboard");Assert.DoesNotContain("/Staff/Homestays",html);Assert.DoesNotContain("/Admin/Homestays",html);
         Assert.Contains("Tỷ lệ chốt của tôi",html);Assert.Contains("Đơn quá 30 phút chưa xác nhận",html);Assert.Empty(f.Errors);
         var manager=await f.SignInEmployeeAsync("QL001");
-        Assert.Equal(HttpStatusCode.NotFound,(await manager.GetAsync("/Staff/Homestays/1")).StatusCode);
+        Assert.Equal("/Admin/Homestays/Details/1",(await manager.GetAsync("/Staff/Homestays/1")).Headers.Location!.OriginalString);
     }
 
     [Fact]

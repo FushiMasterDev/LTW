@@ -16,6 +16,9 @@
  @foreach(var h in Model.Homestays){
  <section class="fx-card p-4 mb-4 text-break"><h2 class="h5">@h.Name</h2><p>@h.Address</p><status-badge value="@h.Status" />
   <partial name="_RegistrationDocuments" model="h.Documents" />
+ @if(User.IsManagement() && Model.Status==OwnerRegistrationStatus.Approved) {
+ <p>@L["Mã homestay"]: @h.Id</p><a class="btn btn-outline-secondary" asp-area="Admin" asp-controller="Contracts" asp-action="Create" asp-route-homestayId="@h.Id">@L["Tạo hợp đồng"]</a>
+ }
  </section>}
  @if(Model.LegacyDocuments.Count>0){<section class="fx-card p-4 mb-4"><h2 class="h5">@L["Giấy tờ hồ sơ cũ"]</h2><partial name="_RegistrationDocuments" model="Model.LegacyDocuments" /></section>}
 </div><div class="col-lg-5">

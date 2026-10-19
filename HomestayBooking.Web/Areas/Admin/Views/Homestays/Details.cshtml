@@ -1,0 +1,40 @@
+@model AdminReviewDetails
+@{var h=Model.Content; ViewData["Title"]=h.Name; var priceRows=new List<TableRow>(); var documentRows=new List<TableRow>();}
+<partial name="_PageHead" model='new PageHeadModel(h.Name,"","",h.AreaName,ShowCreate:false)' />
+<partial name="_Breadcrumb" model='new BreadcrumbModel(new BreadcrumbItem[] {new("Duyệt nội dung",Url.Action("Index")),new(h.Name)})' />
+<div class="mb-4"><status-badge value="@h.Status" /></div>
+@if(Model.Pending is {} pending) {
+<partial name="_Alert" model='new AlertModel(L[pending.FirstReview ? "Homestay mới":"Duyệt lại địa chỉ / giấy tờ"].Value)' />
+}
+<partial name="_Alert" model='new AlertModel(L["Đang hiển thị nội dung hiện tại. Chưa có bản trước thay đổi hoặc lý do chi tiết để so sánh địa chỉ và giấy tờ."].Value,"warning")' />
+<div class="fx-card p-4 mb-4"><h2 class="fx-section-title">@L["Thông tin homestay"]</h2>
+<partial name="_DescriptionList" model='new DescriptionItem[] {
+new("Mã homestay",new HtmlContentBuilder().Append(h.Id.ToString())),new("Địa chỉ",new HtmlContentBuilder().Append(h.Address)),new("Khu vực",new HtmlContentBuilder().Append(h.AreaName)),
+new("Số điện thoại",new HtmlContentBuilder().Append(h.ContactPhone)),new("Chủ homestay",new HtmlContentBuilder().Append(Model.Pending?.OwnerName ?? "—")),
+new("Giờ nhận / trả",new HtmlContentBuilder().Append(h.CheckinTime.ToString("HH:mm")+" / "+h.CheckoutTime.ToString("HH:mm"))) }' />
+<h3 class="h6 mt-4">@L["Mô tả"]</h3><div class="rich-text">@Html.Raw(h.DescriptionHtml)</div>
+<h3 class="h6 mt-4">@L["Hướng dẫn nhận phòng"]</h3><div class="rich-text">@Html.Raw(h.CheckinGuideHtml)</div></div>
+<section class="fx-card p-4 mb-4"><h2 class="fx-section-title">@L["Ảnh hiện tại"]</h2>
+@if(h.Images.Count==0) {<partial name="_EmptyState" />}
+<div class="row g-3">@foreach(var i in h.Images) {<div class="col-sm-6 col-lg-4"><a href="@i.Url"><img src="@i.Url.Thumbnail()" alt='@L["Ảnh homestay {0}",h.Name]' width="480" height="320" class="img-fluid rounded-4" loading="lazy" /></a><p class="mt-2">@L[i.IsCover ? "Ảnh bìa":"Ảnh homestay"] @if(i.RoomTypeId is {} type){@h.RoomTypes.FirstOrDefault(t=>t.Id==type)?.Name}</p></div>}</div></section>
+@foreach(var t in h.RoomTypes) {
+foreach(var price in t.CurrentPrices.Concat(t.UpcomingPrices)) {
+Func<dynamic,IHtmlContent> money=@<text><money value="@price.Price" /></text>;
+priceRows.Add(new(new IHtmlContent[] {new HtmlContentBuilder().Append(t.Name),new HtmlContentBuilder().Append(t.CategoryName),new HtmlContentBuilder().Append(t.MaxGuests.ToString()),new HtmlContentBuilder().Append(L[price.DayType switch {DayType.Weekday=>"Ngày thường",DayType.Weekend=>"Cuối tuần",_=>"Ngày lễ"}].Value),money(null!),new HtmlContentBuilder().Append(price.EffectiveFrom.ToString("dd/MM/yyyy"))}));
+}}
+<section class="mb-4"><h2 class="fx-section-title">@L["Phòng và giá"]</h2>
+<partial name="_DataTable" model='new DataTableModel("Giá hiện tại và giá sắp tới",new TableColumn[] {new("Loại phòng"),new("Danh mục"),new("Sức chứa",Numeric:true),new("Loại ngày"),new("Giá",Numeric:true),new("Hiệu lực từ")},priceRows)' />
+@foreach(var t in h.RoomTypes){<p class="mt-3"><strong>@t.Name</strong> · @L[t.IsActive ? "Đang bán":"Ngừng bán"] · @string.Join(", ",t.Rooms.Select(r=>r.RoomCode+" ("+L[r.IsActive ? "Đang bán":"Ngừng bán"].Value+")"))</p>}
+</section>
+@foreach(var d in h.Documents){
+Func<dynamic,IHtmlContent> link=@<text><a asp-action="Document" asp-route-id="@d.Id">@(d.OriginalFileName ?? L["Xem giấy tờ"].Value)</a></text>;
+documentRows.Add(new(new IHtmlContent[] {new HtmlContentBuilder().Append(L[d.Type switch {DocumentType.BusinessLicense=>"Giấy phép kinh doanh",DocumentType.FireSafety=>"Giấy PCCC",DocumentType.PropertyPhoto=>"Ảnh thực tế",_=>"Giấy tờ khác"}].Value),link(null!),new HtmlContentBuilder().Append(d.ExpiryDate?.ToString("dd/MM/yyyy") ?? "—")}));
+}
+<section class="mb-4"><h2 class="fx-section-title">@L["Giấy tờ hiện tại"]</h2><partial name="_DataTable" model='new DataTableModel("Giấy tờ hiện tại",new TableColumn[] {new("Loại giấy tờ"),new("Tệp"),new("Ngày hết hạn")},documentRows)' /></section>
+@if(h.Status==HomestayStatus.PendingReview){
+<section class="fx-card fx-form-card mb-4"><h2 class="fx-section-title">@L["Quyết định duyệt"]</h2>
+<form asp-action="Approve" asp-route-id="@h.Id" method="post" class="mb-4" data-confirm='@L["Duyệt nội dung và mở bán homestay? Hợp đồng, giấy tờ và giá sẽ được kiểm tra."]'><button class="btn btn-brand" type="submit" data-loading-text='@L["Đang lưu…"]'>@L["Duyệt nội dung"]</button></form>
+<form asp-action="Reject" asp-route-id="@h.Id" method="post" data-confirm='@L["Từ chối nội dung và yêu cầu chủ chỉnh sửa?"]' data-confirm-variant="danger"><label class="form-label" for="review-reason">@L["Lý do từ chối"]</label><textarea class="form-control mb-3" id="review-reason" name="reason" rows="3" required></textarea><button class="btn btn-outline-danger" type="submit" data-loading-text='@L["Đang lưu…"]'>@L["Từ chối nội dung"]</button></form></section>
+} else if(h.Status==HomestayStatus.Suspended){
+<section class="fx-card fx-form-card"><h2 class="fx-section-title">@L["Mở lại homestay"]</h2><form asp-action="Resume" asp-route-id="@h.Id" method="post" data-confirm='@L["Xác nhận mở lại homestay?"]'><label class="form-label" for="resume-reason">@L["Lý do"]</label><textarea id="resume-reason" name="reason" class="form-control mb-3" rows="3" required></textarea><button class="btn btn-brand" type="submit" data-loading-text='@L["Đang lưu…"]'>@L["Mở lại homestay"]</button></form></section>
+}

@@ -1,0 +1,9 @@
+@using HomestayBooking.Web.Services
+@model IReadOnlyList<PendingHomestay>
+@{ ViewData["Title"]=L["Duyệt nội dung"]; var rows=new List<TableRow>(); }
+<partial name="_PageHead" model='new PageHeadModel("Duyệt nội dung","","","Nội dung đang chờ Quản lý hoặc Quản trị viên duyệt.",ShowCreate:false)' />
+@foreach(var p in Model) {
+Func<dynamic,IHtmlContent> home=@<text><a asp-action="Details" asp-route-id="@p.Homestay.Id" class="fw-semibold">@p.Homestay.Name</a><div class="text-muted">@p.Homestay.Address</div></text>;
+rows.Add(new(new IHtmlContent[] {home(null!),new HtmlContentBuilder().Append(L[p.Homestay.ApprovedAt is null ? "Homestay mới":"Duyệt lại địa chỉ / giấy tờ"].Value),new HtmlContentBuilder().Append(p.SubmittedAt is {} at ? VietnamTime.ToLocal(at).ToString("dd/MM/yyyy HH:mm"):L["Chưa có dữ liệu"].Value)}));
+}
+<partial name="_DataTable" model='new DataTableModel("Hàng chờ duyệt nội dung",new TableColumn[] {new("Homestay"),new("Lý do đưa vào hàng chờ"),new("Ngày gửi")},rows)' />

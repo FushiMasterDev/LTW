@@ -6,8 +6,8 @@ namespace HomestayBooking.Web.Areas.Staff.Controllers;
 [Area("Staff"),Authorize(Policy=AppPolicies.Employee),Authorize(Policy=AppPolicies.Management)]
 public class HomestaysController : Controller
 {
-    public IActionResult Index() => NotFound();
+    public IActionResult Index() => RedirectToAction("Index", "Homestays", new { area = "Admin" });
     [HttpGet("/Staff/Homestays/{id:int}")]
     [HttpGet("/Staff/Homestays/Details/{id:int}")]
-    public IActionResult Details(int id) => NotFound();
+    public IActionResult Details(int id) => RedirectToAction("Details", "Homestays", new { area = "Admin", id });
 }
