@@ -10,7 +10,7 @@
 <div class="row g-4">
     <div class="col-lg-5">
         <div class="fx-card p-4 h-100">
-            <span class="fx-icon-chip fx-icon-chip-lg @t.MatchStatus.ToneClass() mb-3" aria-hidden="true"><i class="bi bi-bank"></i></span>
+            <span class="fx-icon-chip @t.MatchStatus.ToneClass() mb-3" aria-hidden="true"><i class="bi bi-bank"></i></span>
 
             <p class="mb-3"><status-badge value="@t.MatchStatus" /></p>
             <p class="small text-muted">@L[t.MatchStatus.Hint()]</p>
@@ -27,7 +27,7 @@
     facts.Add(new("Mã giao dịch", fact3(null!)));
                 if (t.BookingCode is not null)
                 {
-                    Func<dynamic, IHtmlContent> fact4 = @<text><span class="fx-code">@t.BookingCode</span> · @L[t.BookingStatus!.Value.DisplayName()] · @L["cần {0:N0}đ", t.BookingAmountDue ?? 0]</text>;
+                    Func<dynamic, IHtmlContent> fact4 = @<text><span class="fx-code">@t.BookingCode</span> · @L[t.BookingStatus!.Value.DisplayName()] · @L["cần"] <money value="@(t.BookingAmountDue ?? 0)" /></text>;
     facts.Add(new("Đơn đọc được", fact4(null!)));
                 }
                 if (t.Note is not null)
@@ -55,7 +55,7 @@
                             <button type="button" class="fx-suggestion" data-fill="#bookingCode" data-value="@s.Code">
                                 <span class="fx-code">@s.Code</span>
                                 <span>@s.ContactName · @PhoneNumberNormalizer.ToNational(s.ContactPhone)</span>
-                                <span class="text-muted">@s.HomestayName · @L["cần {0:N0}đ", s.AmountDue]</span>
+                                <span class="text-muted">@s.HomestayName · @L["cần"] <money value="@(s.AmountDue)" /></span>
                             </button>
                         </li>
                     }
@@ -77,7 +77,7 @@
         </section>
         <section class="fx-card p-4" aria-labelledby="refund-title">
             <h2 id="refund-title" class="h6"><i class="bi bi-arrow-counterclockwise text-brand" aria-hidden="true"></i> @L["Đã chuyển trả khách"]</h2>
-            <p class="small text-muted">@L["Chuyển trả đúng {0:N0}đ về tài khoản đã gửi, rồi ghi mã giao dịch chuyển trả.", t.Amount]</p>
+            <p class="small text-muted"><money value="@t.Amount" /> · @L["Chuyển trả đúng số tiền này về tài khoản đã gửi, rồi ghi mã giao dịch chuyển trả."]</p>
             <form asp-action="Refund" asp-route-id="@t.Id" method="post" class="row g-2" data-confirm="@L["Xác nhận đã chuyển trả {0:N0}đ?", t.Amount]">
                 <div class="col-sm-5">
                     <label for="bankRef" class="form-label small">@L["Mã giao dịch chuyển trả"]</label>

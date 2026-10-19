@@ -2207,4 +2207,6 @@
   <data name="Thử nhập thiếu tiền (Underpaid) hoặc dư tiền để xem các trường hợp." xml:space="preserve"><value>Try a smaller or larger amount to inspect matching outcomes.</value></data>
   <data name="Đổi số khác để thử trường hợp sai tài khoản (Ignored)." xml:space="preserve"><value>Change the account number to test an incorrect account (Ignored).</value></data>
   <data name="Gửi giao dịch" xml:space="preserve"><value>Send transaction</value></data>
+  <data name="cần" xml:space="preserve"><value>needs</value></data>
+  <data name="Chuyển trả đúng số tiền này về tài khoản đã gửi, rồi ghi mã giao dịch chuyển trả." xml:space="preserve"><value>Return exactly this amount to the sending account, then record the refund transaction reference.</value></data>
 </root>

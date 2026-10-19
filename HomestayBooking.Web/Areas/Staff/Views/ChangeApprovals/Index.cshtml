@@ -16,7 +16,7 @@
             <partial name="_PriceBreakdown" model="@(PriceBreakdownModel.From(new BookingChangeQuote(r.NewTotalAmount!.Value, r.ChangeFee!.Value, r.DepositCarriedOver!.Value, 0, r.AdditionalDeposit!.Value, r.RefundAmount, null)))" />
             <form asp-action="Approve" asp-route-id="@r.Id" method="post" class="d-flex flex-column flex-sm-row gap-2 mb-2"><label class="visually-hidden" for="approve-@r.Id">@L["Ghi chú duyệt"]</label><input id="approve-@r.Id" name="Note" class="form-control" required maxlength="500" placeholder="@L["Ghi chú duyệt"]" /><button class="btn btn-brand text-nowrap flex-shrink-0" type="submit" data-loading-text="@L["Đang xử lý..."]">@L["Duyệt"]</button></form>
         }
-        <form asp-action="Reject" asp-route-id="@r.Id" method="post" class="d-flex flex-column flex-sm-row gap-2"><label class="visually-hidden" for="reject-@r.Id">@L["Lý do từ chối"]</label><input id="reject-@r.Id" name="Note" class="form-control" required maxlength="500" placeholder="@L["Lý do từ chối"]" /><button class="btn btn-outline-danger text-nowrap flex-shrink-0" type="submit" data-loading-text="@L["Đang xử lý..."]">@L["Từ chối"]</button></form>
+        <form data-confirm="@L["Bạn có chắc muốn tiếp tục?"]" data-confirm-variant="danger" asp-action="Reject" asp-route-id="@r.Id" method="post" class="d-flex flex-column flex-sm-row gap-2"><label class="visually-hidden" for="reject-@r.Id">@L["Lý do từ chối"]</label><input id="reject-@r.Id" name="Note" class="form-control" required maxlength="500" placeholder="@L["Lý do từ chối"]" /><button class="btn btn-outline-danger text-nowrap flex-shrink-0" type="submit" data-loading-text="@L["Đang xử lý..."]">@L["Từ chối"]</button></form>
     </section>
 }
 <partial name="_Pager" model="Model" />

@@ -4,7 +4,7 @@
     var counts = (Dictionary<int, int>)ViewBag.HomestayCounts;
 }
 <partial name="_PageHead" model="@(new PageHeadModel(L["Khu vực"], "bi-geo-alt", "tone-sky", L["Quận, huyện có homestay"]))" />
-<partial name="_CatalogSearch" />
+<partial name="_FilterBar" model='new FilterBarModel("catalog-filter", new FilterField[] { new("q", "Tìm theo tên", ViewData["Query"]?.ToString(), Type: "search") })' />
 
 @{ var rows = new List<TableRow>(); }
 @foreach (var entry in Model)

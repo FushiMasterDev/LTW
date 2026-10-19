@@ -121,5 +121,5 @@ code {
 }
 
 /* Display face also serves page titles and dashboard numbers. */
-.page-head h1, .fx-page-head h1, .fx-stat__value { font-family: var(--fx-font-display); letter-spacing: -.02em; font-weight: 500; }
+.fx-page-head h1, .fx-stat__value { font-family: var(--fx-font-display); letter-spacing: -.02em; font-weight: 500; }
 :where(h1, h2, h3, [id]) { scroll-margin-top: 6rem; }

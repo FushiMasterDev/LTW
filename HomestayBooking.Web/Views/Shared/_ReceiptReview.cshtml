@@ -31,7 +31,7 @@
                         Func<dynamic, IHtmlContent> fact1 = @<text><strong><money value="@r.Amount" /></strong>
                             @if (!amountOk)
                             {
-                                <span class="text-danger small">(@L["cần {0:N0}đ", r.AmountDue])</span>
+                                <span class="text-danger small">(@L["cần"] <money value="@(r.AmountDue)" />)</span>
                             }</text>;
     facts.Add(new("Số tiền", fact1(null!)));
                         Func<dynamic, IHtmlContent> fact2 = @<text>@(r.TransferContent ?? "—")</text>;

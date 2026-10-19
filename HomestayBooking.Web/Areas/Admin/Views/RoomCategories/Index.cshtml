@@ -4,7 +4,7 @@
     var counts = (Dictionary<int, int>)ViewBag.RoomCounts;
 }
 <partial name="_PageHead" model="@(new PageHeadModel(L["Loại phòng"], "bi-grid-3x3-gap", "tone-emerald", L["Phòng đôi, gia đình, nguyên căn..."]))" />
-<partial name="_CatalogSearch" />
+<partial name="_FilterBar" model='new FilterBarModel("catalog-filter", new FilterField[] { new("q", "Tìm theo tên", ViewData["Query"]?.ToString(), Type: "search") })' />
 
 @{ var rows = new List<TableRow>(); }
 @foreach (var entry in Model)

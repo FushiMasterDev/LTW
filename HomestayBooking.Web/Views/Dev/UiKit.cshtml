@@ -38,7 +38,7 @@
     <link rel="stylesheet" href="~/css/dev-uikit.css" asp-append-version="true" />
 }
 
-<div class="page-head">
+<div class="fx-page-head">
     <div>
         <h1>UI Kit</h1>
         <p class="text-muted mb-0">Mọi component dùng chung, đủ trạng thái. Đổi sáng/tối và VI/EN ở thanh trên để kiểm cả hai chế độ.</p>
@@ -48,7 +48,7 @@
     </a>
 </div>
 
-<nav aria-label="Mục lục UI Kit" class="card-soft p-3 mb-2">
+<nav aria-label="Mục lục UI Kit" class="fx-card p-3 mb-2">
     <ol class="uikit-toc mb-0">
         @foreach (var s in sections)
         {
@@ -58,7 +58,7 @@
 </nav>
 
 <section id="colors" class="uikit-section" aria-labelledby="colors-title">
-    <h2 id="colors-title" class="section-title">Màu</h2>
+    <h2 id="colors-title" class="fx-section-title">Màu</h2>
     <p class="text-muted">Token <code>--fx-*</code> trong <code>tokens.css</code>. Không viết mã màu ở chỗ khác.</p>
     <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
         @foreach (var t in tokens)
@@ -76,7 +76,7 @@
 </section>
 
 <section id="type" class="uikit-section" aria-labelledby="type-title">
-    <h2 id="type-title" class="section-title">Chữ</h2>
+    <h2 id="type-title" class="fx-section-title">Chữ</h2>
     <p class="h1 uikit-display">Tiêu đề h1 – Homestay Tây Hồ</p>
     <p class="h2 uikit-display">Tiêu đề h2 – Phòng đôi hướng hồ</p>
     <p class="h3 uikit-display">Tiêu đề h3 · ỗ ữ ặ ậ ỡ</p>
@@ -88,7 +88,7 @@
 </section>
 
 <section id="buttons" class="uikit-section" aria-labelledby="buttons-title">
-    <h2 id="buttons-title" class="section-title">Nút</h2>
+    <h2 id="buttons-title" class="fx-section-title">Nút</h2>
     <div class="d-flex flex-wrap gap-2 mb-3">
         <button type="button" class="btn btn-brand"><icon name="check2" /> Nút chính</button>
         <button type="button" class="btn btn-accent">Nút nhấn</button>
@@ -114,7 +114,7 @@
 </section>
 
 <section id="badges" class="uikit-section" aria-labelledby="badges-title">
-    <h2 id="badges-title" class="section-title">Badge trạng thái</h2>
+    <h2 id="badges-title" class="fx-section-title">Badge trạng thái</h2>
     <p class="text-muted"><code>&lt;status-badge value="@@x" /&gt;</code> lấy nhãn và tone từ <code>*StatusExtensions</code>. Trạng thái đơn có thêm <code>icon="true"</code>.</p>
     @foreach (var g in statusGroups)
     {
@@ -138,7 +138,7 @@
 </section>
 
 <section id="money" class="uikit-section" aria-labelledby="money-title">
-    <h2 id="money-title" class="section-title">Tiền và ngày</h2>
+    <h2 id="money-title" class="fx-section-title">Tiền và ngày</h2>
     <dl class="row mb-0">
         <dt class="col-sm-4"><code>&lt;money value="0" /&gt;</code></dt><dd class="col-sm-8"><money value="0m" /></dd>
         <dt class="col-sm-4">Số thường</dt><dd class="col-sm-8"><money value="350000m" /></dd>
@@ -152,7 +152,7 @@
 </section>
 
 <section id="icons" class="uikit-section" aria-labelledby="icons-title">
-    <h2 id="icons-title" class="section-title">Icon</h2>
+    <h2 id="icons-title" class="fx-section-title">Icon</h2>
     <p class="text-muted"><code>&lt;icon name="calendar" /&gt;</code> ẩn với trình đọc màn hình; có <code>label</code> thì đọc được.</p>
     <div class="d-flex flex-wrap gap-3 fs-4">
         @foreach (var i in new[] { "calendar", "house-heart", "geo-alt", "people", "wifi", "telephone", "bank", "receipt", "star" })
@@ -164,9 +164,9 @@
 </section>
 
 <section id="forms" class="uikit-section" aria-labelledby="forms-title">
-    <h2 id="forms-title" class="section-title">Form</h2>
+    <h2 id="forms-title" class="fx-section-title">Form</h2>
     <p class="text-muted"><code>&lt;form-field asp-for="…" /&gt;</code>: label + ô nhập + gợi ý + lỗi. Bấm nút ở đầu trang để xem trạng thái lỗi.</p>
-    <form class="card-soft p-4" method="get" asp-action="UiKit" novalidate>
+    <form class="fx-card p-4" method="get" asp-action="UiKit" novalidate>
         <div asp-validation-summary="ModelOnly" class="alert tone-rose" role="alert"></div>
         <div class="row">
             <div class="col-md-6"><form-field asp-for="FullName" autocomplete="name" /></div>
@@ -183,7 +183,7 @@
 </section>
 
 <section id="alerts" class="uikit-section" aria-labelledby="alerts-title">
-    <h2 id="alerts-title" class="section-title">Thông báo</h2>
+    <h2 id="alerts-title" class="fx-section-title">Thông báo</h2>
     <partial name="_Alert" model='new AlertModel("Đã lưu thay đổi.", "success")' />
     <partial name="_Alert" model='new AlertModel("Không lưu được: số điện thoại đã được dùng.", "danger")' />
     <partial name="_Alert" model='new AlertModel("Đơn đang chờ homestay xác nhận, tối đa 30 phút.", "warning")' />
@@ -191,9 +191,9 @@
 </section>
 
 <section id="lists" class="uikit-section" aria-labelledby="lists-title">
-    <h2 id="lists-title" class="section-title">Trang danh sách</h2>
+    <h2 id="lists-title" class="fx-section-title">Trang danh sách</h2>
     <partial name="_PageHead" model='new PageHeadModel("Đơn đặt phòng", "bi-journal-check", "tone-sky", "Tiêu đề, mô tả và nút chính của trang danh sách.", ShowCreate: false)' />
-    <partial name="_CatalogSearch" />
+    <partial name="_FilterBar" model='new FilterBarModel("catalog-filter", new FilterField[] { new("q", "Tìm theo tên", Type: "search") })' />
     <partial name="_DataTable" model='new DataTableModel("Đơn đặt phòng",
         new TableColumn[] { new("Mã đơn", NoWrap: true), new("Khách"), new("Tổng tiền", Numeric: true, NoWrap: true) },
         sampleRows.Select(r => new TableRow(new IHtmlContent[] {
@@ -202,12 +202,12 @@
 </section>
 
 <section id="empty" class="uikit-section" aria-labelledby="empty-title">
-    <h2 id="empty-title" class="section-title">Trạng thái rỗng</h2>
-    <div class="card-soft"><partial name="_EmptyState" /></div>
+    <h2 id="empty-title" class="fx-section-title">Trạng thái rỗng</h2>
+    <div class="fx-card"><partial name="_EmptyState" /></div>
 </section>
 
 <section id="layout" class="uikit-section" aria-labelledby="layout-title">
-    <h2 id="layout-title" class="section-title">Khung trang</h2>
+    <h2 id="layout-title" class="fx-section-title">Khung trang</h2>
     <ul class="mb-0">
         <li><code>_DashboardLayout</code>: trang này. Sidebar là View Component <code>Sidebar</code> (thu gọn bằng nút trên thanh trên, thành ngăn kéo khi màn &lt; 992px).</li>
         <li><code>_Layout</code>: trang khách, header <code>_SiteHeader</code> (lối vào khu làm việc là View Component <code>WorkspaceSwitcher</code>) và footer <code>_SiteFooter</code>. Xem ở <a asp-controller="Home" asp-action="Index">trang chủ</a>.</li>
@@ -216,11 +216,11 @@
 </section>
 
 <section id="rating" class="uikit-section" aria-labelledby="rating-title">
-    <h2 id="rating-title" class="section-title">Điểm đánh giá</h2>
+    <h2 id="rating-title" class="fx-section-title">Điểm đánh giá</h2>
     <div class="d-flex flex-wrap gap-4"><rating value="4.75" count="12" /><rating value="null" count="0" /><rating value="5" count="123456" /><rating value="4" single="true" /></div>
 </section>
 <section id="stats" class="uikit-section" aria-labelledby="stats-title">
-    <h2 id="stats-title" class="section-title">Ô số liệu: thường, trạng thái cần xử lý, số lớn và chữ dài</h2>
+    <h2 id="stats-title" class="fx-section-title">Ô số liệu: thường, trạng thái cần xử lý, số lớn và chữ dài</h2>
     <div class="row g-3">
         <div class="col-md-4"><partial name="_StatCard" model='new StatCardModel("Đơn đặt phòng", "24", "journal-check", Url.Action("Index", "Home"))' /></div>
         <div class="col-md-4"><partial name="_StatCard" model='new StatCardModel("Đơn chờ xác nhận", "0", "hourglass-split", Tone: "tone-amber")' /></div>
@@ -228,7 +228,7 @@
     </div>
 </section>
 <section id="data-table" class="uikit-section" aria-labelledby="data-table-title">
-    <h2 id="data-table-title" class="section-title">Bảng dữ liệu dùng chung</h2>
+    <h2 id="data-table-title" class="fx-section-title">Bảng dữ liệu dùng chung</h2>
     <p class="text-muted">Sắp xếp giữ bộ lọc; ô có nhãn trên điện thoại, mã đơn và số tiền giữ một dòng.</p>
     @{
         var columns = new TableColumn[] { new("Mã đơn", "code", NoWrap: true), new("Khách", "guest"), new("Tổng tiền", "amount", Numeric: true, NoWrap: true) };
@@ -241,34 +241,34 @@
     <partial name="_DataTable" model='new DataTableModel("Đơn đặt phòng", columns, Array.Empty<TableRow>())' />
 </section>
 <section id="descriptions" class="uikit-section" aria-labelledby="descriptions-title">
-    <h2 id="descriptions-title" class="section-title">Danh sách mô tả</h2>
+    <h2 id="descriptions-title" class="fx-section-title">Danh sách mô tả</h2>
     <partial name="_DescriptionList" model='new DescriptionItem[] { new("Homestay", new HtmlContentBuilder().Append("Tên homestay rất dài để kiểm tra việc xuống dòng mà không đẩy rộng màn hình điện thoại")), new("Khách", new HtmlContentBuilder().Append("Nguyễn Văn A <văn bản được encode>")) }' />
 </section>
 <section id="timeline" class="uikit-section" aria-labelledby="timeline-title">
-    <h2 id="timeline-title" class="section-title">Dòng thời gian: lịch sử trạng thái, yêu cầu đổi và rỗng</h2>
+    <h2 id="timeline-title" class="fx-section-title">Dòng thời gian: lịch sử trạng thái, yêu cầu đổi và rỗng</h2>
     <partial name="_Timeline" model='new TimelineModel(Events: new[] { new TimelineItem(DateTime.UtcNow, "Đã xác nhận", "Chủ homestay đã xác nhận đơn."), new TimelineItem(DateTime.UtcNow.AddMinutes(-30), "Đã đặt cọc", "Ghi chú rất dài để kiểm tra khả năng xuống dòng và văn bản thuần: <script> không được thực thi.") })' />
     <partial name="_Timeline" model='new TimelineModel(Changes: new[] { new ChangeRequestHistoryRow(new BookingChangeRequest { Id = 12, RequestType = ChangeRequestType.ChangeDates, Status = ChangeRequestStatus.Pending, NewCheckIn = today.AddDays(7), NewCheckOut = today.AddDays(9) }, today.AddDays(3), today.AddDays(5), "Phòng đôi", "Phòng đôi") })' />
     <partial name="_Timeline" model="@(new TimelineModel())" />
 </section>
 <section id="prices" class="uikit-section" aria-labelledby="prices-title">
-    <h2 id="prices-title" class="section-title">Bảng giá, hoàn tiền và chính sách hủy</h2>
+    <h2 id="prices-title" class="fx-section-title">Bảng giá, hoàn tiền và chính sách hủy</h2>
     <partial name="_PriceBreakdown" model='new PriceBreakdownModel(new[] { new PriceLine("Giá từng đêm", 800000), new PriceLine("Giảm giá", -36000), new PriceLine("Tiền cọc", 600000), new PriceLine("Còn lại", 1400000), new PriceLine("Phí đổi", 300000), new PriceLine("Tiền hoàn khi hủy", 0), new PriceLine("Tổng tiền", 999999999999) })' />
     <partial name="_PriceBreakdown" model='new PriceBreakdownModel(Rules: new[] { new PolicyRuleView(7, 100), new PolicyRuleView(3, 50), new PolicyRuleView(0, 0) })' />
     <div class="mt-4"><partial name="_EmptyState" model='new EmptyStateModel("Không có dữ liệu.", "Chọn ngày để xem báo giá.", "calendar")' /></div>
     <div class="mt-4"><partial name="_EmptyState" model='new EmptyStateModel("Đã xảy ra lỗi", "Vui lòng thử lại sau hoặc liên hệ Fuji để được hỗ trợ.", "exclamation-triangle", "Về trang chủ", Url.Action("Index", "Home"))' /></div>
 </section>
 <section id="skeleton" class="uikit-section" aria-labelledby="skeleton-title">
-    <h2 id="skeleton-title" class="section-title">Khung chờ tải: dòng và thẻ, tôn trọng reduced-motion</h2>
+    <h2 id="skeleton-title" class="fx-section-title">Khung chờ tải: dòng và thẻ, tôn trọng reduced-motion</h2>
     <partial name="_Skeleton" model="@(new SkeletonModel())" />
     <div class="mt-4"><partial name="_Skeleton" model="@(new SkeletonModel(Cards: true))" /></div>
 </section>
 
 <section id="filters" class="uikit-section" aria-labelledby="filters-title">
-    <h2 id="filters-title" class="section-title">Thanh lọc: GET, giữ query, ngăn kéo trên điện thoại</h2>
+    <h2 id="filters-title" class="fx-section-title">Thanh lọc: GET, giữ query, ngăn kéo trên điện thoại</h2>
     <partial name="_FilterBar" model='new FilterBarModel("kit-filter", new[] { new FilterField("Q", "Từ khóa"), new FilterField("Guests", "Số khách", "2", "number"), new FilterField("AreaId", "Khu vực", Options: Model.Areas), new FilterField("AmenityIds", "Tiện nghi", Type: "checkbox", Options: new[] { new SelectListItem("Wifi", "1", true), new SelectListItem("Điều hòa", "2"), new SelectListItem("Bếp riêng", "3"), new SelectListItem("Cho phép thú cưng", "4") }) })' />
 </section>
 <section id="date-picker" class="uikit-section" aria-labelledby="date-picker-title">
-    <h2 id="date-picker-title" class="section-title">Ngày theo đêm: thường, rỗng, lỗi, đang tải</h2>
+    <h2 id="date-picker-title" class="fx-section-title">Ngày theo đêm: thường, rỗng, lỗi, đang tải</h2>
     <div class="row g-4">
         <div class="col-md-6"><partial name="_DateRangePicker" model='new DateRangePickerModel("kit-dates", today.AddDays(1), today.AddDays(3))' /></div>
         <div class="col-md-6"><partial name="_DateRangePicker" model='new DateRangePickerModel("kit-dates-empty")' /></div>
@@ -277,7 +277,7 @@
     </div>
 </section>
 <section id="guest-picker" class="uikit-section" aria-labelledby="guest-picker-title">
-    <h2 id="guest-picker-title" class="section-title">Số khách: biên nhỏ/lớn và không cho thao tác</h2>
+    <h2 id="guest-picker-title" class="fx-section-title">Số khách: biên nhỏ/lớn và không cho thao tác</h2>
     <div class="row g-4">
         <div class="col-md-4"><partial name="_GuestPicker" model='new GuestPickerModel("kit-guests", Value: 1, Max: 4)' /></div>
         <div class="col-md-4"><partial name="_GuestPicker" model='new GuestPickerModel("kit-guests-max", Value: 20)' /></div>
@@ -285,14 +285,14 @@
     </div>
 </section>
 <section id="uploads" class="uikit-section" aria-labelledby="uploads-title">
-    <h2 id="uploads-title" class="section-title">Tải file: nhiều ảnh/giấy tờ, chỉ ảnh, trạng thái lỗi</h2>
+    <h2 id="uploads-title" class="fx-section-title">Tải file: nhiều ảnh/giấy tờ, chỉ ảnh, trạng thái lỗi</h2>
     <div class="row g-4">
         <div class="col-md-6"><partial name="_UploadZone" model='new UploadZoneModel("kit-files", Multiple: true)' /></div>
         <div class="col-md-6"><partial name="_UploadZone" model='new UploadZoneModel("kit-images", AllowPdf: false, Error: "File phải có dung lượng từ 1 byte đến 5MB.")' /></div>
     </div>
 </section>
 <section id="feedback" class="uikit-section" aria-labelledby="feedback-title">
-    <h2 id="feedback-title" class="section-title">Modal xác nhận tương thích data-confirm và toast AJAX</h2>
+    <h2 id="feedback-title" class="fx-section-title">Modal xác nhận tương thích data-confirm và toast AJAX</h2>
     <form method="get" asp-action="UiKit" data-confirm="@L["Bạn có chắc muốn tiếp tục?"]" data-confirm-title="@L["Xác nhận thao tác"]" data-confirm-variant="danger">
         <input type="hidden" name="confirmed" value="true" />
         <button type="submit" class="btn btn-outline-danger">@L["Xác nhận thao tác"]</button>
@@ -304,13 +304,13 @@
 </section>
 
 <section id="navigation" class="uikit-section" aria-labelledby="navigation-title">
-    <h2 id="navigation-title" class="section-title">Tabs, breadcrumb, đầu trang</h2>
+    <h2 id="navigation-title" class="fx-section-title">Tabs, breadcrumb, đầu trang</h2>
     <partial name="_Tabs" model='new TabsModel("Kế toán", new[] { new TabItem("Tổng quan", "/Accounting/Dashboard", Active: true), new TabItem("Bill chờ duyệt", "/Accounting/Receipts", Count: 12345), new TabItem("Cọc bổ sung", "/Accounting/AdditionalDeposits", Visible: false) })' />
     <partial name="_Breadcrumb" model='new BreadcrumbModel(new[] { new BreadcrumbItem("Trang chủ", Url.Action("Index", "Home", new {area = ""})), new BreadcrumbItem("Thông báo") })' />
     <partial name="_PageHead" model='new PageHeadModel("Đơn đặt phòng", "journal-check", "", "Hành động chính nối qua model, không viết cứng Create.", Action: "Index", Controller: "Homestays", Area: "", ActionLabel: "Tìm homestay")' />
 </section>
 <section id="notifications" class="uikit-section" aria-labelledby="notifications-title">
-    <h2 id="notifications-title" class="section-title">Chuông thông báo: rỗng và tin dài, số lớn</h2>
+    <h2 id="notifications-title" class="fx-section-title">Chuông thông báo: rỗng và tin dài, số lớn</h2>
     <div class="d-flex gap-4">
         <partial name="~/Views/Shared/Components/NotificationBell/Default.cshtml" model='new NotificationBellModel(0, Array.Empty<Notification>(), "kit-bell-empty")' />
         <partial name="~/Views/Shared/Components/NotificationBell/Default.cshtml" model='new NotificationBellModel(123, new[] { new Notification { Message = new string((char)65, 500), CreatedAt = DateTime.UtcNow } }, "kit-bell-long")' />
@@ -319,12 +319,12 @@
 </section>
 
 <section id="booking-search" class="uikit-section" aria-labelledby="booking-search-title">
-    <h2 id="booking-search-title" class="section-title">Thanh tìm phòng</h2>
+    <h2 id="booking-search-title" class="fx-section-title">Thanh tìm phòng</h2>
     <partial name="_SearchBar" model='new SearchBarModel("kit-search-hero", Model.Areas, Variant: "hero")' />
     <div class="mt-4"><partial name="_SearchBar" model='new SearchBarModel("kit-search-compact", Model.Areas, new HomestaySearchQuery { CheckIn = today.AddDays(1), CheckOut = today.AddDays(3), Guests = 4 })' /></div>
 </section>
 <section id="homestay-cards" class="uikit-section" aria-labelledby="homestay-cards-title">
-    <h2 id="homestay-cards-title" class="section-title">Thẻ homestay</h2>
+    <h2 id="homestay-cards-title" class="fx-section-title">Thẻ homestay</h2>
     <div class="fx-homestay-grid">
         <partial name="_HomestayCard" model='new HomestayCardModel(1, "Homestay mẫu", "Tây Hồ", "/images/demo/bright-living.webp", 800000, 4.8, 12)' />
         <partial name="_HomestayCard" model='new HomestayCardModel(1, "Tên homestay rất dài để kiểm tra xuống dòng trên màn hình nhỏ và không làm tràn thẻ", "Khu vực rất dài", null, 999999999999, Badge: "Được khách đánh giá cao")' />
@@ -332,12 +332,12 @@
     </div>
 </section>
 <section id="gallery" class="uikit-section" aria-labelledby="gallery-title">
-    <h2 id="gallery-title" class="section-title">Ảnh homestay</h2>
+    <h2 id="gallery-title" class="fx-section-title">Ảnh homestay</h2>
     <partial name="_Gallery" model='new GalleryModel("Homestay mẫu", new[] { "/images/demo/bright-living.webp", "/images/demo/room-bright.webp", "/images/demo/wooden-dining.webp" })' />
     <partial name="_Gallery" model='new GalleryModel("Homestay mẫu", Array.Empty<string>())' />
 </section>
 <section id="booking-panel" class="uikit-section" aria-labelledby="booking-panel-title">
-    <h2 id="booking-panel-title" class="section-title">Ô báo giá mẫu</h2>
+    <h2 id="booking-panel-title" class="fx-section-title">Ô báo giá mẫu</h2>
     <div class="row g-4">
         <div class="col-lg-5">
             <partial name="_BookingPanel" model='new BookingPanelModel("kit-booking-panel", new DateRangePickerModel("kit-panel-dates", today.AddDays(1), today.AddDays(3)), new GuestPickerModel("kit-panel-guests", Max: 4), new PriceBreakdownModel(new[] { new PriceLine("Tổng tiền", 1600000), new PriceLine("Tiền cọc", 480000), new PriceLine("Còn lại", 1120000) }), Url.Action("Index", "Homestays")!)' />
@@ -348,11 +348,11 @@
     </div>
 </section>
 <section id="booking-stepper" class="uikit-section" aria-labelledby="booking-stepper-title">
-    <h2 id="booking-stepper-title" class="section-title">Tiến trình chỉ đọc: mọi trạng thái đơn</h2>
+    <h2 id="booking-stepper-title" class="fx-section-title">Tiến trình chỉ đọc: mọi trạng thái đơn</h2>
     @foreach (var state in Enum.GetValues<BookingStatus>()) { <p class="fw-semibold mt-3">@L[state.DisplayName()]</p><partial name="_BookingStepper" model="@(new BookingStepperModel(state))" /> }
 </section>
 <section id="booking-cards" class="uikit-section" aria-labelledby="booking-cards-title">
-    <h2 id="booking-cards-title" class="section-title">Thẻ đơn của khách: sắp tới, chờ cọc, tên dài</h2>
+    <h2 id="booking-cards-title" class="fx-section-title">Thẻ đơn của khách: sắp tới, chờ cọc, tên dài</h2>
     <ul class="fx-booking-list">
         @foreach (var row in sampleRows)
         {
@@ -361,7 +361,7 @@
     </ul>
 </section>
 <section id="rating-input" class="uikit-section" aria-labelledby="rating-input-title">
-    <h2 id="rating-input-title" class="section-title">Chọn điểm đánh giá: chưa chọn, đã chọn, lỗi</h2>
+    <h2 id="rating-input-title" class="fx-section-title">Chọn điểm đánh giá: chưa chọn, đã chọn, lỗi</h2>
     <div class="row g-4">
         <div class="col-md-4"><partial name="_RatingInput" model="@(new RatingInputModel("kit-rating"))" /></div>
         <div class="col-md-4"><partial name="_RatingInput" model="@(new RatingInputModel("kit-rating-4", "kitRating4", 4))" /></div>
@@ -369,26 +369,26 @@
     </div>
 </section>
 <section id="steps" class="uikit-section" aria-labelledby="steps-title">
-    <h2 id="steps-title" class="section-title">Các bước: đang ở bước 4 và đã xong hết</h2>
+    <h2 id="steps-title" class="fx-section-title">Các bước: đang ở bước 4 và đã xong hết</h2>
     <partial name="_Steps" model="@(new StepsModel("Các bước đăng ký đối tác", ["Thông tin cơ sở", "Khu vực và địa chỉ", "Liên hệ và tài khoản", "Ảnh và giấy tờ", "Gửi hồ sơ"], 3))" />
     <div class="mt-3"><partial name="_Steps" model="@(new StepsModel("Các bước đăng ký đối tác", ["Thông tin cơ sở", "Khu vực và địa chỉ", "Liên hệ và tài khoản", "Ảnh và giấy tờ", "Gửi hồ sơ"], 5))" /></div>
 </section>
 <section id="auth-aside" class="uikit-section" aria-labelledby="auth-aside-title">
-    <h2 id="auth-aside-title" class="section-title">Cột ảnh trang đăng nhập (ẩn dưới 768px)</h2>
+    <h2 id="auth-aside-title" class="fx-section-title">Cột ảnh trang đăng nhập (ẩn dưới 768px)</h2>
     <div class="row"><div class="col-md-5 uikit-auth-aside"><partial name="_AuthAside" model="@(new AuthAsideModel("Chào mừng đến Fuji Homestay", ["Khách hàng: theo dõi đơn đặt phòng của bạn.", "Chủ homestay: quản lý phòng, lịch và đơn đặt.", "Một tài khoản dùng chung cho cả hai vai trò."]))" /></div></div>
 </section>
 <section id="status-page" class="uikit-section" aria-labelledby="status-page-title">
-    <h2 id="status-page-title" class="section-title">Trang lỗi: 404 và lỗi máy chủ có mã đối chiếu</h2>
+    <h2 id="status-page-title" class="fx-section-title">Trang lỗi: 404 và lỗi máy chủ có mã đối chiếu</h2>
     <partial name="_StatusPage" model="@(new StatusPageModel(404, "Không tìm thấy trang", "Trang bạn tìm không tồn tại hoặc đã bị xóa."))" />
     <partial name="_StatusPage" model="@(new StatusPageModel(null, "Đã xảy ra lỗi", "Vui lòng thử lại sau hoặc liên hệ Fuji để được hỗ trợ.", "00-demo-uikit-00"))" />
 </section>
 <section id="payment-qr" class="uikit-section" aria-labelledby="payment-qr-title">
-    <h2 id="payment-qr-title" class="section-title">QR thanh toán mẫu</h2>
+    <h2 id="payment-qr-title" class="fx-section-title">QR thanh toán mẫu</h2>
     <partial name="_PaymentQr" model='new PaymentQrModel(VietQr.BuildImageUrl(300000, "DEMO-UIKIT"), 300000, "DEMO-UIKIT", DateTime.UtcNow.AddMinutes(15), VietQr.Account)' />
     <div class="mt-4"><partial name="_PaymentQr" model='new PaymentQrModel(null, 999999999999, "DEMO-UIKIT-NOI-DUNG-RAT-DAI-DE-KIEM-TRA-XUONG-DONG", DateTime.UtcNow.AddMinutes(-1), Additional: true)' /></div>
 </section>
 <section id="room-calendar" class="uikit-section" aria-labelledby="room-calendar-title">
-    <h2 id="room-calendar-title" class="section-title">Lịch phòng theo đêm</h2>
+    <h2 id="room-calendar-title" class="fx-section-title">Lịch phòng theo đêm</h2>
     <p class="text-muted">Dành cho Chủ, Quản lý và Quản trị. Tư vấn dùng bảng phòng trống.</p>
     @{
         var month = RoomCalendarModel.ParseMonth(Context.Request.Query["month"], today);

@@ -13,7 +13,7 @@
 <div class="change-current">
     <partial name="_DescriptionList" model="@(new DescriptionItem[] { new("Lịch hiện tại", new HtmlContentBuilder().Append($"{Model.Booking.CheckIn:dd/MM/yyyy} – {Model.Booking.CheckOut:dd/MM/yyyy}")), new("Loại phòng", new HtmlContentBuilder().Append(Model.Booking.RoomType.Name)) })" />
 </div>
-<form asp-action="@quoteAction" asp-route-id="@id" method="post" class="card-soft p-4 change-request-form">
+<form asp-action="@quoteAction" asp-route-id="@id" method="post" class="fx-card p-4 change-request-form">
     <div asp-validation-summary="All" class="text-danger" role="alert"></div>
     <input asp-for="PreviewToken" type="hidden" />
     <div class="mb-3">

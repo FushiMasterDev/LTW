@@ -3,7 +3,7 @@
     var actions = Model.Rows.Any(r => r.Actions is not null);
 }
 <div class="fx-table-wrap">
-    <table class="table table-modern fx-table">
+    <table class="table fx-table">
         <caption class="visually-hidden">@L[Model.Caption]</caption>
         <thead><tr>
             @foreach (var column in Model.Columns)

@@ -24,7 +24,7 @@ Bước 03y ngày 18/10/2026 thay nhận diện cũ theo bản mẫu đã đư�
 
 ## Tinh thần
 
-Ảnh thật của Hà Nội và homestay mở câu chuyện. Nền ivory và bề mặt giấy ấm giữ phần đọc yên tĩnh; xanh rừng cho thương hiệu, link, khối tối và lựa chọn; cam đất cho hành động chính và chữ nhấn. Không biến trạng thái nghiệp vụ thành màu trang trí. Dashboard ưu tiên đọc dữ liệu, chỉ đổi khung ở bước 03y.
+Ảnh thật của Hà Nội và homestay mở câu chuyện. Nền ivory và bề mặt giấy ấm giữ phần đọc yên tĩnh; xanh rừng cho thương hiệu, link, khối tối và lựa chọn; cam đất cho hành động chính và chữ nhấn. Không biến trạng thái nghiệp vụ thành màu trang trí. Dashboard ưu tiên đọc dữ liệu; bước 04 dùng cùng thư viện component cho nội dung các màn nội bộ hiện có.
 
 Chế độ tối dùng nền xanh than ấm, surface sáng hơn nền, chữ ivory và cam sáng với chữ tối. Mọi cặp chữ/nền cần đạt 4.5:1. Cam nút ở chế độ sáng tối hơn bản mẫu để dùng chữ trắng; màu chữ nhấn trên ảnh dùng token riêng để đạt tương phản trên lớp phủ tối.
 
@@ -50,7 +50,7 @@ Mọi mẫu dùng chung phải có partial/Tag Helper và xuất hiện trong `/
 - Gallery desktop một ảnh lớn trái, hai ảnh phải; ảnh tiếp theo trong lightbox. Điện thoại vuốt và có bàn phím/nút mở.
 - BookingPanel dính desktop, phòng chọn có viền xanh và dấu kiểm, tiện nghi chip, đánh giá có avatar chữ cái.
 - Alert, Tabs, EmptyState, Steps, RatingInput, BookingCard, StatusPage, AuthAside, BookingStepper, PaymentQr, StatCard, PageHead, DataTable và FilterBar chung token bề mặt, viền và góc.
-- Dashboard sidebar xanh đậm, lựa chọn viên cam, topbar sáng; auth hai cột ảnh/form. Không sửa nghiệp vụ hoặc làm bước 04.
+- Dashboard sidebar xanh đậm, lựa chọn viên cam, topbar sáng; auth hai cột ảnh/form. Nội dung nội bộ dùng PageHead, FilterBar, DataTable/Pager, TaskList, DescriptionList và Timeline. StatCard đặt nhãn cạnh icon sage, số Fraunces phía dưới. Bảng thành thẻ có nhãn trên điện thoại; form một cột tối đa 40rem, nút cuối form dính dưới trên điện thoại. Chi tiết Owner đặt thao tác trước lịch sử trên 375px, nút tối thiểu 44px. Accounting dùng Tabs và ReceiptReview; chỉ hiển thị dữ liệu thật đã được controller nạp. Không thay nghiệp vụ hoặc mở màn bước 05.
 
 ## Chuyển động
 

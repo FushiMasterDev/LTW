@@ -3,7 +3,6 @@
    nút, thẻ, badge, form, bảng, empty state, pager, alert, dropdown/modal, avatar,
    và các component mới tiền tố fx- (status badge, money…).
    ========================================================================= */
-/* Class không có tiền tố fx- là class cũ chuyển nguyên từ CSS trước bước 01: bước 02–04 thay bằng component mới rồi xóa. */
 
 /* ---------- Buttons ---------- */
 .btn {
@@ -140,41 +139,8 @@
 .lang-switch .btn {
   min-width: 2.75rem;
   padding-inline: 0.6rem;
-}
-
-/* ---------- Cards, chips, badges ---------- */
-.card-soft {
-  box-shadow: var(--fx-shadow);
-  background: var(--fx-surface);
-  border: 1px solid var(--fx-border);
-  border-radius: var(--fx-radius);
-  color: var(--fx-ink);
-}
-
+}/* ---------- Cards, chips, badges ---------- */
 /* Trước đây là viền màu trên đầu thẻ; nay chỉ giữ một nét mảnh theo tone */
-.card-accent-top {
-  border-top: 3px solid var(--tone-solid, var(--fx-primary));
-}
-
-.icon-chip {
-  width: 2.75rem;
-  height: 2.75rem;
-  flex-shrink: 0;
-  border-radius: var(--fx-radius-sm);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--tone-bg, var(--fx-primary-soft));
-  color: var(--tone-fg, var(--fx-on-primary-soft));
-  font-size: 1.25rem;
-}
-
-.icon-chip-lg {
-  width: 3.5rem;
-  height: 3.5rem;
-  font-size: 1.6rem;
-  border-radius: var(--fx-radius);
-}
 
 .badge-tone {
   display: inline-flex;
@@ -204,7 +170,7 @@
   display: none;
 }
 
-.count-pill {
+.fx-tabs__count {
   display: inline-block;
   min-width: 2.25rem;
   padding: 0.1rem 0.6rem;
@@ -214,45 +180,9 @@
   font-variant-numeric: tabular-nums;
   background: var(--tone-bg, var(--fx-surface-2));
   color: var(--tone-fg, var(--fx-ink));
-}
-
-/* ---------- Page head (trang danh sách) ---------- */
-.page-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.page-head h1 {
-  margin: 0;
-  font-size: 1.625rem;
-}
-
-.page-head p {
-  max-width: 46rem;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin: 2.5rem 0 1rem;
-  font-size: 1.375rem;
-}
-
-.section-title > .bi {
-  color: var(--fx-primary);
-  font-size: 1.15em;
-}
+}/* ---------- Page head (trang danh sách) ---------- */
 
 /* ---------- Forms ---------- */
-.filter-bar {
-  padding: 1rem;
-  margin-bottom: 1.25rem;
-}
 
 .form-control,
 .form-select {
@@ -336,11 +266,11 @@
   --bs-table-hover-color: var(--fx-ink);
 }
 
-.table-modern {
+.fx-table {
   margin: 0;
 }
 
-.table-modern thead th {
+.fx-table thead th {
   background: var(--fx-surface-2);
   color: var(--fx-muted);
   font-size: 0.8125rem;
@@ -350,17 +280,17 @@
   white-space: nowrap;
 }
 
-.table-modern tbody td {
+.fx-table tbody td {
   padding: 0.8rem 1rem;
   vertical-align: middle;
   border-color: var(--fx-border);
 }
 
-.table-modern tbody tr:last-child td {
+.fx-table tbody tr:last-child td {
   border-bottom: 0;
 }
 
-.table-modern tbody tr:hover > * {
+.fx-table tbody tr:hover > * {
   background: color-mix(in srgb, var(--fx-primary-soft) 45%, transparent);
 }
 
@@ -541,7 +471,7 @@
 .fx-table th a { color: inherit; display: inline-flex; gap: .5rem; align-items: center; min-height: 2.75rem; }
 .fx-table td { overflow-wrap: anywhere; }
 .fx-table .fx-table__nowrap { white-space: nowrap; overflow-wrap: normal; font-variant-numeric: tabular-nums; }
-@media (max-width: 767.98px) {
+@media (max-width: 991.98px) {
   .fx-table, .fx-table tbody { display: block; width: 100%; }
   .fx-table thead { display: block; }
   .fx-table thead tr { display: flex; flex-wrap: wrap; gap: .5rem; background: var(--fx-surface-2); }
@@ -550,6 +480,10 @@
   .fx-table tr { display: block; padding: .75rem; border-bottom: 1px solid var(--fx-border); }
   .fx-table td { display: grid; grid-template-columns: minmax(5rem, 1fr) minmax(0, 2fr); gap: .75rem; border: 0; padding: .5rem !important; text-align: left !important; }
   .fx-table td::before { content: attr(data-label); color: var(--fx-muted); font-weight: 500; }
+  .fx-table thead:not(:has(a)) { display: none; }
+  .fx-table td.text-end .fx-table__value { text-align: right; }
+}
+@media (max-width: 767.98px) {
   .fx-price-breakdown > div { grid-template-columns: minmax(0, 1fr) auto; }
 }
 /* ---------- Dòng thời gian ---------- */

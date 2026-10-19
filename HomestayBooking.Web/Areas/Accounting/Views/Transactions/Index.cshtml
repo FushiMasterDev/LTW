@@ -27,7 +27,7 @@
                         Func<dynamic, IHtmlContent> cell3 = @<text>@if (t.BookingCode is not null)
                             {
                                 <span class="fx-code">@t.BookingCode</span>
-                                <div class="small text-muted">@L[t.BookingStatus!.Value.DisplayName()] · @L["cần {0:N0}đ", t.BookingAmountDue ?? 0]</div>
+                                <div class="small text-muted">@L[t.BookingStatus!.Value.DisplayName()] · @L["cần"] <money value="@(t.BookingAmountDue ?? 0)" /></div>
                             }
                             else
                             {

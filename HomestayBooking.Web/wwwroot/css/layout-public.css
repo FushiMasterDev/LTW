@@ -779,13 +779,6 @@
   }
 }
 
-/* ---------- Điện thoại ---------- */
-@media (max-width: 575.98px) {
-  .page-head h1 {
-    font-size: 1.5rem;
-  }
-}
-
 /* Public frame: the homepage header floats over the photograph. */
 .site-public .container { max-width: 80rem; padding-inline: 1.25rem; }
 .fx-js .site-header--home { position: fixed; inset: 0 0 auto; background: transparent; border-color: transparent; }

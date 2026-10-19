@@ -4,7 +4,7 @@
     {
         <a class="fx-tabs__link @(tab.Active ? "is-active" : null)" href="@Url.Content("~" + tab.Href)" aria-current="@(tab.Active ? "page" : null)">
             @if (tab.Icon is not null) { <icon name="@tab.Icon" /> } @L[tab.Label]
-            @if (tab.Count > 0) { <span class="count-pill">@tab.Count</span> }
+            @if (tab.Count > 0) { <span class="fx-tabs__count">@tab.Count</span> }
         </a>
     }
 </nav>
