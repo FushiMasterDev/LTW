@@ -1,0 +1,47 @@
+@model OwnerCalendarModel
+@{ ViewData["Title"]=L["Lịch phòng"]; var availableRooms = Model.Nights.Select(n => new {n.RoomId,n.RoomCode}).Distinct().ToList();
+var selectedBlocks=Model.Nights.Where(n=>n.RoomId==Model.RoomId && n.State==HomestayBooking.Web.Services.CalendarNightState.Blocked && n.Date>=Model.Today).GroupBy(n=>n.Code).ToList(); }
+<partial name="_PageHead" model='new PageHeadModel("Lịch phòng", "", "", L["Chọn phòng → chọn khoảng ngày → xác nhận. Ngày kết thúc không tính là đêm khóa."], ShowCreate:false)' />
+@if(Model.Homes.Count==0) { <partial name="_EmptyState" /> } else {
+<div class="fx-form-card fx-card mb-4">
+    <form method="get" class="mb-3" data-owner-room-select>
+        <label class="form-label" for="calendar-home">@L["Homestay"]</label>
+        <select class="form-select mb-3" id="calendar-home" name="homestayId">@foreach(var h in Model.Homes) { <option value="@h.Id" selected="@(h.Id==Model.HomestayId)">@h.Name</option> }</select>
+        <label class="form-label" for="calendar-room">@L["Phòng"]</label>
+        <select class="form-select mb-3" id="calendar-room" name="roomId">@foreach(var r in availableRooms) { <option value="@r.RoomId" selected="@(r.RoomId==Model.RoomId)">@r.RoomCode</option> }</select>
+        <input type="hidden" name="month" value="@Model.Calendar.Month.ToString("yyyy-MM")" />
+        <noscript><button type="submit" class="btn btn-outline-secondary">@L["Xem lịch"]</button></noscript>
+    </form>
+    @if(Model.RoomId is int room) {
+    <form asp-action="Create" method="post" data-owner-block data-date-required="@L["Chọn đủ ngày bắt đầu và kết thúc."]">
+        <input type="hidden" name="homestayId" value="@Model.HomestayId" /><input type="hidden" name="roomId" value="@room" />
+        <partial name="_DateRangePicker" model='new DateRangePickerModel("owner-block", CheckInName:"start", CheckOutName:"end")' />
+        <details class="my-3"><summary class="py-3">@L["Lý do và ghi chú (không bắt buộc)"]</summary>
+            <label class="form-label mt-3" for="block-reason">@L["Lý do"]</label><select class="form-select mb-3" name="reason" id="block-reason"><option value="OtherChannel">@L["Khách từ kênh khác"]</option><option value="Maintenance">@L["Bảo trì"]</option></select>
+            <label class="form-label" for="block-note">@L["Ghi chú"]</label><textarea class="form-control" id="block-note" name="note" maxlength="255"></textarea>
+        </details>
+        <div class="fx-form-actions"><button type="submit" class="btn btn-brand" data-loading-text="@L["Đang lưu…"]">@L["Xác nhận khóa ngày"]</button></div>
+    </form>
+    @if(selectedBlocks.Count>0) {
+    <form asp-action="Unlock" method="post" class="mt-4">
+        <input type="hidden" name="homestayId" value="@Model.HomestayId" /><input type="hidden" name="roomId" value="@room" /><input type="hidden" name="month" value="@Model.Calendar.Month.ToString("yyyy-MM")" />
+        <label class="form-label" for="unlock-block">@L["Khoảng khóa cần mở"]</label><select class="form-select mb-3" id="unlock-block" name="blockId" required>
+        <option value="">@L["Chọn khoảng khóa"]</option>
+        @foreach(var block in selectedBlocks) { <option value="@block.Key![2..]">@block.Key · @block.Min(n=>n.Date).ToString("dd/MM") – @block.Max(n=>n.Date).AddDays(1).ToString("dd/MM")</option> }
+        </select>
+        <p class="small text-muted">@L["Xác nhận sẽ mở toàn bộ phần còn lại của khóa này, kể cả ngày ngoài tháng đang xem."]</p>
+        <button type="submit" class="btn btn-outline-secondary" data-loading-text="@L["Đang lưu…"]">@L["Xác nhận mở khóa"]</button>
+    </form>
+    }
+    }
+</div>
+<partial name="_RoomCalendar" model="Model.Calendar" />
+}
+@section Head { <link rel="stylesheet" href="~/lib/flatpickr/flatpickr.min.css" /> }
+@section Scripts {
+    <script src="~/lib/flatpickr/flatpickr.min.js"></script>
+    <script src="~/lib/flatpickr/l10n/vn.min.js"></script>
+    <script src="~/js/components/date-range-picker.js" asp-append-version="true"></script>
+    <script src="~/js/components/room-calendar.js" asp-append-version="true"></script>
+    <script src="~/js/components/owner-calendar.js" asp-append-version="true"></script>
+}
