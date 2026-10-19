@@ -53,6 +53,8 @@ public class HomeController : Controller
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    // Exception re-execution preserves POST; this read-only error view must also handle server webhooks.
+    [IgnoreAntiforgeryToken]
     public IActionResult Error()
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
