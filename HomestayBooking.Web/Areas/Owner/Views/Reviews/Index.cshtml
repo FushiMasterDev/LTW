@@ -1,0 +1,21 @@
+@model OwnerReviewsModel
+@{ ViewData["Title"]=L["Đánh giá của khách"]; }
+<partial name="_PageHead" model='new PageHeadModel("Đánh giá của khách", "", "", ShowCreate:false)' />
+<partial name="_FilterBar" model='new FilterBarModel("owner-reviews",new FilterField[] {new("homestayId","Homestay",Options:Model.Homes.Select(h=>new SelectListItem(h.Name,h.Id.ToString(),h.Id==Model.HomestayId)).ToList())})' />
+@if(Model.Page is {} reviewPage) {
+    @if(reviewPage.Average is {} average) { <div class="mb-4"><rating value="@average" count="@reviewPage.Count" /></div> }
+    @foreach(var r in reviewPage.Reviews) {
+        Func<dynamic,IHtmlContent> actions = @<text>
+            <form asp-action="Reply" asp-route-id="@r.Id" method="post" data-owner-form>
+                <input type="hidden" name="homestayId" value="@Model.HomestayId" /><input type="hidden" name="page" value="@reviewPage.Reviews.PageIndex" />
+                <label class="form-label" for="reply-@r.Id">@L["Trả lời đánh giá"]</label><textarea class="form-control" id="reply-@r.Id" name="reply" required maxlength="1000" aria-describedby="reply-hint-@r.Id">@r.OwnerReply</textarea>
+                <p class="form-text" id="reply-hint-@r.Id">@L["Tối đa 1000 ký tự. Trả lời sẽ hiển thị công khai."]</p>
+                <div class="fx-form-actions"><button class="btn btn-brand" type="submit" data-loading-text="@L["Đang lưu…"]">@L["Gửi trả lời"]</button></div>
+            </form>
+        </text>;
+        <ul class="list-unstyled fx-form-card p-0 mb-4"><partial name="_ReviewCard" model='new ReviewCardModel(r.Rating,r.CreatedAt,r.Comment,r.OwnerReply,Actions:actions(null!))' /></ul>
+    }
+    @if(reviewPage.Reviews.Count==0) { <partial name="_EmptyState" model='new EmptyStateModel("Chưa có đánh giá.",Icon:"chat-square-text")' /> }
+    <partial name="_Pager" model="reviewPage.Reviews" />
+} else { <partial name="_EmptyState" /> }
+@section Scripts { <script src="~/js/components/owner-forms.js" asp-append-version="true"></script> }
