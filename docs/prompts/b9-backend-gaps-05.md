@@ -56,7 +56,7 @@ Style viết như B8: primary constructor, record DTO, kiểm quyền qua `Actor
 5. **Báo cáo Admin (`/Admin/Reports`) khi khoảng ngày không có dữ liệu:** các biểu đồ vẫn vẽ trục 0–1 rỗng và bảng toàn 0. Khi không có dữ liệu thì hiện `_EmptyState` thay cho biểu đồ rỗng (giữ thẻ số liệu). Kiểm thêm: seed có dữ liệu năm 2026 (77 đơn) nhưng năm 2027–2028 hiện 0; ghi rõ trong báo cáo dữ liệu seed thực có ở những năm nào, không bịa dữ liệu.
 6. **Dashboard Admin:** nút "Xem báo cáo" dùng icon dấu cộng (nghĩa "tạo mới"); đổi sang icon phù hợp hành động xem (ví dụ `bar-chart` hoặc `arrow-right`). Trạng thái rỗng của bảng "Hợp đồng sắp hết hạn" cũng là thẻ lồng trong thẻ: dùng cùng cách sửa với điểm 3.
 
-### Dữ liệu thử để nghiệm thu 05d (người dùng chốt 19/10/2026)
+### Dữ liệu thử để nghiệm thu 05d (Claude chốt khi giao B9, theo yêu cầu người dùng làm tiếp và sửa điểm yếu ngày 19/10/2026)
 
 Báo cáo 05d chưa nghiệm thu được **tạo hợp đồng** và **duyệt nội dung thành công** vì thiếu dữ liệu đủ điều kiện. Ở bước này **được phép** chuẩn bị dữ liệu thử trong database Development, nhưng **chỉ qua luồng thật của app** (ví dụ chủ `0912000001` đổi địa chỉ một homestay qua trình sửa để đưa nó về chờ duyệt; hoàn tất một hồ sơ đối tác thử qua `/Partner` → thẩm định → kích hoạt để có chủ đủ điều kiện ký hợp đồng). Không sửa dữ liệu bằng SQL trực tiếp. Sau đó đăng nhập `QL001` tạo/gia hạn một hợp đồng và duyệt một nội dung. Ghi mọi dữ liệu thử vào báo cáo. Giữ đơn demo `FJ261019-001`.
 
