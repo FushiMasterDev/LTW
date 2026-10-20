@@ -2,6 +2,8 @@
 
 Ngày 20/10/2026. Nhánh `deploy/self-host-mac`, tách từ `main` tại `a276f3f` (sau `86d574f`). Phạm vi theo [prompt](../prompts/self-host-mac.md). Hướng dẫn thao tác thật: [runbook](self-host-mac.md). Các commit code/bộ triển khai/QR lần lượt là `ccc3d8e`, `143a143`, `0b76266`; tài liệu được lưu trong commit riêng tiếp theo.
 
+**Cập nhật quyết định:** mục 1–7 dưới đây lưu lịch sử lượt diễn tập đầu. Kế hoạch mua domain/Cloudflare/SePay trong các mục đó đã được thay bằng **mục 8 — Phương án miễn phí (Tailscale Funnel)** theo [prompt tiếp theo](../prompts/self-host-mac-free.md). Khi triển khai hãy theo mục 8 và runbook hiện hành, không làm checklist cũ.
+
 **Diễn tập chỉ trên loopback, không công bố web ra Internet.** Không chạy Cloudflare login/create/route/quick tunnel, không cài phần mềm hay LaunchAgent thật, không đổi `pmset`, tường lửa, người dùng máy hoặc port Docker. Không push/merge. App 5011 và container `sql-homestay` được giữ chạy.
 
 ## 1. Code và kiểm thử
@@ -183,3 +185,139 @@ Chi tiết từng thao tác nằm trong [runbook](self-host-mac.md), bao gồm c
 3. Tài khoản ngân hàng nhận tiền và gói/tài khoản SePay, người giữ khóa và kiểm giao dịch thật.
 4. Khi nào cho phép chạy named tunnel/LaunchAgent thật; người đăng nhập sau reboot/FileVault, chính sách máy không ngủ, UPS.
 5. Nơi sao lưu ngoài máy, người nhận cảnh báo health/dung lượng và lịch diễn tập restore định kỳ.
+
+## 8. Phương án miễn phí (Tailscale Funnel)
+
+Ngày đối chiếu và diễn tập: **20/10/2026**, cùng nhánh `deploy/self-host-mac`. Không mở web ra Internet, không cài Tailscale hay phần mềm hệ thống, không nạp LaunchAgent, không đổi thiết lập máy. Không chạy `sql-harden.sh`, không dừng/đổi/xóa container SQL hay app 5011, không xóa database nào. Không push/merge. Code và bộ triển khai theo [prompt phương án miễn phí](../prompts/self-host-mac-free.md).
+
+### Code và kiểm thử
+
+- `Program.cs`: khi `ReverseProxy:Enabled=true`, app bỏ HSTS/HTTPS redirection, để proxy kết thúc TLS. `ReverseProxy:AssumeHttps` mặc định true khi bật proxy: xét **socket peer loopback trước** Forwarded Headers, hỗ trợ IPv4, IPv6 và IPv4-mapped, không tin máy ngoài loopback. Kết nối từ Tailscale thiếu `X-Forwarded-Proto` vẫn có scheme HTTPS để antiforgery Secure hoạt động. Mặc định proxy vẫn tắt; cookie Production giữ Secure cho Identity/antiforgery/session/TempData.
+- `BankWebhookController`: khóa null/trống/toàn khoảng trắng trả **503 ProblemDetails: Bank webhook is disabled**, trước xác thực/xử lý giao dịch. Khóa đã cấu hình vẫn dùng xác thực cũ. JSON không hợp lệ có thể trả 400 do model validation; không nhận dữ liệu khi khóa trống.
+- Rà URL tuyệt đối: `PublicUrlService` và tin nhắc dùng `Reminders:PublicBaseUrl`; URL QR dùng `BankAccount:QrImageBaseUrl` và thông tin ngân hàng cấu hình, QR dự phòng có khóa riêng. Điều hướng/thông báo nội bộ là URL tương đối; không tìm thấy code tạo URL công khai từ `Request.Host`/`Request.Scheme`. Giữ giới hạn base URL 50 ký tự để tin nhắc còn trong 160 ký tự; nếu hostname dài, chọn tên máy ngắn trước public.
+- Thêm **9 ca test**, tổng **1.781**: thiếu Proto với proxy bật/tắt và 3 dạng loopback/ngoài loopback; đăng nhập qua HTTP backend, cookie Secure, token form, truy cập Admin; 503 qua pipeline không ghi giao dịch; null/rỗng/khoảng trắng không gọi matching service. Hai ca trang QR được tăng assertion: khóa webhook trống vẫn có QR và form tải bill. Các test ReceiptReviewService có sẵn kiểm kế toán duyệt/từ chối/giữ phòng/quá hạn/phân quyền.
+- Kiểm đối chứng code cũ bằng 8 ca mới chọn lọc: **6 fail đúng lỗi cần sửa, 2 pass** (`regression-red.log`, exit 1). Sau đó phục hồi nguyên code mới, build và chạy lại toàn bộ. Lượt xác nhận trước đối chứng: `dotnet build HomestayBooking.sln -c Release --no-restore` **0 cảnh báo / 0 lỗi**; test **1.781 pass / 0 fail / 0 skip**, gồm benchmark SQL, thời gian **3 phút 53 giây** (`build.log`, `test-complete.log`, `free-complete.trx`). Kết quả lượt cuối sau đối chứng ghi ở đoạn chốt kiểm chứng bên dưới.
+- SQL test dùng **DB mới** `HomestayBooking_SelfHostTest_Free_20261020`, đã deploy/verify; hai test SQL rollback dữ liệu. Không chạy trên ConstraintTest/v5 hay DB làm việc có sẵn.
+
+Bổ sung bộ triển khai: env chuyển sang hostname `ts.net`, `AssumeHttps=true`, khóa webhook trống; [tailscale.md](../../deploy/mac/tailscale.md) có cài đặt/quyền admin/lệnh bật-tắt-status và phiên bản đối chiếu; [sql-harden.sh](../../deploy/mac/sql-harden.sh) có 3 lần xác nhận, backup toàn bộ DB (trừ tempdb), restore vào **volume Express mới**, kiểm trước cutover, giữ nguồn để quay lui. Cloudflare được giữ là tùy chọn khi có tên miền. Bash syntax và cả 3 plist đã kiểm; script SQL chỉ được kiểm cú pháp/rà soát, chưa diễn tập đổi edition/container thật.
+
+### Kết quả diễn tập nội bộ
+
+App publish thật ở `/private/tmp/fuji-selfhost-free/app`, env quyền **600**, thư mục gốc **700**. Dùng lại **chỉ** `HomestayBooking_ProdRehearsal` theo quyền trong prompt; file dữ liệu được chép sang thư mục thử riêng, giữ nguyên thư mục lượt trước. HTTP tới **127.0.0.1:8080**, `Host: fuji-mac.example.ts.net`, chỉ `X-Forwarded-For`, **không** `X-Forwarded-Proto`. Harness chuyển cookie giữa các request để mô phỏng trình duyệt đi qua HTTPS của Funnel; đây không phải thử TLS/4G thực tế.
+
+| Kiểm | Kết quả và bằng chứng |
+|---|---|
+| Không redirect loop | `/`, `/healthz`, `/Account/EmployeeLogin` trả 200, không Location; Dev/Swagger GET 404. App không phát HSTS ở proxy mode; nosniff/DENY/CSP còn. `funnel-manual-flow.json` |
+| Đăng nhập/form | Admin, kế toán mới KTFREE001, chủ đăng nhập qua form thật và token antiforgery; cookie Secure được kiểm trong test pipeline và antiforgery cookie trên app publish. Tạo tài khoản kế toán qua form quản trị, mật khẩu tạm chỉ lưu file 600 ngoài repo |
+| URL cấu hình | Lời mời qua controller thật với **Host: localhost** vẫn bắt đầu `https://fuji-mac.example.ts.net/Partner/Activate`, TempData Secure; không lưu token/HTML lời mời vào evidence. `funnel-absolute-url.json`. Fixture hồ sơ EmployeeAssisted được thêm bằng SQL chỉ trong DB diễn tập; không xem đó là thử quy trình tạo hồ sơ qua UI |
+| Webhook tắt | Payload JSON hợp lệ + header API key giả → **503**, thông báo disabled; BankTransactions giữ **1** dòng của lượt trước, không thêm giao dịch. `funnel-manual-flow.json` |
+| Không SePay, qua form HTTP thật | Khách tạo **FJ261020-003**, QR VietQR đúng số cọc thử **150.000đ**, form tải bill có mặt → tải PNG thử `PaymentSubmitted` → KTFREE001 thấy trong `/Accounting/Receipts`, duyệt thành `Deposited` → chủ xác nhận `Confirmed`. Payment `ManualReceipt/Approved`, reviewer employee **3**; không có webhook/tiền thật. `rehearse.log`, `funnel-manual-flow.json`, `rehearsal-inventory.txt` |
+| Dữ liệu và dừng app | `database/tests/data_consistency.sql` **35/35 OK**, không sửa dữ liệu; app thử dừng bằng script đúng PID. Không còn listener 8080. App **5011 vẫn PID 31028**, SQL container vẫn chạy. `data-consistency.log`, `listeners-final.txt` |
+| SQL chỉ đọc | `docker port sql-homestay`: vẫn `0.0.0.0:1433`, `[::]:1433`; lsof `*:1433`, Docker PID 32952. Edition **Developer Edition (64-bit)**, version **16.0.4230.2**, image `mcr.microsoft.com/mssql/server:2022-latest`, volume `sql-homestay-data`. `docker-port.txt`, `sql-readonly.txt`, `source-mount.txt` |
+
+Các lỗi harness không tính đạt: lệnh đầu đã kết thúc launcher nên tiến trình nền bị môi trường exec thu hồi, HTTP connection refused; sau đó chạy start và harness trong cùng phiên lệnh, rồi stop rõ ràng. Fixture lời mời ban đầu thiếu `SET QUOTED_IDENTIFIER ON` khi insert vào bảng có filtered index, transaction rollback; sửa SET option rồi kiểm đạt (`rehearse-url-final.log`). Lượt targeted đầu bị chạy trùng/chung log; đã dừng đúng PID test trùng của phiên, không dùng log lẫn đó làm bằng chứng cuối. Sandbox hạn chế `ps`/`lsof` và certificate store: dùng lượt kiểm với quyền phù hợp, không sửa cấu hình máy.
+
+Dữ liệu giữ lại: DB rehearsal có thêm 1 kế toán, 1 khách/đơn đã Confirmed và 1 hồ sơ mời thử (WaitingOwnerActivation); toàn bộ đơn cũ còn. Giữ `/private/tmp/fuji-selfhost-free` gồm env/credentials thử, binary, data/bill/key, harness và `evidence/`; không commit chúng. `/private/tmp` có thể bị dọn, không dùng làm nơi lưu lâu dài.
+
+### Việc chủ máy tự làm — theo thứ tự
+
+1. **Xử lý điều kiện Tailscale trước public thương mại.** Personal 0đ chỉ dành phi thương mại theo [bảng giá chính thức](https://tailscale.com/pricing). Không thể xác nhận web kinh doanh homestay được dùng Personal chỉ dựa trên máy/tài khoản cá nhân. Tự đối chiếu/xin xác nhận quyền sử dụng miễn phí; không lấy trial làm phương án lâu dài và không tự mua gói trả phí:
+
+   ```bash
+   open https://tailscale.com/pricing
+   ```
+
+2. **Chọn cửa sổ bảo trì SQL, backup ngoài máy và tự dừng mọi app ghi SQL, kể cả 5011.** Theo runbook mục 9; script sẽ backup mọi DB, VERIFYONLY, yêu cầu chép backup sang ổ khác, dựng bản Express trên volume mới ở 1434 để bạn kiểm trước khi cutover 1433. Không xóa container/volume cũ:
+
+   ```bash
+   docker port sql-homestay 1433
+   ./deploy/mac/sql-harden.sh --apply
+   # Sau khi tự kiểm, xác nhận cutover trong script:
+   docker port sql-homestay 1433  # chỉ 127.0.0.1:1433
+   ```
+
+   Kiểm `SELECT SERVERPROPERTY('Edition')`, CHECKDB, mọi DB/app/quyền theo lệnh runbook; Express phải đúng **SQL Server 2022**, 10 GB/DB. Không tiếp tục nếu restore/tính năng/edition không đạt. Bản nguồn vẫn Developer/LAN nên rollback chỉ để khôi phục phục vụ bảo trì.
+3. **Dựng DB thật và điền env ngoài repo**, không dùng dữ liệu thử. BankAccount là tài khoản nhận tiền thật/đúng tên chủ, khóa webhook trống; điền base URL/AllowedHosts theo Tailscale sau khi lấy URL. Giữ proxy/AssumeHttps true:
+
+   ```bash
+   cd /Users/phamngocphu/Downloads/LTW
+   ./deploy/mac/setup-database.sh HomestayBooking
+   mkdir -p "$HOME/FujiHomestay"
+   chmod 700 "$HOME/FujiHomestay"
+   cp deploy/mac/production.env.example "$HOME/FujiHomestay/production.env"
+   chmod 600 "$HOME/FujiHomestay/production.env"
+   nano "$HOME/FujiHomestay/production.env"
+   ./deploy/mac/publish.sh
+   ./deploy/mac/start.sh
+   ./deploy/mac/status.sh
+   ```
+
+   Sau bootstrap, đổi mật khẩu và xóa dòng mật khẩu bootstrap khỏi env; tạo người kế toán thật qua UI.
+4. **Cài/đăng nhập Tailscale Standalone**, bật mở khi đăng nhập/CLI integration; admin console DNS bật MagicDNS/HTTPS certificates và policy `nodeAttrs` cho Funnel đúng máy. [Hướng dẫn từng bước + ACL](../../deploy/mac/tailscale.md):
+
+   ```bash
+   open https://tailscale.com/download/mac
+   open https://console.tailscale.com/
+   tailscale version
+   tailscale serve --bg 8080
+   tailscale serve status
+   ```
+
+5. **Chỉ khi sẵn sàng và có quyền sử dụng phù hợp mới bật public**. Lấy URL, ghi env và restart app:
+
+   ```bash
+   tailscale funnel --bg 8080
+   tailscale funnel status
+   nano "$HOME/FujiHomestay/production.env"
+   ./deploy/mac/stop.sh
+   ./deploy/mac/start.sh
+   ./deploy/mac/status.sh
+   # Thay bằng hostname thật vừa lấy:
+   curl --fail https://TEN-MAY.TAILNET.ts.net/healthz
+   ```
+
+   Điền `Reminders__PublicBaseUrl='https://TEN-MAY.TAILNET.ts.net'`, `AllowedHosts='TEN-MAY.TAILNET.ts.net;127.0.0.1;localhost'`; giữ `BankAccount__WebhookApiKey=''`. Không cài/nạp cloudflared trong đường chính này.
+6. **Tự cài LaunchAgent app/backup theo khối lệnh mục 5 runbook**, dừng bản chạy tay trước, thay đường dẫn plist, rồi:
+
+   ```bash
+   ./deploy/mac/stop.sh
+   rm -f "$HOME/FujiHomestay/run/maintenance"
+   launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.fuji.homestay.plist"
+   launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.fuji.homestay.backup.plist"
+   tailscale funnel status
+   ```
+
+   `--bg` tự giữ cấu hình Funnel; Tailscale/Docker mở khi đăng nhập, Mac phải thức. Chủ máy tự chỉnh sleep/FileVault/tường lửa theo runbook nếu chọn. Không có thay đổi hệ thống tự động từ phiên chuẩn bị.
+7. **Thử bằng điện thoại 4G**, tắt Wi-Fi, mở web HTTPS, đặt đơn, chuyển tiền thật số nhỏ đúng QR/mã đơn, tải bill, kế toán đối chiếu sao kê rồi duyệt, chủ xác nhận. Kế toán xem hàng chờ nhiều lần mỗi ngày, đối chiếu số tiền/nội dung chứa mã đơn/người nhận/giao dịch duy nhất; từ chối phải ghi lý do. Không chỉ tin ảnh bill. Sau reboot kiểm lại health và Funnel; định kỳ backup/restore ra DB tên khác:
+
+   ```bash
+   ./deploy/mac/backup.sh
+   ./deploy/mac/restore.sh "$HOME/FujiHomestay/backups/TEN_BAN_SAO.bak" HomestayBooking_Restore_FreeCheck
+   tailscale funnel status
+   # Khi muốn dừng public:
+   tailscale funnel --bg 8080 off
+   ```
+
+### Chi phí, giấy phép và rủi ro
+
+| Thành phần | Chi phí thêm dự kiến | Điều kiện |
+|---|---:|---|
+| macOS trên Mac đang có | 0đ | Máy/giấy phép đã sở hữu |
+| Docker Desktop cá nhân/doanh nghiệp nhỏ | 0đ | Dưới 250 nhân viên **và** doanh thu dưới 10 triệu USD/năm; điều kiện [Docker](https://docs.docker.com/subscription-billing/desktop-license/) |
+| SQL Server 2022 Express | 0đ | Production hợp lệ, 10 GB/DB; Developer không dùng Production thương mại, [Microsoft](https://learn.microsoft.com/en-us/sql/sql-server/editions-and-components-of-sql-server-2022?view=sql-server-ver16) |
+| .NET | 0đ | Runtime miễn phí kể cả thương mại, [Microsoft](https://dotnet.microsoft.com/en-us/platform/free) |
+| Tailscale Personal/Funnel | 0đ **phi thương mại** | Chưa xác nhận điều kiện cho web kinh doanh; [Tailscale](https://tailscale.com/pricing) |
+| VietQR có sẵn + duyệt bill thủ công | 0đ phí tích hợp | Không đăng ký API/gói SePay; phí tài khoản/chuyển tiền tùy ngân hàng, cần người đối chiếu |
+| Tên miền, SePay | 0đ | Không mua, không dùng |
+
+**Không thể khẳng định mọi dịch vụ Production thương mại 0đ theo điều kiện hiện hành của Tailscale Personal.** Không tự đổi dịch vụ/gói trả phí để giải quyết; báo rõ giới hạn này cho chủ máy. Điện/mạng, phần cứng, ổ backup, UPS, nhân công và phí ngân hàng không được tính là miễn phí.
+
+Funnel chỉ TLS trên 443/8443/10000, tên dưới `ts.net` của tailnet, không đổi thành tên miền tùy ý; giữ tên máy/tailnet để URL ổn định. Có giới hạn băng thông không cấu hình được; tài liệu không công bố số Mbps/hạn mức kết nối đồng thời, không đoán số. Chưa kiểm tải qua Funnel thật. [Giới hạn chính thức](https://tailscale.com/docs/features/tailscale-funnel#requirements-and-limitations). Cú pháp đối chiếu CLI từ 1.52, changelog v1.104.1 (07/10/2026); chưa kiểm trên binary Tailscale cài tại máy.
+
+Rủi ro vận hành còn nguyên: máy ngủ/đóng nắp/mất điện/mạng/Docker/Tailscale ngừng thì web ngừng; cần đăng nhập sau reboot/FileVault, theo dõi key expiry. SQL hiện vẫn LAN/Developer cho đến khi chủ máy tự bảo trì; chuyển edition/port thật chưa diễn tập. Mac chạy SQL amd64 qua giả lập (nếu có) không thuộc cấu hình SQL container được Microsoft hỗ trợ. Duyệt tay chậm hơn tự khớp; khách đã chuyển nhưng quên tải bill có thể hết hạn giữ phòng, cần đối chiếu và hỗ trợ/hoàn tiền khi cần. Không có SMS/Zalo thật, không dùng MessageLog như chứng cứ giao tin. Chưa thử ngân hàng/4G/TLS public hay reboot; backup cùng Mac vẫn cần một bản ngoài máy.
+
+### Chốt kiểm chứng lượt phương án miễn phí
+
+Sau khi phục hồi code mới từ kiểm đối chứng: `dotnet build HomestayBooking.sln -c Release --no-restore` thoát **0**, **0 cảnh báo / 0 lỗi** (`build-final.log`). `FUJI_SQL_TEST_DATABASE=HomestayBooking_SelfHostTest_Free_20261020 RUN_PERF_TESTS=1 dotnet test HomestayBooking.sln -c Release --no-build` thoát **0**, **1.781 pass / 0 fail / 0 skip**, thời gian runner **3 phút 20 giây** (`test-final.log`, `free-final.trx`). Bash `/bin/bash -n` toàn bộ script, `plutil -lint` cả 3 plist, kiểm link tài liệu nội bộ và `git diff --check` đều đạt. Code ở commit **`3f620aa`**, bộ triển khai ở **`2c6bae8`**; báo cáo/runbook được commit riêng tiếp theo. Toàn bộ bằng chứng lượt này nằm tại **`/private/tmp/fuji-selfhost-free/evidence/`**.
+
+Giới hạn cần chủ máy xử lý trước kinh doanh: quyền Tailscale Personal cho mục đích thương mại chưa được xác nhận; SQL hiện vẫn Developer và bind LAN. Đây là kết quả chuẩn bị/diễn tập nội bộ, chưa công bố web, chưa chuyển SQL thật và chưa kiểm thanh toán thật.

@@ -1,6 +1,8 @@
 # Chạy Fuji Homestay trên máy Mac của chủ dự án
 
-Máy Mac này là máy chủ Production. App nghe **127.0.0.1:8080**, SQL chạy trong container `sql-homestay`; Cloudflare Tunnel nối từ máy ra Cloudflare và cung cấp HTTPS cho khách. Không cần mở cổng router. Các lệnh Cloudflare, cài phần mềm, LaunchAgent và thay đổi hệ thống bên dưới **do chủ máy tự chạy** khi đã sẵn sàng đưa web lên mạng.
+Máy Mac này là máy chủ Production. App nghe **127.0.0.1:8080**, SQL chạy trong container `sql-homestay`; **Tailscale Funnel** cung cấp HTTPS qua `https://TEN-MAY.TAILNET.ts.net`, không mua tên miền, không mở cổng router, không dùng SePay. Mọi lệnh cài đặt, public và đổi cấu hình máy dưới đây **do chủ máy tự chạy**.
+
+**Điều kiện 0đ cần giải quyết trước khi kinh doanh:** Tailscale Personal miễn phí chỉ dành cho phi thương mại theo [bảng giá hiện hành](https://tailscale.com/pricing) đối chiếu 20/10/2026. Web homestay nhận tiền là trường hợp thương mại: chưa thể cam kết toàn bộ phương án 0đ hợp lệ nếu chưa có xác nhận phù hợp từ Tailscale. Các bước Funnel được chuẩn bị đầy đủ để chủ máy thực hiện khi quyền sử dụng đã rõ; không mua gói nào tự động.
 
 ## 1. Chuẩn bị máy và hiểu giới hạn
 
@@ -17,31 +19,40 @@ Không coi `caffeinate` là bảo đảm khi đóng nắp. Sau khi khởi độn
 
 Upload của mạng nhà quyết định tốc độ khách tải ảnh. Mất điện, mất Internet, Docker ngừng, hết ổ đĩa hoặc Mac ngủ đều làm web ngừng. Nên có UPS cho Mac/router và bản sao lưu ở ổ/máy khác. Một máy là một điểm hỏng duy nhất; đây không phải hệ thống dự phòng cao. Kiểm lại giấy phép SQL Server trước khai thác thương mại: SQL Server Developer chỉ cho phát triển/thử nghiệm; cần edition/giấy phép phù hợp tải thực tế. Xem [quyền sử dụng Developer theo Microsoft](https://learn.microsoft.com/en-us/sql/sql-server/editions-and-components-of-sql-server-2022?view=sql-server-ver17).
 
-## 2. Tên miền và Cloudflare (tự thực hiện)
+## 2. Tailscale Funnel là đường chính (chủ máy tự thực hiện)
 
-Mua tên miền ở nhà đăng ký bạn chọn hoặc dùng tên miền đang sở hữu; chuyển nameserver theo Cloudflare. Tạo tài khoản Cloudflare miễn phí và thêm domain; tên miền có phí theo nhà đăng ký. Thay `fuji.example` bằng hostname thật ở **mọi** vị trí. Lệnh không thể thay thao tác mua/đăng ký tài khoản.
+1. Cài Tailscale macOS **Standalone** miễn phí từ trang chính thức, đăng nhập bằng Google/GitHub/Microsoft; bật mở khi đăng nhập, cài CLI integration trong Settings. Không cần cài Tailscale trên điện thoại của khách.
+2. Vào admin console bật MagicDNS và HTTPS certificates; Access controls cho phép thuộc tính `funnel` chỉ cho máy Mac này. Thực hiện từng bước và chép mẫu policy tại [deploy/mac/tailscale.md](../../deploy/mac/tailscale.md).
+3. Chuẩn bị DB/env/app theo mục 3–5 trước khi public. Có thể dùng `tailscale serve --bg 8080` để xem trong tailnet trước; khi sẵn sàng, **chính chủ máy** chạy:
 
-```bash
-# Nếu đã có Homebrew; nếu chưa có, cài từ https://brew.sh bằng hướng dẫn chính thức.
-brew install cloudflared
-cloudflared tunnel login
-cloudflared tunnel create fuji-homestay
-cloudflared tunnel route dns fuji-homestay fuji.example
-mkdir -p "$HOME/FujiHomestay/cloudflared"
-cp deploy/mac/cloudflared/config.yml.example "$HOME/FujiHomestay/cloudflared/config.yml"
-nano "$HOME/FujiHomestay/cloudflared/config.yml"
-# Điền UUID từ lệnh create, đường dẫn credentials JSON và hostname.
-chmod 600 "$HOME/FujiHomestay/cloudflared/config.yml"
-cloudflared tunnel --config "$HOME/FujiHomestay/cloudflared/config.yml" ingress validate
-# Chỉ chạy sau khi app và bí mật đã chuẩn bị xong:
-cloudflared tunnel --config "$HOME/FujiHomestay/cloudflared/config.yml" run
-```
+   ```bash
+   ./deploy/mac/start.sh
+   ./deploy/mac/status.sh
+   tailscale serve --bg 8080
+   tailscale funnel --bg 8080
+   tailscale funnel status
+   ```
 
-Trong Cloudflare SSL/TLS → Edge Certificates bật **Always Use HTTPS**, rồi thử HTTP phải chuyển sang HTTPS. Không bật cache cho HTML có cookie, trang tài khoản, đặt phòng hoặc API; giữ quy tắc cache mặc định cho nội dung động. Không đặt Cloudflare Access/challenge chặn endpoint SePay. Cloudflare bảo vệ HTTPS phía khách; kết nối tunnel → app là HTTP chỉ trong loopback.
+4. Chép URL HTTPS do lệnh status in ra vào env. Ví dụ `Reminders__PublicBaseUrl='https://fuji-mac.example.ts.net'`; `AllowedHosts='fuji-mac.example.ts.net;127.0.0.1;localhost'`. Đây chỉ là ví dụ, phải thay bằng URL thật. Giữ `ReverseProxy__Enabled='true'`, `ReverseProxy__AssumeHttps='true'`, `BankAccount__WebhookApiKey=''`, rồi restart:
 
-Quick tunnel `trycloudflare.com` chỉ dành cho thử nhanh, URL đổi mỗi lần nên **không dùng cho webhook SePay**. Phiên chuẩn bị không chạy quick tunnel hay tunnel thật.
+   ```bash
+   nano "$HOME/FujiHomestay/production.env"
+   ./deploy/mac/stop.sh
+   ./deploy/mac/start.sh
+   ./deploy/mac/status.sh
+   # Nếu dùng LaunchAgent: stop tạo cờ bảo trì; tự bỏ cờ và kickstart thay start.sh:
+   # rm -f "$HOME/FujiHomestay/run/maintenance"
+   # launchctl kickstart -k "gui/$(id -u)/com.fuji.homestay"
+   ```
 
-Tài liệu chính thức: [tạo tunnel](https://developers.cloudflare.com/tunnel/features/locally-managed-tunnels/create-local-tunnel/), [cấu hình ingress](https://developers.cloudflare.com/tunnel/features/locally-managed-tunnels/configuration-file/), [dịch vụ macOS](https://developers.cloudflare.com/tunnel/features/locally-managed-tunnels/as-a-service/macos/).
+5. Tắt Wi-Fi điện thoại để dùng **4G**, mở URL HTTPS, đăng nhập, đặt đơn thử, chuyển khoản thật số nhỏ theo QR, tải ảnh bill, kế toán đối chiếu rồi duyệt và chủ xác nhận. Không coi diễn tập loopback là đã kiểm 4G/chứng chỉ/tiền thật.
+6. `--bg` giữ cấu hình Funnel qua reboot. Tailscale mở khi đăng nhập; app dùng LaunchAgent ở mục 5; Docker cũng phải mở. Sau reboot đăng nhập macOS/FileVault, kiểm `tailscale funnel status` và `/healthz`. Tắt bằng `tailscale funnel --bg 8080 off`; xem thêm cách tắt Serve trong tài liệu kèm.
+
+**Giới hạn Funnel:** public chỉ cổng 443/8443/10000 (8080 là backend); tên dưới tailnet `ts.net`, không gắn tên miền tùy ý. Địa chỉ ổn định nếu giữ tên máy/tailnet. Băng thông bị giới hạn, tài liệu không đưa số Mbps/kết nối đồng thời; không cam kết tải vô hạn. Mac phải bật và không ngủ. Cú pháp đã đối chiếu tài liệu CLI từ 1.52 và changelog v1.104.1 ngày 20/10/2026; chưa cài/chạy Tailscale thật. [Nguồn giới hạn](https://tailscale.com/docs/features/tailscale-funnel#requirements-and-limitations), [CLI](https://tailscale.com/docs/reference/tailscale-cli/funnel).
+
+### Cloudflare: phương án khi đã có tên miền
+
+Giữ các file `deploy/mac/cloudflared/` để dùng tùy chọn về sau; không thuộc đường triển khai 0đ này. Nếu đã có domain và tự chọn Cloudflare, tạo named tunnel bằng hướng dẫn [Cloudflare](https://developers.cloudflare.com/tunnel/features/locally-managed-tunnels/create-local-tunnel/), điền UUID/credentials/hostname trong config mẫu, trỏ về `http://127.0.0.1:8080`, bật HTTPS ở edge. Chỉ cài LaunchAgent cloudflared nếu thực sự chọn phương án đó. Không chạy đồng thời hai đường public khi chưa chủ động quản lý hostname/cookie/URL; quick tunnel không phải địa chỉ vận hành cố định.
 
 ## 3. Dựng database Production mới
 
@@ -68,19 +79,20 @@ nano "$HOME/FujiHomestay/production.env"
 
 Đây là file shell, bao giá trị bằng dấu nháy đơn. Nếu mật khẩu có dấu nháy đơn, dùng cú pháp shell đúng hoặc tạo mật khẩu mới không chứa ký tự đó; không chạy `cat`/`set -x`/`env` để kiểm tra bí mật. Script từ chối env không thuộc bạn hoặc khác quyền 600. Chỉ dùng file tự quản lý vì `source` sẽ thực thi nội dung file.
 
-Điền `DOTNET_BIN` từ `command -v dotnet`, `ConnectionStrings__Default` đúng DB Production, `DATABASE_NAME=HomestayBooking`, quản trị đầu tiên, ngân hàng thật và khóa webhook mạnh (tạo bằng `openssl rand -hex 32`). Giữ `ASPNETCORE_URLS=http://127.0.0.1:8080`.
+Điền `DOTNET_BIN` từ `command -v dotnet`, `ConnectionStrings__Default` đúng DB Production, `DATABASE_NAME=HomestayBooking`, quản trị đầu tiên, ngân hàng thật (mã ngân hàng, số tài khoản nhận tiền, tên chủ tài khoản hiển thị trên QR); **để trống khóa webhook** vì không dùng SePay. Giữ `ASPNETCORE_URLS=http://127.0.0.1:8080`.
 
 Các URL cần cấu hình:
 
 | Khóa | Giá trị và tác dụng |
 |---|---|
-| `Reminders__PublicBaseUrl` | `https://hostname-thật`, tối đa 50 ký tự, không userinfo/query/fragment; dùng cho tin nhắc khách **và lời mời kích hoạt đối tác** |
+| `Reminders__PublicBaseUrl` | `https://TEN-MAY.TAILNET.ts.net`, tối đa 50 ký tự (chọn tên máy ngắn nếu URL dài hơn), không userinfo/query/fragment; dùng cho tin nhắc khách **và lời mời kích hoạt đối tác** |
 | `BankAccount__QrImageBaseUrl` | `https://img.vietqr.io/image`, dịch vụ tạo QR bên ngoài; không thay bằng hostname app |
 | `BankAccount__FallbackQrImageUrl` | Mặc định trống ở Production; chỉ điền đường dẫn/URL ảnh QR đã kiểm đúng tài khoản thật (ví dụ `/uploads/verified-bank-qr.png`). Không dùng ảnh QR mẫu trong repo |
 | `BankAccount__BankCode`, `AccountNumber`, `AccountName` | Tài khoản nhận cọc, quyết định nội dung QR và khớp tiền; không dùng số ví dụ |
-| `BankAccount__WebhookApiKey` | Khớp đúng khóa xác thực API Key ở SePay |
+| `BankAccount__WebhookApiKey` | **Trống**; webhook trả 503, không ghi dữ liệu |
 | `AllowedHosts` | hostname thật + `127.0.0.1;localhost` để health check nội bộ hoạt động |
-| `ReverseProxy__Enabled` | `true`; chỉ tin X-Forwarded-For/Proto từ proxy loopback, không tin X-Forwarded-Host |
+| `ReverseProxy__Enabled` | `true`; chỉ tin X-Forwarded-For/Proto từ proxy loopback, không tin X-Forwarded-Host; app bỏ redirect/HSTS, proxy lo TLS |
+| `ReverseProxy__AssumeHttps` | `true`; coi socket loopback là HTTPS trước forwarded headers, hỗ trợ Funnel thiếu X-Forwarded-Proto và antiforgery Secure |
 | `DataProtection__KeysPath` | thư mục tuyệt đối `$FUJI_HOME/data/App_Data/keys`, giữ nguyên qua mọi release |
 
 Nếu dùng QR dự phòng, tự xuất QR từ ngân hàng thật, kiểm số tài khoản bằng ứng dụng ngân hàng rồi chép **ngoài repo**:
@@ -108,7 +120,7 @@ curl --fail http://127.0.0.1:8080/healthz
 # Trình duyệt dùng hostname HTTPS sau khi tunnel chạy.
 ```
 
-`/healthz` công khai trả `Healthy`/200 khi app kết nối DB được, hoặc `Unhealthy`/503 không lộ lỗi. Health nội bộ bỏ chuyển hướng HTTPS. Các route khác đi qua HTTPS và header bảo mật. Không đăng nhập bằng HTTP loopback vì cookie Production bắt buộc Secure.
+`/healthz` công khai trả `Healthy`/200 khi app kết nối DB được, hoặc `Unhealthy`/503 không lộ lỗi. Health nội bộ bỏ chuyển hướng HTTPS. Khách truy cập HTTPS của Funnel; app không redirect HTTP backend và không tự phát HSTS khi bật proxy, các header bảo mật khác vẫn có. Không đăng nhập bằng HTTP loopback vì cookie Production bắt buộc Secure.
 
 Bản publish ở `~/FujiHomestay/app`; `App_Data` và `wwwroot/uploads` là symlink tới `~/FujiHomestay/data/…`. Không xóa thư mục `data`. File khóa chưa mã hóa trên ổ: bảo vệ bằng quyền thư mục, FileVault và bản backup riêng tư. Khóa bị mất sẽ vô hiệu cookie/token cũ. Log ở `logs/app.log`, PID ở `run/app.pid`.
 
@@ -121,11 +133,9 @@ cp deploy/mac/*.sh "$HOME/FujiHomestay/scripts/"
 python3 - <<'PY'
 import pathlib,plistlib,shutil
 home=pathlib.Path.home(); base=home/'FujiHomestay'; repo=pathlib.Path.cwd()
-for rel in ['com.fuji.homestay.plist','com.fuji.homestay.backup.plist','cloudflared/com.fuji.cloudflared.plist']:
+for rel in ['com.fuji.homestay.plist','com.fuji.homestay.backup.plist']:
     raw=(repo/'deploy/mac'/rel).read_text().replace('/Users/REPLACE_ME/FujiHomestay',str(base))
     obj=plistlib.loads(raw.encode())
-    if obj['Label']=='com.fuji.cloudflared':
-        obj['ProgramArguments'][0]=shutil.which('cloudflared') or '/opt/homebrew/bin/cloudflared'
     dest=home/'Library/LaunchAgents'/pathlib.Path(rel).name
     dest.write_bytes(plistlib.dumps(obj))
 PY
@@ -135,48 +145,45 @@ plutil -lint "$HOME/Library/LaunchAgents/com.fuji.homestay.plist"
 rm -f "$HOME/FujiHomestay/run/maintenance"
 launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.fuji.homestay.plist"
 launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.fuji.homestay.backup.plist"
-# Chỉ khi đã chọn đưa lên Internet:
-launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.fuji.cloudflared.plist"
 launchctl print "gui/$(id -u)/com.fuji.homestay"
 ```
 
-Chỉ cài **một** dịch vụ cloudflared: mẫu ở trên hoặc `cloudflared service install` theo tài liệu Cloudflare, không cả hai. LaunchAgent app chạy `run.sh` foreground, KeepAlive giám sát đúng PID dotnet. `stop.sh` tạo cờ bảo trì để app không được tự bật lại; `start.sh` xóa cờ đó. Không xóa `start.lock` khi còn lượt khởi động; nếu máy tắt đột ngột, kiểm PID/cổng trước khi xóa lock cũ.
+Funnel tự phục hồi nhờ cấu hình `--bg` của Tailscale, không cần LaunchAgent cloudflared. LaunchAgent app chạy `run.sh` foreground, KeepAlive giám sát đúng PID dotnet. `stop.sh` tạo cờ bảo trì để app không được tự bật lại; `start.sh` xóa cờ đó. Không xóa `start.lock` khi còn lượt khởi động; nếu máy tắt đột ngột, kiểm PID/cổng trước khi xóa lock cũ.
 
 Gỡ tự chạy (không xóa dữ liệu):
 
 ```bash
-launchctl bootout "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.fuji.cloudflared.plist"
+tailscale funnel --bg 8080 off
 launchctl bootout "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.fuji.homestay.backup.plist"
 ./deploy/mac/stop.sh
 launchctl bootout "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.fuji.homestay.plist"
 ```
 
-## 6. SePay và thử tiền thật (chủ tài khoản thực hiện)
+## 6. Thanh toán (0đ): VietQR → tải bill → kế toán duyệt → chủ xác nhận
 
-Đăng ký SePay, liên kết tài khoản ngân hàng thật trùng tài khoản QR. Trong mục Webhooks tạo webhook nhận tiền vào:
+Không đăng ký/liên kết SePay; giữ `BankAccount__WebhookApiKey=''`. POST JSON hợp lệ tới `/api/bank-webhook/sepay` trả **503 Bank webhook is disabled** trước khi xử lý tiền. Payload sai định dạng có thể bị model validation trả 400; không có giao dịch nào được nhận khi khóa trống.
 
-- URL: `https://hostname-thật/api/bank-webhook/sepay`.
-- Xác thực **API Key**, header `Authorization: Apikey <khóa trong env>`.
-- Payload JSON chuẩn SePay, `transactionDate` dạng `yyyy-MM-dd HH:mm:ss` giờ Việt Nam.
+Khách mở trang chi tiết đơn → quét QR VietQR có sẵn (kiểm đúng người nhận, số tiền và nội dung có **mã đơn**) → chuyển khoản trong app ngân hàng → tải ảnh bill ngay trên trang đơn. Bill chuyển đơn sang `PaymentSubmitted`, tiếp tục giữ phòng. Kế toán vào **Kế toán → Bill chờ duyệt** (`/Accounting/Receipts`), đối chiếu **tiền thực nhận** trong sao kê/app ngân hàng rồi duyệt → đơn `Deposited`; chủ vào đơn và xác nhận → `Confirmed`.
 
-Đặt một đơn, chuyển khoản nhỏ **đúng AmountDue và nội dung chứa mã đơn**. Kiểm SePay nhận HTTP 200 + `success:true`, giao dịch khớp, đơn sang `Deposited`; chủ xác nhận tiếp theo quy trình. Gửi trùng phải không tăng tiền. Khóa sai phải 401. Không dùng dữ liệu giả lập như bằng chứng chuyển tiền thật. Xem [tạo webhook](https://developer.sepay.vn/en/sepay-webhooks/tao-webhook) và [xác thực SePay](https://developer.sepay.vn/en/sepay-webhooks/xac-thuc).
+Hằng ngày, kế toán mở hàng chờ nhiều lần trong giờ làm việc, kiểm đơn cũ trước, đối chiếu mã đơn trong nội dung, số tiền, tài khoản nhận và tránh duyệt hai bill cho cùng giao dịch. Xem ảnh bill chỉ để tham khảo; duyệt khi đã thấy tiền thực nhận. Không khớp thì từ chối kèm lý do cụ thể (sai số tiền, thiếu mã đơn, chưa thấy giao dịch…), liên hệ khách khi cần. Theo dõi cảnh báo bill chậm và bàn giao ngoài giờ. Quản lý cũng được duyệt; tài khoản Administrator không thay thế nhân viên kế toán/quản lý ở bước duyệt bill.
+
+Duyệt tay chậm hơn tự khớp. Khách chuyển tiền nhưng quên tải bill có thể hết hạn giữ phòng (mặc định 15 phút); tiền không tự làm đơn sống lại. Cần hỗ trợ/đối chiếu và hoàn tiền nếu phòng đã hết, không hứa chắc còn phòng. Từ chối cho khách một hạn nộp lại; quá số lần cấu hình (mặc định 2) đơn hết hạn. Chủ cần xác nhận trong hạn sau khi nhận cọc. Thử tiền thật số nhỏ trước phục vụ khách; ảnh bill giả trong diễn tập không chứng minh đã nhận tiền.
 
 ## 7. Checklist sau khi đưa lên mạng
 
 ```bash
-curl -I http://hostname-thật/
-curl -I https://hostname-thật/
-curl --fail https://hostname-thật/healthz
-curl -o /dev/null -w '%{http_code}\n' https://hostname-thật/swagger
-curl -o /dev/null -w '%{http_code}\n' https://hostname-thật/Dev/UiKit
-curl -o /dev/null -w '%{http_code}\n' https://hostname-thật/Dev/SimulateBank
+curl -I https://TEN-MAY.TAILNET.ts.net/
+curl --fail https://TEN-MAY.TAILNET.ts.net/healthz
+curl -o /dev/null -w '%{http_code}\n' https://TEN-MAY.TAILNET.ts.net/swagger
+curl -o /dev/null -w '%{http_code}\n' https://TEN-MAY.TAILNET.ts.net/Dev/UiKit
+curl -o /dev/null -w '%{http_code}\n' https://TEN-MAY.TAILNET.ts.net/Dev/SimulateBank
 ```
 
-- HTTPS có chứng chỉ hợp lệ, HTTP chuyển sang HTTPS, không lặp chuyển hướng.
+- HTTPS có chứng chỉ hợp lệ, không lặp chuyển hướng. Funnel chỉ phục vụ TLS ở public; không yêu cầu HTTP cổng 80 chuyển hướng. HTTP loopback chỉ để health/proxy, không dùng đăng nhập trực tiếp.
 - Đăng nhập quản trị, đổi mật khẩu, xóa mật khẩu bootstrap; tạo nhân viên/chủ thật.
 - Swagger và Dev trả 404; trang lỗi thân thiện không lộ stack/chuỗi kết nối.
 - Tự đăng ký qua `/Partner`, nộp giấy tờ, duyệt/hợp đồng/nội dung, tìm được homestay.
-- Đặt đơn và thanh toán nhỏ thật; xác nhận khớp đúng, không nhân đôi.
+- Đặt đơn và thanh toán nhỏ thật; tải bill, kế toán đối chiếu/duyệt, chủ xác nhận, không duyệt trùng.
 - Dùng điện thoại **4G ngoài Wi-Fi nhà** kiểm các bước trên. Tắt Wi-Fi để chắc chắn đang ở mạng ngoài.
 
 ## 8. Vận hành và xử lý sự cố
@@ -216,14 +223,14 @@ Update khóa chống chạy song song, backup → publish thư mục chờ → d
 
 | Sự cố | Kiểm tra / xử lý |
 |---|---|
-| Tunnel rớt, Cloudflare 502/1033 | `launchctl print gui/$(id -u)/com.fuji.cloudflared`, xem log cloudflared, `curl http://127.0.0.1:8080/healthz`; kiểm Wi-Fi/router/DNS |
+| Funnel rớt/không truy cập được | `tailscale status`, `tailscale funnel status`, kiểm MagicDNS/HTTPS/quyền funnel, đăng nhập/expiry Tailscale; `curl http://127.0.0.1:8080/healthz`; kiểm Wi-Fi/router/DNS |
 | Docker chưa chạy | Mở Docker Desktop bằng giao diện, chờ `docker ps`; không tạo/xóa container để chữa vội |
 | App không khỏe | Xem `app.log`, env quyền 600, schema đã deploy, SQL đang chạy; không in env |
 | 8080 bị chiếm | `lsof -nP -iTCP:8080 -sTCP:LISTEN`; script từ chối chiếm cổng, chỉ dừng đúng PID của mình |
 | Ổ đầy | `df -h`, xem kích thước backups/release/log; chép backup ra nơi khác trước khi dọn; không xóa data/keys |
 | Mất admin | Theo B7 không bootstrap thêm khi đã có Administrator; phục hồi tài khoản bằng quy trình có chủ đích, không seed Development |
 
-Đổi mật khẩu `sa`: bảo trì có backup, đổi bằng SSMS/Azure Data Studio hoặc phiên `sqlcmd` tương tác không ghi mật khẩu vào lịch sử; cập nhật `ConnectionStrings__Default`. **Biến `MSSQL_SA_PASSWORD` của container không tự đổi theo ALTER LOGIN**; các script backup đang đọc biến đó, nên phải lập kế hoạch cập nhật cấu hình container bằng Docker Desktop/Compose (giữ volume, localhost binding) hoặc chuyển sang tài khoản vận hành riêng. Không dán mật khẩu vào lệnh `-Q`/`-P` hay repo. Đừng đổi một phía rồi bỏ quên phía còn lại. Theo dõi hạn tên miền, thanh toán và email gia hạn, bật MFA Cloudflare/nhà đăng ký/SePay.
+Đổi mật khẩu `sa`: bảo trì có backup, đổi bằng SSMS/Azure Data Studio hoặc phiên `sqlcmd` tương tác không ghi mật khẩu vào lịch sử; cập nhật `ConnectionStrings__Default`. **Biến `MSSQL_SA_PASSWORD` của container không tự đổi theo ALTER LOGIN**; các script backup đang đọc biến đó, nên phải lập kế hoạch cập nhật cấu hình container bằng Docker Desktop/Compose (giữ volume, localhost binding) hoặc chuyển sang tài khoản vận hành riêng. Không dán mật khẩu vào lệnh `-Q`/`-P` hay repo. Đừng đổi một phía rồi bỏ quên phía còn lại. Bật MFA cho tài khoản đăng nhập Tailscale; theo dõi key expiry trong Machines và tái xác thực trước hạn.
 
 ## 9. Bảo vệ máy và SQL
 
@@ -235,11 +242,53 @@ fdesetup status
 docker port sql-homestay 1433
 ```
 
-**Máy diễn tập hiện có `0.0.0.0:1433` và `[::]:1433`**, tức SQL được công bố trên LAN. Cần sửa trước public: trong một cửa sổ bảo trì riêng, backup/xác minh restore, lưu cấu hình Docker hiện có và volume, đổi publish port thành `127.0.0.1:1433:1433` rồi tái tạo container dùng **đúng volume cũ**. Docker không sửa port binding container đang chạy tại chỗ. Không thực hiện lệnh xóa/dừng container đang chạy trong phiên này. Với Compose do bạn quản lý, trường cần sửa là:
+**Kiểm chỉ đọc ngày 20/10/2026:** SQL đang nghe `0.0.0.0:1433`, `[::]:1433` (LAN), volume `sql-homestay-data`, SQL Server 2022 **Developer**. Không public SQL và không mở cổng router 1433. Developer chỉ dùng phát triển/thử nghiệm, không hợp lệ cho Production thương mại. Đổi image edition bằng `MSSQL_PID=Express`, vẫn dùng image SQL Server **2022** cùng version; Express miễn phí, tối đa **10 GB dữ liệu mỗi database**. Không chỉ đổi env trong container cũ rồi cho rằng đã đổi edition. [Edition Microsoft](https://learn.microsoft.com/en-us/sql/sql-server/editions-and-components-of-sql-server-2022?view=sql-server-ver16), [container Production](https://learn.microsoft.com/en-us/sql/linux/containers/deploy?view=sql-server-linux-ver16).
 
-```yaml
-ports:
-  - "127.0.0.1:1433:1433"
-```
+### Bảo trì SQL không mất dữ liệu (chủ máy tự chạy)
 
-Sau bảo trì `docker port sql-homestay 1433` chỉ được in `127.0.0.1:1433`; kiểm ứng dụng và backup lại. Việc đổi SQL edition/credential/container là bước riêng cần người dùng quyết định để tránh ảnh hưởng app cổng 5011 đang dùng chung SQL.
+Docker không sửa binding cổng tại chỗ. **Không dùng `docker rm -v`, không xóa volume cũ, không hạ edition trực tiếp trên bộ dữ liệu duy nhất.** Chọn cửa sổ bảo trì vì container dùng chung với app 5011. Nếu Mac Apple Silicon đang giả lập image amd64, đây vẫn là giới hạn hỗ trợ nền tảng của SQL container; không coi diễn tập này là chứng nhận hỗ trợ Production trên ARM. [Nền tảng SQL Linux](https://learn.microsoft.com/en-us/sql/linux/sql-server-linux-docker-container-deployment?view=sql-server-ver16).
+
+1. Ghi danh sách **mọi** database, dung lượng, mount/image và edition; kiểm tính năng đặc thù, login/SID/quyền, Agent job, linked server, certificate/credential. Express không có SQL Agent. DB lớn hơn 10 GB hoặc tính năng không tương thích phải có kế hoạch riêng. Tự dừng toàn bộ app ghi SQL (cả app 5011); sao lưu App_Data/uploads, cấu hình và khóa ngoài repo. Việc này chưa được phiên chuẩn bị thực hiện.
+2. Chạy script trong terminal tương tác:
+
+   ```bash
+   cd /Users/phamngocphu/Downloads/LTW
+   ./deploy/mac/sql-harden.sh --apply
+   ```
+
+   Script yêu cầu xác nhận `DA_DUNG_APP_VA_SAO_LUU`, backup COPY_ONLY/CHECKSUM + VERIFYONLY **master/model/msdb và mọi DB người dùng** (tempdb tạo lại), chép ra `~/FujiHomestay/sql-harden-THOI_GIAN`, ghi manifest SHA-256. Chép thư mục đó sang ổ khác trước khi nhập `RESTORE_EXPRESS`. Backup có dữ liệu nhạy cảm, giữ quyền 600/700 và mã hóa bản ngoài máy.
+3. Script giữ nguồn chạy, dựng container **sql-homestay-express**, volume **mới**, cùng image ID SQL 2022, env `MSSQL_PID=Express`, tạm bind `127.0.0.1:1434:1433`. Restore mọi DB người dùng với đường dẫn MOVE riêng, CHECKDB và kiểm edition. Không restore master/msdb khác edition; script từ chối login riêng/Agent job đang bật để tránh mất cấu hình âm thầm. Những cấu hình cấp server khác cần tự kiểm/xuất trước khi xác nhận.
+4. Khi script chờ, mở terminal khác, dùng app kiểm thử riêng với connection port 1434 và kiểm dữ liệu, quyền, đăng nhập, đặt/duyệt đơn trên bản Express; đối chiếu tổng hàng/số tiền với nguồn, chạy `data_consistency.sql`. Không cho khách ghi vào cả hai bản. **Nếu chưa đạt: không nhập xác nhận cuối**, nguồn vẫn nguyên, đích/backup được giữ để xử lý.
+5. Chỉ khi đã kiểm và dừng app thử, nhập `CHUYEN_SANG_EXPRESS`: script tắt tự restart của container nguồn để không giành lại cổng sau reboot, giữ container cũ dưới tên `sql-homestay-before-express-THOI_GIAN`, không xóa volume nguồn; tạo container đích tên `sql-homestay` gắn volume Express mới với **`-p 127.0.0.1:1433:1433`**. Dùng cùng mật khẩu sa ngoài repo, không in vào lệnh/log. Sau đó kiểm:
+
+   ```bash
+   docker port sql-homestay 1433
+   lsof -nP -iTCP:1433 -sTCP:LISTEN
+   # Truy vấn chỉ đọc, mật khẩu chỉ trong biến:
+   SQLCMDPASSWORD="$(docker exec sql-homestay printenv MSSQL_SA_PASSWORD)"
+   export SQLCMDPASSWORD
+   docker exec -e SQLCMDPASSWORD sql-homestay /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -b -Q "SELECT SERVERPROPERTY('Edition') AS Edition; SELECT name,state_desc FROM sys.databases;"
+   unset SQLCMDPASSWORD
+   ./deploy/mac/start.sh
+   ./deploy/mac/status.sh
+   ./deploy/mac/backup.sh
+   ```
+
+   Phải thấy Express và duy nhất `127.0.0.1:1433` trong `docker port` (Docker Desktop có thể hiển thị listener tổng quát trong lsof; port mapping là đối chiếu chính). Tự khởi động/kiểm cả app 5011 theo quy trình của app đó. Giữ container/volume cũ và backup đến khi xác minh hoàn tất.
+6. Nếu lỗi trước cutover: nguồn chưa đổi, giữ app bảo trì rồi xử lý đích. Nếu lỗi sau cutover **trước khi nhận ghi mới**, script in tên rollback chính xác: dừng đích, đổi tên đích sang tên giữ lỗi, đổi container cũ lại `sql-homestay`, start container cũ (restart policy cũ có trong `source-config.txt`, chỉ khôi phục nó khi đã chủ động chọn rollback). Nếu lệnh tạo đích thất bại và tên `sql-homestay` chưa tồn tại, bỏ qua hai lệnh đầu sau khi kiểm `docker ps -a`. Nếu đã có giao dịch mới thì phải đồng bộ/khôi phục có chủ đích; quay lại snapshot cũ sẽ mất ghi mới. Bản cũ còn binding LAN/Developer, nên rollback chỉ để phục hồi và tiếp tục bảo trì.
+
+Script **chưa được chạy** trên Docker thật trong phiên chuẩn bị; chỉ kiểm cú pháp và rà soát. Thất bại không tự xóa DB/volume. Mỗi lần chạy dùng tên/thư mục mới; nếu còn container thử thì dừng để người vận hành xử lý, không tự ghi đè.
+
+## 10. Chi phí và giấy phép
+
+| Thành phần | Phí phần mềm/dịch vụ dự kiến | Điều kiện |
+|---|---:|---|
+| macOS trên Mac đang có | 0đ thêm | Dùng Mac hợp lệ đã sở hữu |
+| Docker Desktop | 0đ | Cá nhân; doanh nghiệp nhỏ dưới 250 nhân viên **và** doanh thu năm dưới 10 triệu USD; tổ chức chính phủ/doanh nghiệp vượt ngưỡng cần gói trả phí theo [Docker](https://docs.docker.com/subscription-billing/desktop-license/) |
+| SQL Server **2022 Express** | 0đ | Production được phép, 10 GB mỗi DB; Developer đang chạy chỉ dành phát triển/thử nghiệm |
+| .NET | 0đ | Mã nguồn mở, không có phí runtime; [Microsoft](https://dotnet.microsoft.com/en-us/platform/free) |
+| Tailscale Personal + Funnel | 0đ **cho phi thương mại** | [Điều kiện hiện hành](https://tailscale.com/pricing); chưa bảo đảm quyền miễn phí cho kinh doanh homestay, không coi trial là miễn phí lâu dài |
+| QR VietQR + tải bill/duyệt tay | 0đ phí tích hợp trong app | Dùng URL ảnh QR có sẵn, không mua API; chuyển tiền/phí tài khoản theo ngân hàng, thời gian kế toán không được tự động hóa |
+| Tên miền / SePay | 0đ | Không mua / không dùng |
+
+Đây là ngân sách phần mềm với máy/mạng sẵn có; điện, Internet, UPS/ổ backup và phí ngân hàng (nếu có) là chi phí vận hành thực, không tuyên bố bằng 0. **Mục tiêu mọi dịch vụ 0đ cho Production thương mại còn vướng điều kiện Tailscale**, cần quyền sử dụng phù hợp hoặc một quyết định đường public khác sau này; phiên này không đổi sang dịch vụ trả phí hay Cloudflare làm chính.
