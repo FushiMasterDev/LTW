@@ -6,6 +6,7 @@ Dựng database SQL Server cho ứng dụng trên một máy hoặc server mới
 |---|---|
 | `schema.sql` | Toàn bộ schema (bảng, khóa, CHECK, index) **sinh tự động từ EF Core migrations**, không sửa tay |
 | `deploy.sql` | Chạy `schema.sql` với kiểm tra database đích và `XACT_ABORT` |
+| `data/sample_data.sql` | Dữ liệu mẫu đầy đủ xuất từ database trắng seed Development; nạp sau `deploy.sql`, chỉ vào database chưa có dữ liệu |
 | `verify.sql` | Kiểm tra sau khi dựng: số bảng/khóa/index, migration đã áp, các ràng buộc chính. Chỉ đọc |
 | `tests/data_consistency.sql` | Đối chiếu 33 quy tắc dữ liệu liên bảng, chỉ đọc; dùng được trên mọi database đã deploy, có LỆCH thì mã thoát khác 0 |
 | `tests/constraints.sql` | Thử ràng buộc trên database **mới dựng, chưa seed** (mục 4) |
@@ -78,6 +79,22 @@ docker exec -i -w /tmp/hb -e SQLCMDPASSWORD sql-homestay /opt/mssql-tools18/bin/
 SSMS: mở `deploy.sql`, bật *SQLCMD Mode*, sửa dòng `:r schema.sql` thành đường dẫn đầy đủ, thêm `:setvar TargetDb HomestayBooking` ở đầu, chọn đúng database rồi chạy.
 
 Cách khác, không dùng file SQL: `dotnet ef database update --configuration Release --project HomestayBooking.Web --connection "<chuỗi kết nối>"` áp cùng các migration đó.
+
+### Nạp dữ liệu mẫu bằng SQL
+
+Sau khi tạo database mới và chạy `deploy.sql` ở trên, đứng trong `database/`:
+
+```bash
+sqlcmd -S localhost,1433 -U sa -C -b -d HomestayBooking_Demo -v TargetDb=HomestayBooking_Demo -i data/sample_data.sql
+sqlcmd -S localhost,1433 -U sa -C -b -d HomestayBooking_Demo -i verify.sql
+sqlcmd -S localhost,1433 -U sa -C -b -d HomestayBooking_Demo -i tests/data_consistency.sql
+```
+
+Đổi `HomestayBooking_Demo` thành tên vừa tạo; `-d` và `TargetDb` phải trùng nhau. Có thể dùng cách này thay seed tự động, không cần khởi động Development để có dữ liệu. Script kiểm đúng 9 migration (cuối `20261015200521_EnumAndReviewChecks`), từ chối nếu bất kỳ bảng dữ liệu nào đã có dòng, giữ nguyên ID và nạp trong một transaction. FK tạm tắt do vòng tham chiếu được bật lại bằng `WITH CHECK CHECK`; cuối script in số dòng từng bảng.
+
+Bản xuất **20/10/2026** cố định ngày đơn theo ngày seed nguồn, không tự dời theo ngày nạp. Không cần `data/seed_topup_2028.sql`: seed hiện tại đã có hợp đồng đến 31/05/2028, ngày lễ 2028 và ảnh thực tế mẫu. SQL chứa mã băm Identity của tài khoản demo, **chỉ dùng ở môi trường thử**; mật khẩu xem `SeedData.DefaultPassword`, tài khoản xem README gốc mục 4. Production không xóa dữ liệu demo đã nạp.
+
+SQL không đóng gói file ảnh hoặc khóa: giữ `wwwroot/images/demo` trong ứng dụng; chép `Data/SampleFiles/sample-receipt.png` và `sample-document.png` sang `App_Data/receipts` nếu chưa có để mở bill/giấy tờ (Development chỉ tự chép ảnh bill khi seed đơn chưa chạy). Data Protection tự tạo khóa tại đường dẫn cấu hình; không cần xuất khóa từ máy nguồn. Trong container, dùng mẫu `docker exec` ở mục 3 và đổi `-i` thành `data/sample_data.sql`, rồi chạy hai script kiểm tra tương tự.
 
 ### Tự áp migration khi khởi động
 
@@ -200,7 +217,7 @@ Production, Staging, Testing hoặc thiếu thông tin môi trường đều kh�
 
 - Mỗi lần khởi động, ứng dụng kiểm tra schema theo `Database:AutoMigrate` rồi seed vào database trong chuỗi kết nối `ConnectionStrings:Default`. Khi cờ tắt mà còn migration chưa áp dụng, ứng dụng dừng trước khi seed. Với database đã dựng bằng `deploy.sql`, không còn migration chờ chạy.
 - Seed chạy lại không nhân đôi dữ liệu: từng nhánh kiểm tra bản ghi hoặc bảng trước khi thêm.
-- Ngày của đơn mẫu tính theo **ngày chạy seed**, nên luôn có đơn sắp tới, đang ở và đã qua. Vì thế repo không kèm file dữ liệu SQL tĩnh (sẽ cũ sau vài tuần).
+- Ngày của đơn mẫu tính theo **ngày chạy seed**, nên luôn có đơn sắp tới, đang ở và đã qua. Riêng bản SQL trong repo cố định ngày theo lúc xuất, sẽ cũ dần theo thời gian.
 - Tài khoản demo và mật khẩu mặc định: xem `HomestayBooking.Web/Data/SeedData.cs` (`DefaultPassword`). Chỉ tạo ở Development.
 - `Database:AutoMigrate=false` chỉ chặn tự migration; dữ liệu nền vẫn seed và Development vẫn seed demo. Không dùng cờ này như công tắc tắt toàn bộ seed.
 

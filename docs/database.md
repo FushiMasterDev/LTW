@@ -1420,6 +1420,8 @@ Không nên coi CHECK/FK là toàn bộ nghiệp vụ: thiếu đồng nhất gi
 
 ## 7. Dữ liệu mẫu và tài khoản để thuyết trình
 
+Có thể nạp đủ dữ liệu bằng `database/deploy.sql` rồi `database/data/sample_data.sql` trên database mới, thay cho seed tự động Development; cách chạy và kiểm tra ở [database/README.md](../database/README.md#nạp-dữ-liệu-mẫu-bằng-sql). Script từ chối database đã có dữ liệu hoặc sai phiên bản migration, giữ nguyên ID và kiểm FK trusted trước khi hoàn tất transaction. Bản xuất ngày **20/10/2026** cố định ngày đơn theo lúc seed nguồn, không tự dời theo ngày nạp; không cần thêm `seed_topup_2028.sql`. Mã băm Identity trong SQL thuộc tài khoản demo, **chỉ dùng ở môi trường thử** (Production vẫn giữ dữ liệu đã nạp). Ảnh không nằm trong SQL: dùng `wwwroot/images/demo` và chép hai file `Data/SampleFiles/sample-receipt.png`, `sample-document.png` vào `App_Data/receipts`; khóa Data Protection do ứng dụng tự tạo.
+
 Tài khoản dưới đây đọc từ `SeedData.EmployeeData`, `OwnerData`, `CustomerData`. **Mật khẩu mẫu: xem `SeedData.DefaultPassword`**. Nhân viên dùng mã nhân viên tại `/Account/EmployeeLogin`; chủ/khách dùng số điện thoại tại `/Account/Login`.
 
 | Định danh đăng nhập | Vai trò/chức vụ | Ghi chú |

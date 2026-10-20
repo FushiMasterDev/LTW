@@ -69,6 +69,20 @@ dotnet ef database update --configuration Release --project HomestayBooking.Web 
 
 `schema.sql` chỉ có schema. **Dữ liệu mẫu do ứng dụng tự seed khi khởi động ở môi trường Development** (`Data/SeedData*.cs`), ngày của các đơn mẫu tính theo ngày chạy nên luôn có đơn sắp tới/đang ở/đã qua. Seed chạy lại không nhân đôi dữ liệu. Ở Production chỉ seed danh mục nền (vai trò, khu vực, loại phòng, tiện nghi, ngày lễ, chính sách hủy), không tạo tài khoản demo.
 
+#### Cách nạp bằng script SQL
+
+Có thể dùng `database/data/sample_data.sql` **thay cho seed tự động** để dựng đủ dữ liệu mẫu ngay bằng SQL. Đặt `SQLCMDPASSWORD` như Cách A, đứng trong `database/`, dùng một tên database mới (ví dụ `HomestayBooking_Demo`):
+
+```bash
+sqlcmd -S localhost,1433 -U sa -C -Q "CREATE DATABASE [HomestayBooking_Demo]"
+sqlcmd -S localhost,1433 -U sa -C -d HomestayBooking_Demo -v TargetDb=HomestayBooking_Demo -i deploy.sql
+sqlcmd -S localhost,1433 -U sa -C -b -d HomestayBooking_Demo -v TargetDb=HomestayBooking_Demo -i data/sample_data.sql
+```
+
+Script chỉ nhận database đã dựng đúng phiên bản schema và chưa có dữ liệu; chạy lại sẽ bị từ chối. Bản xuất ngày **20/10/2026** cố định ngày đơn theo lúc seed nguồn, không tự dịch theo ngày nạp. Nếu muốn ngày mẫu bám ngày hiện tại, dùng seed Development trên một database mới thay cho bản SQL này. Không cần chạy thêm `data/seed_topup_2028.sql` cho bản xuất này.
+
+Script có mã băm mật khẩu Identity của **tài khoản demo, chỉ dùng ở môi trường thử**; định danh xem mục 4, mật khẩu xem `SeedData.DefaultPassword`. Chạy Production trên database đã nạp vẫn giữ các tài khoản này. SQL chỉ chứa tham chiếu ảnh: giữ bộ `wwwroot/images/demo`, chép `Data/SampleFiles/sample-receipt.png` và `sample-document.png` vào `App_Data/receipts` của ứng dụng để mở bill/giấy tờ. Seed Development chép các file còn thiếu; với database đã có đơn, nên chép cả hai file thủ công vì nhánh seed đơn có thể bỏ qua ảnh bill. Khóa Data Protection do ứng dụng tự tạo, không nằm trong SQL.
+
 Sau lần chạy đầu ở Development, database có 35 homestay, 128 phòng, khoảng 60 đơn, 20 tài khoản, đánh giá, đối soát và voucher mẫu. Kiểm tra dữ liệu (chỉ đọc): `sqlcmd ... -d HomestayBooking -i database/tests/data_consistency.sql` (35 mục, mã thoát 0 là đạt).
 
 Đã thử trọn quy trình trên một database mới tinh ngày 20/10/2026 (SQL Server 2022 trong Docker): `deploy.sql` → `verify.sql` toàn OK (45 bảng, 9 migration) → chạy app Development tự seed → `data_consistency.sql` 35/35 OK → `tools/ui-crawl.py` 840 trang, không có lỗi 500.
