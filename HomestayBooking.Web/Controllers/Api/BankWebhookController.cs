@@ -43,6 +43,10 @@ public class BankWebhookController : ControllerBase
     [HttpPost("sepay")]
     public async Task<IActionResult> SePay(SePayPayload payload)
     {
+        // Manual VietQR + receipt review works independently of this optional integration.
+        if (string.IsNullOrWhiteSpace(_account.WebhookApiKey))
+            return Problem(statusCode: StatusCodes.Status503ServiceUnavailable, title: "Bank webhook is disabled");
+
         if (!IsAuthorized())
         {
             return Unauthorized();

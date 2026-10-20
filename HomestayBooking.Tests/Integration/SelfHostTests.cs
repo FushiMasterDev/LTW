@@ -16,6 +16,20 @@ namespace HomestayBooking.Tests.Integration;
 
 public sealed class SelfHostTests
 {
+    [Fact]
+    public async Task DisabledSePayReturns503WithoutRecordingTransactions()
+    {
+        using var factory = new TestWebApplicationFactory();
+        using var host = factory.WithWebHostBuilder(b => b.UseSetting("BankAccount:WebhookApiKey", ""));
+        using var client = host.CreateClient();
+        var response = await client.PostAsync("/api/bank-webhook/sepay", new StringContent(
+            """{"id":991,"transactionDate":"2026-10-20 12:00:00","accountNumber":"test","content":"FJ TEST","transferType":"in","transferAmount":150000}""",
+            System.Text.Encoding.UTF8, "application/json"));
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        using var scope = host.Services.CreateScope();
+        Assert.False(scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().BankTransactions.Any(t => t.ProviderTransactionId == "991"));
+    }
+
     [Theory]
     [InlineData(true, "127.0.0.1", "https", "203.0.113.10")]
     [InlineData(true, "::1", "https", "203.0.113.10")]
@@ -40,8 +54,48 @@ public sealed class SelfHostTests
             var login = await client.GetAsync("/Account/EmployeeLogin");
             Assert.Equal(HttpStatusCode.OK, login.StatusCode);
             Assert.Contains(login.Headers.GetValues("Set-Cookie"), cookie => cookie.Contains("; secure", StringComparison.OrdinalIgnoreCase));
-            Assert.True(login.Headers.Contains("Strict-Transport-Security"));
+            Assert.False(login.Headers.Contains("Strict-Transport-Security"));
         }
+    }
+
+    [Theory]
+    [InlineData(true, "127.0.0.1", "https")]
+    [InlineData(true, "::1", "https")]
+    [InlineData(true, "::ffff:127.0.0.1", "https")]
+    [InlineData(true, "192.0.2.5", "http")]
+    [InlineData(false, "127.0.0.1", "http")]
+    public async Task FunnelWithoutForwardedProtoTrustsOnlyEnabledLoopback(bool enabled, string remote, string scheme)
+    {
+        using var factory = new TestWebApplicationFactory();
+        using var host = Configure(factory, enabled, remote);
+        using var client = host.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("http://localhost"), AllowAutoRedirect = false, HandleCookies = false,
+        });
+        client.DefaultRequestHeaders.Host = "fuji-mac.example.ts.net";
+        client.DefaultRequestHeaders.Add("X-Forwarded-For", "203.0.113.10");
+        var health = await client.GetAsync("/healthz");
+        Assert.Equal(scheme, health.Headers.GetValues("Test-Scheme").Single());
+        if (scheme != "https") return;
+        var page = await client.GetAsync("/Account/EmployeeLogin");
+        Assert.Equal(HttpStatusCode.OK, page.StatusCode);
+        Assert.Null(page.Headers.Location);
+        Assert.False(page.Headers.Contains("Strict-Transport-Security"));
+        var csrfCookie = page.Headers.GetValues("Set-Cookie").Single(c => c.Contains("Antiforgery"));
+        Assert.Contains("; secure", csrfCookie, StringComparison.OrdinalIgnoreCase);
+        client.DefaultRequestHeaders.Add("Cookie", csrfCookie.Split(';')[0]);
+        var token = System.Text.RegularExpressions.Regex.Match(await page.Content.ReadAsStringAsync(),
+            "name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^\"]+)\"").Groups[1].Value;
+        var login = await client.PostAsync("/Account/EmployeeLogin", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["EmployeeCode"] = "AD001", ["Password"] = "Fuji@2026", ["__RequestVerificationToken"] = token,
+        }));
+        Assert.Equal(HttpStatusCode.Redirect, login.StatusCode);
+        var auth = login.Headers.GetValues("Set-Cookie").Single(c => c.Contains("Identity.Application"));
+        Assert.Contains("; secure", auth, StringComparison.OrdinalIgnoreCase);
+        client.DefaultRequestHeaders.Remove("Cookie");
+        client.DefaultRequestHeaders.Add("Cookie", auth.Split(';')[0]);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/Admin")).StatusCode);
     }
 
     [Theory]
@@ -121,6 +175,7 @@ public sealed class SelfHostTests
         using var host = factory.WithWebHostBuilder(builder =>
         {
             builder.UseSetting("BankAccount:BankCode", "TESTBANK");
+            builder.UseSetting("BankAccount:WebhookApiKey", "");
             if (fallbackUrl is not null) builder.UseSetting("BankAccount:FallbackQrImageUrl", fallbackUrl);
         });
         // Prepare a view fixture. Booking creation/transactions are exercised separately on relational databases.
@@ -152,6 +207,8 @@ public sealed class SelfHostTests
         Assert.DoesNotContain("/images/qr-mb.png", detail);
         Assert.Contains($"data-qr-fallback=\"{fallbackUrl}\"", detail);
         Assert.Contains("<dd>TESTBANK</dd>", detail);
+        Assert.Contains("https://img.vietqr.io/image/", detail);
+        Assert.Contains("/Bookings/UploadReceipt/FJ-QR-VIEW", detail);
     }
 
     [Fact]

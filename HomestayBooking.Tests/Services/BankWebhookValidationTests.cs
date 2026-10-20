@@ -9,6 +9,23 @@ namespace HomestayBooking.Tests.Services;
 public sealed class BankWebhookValidationTests
 {
     [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task UnconfiguredWebhookIs503BeforeProcessingMoney(string? key)
+    {
+        // Null matching service deliberately proves no transaction processing occurs.
+        var controller = new BankWebhookController(null!, Options.Create(new BankAccountOptions { WebhookApiKey = key }))
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
+        };
+        controller.Request.Headers.Authorization = "Apikey anything";
+        var result = Assert.IsAssignableFrom<ObjectResult>(await controller.SePay(Payload("2026-10-20 12:00:00")));
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, result.StatusCode);
+        Assert.Equal("Bank webhook is disabled", Assert.IsType<ProblemDetails>(result.Value).Title);
+    }
+
+    [Theory]
     [InlineData("not-a-date")]
     [InlineData("2026-02-30 10:00:00")]
     [InlineData("")]

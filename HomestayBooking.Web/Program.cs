@@ -29,8 +29,6 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Add(IPAddress.IPv6Loopback);
     options.KnownProxies.Add(IPAddress.Loopback.MapToIPv6());
 });
-if (reverseProxyEnabled)
-    builder.Services.AddHttpsRedirection(options => options.HttpsPort = 443);
 
 var keysPath = builder.Configuration["DataProtection:KeysPath"] ?? "App_Data/keys";
 builder.Services.AddDataProtection()
@@ -235,7 +233,20 @@ builder.Services.AddSwaggerGen(o =>
 
 var app = builder.Build();
 
-if (reverseProxyEnabled) app.UseForwardedHeaders();
+if (reverseProxyEnabled)
+{
+    // Funnel terminates TLS and may omit X-Forwarded-Proto. Inspect the socket peer
+    // before forwarded headers replace it with the public client's address.
+    if (builder.Configuration.GetValue("ReverseProxy:AssumeHttps", true))
+        app.Use(async (context, next) =>
+        {
+            var peer = context.Connection.RemoteIpAddress;
+            if (peer is not null && IPAddress.IsLoopback(peer.IsIPv4MappedToIPv6 ? peer.MapToIPv4() : peer))
+                context.Request.Scheme = "https";
+            await next();
+        });
+    app.UseForwardedHeaders();
+}
 
 // Header bảo mật cơ bản cho mọi phản hồi (QA trước ra mắt). CSP đầy đủ chưa bật: script chống nháy theme trong
 // _HeadAssets là inline, cần nonce trước khi siết script-src.
@@ -258,7 +269,7 @@ app.Use(async (context, next) =>
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
+    if (!reverseProxyEnabled) app.UseHsts();
 }
 else
 {
@@ -267,8 +278,9 @@ else
 }
 
 app.UseStatusCodePagesWithReExecute("/Home/StatusCode/{0}");
-// Giám sát nội bộ qua HTTP loopback không cần TLS; các URL khác vẫn chuyển sang HTTPS.
-app.UseWhen(context => context.Request.Path != "/healthz", branch => branch.UseHttpsRedirection());
+// The public proxy owns TLS/HSTS/redirection; never redirect its HTTP backend.
+if (!reverseProxyEnabled)
+    app.UseWhen(context => context.Request.Path != "/healthz", branch => branch.UseHttpsRedirection());
 
 // MapStaticAssets chỉ phục vụ file có sẵn lúc build; ảnh upload lúc chạy (wwwroot/uploads) cần UseStaticFiles
 app.UseStaticFiles();
