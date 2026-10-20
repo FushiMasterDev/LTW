@@ -9,10 +9,10 @@ document.querySelectorAll('[data-payment-qr]').forEach(root => {
       timers.set(button, setTimeout(() => { button.textContent = button.dataset.copyLabel; }, 1500));
     } catch { window.fxToast?.(root.dataset.copyError, 'warning'); }
   }));
-  const img = root.querySelector('img[data-qr-fallback]');
+  const img = root.querySelector('img.qr-image');
   const fallback = () => {
     root.querySelector('.fx-payment-qr__fallback').hidden = false;
-    if (img.dataset.fallbackUsed) { img.hidden = true; return; }
+    if (!img.dataset.qrFallback || img.dataset.fallbackUsed) { img.hidden = true; return; }
     img.dataset.fallbackUsed = 'true'; img.src = img.dataset.qrFallback;
   };
   if (img) { img.addEventListener('error', fallback); if (img.complete && !img.naturalWidth) fallback(); }

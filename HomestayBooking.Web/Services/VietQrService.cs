@@ -17,13 +17,6 @@ public class VietQrService
 
     public BankAccountOptions Account => _account;
 
-    /// <summary>
-    /// Ảnh QR tĩnh của tài khoản (không kèm số tiền/nội dung) lưu sẵn trong wwwroot,
-    /// dùng làm dự phòng khi img.vietqr.io không tải được (onerror của thẻ img).
-    /// Khách quét ảnh này phải tự nhập số tiền và mã đơn.
-    /// </summary>
-    public const string StaticImagePath = "/images/qr-mb.png";
-
     public string BuildImageUrl(decimal amount, string transferContent) =>
         $"{_account.QrImageBaseUrl.TrimEnd('/')}/{_account.BankCode}-{_account.AccountNumber}-compact2.png" +
         $"?amount={decimal.ToInt64(amount)}" +

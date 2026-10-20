@@ -112,6 +112,48 @@ public sealed class SelfHostTests
         Assert.DoesNotContain("https://request-host.example/Partner/Activate", page);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("/uploads/verified-bank-qr.png")]
+    public async Task BookingQrNeverFallsBackToDemoAccountInProduction(string? fallbackUrl)
+    {
+        using var factory = new TestWebApplicationFactory();
+        using var host = factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("BankAccount:BankCode", "TESTBANK");
+            if (fallbackUrl is not null) builder.UseSetting("BankAccount:FallbackQrImageUrl", fallbackUrl);
+        });
+        // Prepare a view fixture. Booking creation/transactions are exercised separately on relational databases.
+        using (var scope = host.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var customerId = db.Customers.Where(c => c.Person.PhoneNumber == "+84987000001").Select(c => c.Id).Single();
+            var original = db.Bookings.First(b => b.CustomerId == customerId);
+            var day = VietnamTime.Today(TimeProvider.System).AddDays(60);
+            db.Bookings.Add(new Booking
+            {
+                Code = "FJ-QR-VIEW", CustomerId = customerId, ContactName = "Khách thử QR", ContactPhone = "+84987000001",
+                HomestayId = original.HomestayId, RoomTypeId = original.RoomTypeId, RoomId = original.RoomId, CheckIn = day, CheckOut = day.AddDays(1), Guests = 1,
+                Status = BookingStatus.AwaitingPayment, HoldExpiresAt = DateTime.UtcNow.AddMinutes(15),
+                CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow, TotalAmount = 500000, DepositAmount = 150000,
+                DepositRate = .30m, CommissionRate = .12m, CancellationPolicyId = original.CancellationPolicyId,
+                Nights = [new BookingNight { Date = day, DayType = DayType.Weekday, Price = 500000 }],
+            });
+            await db.SaveChangesAsync();
+        }
+        using var client = host.CreateClient();
+        var token = await TestWebApplicationFactory.TokenFromAsync(client, "/Account/Login");
+        var login = await client.PostAsync("/Account/Login", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["PhoneNumber"] = "0987000001", ["Password"] = "Fuji@2026", ["__RequestVerificationToken"] = token,
+        }));
+        Assert.Equal(HttpStatusCode.Redirect, login.StatusCode);
+        var detail = await client.GetStringAsync("/Bookings/Details/FJ-QR-VIEW");
+        Assert.DoesNotContain("/images/qr-mb.png", detail);
+        Assert.Contains($"data-qr-fallback=\"{fallbackUrl}\"", detail);
+        Assert.Contains("<dd>TESTBANK</dd>", detail);
+    }
+
     [Fact]
     public async Task KeysCookieAndOldAntiforgerySurviveNewHost()
     {

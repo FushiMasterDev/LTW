@@ -3012,4 +3012,7 @@
   <data name="File ảnh bị hỏng hoặc không đầy đủ." xml:space="preserve">
     <value>The image file is damaged or incomplete.</value>
   </data>
+  <data name="Không tải được mã QR theo đơn. Hãy chuyển khoản đúng tài khoản, số tiền và nội dung bên cạnh." xml:space="preserve">
+    <value>The booking QR could not be loaded. Transfer to the account shown with the exact amount and reference.</value>
+  </data>
 </root>

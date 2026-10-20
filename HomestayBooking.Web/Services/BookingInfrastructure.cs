@@ -121,6 +121,9 @@ public class BankAccountOptions
 
     public string QrImageBaseUrl { get; set; } = "https://img.vietqr.io/image";
 
+    /// <summary>Chỉ cấu hình ảnh QR đã xác minh đúng tài khoản; Production không dùng ảnh tài khoản mẫu.</summary>
+    public string? FallbackQrImageUrl { get; set; }
+
     public string AccountNumber { get; set; } = string.Empty;
     public string AccountName { get; set; } = string.Empty;
 
