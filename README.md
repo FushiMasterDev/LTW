@@ -185,3 +185,16 @@ tools/ui-crawl.py         duyệt mọi trang theo vai trò, báo trang lỗi
 - Ảnh homestay mẫu nằm ở `wwwroot/images/demo`, ảnh trang trí ở `wwwroot/images/ai` (nguồn ghi ở `docs/ui/credits.md`). Ảnh người dùng tải lên lưu ở `wwwroot/uploads/` (không đưa vào Git).
 - Thanh toán là chuyển khoản QR VietQR; khớp tự động qua webhook SePay hoặc kế toán duyệt bill. Ở Development dùng `/Dev/SimulateBank` để giả lập.
 - Chưa làm: gửi tin Zalo/SMS (FR-04, FR-23, lời mời đối tác), cổng thanh toán, đồng bộ OTA.
+
+## 9. Tự host Production trên Mac
+
+Xem [runbook cho chủ máy](docs/deploy/self-host-mac.md), [báo cáo diễn tập](docs/deploy/self-host-rehearsal-report.md) và bộ script `deploy/mac/`. App Production chỉ nghe localhost:8080, dùng Cloudflare named tunnel cho HTTPS; người vận hành tự cấu hình domain/SePay/LaunchAgent, không tự public khi chạy script app.
+
+Có thể cô lập test SQL vào database mới thay vì ConstraintTest có sẵn (vẫn đọc thông tin máy chủ/xác thực từ user-secrets, không sửa DB chính):
+
+```bash
+./deploy/mac/setup-database.sh HomestayBooking_SelfHostTest_Local
+FUJI_SQL_TEST_DATABASE=HomestayBooking_SelfHostTest_Local RUN_PERF_TESTS=1 dotnet test HomestayBooking.sln -c Release --no-build
+```
+
+Chỉ cho phép tên override dạng `HomestayBooking_SelfHostTest_<chữ/số/gạch dưới>`; bỏ biến này thì hai lớp SQL test giữ database ConstraintTest như trước. Không chạy hai lượt SQL test đồng thời trên cùng DB thử.
