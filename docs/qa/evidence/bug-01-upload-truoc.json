@@ -1,0 +1,36 @@
+{
+  "source": "fuji-prelaunch/upload-deep.json",
+  "source_sha256": "48c4b6e82a0815be595d7c6e16b6bf98acaa7ed6abf74838a9879a9abb876b7c",
+  "observations": [
+    {
+      "file": "qa-broken.png",
+      "status": 200,
+      "success": true,
+      "invalid": false
+    },
+    {
+      "file": "../qa-path.png",
+      "status": 200,
+      "success": true,
+      "invalid": false
+    },
+    {
+      "file": "qa-disguised.exe",
+      "status": 200,
+      "success": true,
+      "invalid": false
+    },
+    {
+      "file": "qa-mismatch.jpg",
+      "status": 200,
+      "success": true,
+      "invalid": false
+    },
+    {
+      "file": "qa-large.png",
+      "status": 200,
+      "success": false,
+      "invalid": false
+    }
+  ]
+}

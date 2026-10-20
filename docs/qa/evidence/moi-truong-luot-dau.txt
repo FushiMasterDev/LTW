@@ -1,0 +1,4 @@
+Lượt đầu trong sandbox, 20/10/2026. Đã dừng đúng testhost và runner của lượt này sau các timeout; không có kết quả toàn lượt hợp lệ.
+Không dùng để khẳng định Pass hoặc lỗi nghiệp vụ. Đã chạy lại ngoài sandbox với cùng bộ lọc không SQL.
+
+System.InvalidOperationException : Timed out waiting for the entry point to build the IHost after 00:05:00. This timeout can be modified using the 'DOTNET_HOST_FACTORY_RESOLVER_DEFAULT_TIMEOUT_IN_SECONDS' environment variable.

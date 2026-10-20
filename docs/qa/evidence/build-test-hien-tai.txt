@@ -1,0 +1,12 @@
+20/10/2026 — nhánh docs/qa-evidence
+Lượt xác nhận ngoài sandbox, không SQL Server.
+
+Build succeeded.
+0 Warning(s)
+0 Error(s)
+Time Elapsed 00:00:02.46
+Exit: 0
+
+Passed!  - Failed:     0, Passed:  1779, Skipped:     1, Total:  1780, Duration: 4 m 30 s - HomestayBooking.Tests.dll (net10.0)
+Exit: 0
+Không chọn: 1 test ReportServiceSqlServerTests (giới hạn không thao tác database).

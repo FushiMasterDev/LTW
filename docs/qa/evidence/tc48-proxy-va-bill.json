@@ -1,0 +1,48 @@
+{
+  "source": "fuji-selfhost-free/evidence/funnel-manual-flow.json",
+  "source_sha256": "7c779f7d8502d016bda07851c14b1f6accc4663b9880c92448f8e7742d0d1786",
+  "observations": {
+    "/": {
+      "status": 200,
+      "noRedirect": true,
+      "hstsAbsent": true
+    },
+    "/healthz": {
+      "status": 200,
+      "noRedirect": true,
+      "hstsAbsent": true
+    },
+    "/Account/EmployeeLogin": {
+      "status": 200,
+      "noRedirect": true,
+      "hstsAbsent": true
+    },
+    "/swagger": {
+      "status": 404,
+      "noRedirect": true,
+      "hstsAbsent": true
+    },
+    "/Dev/UiKit": {
+      "status": 404,
+      "noRedirect": true,
+      "hstsAbsent": true
+    },
+    "loginAndAntiforgery": true,
+    "booking": {
+      "code": "FJ261020-003",
+      "receiptForm": true
+    },
+    "webhook": {
+      "status": 503,
+      "noTransactionWritten": true
+    },
+    "manualPayment": {
+      "uploaded": "PaymentSubmitted",
+      "accountantApproved": "Deposited",
+      "ownerConfirmed": "Confirmed",
+      "method": "ManualReceipt",
+      "reviewerRecorded": "3",
+      "bankTransactionsUnchanged": true
+    }
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "source": "fuji-prelaunch/concurrency.json",
+  "source_sha256": "51bfd4b47f90c15bb9f7753bc2a624950fd09cb17710632224209919e21b2cc0",
+  "observations": [
+    {
+      "status": 200,
+      "path": "/Bookings/Details/FJ261020-002",
+      "soldOut": false
+    },
+    {
+      "status": 200,
+      "path": "/Bookings/Create",
+      "soldOut": true
+    },
+    {
+      "status": 200,
+      "path": "/Bookings/Create",
+      "soldOut": true
+    },
+    {
+      "status": 200,
+      "path": "/Bookings/Create",
+      "soldOut": true
+    },
+    {
+      "status": 200,
+      "path": "/Bookings/Create",
+      "soldOut": true
+    },
+    {
+      "status": 200,
+      "path": "/Bookings/Create",
+      "soldOut": true
+    },
+    {
+      "status": 200,
+      "path": "/Bookings/Create",
+      "soldOut": true
+    },
+    {
+      "status": 200,
+      "path": "/Bookings/Create",
+      "soldOut": true
+    }
+  ]
+}
