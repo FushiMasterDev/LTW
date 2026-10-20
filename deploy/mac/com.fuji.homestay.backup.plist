@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>FUJI_ENV</key>
+		<string>/Users/REPLACE_ME/FujiHomestay/production.env</string>
+		<key>PATH</key>
+		<string>/opt/homebrew/bin:/usr/local/bin:/usr/local/share/dotnet:/usr/bin:/bin:/usr/sbin:/sbin</string>
+	</dict>
+	<key>Label</key>
+	<string>com.fuji.homestay.backup</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>/Users/REPLACE_ME/FujiHomestay/scripts/backup.sh</string>
+	</array>
+	<key>StandardErrorPath</key>
+	<string>/Users/REPLACE_ME/FujiHomestay/logs/com.fuji.homestay.backup.error.log</string>
+	<key>StandardOutPath</key>
+	<string>/Users/REPLACE_ME/FujiHomestay/logs/com.fuji.homestay.backup.log</string>
+	<key>StartCalendarInterval</key>
+	<dict>
+		<key>Hour</key>
+		<integer>3</integer>
+		<key>Minute</key>
+		<integer>15</integer>
+	</dict>
+</dict>
+</plist>
