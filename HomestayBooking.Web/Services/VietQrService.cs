@@ -25,7 +25,7 @@ public class VietQrService
     public const string StaticImagePath = "/images/qr-mb.png";
 
     public string BuildImageUrl(decimal amount, string transferContent) =>
-        $"https://img.vietqr.io/image/{_account.BankCode}-{_account.AccountNumber}-compact2.png" +
+        $"{_account.QrImageBaseUrl.TrimEnd('/')}/{_account.BankCode}-{_account.AccountNumber}-compact2.png" +
         $"?amount={decimal.ToInt64(amount)}" +
         $"&addInfo={Uri.EscapeDataString(transferContent)}" +
         $"&accountName={Uri.EscapeDataString(_account.AccountName)}";

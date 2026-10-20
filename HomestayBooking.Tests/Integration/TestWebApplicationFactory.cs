@@ -46,6 +46,7 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
         }
 
         builder.UseEnvironment("Testing");
+        builder.UseSetting("DataProtection:KeysPath", Path.Combine(Path.GetTempPath(), "fuji-test-keys-" + _databaseName));
         builder.ConfigureLogging(logging => logging.AddProvider(new ErrorCapture(Errors)));
         builder.ConfigureServices(services =>
         {

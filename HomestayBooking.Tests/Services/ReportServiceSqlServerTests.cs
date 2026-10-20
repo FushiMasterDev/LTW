@@ -15,7 +15,16 @@ namespace HomestayBooking.Tests.Services;
 [Collection(ConstraintTestDatabaseCollection.Name)]
 public sealed class ReportServiceSqlServerTests(ITestOutputHelper output)
 {
-    private const string TestDatabase = "HomestayBooking_ConstraintTest";
+    private static string TestDatabase
+    {
+        get
+        {
+            var name = Environment.GetEnvironmentVariable("FUJI_SQL_TEST_DATABASE") ?? "HomestayBooking_ConstraintTest";
+            if (!System.Text.RegularExpressions.Regex.IsMatch(name, @"^HomestayBooking_(ConstraintTest|SelfHostTest_[A-Za-z0-9_]+)$"))
+                throw new InvalidOperationException("Tên database SQL test không được phép.");
+            return name;
+        }
+    }
 
     [Fact]
     public async Task ReportsTranslateOnSqlServerWithExpectedMoneyConfirmationTimesAndVietnamMonths()

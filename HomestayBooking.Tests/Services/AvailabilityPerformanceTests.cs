@@ -30,7 +30,16 @@ public sealed class ConstraintTestDatabaseCollection { public const string Name 
 [Collection(ConstraintTestDatabaseCollection.Name)]
 public sealed class AvailabilityPerformanceTests(ITestOutputHelper output)
 {
-    private const string TestDatabase = "HomestayBooking_ConstraintTest";
+    private static string TestDatabase
+    {
+        get
+        {
+            var name = Environment.GetEnvironmentVariable("FUJI_SQL_TEST_DATABASE") ?? "HomestayBooking_ConstraintTest";
+            if (!System.Text.RegularExpressions.Regex.IsMatch(name, @"^HomestayBooking_(ConstraintTest|SelfHostTest_[A-Za-z0-9_]+)$"))
+                throw new InvalidOperationException("Tên database SQL test không được phép.");
+            return name;
+        }
+    }
     private const int Homestays = 150, TypesPerHome = 5, RoomsPerType = 2, Days = 365, BlockIdBase = 1_000_000;
 
     [PerformanceFact]

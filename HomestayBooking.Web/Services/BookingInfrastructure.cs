@@ -119,6 +119,8 @@ public class BankAccountOptions
     /// <summary>Mã ngân hàng theo VietQR: MB = MB Bank (BIN 970422).</summary>
     public string BankCode { get; set; } = "MB";
 
+    public string QrImageBaseUrl { get; set; } = "https://img.vietqr.io/image";
+
     public string AccountNumber { get; set; } = string.Empty;
     public string AccountName { get; set; } = string.Empty;
 

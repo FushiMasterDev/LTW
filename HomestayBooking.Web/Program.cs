@@ -6,6 +6,9 @@ using HomestayBooking.Web.Models;
 using HomestayBooking.Web.Models.Entities;
 using HomestayBooking.Web.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Net;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +17,27 @@ using System.Text.Encodings.Web;
 using System.Text.Unicode;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var reverseProxyEnabled = builder.Configuration.GetValue<bool>("ReverseProxy:Enabled");
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit = 1;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+    options.KnownProxies.Add(IPAddress.Loopback);
+    options.KnownProxies.Add(IPAddress.IPv6Loopback);
+    options.KnownProxies.Add(IPAddress.Loopback.MapToIPv6());
+});
+if (reverseProxyEnabled)
+    builder.Services.AddHttpsRedirection(options => options.HttpsPort = 443);
+
+var keysPath = builder.Configuration["DataProtection:KeysPath"] ?? "App_Data/keys";
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.GetFullPath(keysPath, builder.Environment.ContentRootPath)))
+    .SetApplicationName("FujiHomestay");
+builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database");
+builder.Services.AddScoped<PublicUrlService>();
 
 // Cookie chỉ gửi qua HTTPS ở môi trường thật; khi dev cho phép http://localhost
 var cookieSecurePolicy = builder.Environment.IsDevelopment()
@@ -171,10 +195,16 @@ builder.Services.Configure<RequestLocalizationOptions>(o =>
     ];
 });
 builder.Services.AddControllersWithViews(o =>
-        o.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()))
+    {
+        o.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+        if (!builder.Environment.IsDevelopment()) o.Conventions.Add(new ProductionControllerConvention());
+    })
     .AddViewLocalization()
     .AddDataAnnotationsLocalization(o =>
         o.DataAnnotationLocalizerProvider = (_, factory) => factory.Create(typeof(SharedResource)));
+
+// TempData có thể chứa lời mời đối tác/mật khẩu tạm đã mã hóa, cũng cần cookie Secure.
+builder.Services.Configure<CookieTempDataProviderOptions>(o => o.Cookie.SecurePolicy = cookieSecurePolicy);
 
 builder.Services.AddAntiforgery(o =>
 {
@@ -204,6 +234,8 @@ builder.Services.AddSwaggerGen(o =>
 });
 
 var app = builder.Build();
+
+if (reverseProxyEnabled) app.UseForwardedHeaders();
 
 // Header bảo mật cơ bản cho mọi phản hồi (QA trước ra mắt). CSP đầy đủ chưa bật: script chống nháy theme trong
 // _HeadAssets là inline, cần nonce trước khi siết script-src.
@@ -235,7 +267,8 @@ else
 }
 
 app.UseStatusCodePagesWithReExecute("/Home/StatusCode/{0}");
-app.UseHttpsRedirection();
+// Giám sát nội bộ qua HTTP loopback không cần TLS; các URL khác vẫn chuyển sang HTTPS.
+app.UseWhen(context => context.Request.Path != "/healthz", branch => branch.UseHttpsRedirection());
 
 // MapStaticAssets chỉ phục vụ file có sẵn lúc build; ảnh upload lúc chạy (wwwroot/uploads) cần UseStaticFiles
 app.UseStaticFiles();
@@ -260,6 +293,7 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 app.MapControllers(); // Web API (attribute routing)
+app.MapHealthChecks("/healthz").AllowAnonymous();
 
 await SeedData.InitializeAsync(app.Services);
 using (var bootstrapScope = app.Services.CreateScope())

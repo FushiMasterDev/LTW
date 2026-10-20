@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 namespace HomestayBooking.Web.Areas.Staff.Controllers;
 public class OwnerRegistrationsController(ApplicationDbContext db,OwnerRegistrationQueryService queries,
-    OwnerRegistrationService registrations,IStringLocalizer<SharedResource> l) : StaffController(db,l)
+    OwnerRegistrationService registrations,PublicUrlService publicUrls,IStringLocalizer<SharedResource> l) : StaffController(db,l)
 {
     public async Task<IActionResult> Index([FromQuery] RegistrationQuery query)
     {
@@ -46,7 +46,7 @@ public class OwnerRegistrationsController(ApplicationDbContext db,OwnerRegistrat
             : await registrations.InviteAsync(id,await CurrentActorAsync()));
         if(!saved) return RedirectToAction(nameof(Details),new {id});
         // Encrypted TempData carries this private handoff once; never log or audit its token.
-        TempData["OwnerInvitation:"+id]=Url.Action("Activate","Partner",new {area="",id,token=invitation!.Token},Request.Scheme);
+        TempData["OwnerInvitation:"+id]=publicUrls.Absolute(Url.Action("Activate","Partner",new {area="",id,token=invitation!.Token})!);
         return RedirectToAction(nameof(Invitation),new {id});
     }
     [HttpPost,ValidateAntiForgeryToken]
