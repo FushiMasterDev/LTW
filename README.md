@@ -11,6 +11,9 @@ Hệ thống đặt phòng homestay cho Công ty Fuji (Hà Nội), bài tập l�
 Tài liệu chi tiết: [`QUY_TRINH_BTL.md`](QUY_TRINH_BTL.md) (yêu cầu, nghiệp vụ, API), [`fuji_homestay_database_v1.md`](fuji_homestay_database_v1.md) (thiết kế CSDL), [`DESIGN.md`](DESIGN.md) (hệ thiết kế giao diện), [`database/README.md`](database/README.md) (dựng và kiểm tra CSDL chi tiết), [`docs/ui/qa-report.md`](docs/ui/qa-report.md) (báo cáo kiểm thử giao diện).
 [Kết quả kiểm thử và quá trình sửa lỗi (mục 5.4)](docs/qa/ket-qua-kiem-thu-va-sua-loi.md).
 
+- [Cơ sở dữ liệu: bảng, quan hệ, trạng thái và dữ liệu mẫu](docs/database.md).
+- [Backend, đăng nhập, phân quyền và danh sách API](docs/api-va-backend.md).
+
 ## Công nghệ
 
 | Phần | Dùng |

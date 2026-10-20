@@ -1,0 +1,539 @@
+# Backend, đăng nhập và danh sách API Fuji Homestay
+
+Tài liệu đối chiếu trực tiếp `Program.cs`, controller MVC/API, các service, Identity và test trong repo. Các ví dụ JSON minh họa **đúng cấu trúc DTO**, không phải dữ liệu lấy từ database đang chạy; ID, ngày, số tiền và mã đơn cần thay bằng dữ liệu demo thực tế. Chi tiết 45 bảng và các enum: [database.md](database.md).
+
+## 1. Kiến trúc backend
+
+Đường đi thông thường là **Controller → Service → ApplicationDbContext → SQL Server**. Controller nhận request, kiểm model/quyền và chọn response/view; service thực hiện nghiệp vụ; DbContext ánh xạ entity và lưu dữ liệu. Không có lớp repository riêng. Một số controller đọc trực tiếp DbContext để lọc/tóm tắt dữ liệu, ví dụ BookingsApiController, nên đây không phải kiến trúc bắt buộc mọi truy vấn đều qua service.
+
+| Thư mục/tệp | Trách nhiệm |
+|---|---|
+| `Program.cs` | Đăng ký dependency injection, Identity, policy, cookie, localization, Swagger; dựng middleware, route, seed và bootstrap |
+| `Controllers/` | Trang khách, tài khoản, đối tác, thông báo; một số action trả JSON hỗ trợ trang MVC |
+| `Controllers/Api/` | 7 controller Web API, tổng 10 endpoint được liệt kê ở phần 3 |
+| `Areas/Owner`, `Areas/Staff`, `Areas/Accounting`, `Areas/Admin` | Các workspace MVC theo nghiệp vụ/vai trò |
+| `Services/` | Đặt phòng, giá/tồn phòng, thanh toán, đổi/hủy, hợp đồng, giấy tờ, đối soát, tài khoản, báo cáo, thông báo |
+| `Identity/` | Chuẩn hóa điện thoại, tìm/kiểm tài khoản, dựng claim, thông báo lỗi Identity tiếng Việt |
+| `Models/Entities`, `Models/ViewModels` | Entity lưu database; dữ liệu form/trang. DTO API hiện khai báo ngay trong controller |
+| `Data/`, `Data/Migrations` | DbContext, cấu hình EF, migration và các phần SeedData |
+| `BackgroundJobs/BookingTimeoutJob.cs` | Job chạy ngay lượt đầu và mỗi phút, mỗi tác vụ có scope/try-catch riêng |
+| `Views/`, `TagHelpers/`, `ViewComponents/`, `Resources/` | Razor, thành phần giao diện và bản dịch |
+| `HomestayBooking.Tests/` | Test service, ràng buộc, Identity và tích hợp HTTP; không phải tập endpoint triển khai |
+
+### Middleware theo đúng thứ tự Program.cs
+
+1. Nếu `ReverseProxy:Enabled`: có thể đặt scheme HTTPS cho kết nối từ loopback khi AssumeHttps bật; sau đó `UseForwardedHeaders` nhận X-Forwarded-For/Proto. Chỉ tin loopback, giới hạn một proxy.
+2. Middleware đăng ký header bảo mật cho response: X-Content-Type-Options=nosniff, X-Frame-Options=DENY, Referrer-Policy=strict-origin-when-cross-origin, Permissions-Policy tắt camera/microphone/geolocation/payment, CSP gồm frame-ancestors/base-uri/form-action/object-src. CSP chưa siết đầy đủ script-src.
+3. Ngoài Development: `UseExceptionHandler("/Home/Error")`; HSTS chỉ bật nếu không dùng reverse proxy. Trong Development: `UseSwagger`, `UseSwaggerUI`.
+4. `UseStatusCodePagesWithReExecute("/Home/StatusCode/{0}")` cho phản hồi lỗi chưa có body.
+5. Nếu không dùng proxy: HTTPS redirection, riêng `/healthz` được bỏ qua chuyển hướng.
+6. `UseStaticFiles` phục vụ file có sẵn và upload phát sinh lúc chạy.
+7. `UseRequestLocalization`: mặc định vi-VN; hỗ trợ en-US. Ưu tiên query culture rồi cookie, không dùng ngôn ngữ trình duyệt.
+8. `UseRouting` → `UseSession` → `UseAuthentication` → `UseAuthorization`.
+9. Ánh xạ static assets; route area `{area:exists}/{controller=Dashboard}/{action=Index}/{id?}`, route MVC mặc định `{controller=Home}/{action=Index}/{id?}`; `MapControllers` cho attribute route API; `/healthz` cho phép ẩn danh.
+
+`SeedData.InitializeAsync` và `AdminBootstrapService.RunAsync` được gọi trước `app.Run()`, không phải middleware cho từng request. AutoMigrate mặc định tắt; thiếu migration thì startup dừng. Startup Development có thể ghi dữ liệu mẫu và job nền có thể đổi dữ liệu sau khi ứng dụng chạy.
+
+```mermaid
+flowchart TD
+    Client[Trinh duyet hoac HTTP client] --> Proxy{Reverse proxy bat?}
+    Proxy -->|Co| Forward[Scheme HTTPS va ForwardedHeaders]
+    Proxy -->|Khong| Headers[Dang ky header bao mat]
+    Forward --> Headers
+    Headers --> Env[Exception handler HSTS hoac Swagger Development]
+    Env --> Status[Status pages va HTTPS redirection co dieu kien]
+    Status --> Static[Static files]
+    Static --> Local[Localization]
+    Local --> Route[Routing]
+    Route --> Session[Session]
+    Session --> Auth[Authentication cookie]
+    Auth --> Policy[Authorization policy]
+    Policy --> MVC[Controller va antiforgery filter]
+    MVC --> Service[Service nghiep vu]
+    MVC -->|Mot so truy van doc| EF[ApplicationDbContext EF Core]
+    Service --> EF
+    EF --> SQL[(SQL Server)]
+    MVC --> Result[HTML Razor hoac JSON va ma HTTP]
+```
+
+### Job, file và thông báo
+
+`BookingTimeoutJob` thực hiện: hết hạn giữ phòng; hết hạn yêu cầu đổi chưa nộp tiền; cảnh báo đơn chậm chủ xác nhận; cảnh báo bill chậm duyệt; hết hạn voucher/hợp đồng; cảnh báo hồ sơ chủ quá hạn; nhắc khách nhận phòng/chủ đón khách; lập đối soát; từ chối khoản bù treo đủ điều kiện. Lỗi một tác vụ được ghi log rồi tiếp tục tác vụ sau.
+
+- Giữ phòng mặc định 15 phút; hạn chủ xác nhận 30 phút. Quá hạn xác nhận chỉ cảnh báo, không tự từ chối đơn. Bill chờ duyệt được cảnh báo sau 120 phút hành chính, thứ Hai–thứ Sáu, 08–17 giờ Việt Nam.
+- Nhắc khách trước 1 ngày; chỉ gửi trong khung mặc định [09:00, 21:00) giờ Việt Nam, có chống lặp. MessageService ghi Pending trong transaction ngắn, gửi ngoài transaction, rồi ghi Sent/Failed; Zalo lỗi có nhánh SMS. Pending quá 10 phút có cơ chế đánh Failed để thử lại theo giới hạn của caller.
+- Đối soát mặc định xét 4 kỳ gần nhất, chờ 2 ngày sau kỳ, chạy lập kỳ mỗi 60 phút theo mốc thành công trong instance; các tác vụ khác vẫn mỗi phút.
+- **SMS/Zalo đang giả lập bằng LoggingMessageSender**, chỉ log kênh, không gửi dịch vụ thật và không log nội dung tin. MessageLogs.Sent hiện không chứng minh khách đã nhận tin thật. Notifications là thông báo trong ứng dụng, độc lập kết quả giao tin ngoài.
+- `ReceiptFileStore` lưu bill/giấy tờ ở `App_Data/receipts`, ngoài wwwroot; controller kiểm quyền rồi mới trả file. File 1 byte–5 MiB; kiểm tên, chữ ký/cấu trúc, đuôi và MIME; bill nhận JPG/PNG/WEBP, giấy tờ có thể nhận thêm PDF.
+- `HomestayImageService` lưu ảnh công khai tại `wwwroot/uploads/homestays/{id}/`, tên file GUID; UseStaticFiles phục vụ ảnh upload. Nội dung HTML của homestay được HtmlSanitizer lọc ở service.
+- Khóa Data Protection được lưu tại vị trí cấu hình `DataProtection:KeysPath`, mặc định `App_Data/keys`, application name FujiHomestay. `/healthz` dùng DatabaseHealthCheck kiểm CanConnectAsync, trả trạng thái sức khỏe, không công bố lỗi SQL/cấu hình kết nối; đây không phải Web API controller trong tổng 10 endpoint.
+
+## 2. Đăng nhập và phân quyền
+
+### Identity và hai cổng đăng nhập
+
+ASP.NET Core Identity dùng `ApplicationUser`, `IdentityRole`, bảng AspNetUsers/AspNetRoles và **cookie dùng chung giữa web và API**. Không thấy đăng ký JWT Bearer hay hệ thống token đăng nhập riêng cho API trong Program.cs. Cột token/login ngoài của Identity không đồng nghĩa đang có API JWT hoặc Google login hoạt động; Program.cs chưa cấu hình Google authentication. Khách tự đăng ký chưa có bước OTP.
+
+| Cổng | Định danh gửi form | Cách tìm tài khoản |
+|---|---|---|
+| `/Account/Login` | PhoneNumber, Password, RememberMe, ReturnUrl | Chuẩn hóa điện thoại E.164 → PersonProfiles → tài khoản có Customer hoặc Owner |
+| `/Account/EmployeeLogin` | EmployeeCode, Password, RememberMe, ReturnUrl | Mã nhân viên trim/viết hoa → Employees còn Active → tài khoản có role Employee |
+| `/Account/Register` | Họ tên, điện thoại, email tùy chọn, mật khẩu và dữ liệu xác nhận theo form | CustomerAccountService tạo hồ sơ và tài khoản Customer |
+
+Khách **không cần tài khoản để đặt phòng**. GuestCustomerService tạo/tìm hồ sơ khách; sau tạo đơn, MVC giữ quyền xem bằng session. Tra cứu tại `/Bookings/Lookup` cần mã đơn + điện thoại của người liên hệ hoặc người đặt; khớp thì lưu mã đơn vào session. API tra cứu công khai chỉ trả tóm tắt, không thiết lập quyền session MVC. `/Bookings/Mine` cần đăng nhập; trang đổi của khách cần role Customer và đúng người đặt.
+
+`AppSignInManager` chỉ cho AccountStatus.Active đăng nhập. Sai mật khẩu tối đa **5 lần → khóa tạm 5 phút** theo Identity; AccountStatus.Locked/Disabled là trạng thái nghiệp vụ riêng. Mọi thất bại đăng nhập dùng thông báo chung để hạn chế dò tài khoản. Mật khẩu tối thiểu 8 ký tự được đặt ở Program.cs; các yêu cầu Identity khác không được ghi đè tại đó.
+
+Cookie có thời hạn 7 ngày, sliding expiration; HttpOnly, SameSite=Lax, Secure=Always ngoài Development và SameAsRequest ở Development. RememberMe quyết định lưu cookie bền qua phiên trình duyệt. Kiểm security stamp mỗi phút; tài khoản mất Active hoặc stamp thay đổi bị loại cookie khi kiểm lại. Claim chức vụ và chủ được duyệt được dựng lại từ database ở bước này.
+
+**Đổi mật khẩu lần đầu:** code có PasswordChangedAt và `/Account/ChangePassword`; seed/bootstrap/tạo tài khoản nhân viên đều có ghi mốc đặt mật khẩu. Chưa thấy middleware hay nhánh đăng nhập bắt buộc đổi mật khẩu ở lần đầu, nên không trình bày đây là chức năng đã có. Đổi mật khẩu thành công cập nhật mốc, ghi AccountActivityLog và refresh cookie.
+
+Ngoài Development, `AdminBootstrapService` chỉ tạo quản trị viên đầu tiên nếu chưa tồn tại bất kỳ Employee chức vụ Administrator nào, kể cả đã khóa/nghỉ. Đọc `Bootstrap:Administrator` từ cấu hình bí mật: EmployeeCode, FullName, Phone, Password bắt buộc, Email tùy chọn. Thiếu thì log lỗi, không tạo; tạo xong nhắc xóa giá trị mật khẩu khỏi cấu hình. Development dùng AD001 từ seed. Không có tài khoản quản trị Production mặc định bằng mật khẩu demo.
+
+### Role, chức vụ và policy
+
+AppRoles chỉ có **Customer, Owner, Employee**. Một tài khoản có thể nhiều role; kế toán/quản lý/quản trị là EmployeePosition, không phải role mới. Claim chức vụ chỉ sinh khi EmploymentStatus.Active. Claim OwnerApproved=true sinh khi chủ có ít nhất một hồ sơ Approved.
+
+| Policy | Điều kiện trong Program.cs | Khu/chức năng chính |
+|---|---|---|
+| Employee | Role Employee + có claim chức vụ | Workspace Staff (vẫn có kiểm phạm vi ở service) |
+| Management | Role Employee + Manager hoặc Administrator | Workspace Admin; duyệt danh mục/hợp đồng/homestay, báo cáo |
+| Accounting | Role Employee + Accountant, Manager hoặc Administrator | Workspace Accounting thông thường |
+| ApprovedOwner | Role Owner + OwnerApproved=true | Sửa cơ sở, lịch, đơn, đánh giá, đối soát của chính chủ; API ghi của chủ |
+| ChangeRequestApprove | Role Employee + **Manager** | Duyệt nghiệp vụ yêu cầu đổi/hủy tại Staff/ChangeApprovals |
+| ChangeRequestFinance | Role Employee + **Accountant** | Xác nhận cọc bổ sung tại Accounting/AdditionalDeposits |
+
+Administrator không tự vượt qua hai policy cuối. Service còn kiểm chủ sở hữu/phạm vi dữ liệu và người thực hiện thực tế; qua policy không đồng nghĩa được sửa mọi bản ghi. Các giới hạn bổ sung đọc được trong code:
+
+| Nghiệp vụ sau khi qua policy | Giới hạn thực tế |
+|---|---|
+| Controller kế thừa StaffController | Chỉ Consultant/Manager/Administrator thao tác; Accountant tới Staff/Dashboard được chuyển về Accounting/Dashboard, các action khác của lớp này trả Forbid |
+| Staff/ChangeRequests | Kế thừa Controller trực tiếp, dùng policy Employee; không nhận bộ chặn chức vụ của StaffController |
+| Duyệt bill cọc đầu, xử lý giao dịch và ghi hoàn cọc | ReceiptReviewService/AccountingService chỉ nhận Accountant hoặc Manager; Administrator có quyền đọc khu Accounting nhưng bị chặn các thao tác ghi này |
+| Đối soát | Accountant/Manager/Administrator được đọc và lập Draft; chỉ Accountant được gửi, xác nhận hộ, mở lại và ghi đã chi |
+| Khoản bù | Accountant/Manager/Administrator được xem khoản chờ đủ điều kiện; chỉ Accountant ghi đã trả/từ chối hoặc xem danh sách có thể từ chối |
+| Tài khoản nhân viên | AccountAdminService chỉ cho Administrator sửa; Manager chỉ đọc |
+
+Chủ PendingReview vẫn vào `/Owner/Dashboard` và `/Partner/Status`, chưa được dùng chức năng yêu cầu ApprovedOwner.
+
+```mermaid
+sequenceDiagram
+    actor U as Nguoi dung
+    participant B as Trinh duyet
+    participant C as AccountController
+    participant L as AccountLookupService
+    participant I as Identity va AppSignInManager
+    participant D as Database
+    U->>B: Mo cong dang nhap
+    B->>C: GET Login hoac EmployeeLogin
+    C-->>B: Form va antiforgery token
+    U->>B: Nhap dinh danh va mat khau
+    B->>C: POST form, token va cookie antiforgery
+    C->>L: Tim theo so dien thoai hoac ma nhan vien
+    L->>D: Tra ho so, role va dieu kien nhan vien
+    D-->>L: Tai khoan hoac khong tim thay
+    L-->>C: Ket qua tim
+    C->>I: PasswordSignInAsync, dem lan sai
+    I->>D: Kiem hash, Active va lockout
+    alt Dang nhap hop le
+        I->>D: Nap ho so de tao claim
+        I-->>B: Cookie xac thuc
+        C-->>B: 302 ve ReturnUrl noi bo hoac workspace
+    else That bai
+        C-->>B: Form voi thong bao loi chung
+    end
+    B->>C: Request sau kem cookie
+    Note over I,D: Kiem security stamp va Active dinh ky moi phut
+```
+
+### API, CSRF và webhook
+
+API công khai không cần đăng nhập. API của chủ và thông báo sử dụng cookie Identity vừa đăng nhập trên web; `/api/...` thiếu đăng nhập trả **401**, thiếu quyền **403**, không chuyển 302 tới trang đăng nhập/AccessDenied (đã cấu hình cookie events). Bộ status pages có thể bổ sung trang HTML cho lỗi chưa có body; không giả định mọi lỗi đều là JSON.
+
+`AutoValidateAntiforgeryToken` áp dụng toàn cục: POST/DELETE API dùng cookie phải gửi **header RequestVerificationToken** cùng cookie antiforgery và cookie đăng nhập. Lấy request token từ input `__RequestVerificationToken` trên form, ví dụ `/Owner/Calendar` sau đăng nhập. Token lấy trước đăng nhập có thể không phù hợp principal sau đăng nhập; nên lấy lại từ trang đã xác thực trước lệnh ghi. GET không cần token CSRF.
+
+Swagger UI ở `/swagger` và mô tả `/swagger/v1/swagger.json` **chỉ bật trong Development**. Production không đăng ký các middleware này và trả **404**. Swagger chỉ chứa route bắt đầu `api/`, không gom action MVC vào danh sách này. Có thể đăng nhập cùng origin bằng trang web rồi thử API đọc trong Swagger; chưa có cấu hình security scheme/nút cấp token đăng nhập riêng, cũng chưa khai báo tham số antiforgery tự động cho API ghi. Muốn thử POST/DELETE dùng cookie cần tự gửi header token, ví dụ bằng curl.
+
+Ngoại lệ: `BankWebhookController` bỏ kiểm antiforgery, xác thực máy chủ bằng `Authorization: Apikey <khóa đã cấu hình>`. Không dùng cookie chủ/khách cho webhook. So khóa bằng so sánh thời gian cố định. Nếu `BankAccount:WebhookApiKey` chưa cấu hình, action trả **503 ProblemDetails** trước khi kiểm header; có khóa nhưng header thiếu/sai trả **401**. Dữ liệu không hợp lệ có thể bị model validation chặn 400 trước khi vào action. Chỉ có webhook SePay được triển khai ở Controllers/Api; enum Casso không phải bằng chứng có endpoint Casso.
+
+## 3. Danh sách 10 endpoint Web API
+
+**Đối chiếu: 7 controller, 10 action có `[Http*]` trong `Controllers/Api/`: 1 webhook + 1 tra cứu đơn + 1 tìm homestay + 1 thông báo + 2 thao tác đơn của chủ + 2 thao tác khóa lịch + 2 API phòng = 10 endpoint.** Không tính action MVC, health check hay Swagger. Route có `{id:int}` yêu cầu ID số nguyên; `{code}` là mã đơn chuỗi. JSON response dùng camelCase. Các trường trạng thái/loại ngày/lý do trong DTO response dưới đây được controller chuyển **chuỗi**, không phải số enum.
+
+Các mã trong bảng là nhánh nghiệp vụ/controller; API cần đăng nhập còn có 401/403. Binding/validation tự động có thể trả 400. Ví dụ GET dùng URL/query, **không gửi JSON body**; JSON đi kèm là response. Ví dụ POST có cả JSON body và response. Dữ liệu minh họa chỉ thể hiện cấu trúc và cần các điều kiện nghiệp vụ tương ứng.
+
+### 3.1. HomestaysApiController — tìm kiếm công khai
+
+| Method | Route | Quyền cần có | Tham số/Body | Kết quả (HTTP + dạng JSON) | Chức năng |
+|---|---|---|---|---|---|
+| GET | `/api/homestays` | Công khai | Query HomestaySearchQuery: areaId?, checkIn?, checkOut?, guests=2, minPrice?, maxPrice?, categoryId?, amenityIds (lặp), sort, q?, page? | 200 HomestayPage `{items,page,pageSize,totalCount,totalPages}`; 400 ProblemDetails | Tìm/lọc/sắp xếp/phân trang các cơ sở đủ điều kiện bán |
+
+`sort`: Default=0, PriceAscending=1, PriceDescending=2, Rating=3; query có thể dùng tên enum. `guests` được service kẹp 1–20, ngày nhận quá khứ được nâng lên hôm nay. `pageSize` là kết quả, không phải tham số query; SearchAsync cố định **9** kết quả/trang (khác mặc định 10 của PaginatedList ở nơi khác). Khoảng có đủ ngày bị giới hạn BookingOptions.MaxNights mặc định **30**, dù comment API có nhắc 92; **92 chỉ áp dụng API availability bên dưới**. Giá âm/ngược hoặc sort không hợp lệ trả 400. Chỉ đủ cặp ngày hợp lệ mới dùng để lọc theo khoảng ở.
+
+Request: `GET /api/homestays?guests=2&page=1&sort=PriceAscending`.
+
+Response 200 minh họa một trang chỉ có một kết quả:
+
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "name": "Phố Cổ Corner House",
+      "area": "Hoàn Kiếm",
+      "coverUrl": null,
+      "fromPrice": 400000,
+      "maxGuests": 4,
+      "rating": null,
+      "reviewCount": 0,
+      "amenities": ["Wifi", "Điều hòa"]
+    }
+  ],
+  "page": 1,
+  "pageSize": 9,
+  "totalCount": 1,
+  "totalPages": 1
+}
+```
+
+HomestayItem có coverUrl, fromPrice, rating có thể NULL. Đối chiếu test `PublicApiTests.SearchReturnsPagedHomestaysAndRejectsReversedPriceRange`.
+
+### 3.2. RoomsApiController — lịch kín và báo giá loại phòng
+
+| Method | Route | Quyền cần có | Tham số/Body | Kết quả (HTTP + dạng JSON) | Chức năng |
+|---|---|---|---|---|---|
+| GET | `/api/rooms/{id:int}/availability` | Công khai | id = **RoomTypeId**; query from, to dạng yyyy-MM-dd | 200 mảng chuỗi ngày `[]` hoặc `["yyyy-MM-dd"]`; 400 ProblemDetails | Trả các đêm kín hết phòng của loại phòng trong [from,to), tối đa 92 đêm |
+| GET | `/api/rooms/{id:int}/quote` | Công khai | id = **RoomTypeId**; query checkIn, checkOut | 200 RoomQuote `{roomTypeId,checkIn,checkOut,freeRooms,total,depositRate,deposit,nights}`; 400 ProblemDetails; 404 ProblemDetails khi thiếu bảng giá/loại không có giá | Báo giá từng đêm, tổng/cọc và số phòng còn trống; chưa tính voucher |
+
+availability không tồn tại/không có phòng đủ điều kiện bán có thể trả toàn bộ khoảng là ngày kín, không có nhánh 404 riêng. Service cắt phần trước hôm nay. quote giới hạn MaxNights mặc định 30; còn giá nhưng hết phòng vẫn có thể trả báo giá với freeRooms=0. Không nên coi báo giá là thao tác giữ phòng.
+
+Request: `GET /api/rooms/1/quote?checkIn=2027-01-04&checkOut=2027-01-06`.
+
+Response 200 giả định giá hai đêm đều 400.000 và còn 2 phòng:
+
+```json
+{
+  "roomTypeId": 1,
+  "checkIn": "2027-01-04",
+  "checkOut": "2027-01-06",
+  "freeRooms": 2,
+  "total": 800000,
+  "depositRate": 0.3,
+  "deposit": 240000,
+  "nights": [
+    {"date": "2027-01-04", "dayType": "Weekday", "price": 400000},
+    {"date": "2027-01-05", "dayType": "Weekday", "price": 400000}
+  ]
+}
+```
+
+Đối chiếu `PublicApiTests.AvailabilityListsBlockedNightsAndRejectsBadRanges`, `QuoteReturnsNightlyPricesAndDepositOrProblem`. Khi thử về sau, chọn ngày tương lai còn hợp đồng/giá.
+
+### 3.3. BookingsApiController — tra cứu đơn
+
+| Method | Route | Quyền cần có | Tham số/Body | Kết quả (HTTP + dạng JSON) | Chức năng |
+|---|---|---|---|---|---|
+| GET | `/api/bookings/{code}` | Công khai, phải khớp mã + điện thoại | Query phone; chấp nhận số Việt Nam được PhoneNumberNormalizer chuẩn hóa | 200 BookingSummary `{code,status,homestay,roomType,checkIn,checkOut,guests,totalAmount,depositAmount,holdExpiresAt}`; 404 ProblemDetails | Xem trạng thái/số tiền tóm tắt; thiếu/sai phone hay không có mã đều 404 |
+
+Mã được trim/viết hoa; phone khớp điện thoại người liên hệ **hoặc** người đặt. Không trả địa chỉ/hướng dẫn nhận phòng hay toàn bộ entity.
+
+Request: `GET /api/bookings/FJ261020-001?phone=0987000001`.
+
+Response 200 minh họa khi cặp mã/điện thoại có thật:
+
+```json
+{
+  "code": "FJ261020-001",
+  "status": "Deposited",
+  "homestay": "Phố Cổ Corner House",
+  "roomType": "Phòng đôi",
+  "checkIn": "2027-01-04",
+  "checkOut": "2027-01-06",
+  "guests": 2,
+  "totalAmount": 800000,
+  "depositAmount": 240000,
+  "holdExpiresAt": "2026-10-20T03:15:00Z"
+}
+```
+
+status là BookingStatus.ToString(); holdExpiresAt được gán DateTimeKind.Utc trước khi trả. Tóm tắt này không có AmountDue/DiscountAmount; depositAmount là cọc trước giảm voucher. Đối chiếu `PublicApiTests.BookingLookupNeedsMatchingPhoneAndHidesExistence`.
+
+### 3.4. NotificationsApiController — số thông báo
+
+| Method | Route | Quyền cần có | Tham số/Body | Kết quả (HTTP + dạng JSON) | Chức năng |
+|---|---|---|---|---|---|
+| GET | `/api/notifications/unread-count` | `[Authorize]`, mọi tài khoản đã đăng nhập | Không có; lấy AccountId từ claim NameIdentifier | 200 UnreadCount `{count}`; 401 nếu không có danh tính | Đếm thông báo chưa đọc của chính tài khoản |
+
+Request: `GET /api/notifications/unread-count` kèm cookie đăng nhập.
+
+Response 200 minh họa:
+
+```json
+{"count": 3}
+```
+
+Đối chiếu `PublicApiTests.UnreadCountRequiresSignInAndMatchesAccount`; số đếm thực phụ thuộc tài khoản và thông báo hiện có.
+
+### 3.5. OwnerBookingsApiController — chủ xác nhận/từ chối đơn
+
+| Method | Route | Quyền cần có | Tham số/Body | Kết quả (HTTP + dạng JSON) | Chức năng |
+|---|---|---|---|---|---|
+| POST | `/api/bookings/{id:int}/confirm` | ApprovedOwner, đơn của mình và đã có DepositedAt; cookie + CSRF | ConfirmRequest `{roomId: int hoặc null}`; có thể dùng `{}` để giữ phòng hiện tại | 200 BookingStatusResult `{id,code,status}`; 400 sai nghiệp vụ/token; 404 ProblemDetails nếu không thuộc phạm vi; 409 ProblemDetails nếu cập nhật đồng thời | Xác nhận đơn qua BookingService, có thể chỉ định phòng khác còn trống |
+| POST | `/api/bookings/{id:int}/reject` | Như confirm | RejectRequest `{reason: string}`; trim, 1–500 ký tự | 200 BookingStatusResult; 400 ProblemDetails nếu lý do/trạng thái sai (hoặc lỗi token); 404/409 như trên | Chủ từ chối đơn; ghi số tiền phải hoàn đủ phần cọc khách thực chuyển |
+
+Lọc có DepositedAt không thay cho kiểm trạng thái: service chỉ cho Deposited → Confirmed/Rejected. Gọi lại trên đơn Confirmed trả 400. ID ở đây là số nguyên Bookings.Id, khác mã chuỗi dùng API tra cứu. Reject mới ghi nghĩa vụ hoàn; kế toán vẫn phải thực hiện và ghi khoản Refund.
+
+Request: `POST /api/bookings/12/confirm`, kèm cookie và header RequestVerificationToken, Content-Type application/json.
+
+```json
+{"roomId": null}
+```
+
+Response 200 khi đơn 12 thuộc chủ và đang Deposited:
+
+```json
+{"id": 12, "code": "FJ261020-001", "status": "Confirmed"}
+```
+
+Đối chiếu `OwnerApiTests.OwnerConfirmsOwnDepositedBookingButNotOthersAndNotWithoutToken`, `RejectNeedsReasonAndRefundsDeposit`, `NonOwnersGet401Or403WithoutRedirect`.
+
+### 3.6. RoomBlocksApiController — khóa/mở lịch của chủ
+
+| Method | Route | Quyền cần có | Tham số/Body | Kết quả (HTTP + dạng JSON) | Chức năng |
+|---|---|---|---|---|---|
+| POST | `/api/rooms/{roomId:int}/blocks` | ApprovedOwner, sở hữu phòng; cookie + CSRF | CreateBlockRequest `{start,end,reason,note}`; reason mặc định OtherChannel, note tùy chọn ≤255 ký tự | 201 BlockResult `{id,roomId,start,end,reason,note}` + Location; 400 ProblemDetails/validation/token; 404 ProblemDetails; 409 ConflictProblem `{detail,conflicts:[{date,code}]}` | Khóa các đêm [start,end), không khóa ngày quá khứ; trùng lịch trả các đêm xung đột |
+| DELETE | `/api/rooms/{roomId:int}/blocks/{blockId:int}` | Như POST, khóa phải thuộc đúng phòng | Không body | 204 không nội dung; 400 nếu khóa đã kết thúc/token; 404 ProblemDetails | Mở phần đêm khóa từ hôm nay trở đi |
+
+roomId là **Rooms.Id**, không phải RoomTypeId của API báo giá. reason có JsonStringEnumConverter riêng, nhận tên OtherChannel/Maintenance; converter mặc định còn cho phép số enum, service kiểm Enum.IsDefined. Response luôn là tên chuỗi. Location là đường dẫn tài nguyên được tạo, **không có GET chi tiết block** trong controller. Khóa hoàn toàn ở tương lai có thể bị xóa hẳn; khóa có lịch sử giữ phần đã qua.
+
+Request: `POST /api/rooms/7/blocks`, kèm cookie + CSRF.
+
+```json
+{
+  "start": "2027-03-01",
+  "end": "2027-03-03",
+  "reason": "Maintenance",
+  "note": "Sơn lại phòng"
+}
+```
+
+Response 201 khi phòng thuộc chủ và cả hai đêm còn trống:
+
+```json
+{
+  "id": 9,
+  "roomId": 7,
+  "start": "2027-03-01",
+  "end": "2027-03-03",
+  "reason": "Maintenance",
+  "note": "Sơn lại phòng"
+}
+```
+
+Đối chiếu `OwnerApiTests.OwnerBlocksAndUnblocksOwnRoomWithConflictAndOwnershipChecks`.
+
+### 3.7. BankWebhookController — giao dịch từ SePay
+
+| Method | Route | Quyền cần có | Tham số/Body | Kết quả (HTTP + dạng JSON) | Chức năng |
+|---|---|---|---|---|---|
+| POST | `/api/bank-webhook/sepay` | Header Authorization: Apikey, không CSRF | SePayPayload: id (long), gateway?, transactionDate, accountNumber, code?, content?, transferType, transferAmount (decimal), referenceCode?, description? | 200 `{success:true,status,booking,duplicate}`; giao dịch bỏ qua trả `{success:true}`; 400 ProblemDetails/validation; 401; 503 ProblemDetails khi thiếu khóa cấu hình | Nhận tiền vào, đổi giờ Việt Nam sang UTC, chuyển BankMatchingService khớp đơn và chống gửi lặp |
+
+transactionDate phải đúng `yyyy-MM-dd HH:mm:ss` giờ Việt Nam. transferType khác `in` hoặc transferAmount ≤0 được bỏ qua 200 sau khi xác thực. code trong payload không thay cho việc đọc mã đơn trong content. Giao dịch lặp cũng trả 200 để nhà cung cấp không gửi lại; status là BankMatchStatus.ToString(), booking có thể null. Khớp cọc bổ sung vẫn chờ kế toán, không tự áp đổi đơn.
+
+Request: `POST /api/bank-webhook/sepay`, Content-Type application/json, header `Authorization: Apikey <khóa đã cấu hình>`.
+
+```json
+{
+  "id": 123,
+  "gateway": "MB",
+  "transactionDate": "2026-10-20 10:00:00",
+  "accountNumber": "<tài khoản nhận đã cấu hình>",
+  "code": null,
+  "content": "FJ261020-001 dat coc",
+  "transferType": "in",
+  "transferAmount": 240000,
+  "referenceCode": "DEMO-123",
+  "description": null
+}
+```
+
+accountNumber trong ví dụ là chỗ điền cấu hình, không phải số tài khoản để gửi nguyên văn. Response 200 **giả định** đúng tài khoản nhận, đơn hợp lệ còn hạn, cọc thực phải chuyển 240.000 và giao dịch chưa được nhận:
+
+```json
+{"success": true, "status": "Matched", "booking": "FJ261020-001", "duplicate": false}
+```
+
+Đối chiếu DTO/nhánh trả trong BankWebhookController và `BankWebhookValidationTests`, `BankMatchingServiceTests`. Bộ API không có endpoint phát lệnh chuyển tiền ngân hàng.
+
+## 4. Các trang MVC chính theo vai trò
+
+Các route dưới đây là MVC/Razor (HTML/form), **không cộng vào 10 Web API**. Mặc định `/Area/Controller` tương ứng action Index; các route chứa `{id}` trong workspace dùng ID số, còn `/Bookings/.../{code}` dùng mã đơn.
+
+| Người dùng/quyền | Route hoặc nhóm trang | Chức năng |
+|---|---|---|
+| Mọi người/khách vãng lai | `/`, `/Homestays`, `/Homestays/Details/{id}` | Trang chủ, tìm kiếm, xem cơ sở/loại phòng/giá/đánh giá |
+| Khách vãng lai hoặc có tài khoản | `/Bookings/Create`, `/Bookings/Lookup`, `/Bookings/Details/{code}` | Đặt phòng, tra cứu bằng mã + điện thoại, xem QR và chi tiết theo quyền tài khoản/session |
+| Khách có quyền đơn | `/Bookings/UploadReceipt/{code}`, `/Bookings/Cancel/{code}`, `/Bookings/Review/{code}` | Nộp ảnh bill, hủy trực tiếp, đánh giá đơn đủ điều kiện (POST) |
+| Đã đăng nhập / Customer | `/Bookings/Mine`; `/Bookings/Change/{code}` | Danh sách đơn/voucher; Customer gửi đổi chính đơn của mình |
+| Mọi người/đã đăng nhập tương ứng | `/Account/Login`, `/Account/EmployeeLogin`, `/Account/Register`, `/Account/ChangePassword` | Hai cổng đăng nhập, đăng ký khách, đổi mật khẩu |
+| Người đăng ký đối tác / Owner | `/Partner`, `/Partner/Activate`, `/Partner/Status` | Đăng ký, kích hoạt theo lời mời, bổ sung giấy tờ và xem tiến độ |
+| Mọi tài khoản đăng nhập | `/Notifications` | Danh sách thông báo, đánh dấu đã đọc |
+| Owner kể cả chưa được duyệt | `/Owner/Dashboard` | Tổng quan và trạng thái hồ sơ; quyền thao tác tiếp theo phụ thuộc duyệt |
+| ApprovedOwner | `/Owner/Homestays`, `/Owner/Homestays/Edit/{id}` | Nội dung/vị trí, phòng và giá, ảnh, tiện nghi, chính sách, giấy tờ của cơ sở mình |
+| ApprovedOwner | `/Owner/Bookings`, `/Owner/Bookings/Details/{id}` | Xác nhận/từ chối, nhận phòng, hoàn thành, không đến theo service |
+| ApprovedOwner | `/Owner/Calendar`, `/Owner/Schedule` | Lịch bận/khóa ngày, danh sách nhận–trả |
+| ApprovedOwner | `/Owner/Reviews`, `/Owner/Settlements`, `/Owner/Settlements/Details/{id}` | Trả lời đánh giá; xem bảng đã gửi, xác nhận/báo lệch đối soát |
+| Consultant/Manager/Administrator còn làm việc | `/Staff/Dashboard`, `/Staff/Bookings`, `/Staff/Bookings/Create` | Tổng quan, danh sách/chi tiết, đặt hộ và giao đơn theo quyền service; Accountant được chuyển khỏi dashboard Staff |
+| Consultant/Manager/Administrator còn làm việc | `/Staff/Availability`, `/Staff/Customers` | Tra phòng trống, hồ sơ khách và lịch sử liên quan |
+| Consultant/Manager/Administrator còn làm việc | `/Staff/Overbooking/Index/{id}` | Xử lý trùng phòng; hoàn toàn bộ khi trùng có kiểm Management riêng |
+| Employee còn làm việc | `/Staff/ChangeRequests` | Gửi đổi/hủy thay khách, vẫn phải tách người gửi/duyệt/tài chính |
+| Consultant/Manager/Administrator, quản lý duyệt cuối | `/Staff/OwnerRegistrations` | Danh sách, tiếp nhận, bổ sung hồ sơ/lời mời; Approve/Reject yêu cầu Management |
+| Management | `/Staff/Homestays` | Chuyển tới workspace Admin/Homestays để duyệt cơ sở |
+| **Manager** | `/Staff/ChangeApprovals` | Duyệt/từ chối nghiệp vụ yêu cầu đổi/hủy, tách người gửi |
+| Accounting | `/Accounting/Dashboard`, `/Accounting/Receipts`, `/Accounting/Transactions` | Tổng quan/đọc; chỉ Accountant hoặc Manager duyệt bill, xử lý giao dịch thiếu/không khớp/chuyển muộn |
+| Accounting | `/Accounting/Refunds`, `/Accounting/Compensations` | Đọc; ghi hoàn cần Accountant/Manager, ghi bù cần Accountant; không gọi API chuyển tiền thật |
+| Accounting | `/Accounting/Settlements`, `/Accounting/Settlements/Details/{id}` | Đọc/lập Draft; gửi/ghi đã trả/xác nhận hộ/mở lại chỉ Accountant theo service |
+| **Accountant** | `/Accounting/AdditionalDeposits` | Xác nhận/từ chối cọc bổ sung của yêu cầu đổi |
+| Management | `/Admin/Dashboard`, `/Admin/Homestays`, `/Admin/Contracts` | Tổng quan quản lý, duyệt cơ sở, lập/gia hạn/kết thúc hợp đồng |
+| Management | `/Admin/Reports` | Báo cáo đặt phòng, tài chính, nhân viên, homestay theo kỳ |
+| Management | `/Admin/Areas`, `/Admin/RoomCategories`, `/Admin/Amenities`, `/Admin/Holidays`, `/Admin/Vouchers` | Danh mục và cấp/thu hồi voucher theo service |
+| Manager đọc, Administrator sửa | `/Admin/Accounts` | Danh sách/chi tiết tài khoản; quản trị tạo nhân viên, đổi trạng thái/chức vụ, đặt lại mật khẩu |
+| Management, chỉ Development | `/Dev/UiKit`, `/Dev/SimulateBank` | Thư viện UI và giả lập giao dịch qua BankMatchingService; ngoài Development controller bị loại, 404 |
+
+Tư vấn (Consultant) không được mặc nhiên duyệt bill/đối soát; Accountant không được mặc nhiên sửa danh mục Admin. Manager/Administrator dùng workspace Staff và đọc Accounting theo policy, nhưng thao tác ghi còn bị giới hạn bởi chức vụ cụ thể trong từng service như bảng ở phần 2.
+
+## 5. Các luồng nghiệp vụ chính
+
+### Đặt phòng → QR → bill → duyệt cọc → chủ xác nhận
+
+1. Khách tìm tại `/Homestays` hoặc `GET /api/homestays`; chọn loại phòng, xem `GET /api/rooms/{roomTypeId}/availability` và `/quote`. Các request này chưa giữ phòng.
+2. GET/POST `/Bookings/Create` là MVC form. GuestCustomerService hỗ trợ khách chưa đăng nhập; BookingService kiểm hợp đồng/tồn phòng, chốt giá/cọc/chính sách và tạo Bookings + BookingNights + RoomNights trong giao dịch. Đơn mới AwaitingPayment, giữ 15 phút mặc định.
+3. `/Bookings/Details/{code}` hiển thị VietQR do VietQrService dựng theo số tiền **AmountDue = DepositAmount − DiscountAmount**, nội dung chứa mã đơn. QR là hướng dẫn chuyển khoản, không phải API tự rút/chuyển tiền. Đặt cọc mặc định 30%, phần còn lại không có endpoint thu tự động trong danh sách Web API này.
+4. POST multipart `/Bookings/UploadReceipt/{code}` với receipt và transferContent → ReceiptReviewService ghi Payment ManualReceipt/Submitted, đơn sang PaymentSubmitted. Chờ kế toán, không tự coi ảnh bill là bằng chứng đã đủ tiền.
+5. Kế toán xem `/Accounting/Receipts`, POST `/Accounting/Receipts/Approve/{paymentId}` → Payment Approved, đơn Deposited, bắt đầu hạn xác nhận 30 phút. Từ chối qua `/Accounting/Receipts/Reject/{paymentId}` có lý do: đơn được quay về AwaitingPayment với hạn mới, hoặc Expired khi đạt giới hạn từ chối mặc định 2 lần.
+6. Chủ thao tác tại `/Owner/Bookings/Details/{id}` hoặc POST `/api/bookings/{id}/confirm` → Confirmed. Thông tin liên hệ/hướng dẫn được mở theo BookingContactVisibility. Chủ nhận phòng/hoàn thành trên MVC; Web API hiện chỉ có confirm/reject, không có API check-in/check-out riêng.
+
+Nhánh tự khớp: POST `/api/bank-webhook/sepay` nhận giao dịch → BankMatchingService kiểm tài khoản nhận, mã đơn, số tiền, trạng thái đơn và chống lặp; cọc đủ điều kiện đưa đơn thẳng sang Deposited. Với cọc đầu, service khớp khi đơn vẫn AwaitingPayment/PaymentSubmitted và tiền nhận ≥ AmountDue, chưa có kiểm trực tiếp TransactionTime so với HoldExpiresAt; LatePayment dựa vào đơn đã Expired/Cancelled/Rejected. Cọc bổ sung có kiểm khoảng thời gian riêng. Development có `/Dev/SimulateBank` dùng cùng service với provider Simulator. Webhook chưa có khóa thì nhánh ảnh bill/kế toán vẫn dùng độc lập.
+
+### Đổi và hủy
+
+Khách Customer vào `/Bookings/Change/{code}`, POST `/Bookings/QuoteChange/{code}` để xem báo giá, rồi `/Bookings/SubmitChange/{code}`; nhân viên gửi thay tại `/Staff/ChangeRequests/Create/{bookingId}`, `/Quote/{bookingId}`, `/Submit/{bookingId}`. Giá trị preview được ChangeRequestUiService kiểm trước khi gửi. Yêu cầu chỉ cho đơn đã cọc/xác nhận, chưa nhận phòng, chưa có đối soát/khoản hoàn; đổi mặc định trước ít nhất 3 ngày, tối đa 2 lần đã áp, ngày mới trong cửa sổ 90 ngày. Đổi đơn có voucher bị chặn để liên hệ nhân viên; hủy có nhánh riêng.
+
+Manager tại `/Staff/ChangeApprovals` POST `Approve/{requestId}` hoặc `Reject/{requestId}`. Nếu không cần cọc thêm, yêu cầu được Applied; nếu cần, giữ đêm phòng mới, sang AwaitingPayment và hạn nộp mặc định 15 phút. Khách nộp bill qua `/Bookings/UploadChangeReceipt/{code}` kèm requestId, hoặc giao dịch mang nội dung `CR{requestId} {code}`. **Accountant** tại `/Accounting/AdditionalDeposits` POST `Confirm/{requestId}` mới áp đổi; tự khớp ngân hàng không tự bỏ bước này. Người gửi, người duyệt và người xác nhận tài chính phải khác nhau.
+
+Khi đổi thành công, service cập nhật cùng đơn, giá/đêm mới và đưa về Deposited để chủ xác nhận lại. Cọc đã mang sang + cọc thêm và phí đổi được chốt theo service, không tạo tùy tiện một đơn mới. Hết hạn chưa nộp tiền thì yêu cầu Expired và nhả đêm đang giữ cho yêu cầu; không tự coi đơn gốc đã bị hủy.
+
+**Hủy trực tiếp của khách** dùng POST `/Bookings/Cancel/{code}` sau khi đã có quyền tài khoản/session, chưa qua ngày nhận; BookingService kiểm trạng thái và tính tiền hoàn theo chính sách. Đây là luồng có thật, không qua ChangeApprovals. **Yêu cầu hủy do nhân viên gửi** chọn RequestType.Cancel tại Staff/ChangeRequests, chờ Manager duyệt và áp số tiền hoàn đã chốt khi gửi. Form đổi của khách chủ động chặn Cancel và hướng về nút hủy trực tiếp.
+
+Chủ từ chối Deposited qua POST `/api/bookings/{id}/reject` hoặc MVC ghi Rejected và nghĩa vụ hoàn đủ cọc thực chuyển. Kế toán xem `/Accounting/Refunds`, POST `Record/{bookingId}` để ghi đã chuyển hoàn với mã tham chiếu. Việc ghi nhận không tự thực hiện chuyển khoản ngân hàng.
+
+### Đối soát cho chủ
+
+SettlementService lập theo homestay và kỳ 1 (ngày 1–15), kỳ 2 (16–cuối tháng), chọn đơn theo CheckOut đủ điều kiện và không lập trùng đơn. Job hoặc POST `/Accounting/Settlements/GenerateRecent`, `/Generate` tạo/cập nhật Draft; bảng đã gửi giữ số liệu chốt. Tổng trả chủ = tiền giữ lại − hoa hồng; voucher do Fuji chịu, không giảm phần chủ. Không gộp khoản Compensation chi riêng vào tổng payout của bảng.
+
+Kế toán POST `/Accounting/Settlements/Send/{id}` khi không còn đơn chưa chốt cản gửi. Chủ xem `/Owner/Settlements/Details/{id}`, có thể POST `/Owner/Settlements/Confirm/{id}` hoặc `/Discrepancy/{id}` báo lệch. Chủ xác nhận là tùy chọn: service cho ghi Paid từ Sent hoặc Confirmed. Sau khi đã chuyển tiền thực tế, kế toán POST `/Accounting/Settlements/RecordPaid/{id}` với chứng từ/số tiền/thời điểm theo form. Bảng Paid không được mở lại qua transition thông thường; các thao tác ghi audit. Đây là luồng MVC, chưa có controller Web API đối soát.
+
+## 6. Mã lỗi, JSON lỗi và validation
+
+| HTTP | Khi gặp | Định dạng/đặc điểm |
+|---|---|---|
+| 200 / 201 / 204 | Đọc/thao tác thành công, tạo khóa lịch, xóa khóa lịch | DTO JSON / DTO + Location / không body |
+| 400 | Binding JSON/query sai, model không hợp lệ; ngày/giá/lý do/trạng thái không hợp lệ; thiếu CSRF | `[ApiController]` tự trả ValidationProblemDetails cho lỗi model; controller thường dùng ProblemDetails cho BookingException; lỗi token không nên mặc định có cùng bộ trường |
+| 401 | Thiếu cookie đăng nhập hoặc khóa webhook sai | Không redirect login; action có thể trả Unauthorized không tự định nghĩa JSON DTO, status pages có thể trả HTML |
+| 403 | Đã đăng nhập nhưng không đạt policy | Không redirect AccessDenied; không có DTO lỗi riêng bảo đảm JSON |
+| 404 | Không có bản ghi/không thuộc chủ, tra cứu sai điện thoại, không có giá | Nhánh API chủ động dùng ProblemDetails; route không tồn tại/Swagger Production có thể là trang lỗi HTML |
+| 409 | Đơn bị cập nhật đồng thời hoặc trùng đêm khóa | OwnerBookings: ProblemDetails; RoomBlocks: ConflictProblem riêng, có danh sách conflicts |
+| 503 | Webhook chưa cấu hình khóa | ProblemDetails title `Bank webhook is disabled`; không có nghĩa toàn bộ website thanh toán bị tắt |
+| 500 | Ngoại lệ không bắt được | Ngoài Development, ExceptionHandler re-execute `/Home/Error`, có thể trả HTML kể cả request API; không có global handler bảo đảm JSON ProblemDetails cho mọi lỗi |
+
+ProblemDetails điển hình do API trả khi khoảng giá ngược (các trường title/type/traceId phụ thuộc framework, ví dụ dưới chỉ trích trường ổn định):
+
+```json
+{"status": 400, "detail": "Khoảng giá không hợp lệ."}
+```
+
+ValidationProblemDetails có `status`, `title`, `type` và `errors` ánh xạ tên trường tới mảng thông báo; có thể thêm traceId. Không có mã nghiệp vụ kiểu E001 chung cho toàn API. Không có envelope `{data,error}` toàn cục. Ngôn ngữ không hoàn toàn đồng nhất: một số API dùng localizer, một số trả trực tiếp thông báo tiếng Việt, webhook có title/detail tiếng Anh.
+
+Xung đột khóa lịch có cấu trúc riêng, ví dụ đã khóa BL9:
+
+```json
+{
+  "detail": "Lịch phòng bị trùng: 01/03/2027: BL9. Vui lòng chọn khoảng ngày khác.",
+  "conflicts": [{"date": "2027-03-01", "code": "BL9"}]
+}
+```
+
+Validation có ba lớp: DataAnnotations/model binding ở form/DTO; kiểm nghiệp vụ và quyền thực tế trong service; FK/UNIQUE/CHECK khi EF lưu. Không phải mọi ràng buộc đều có DataAnnotation: RejectRequest.Reason còn được trim/kiểm độ dài trong action, RoomBlockService kiểm ngày/enum/note. Chi tiết schema và mức bảo vệ nằm ở [database.md](database.md).
+
+Test tham chiếu: `PublicApiTests`, `OwnerApiTests`, `BankWebhookValidationTests`, `ProductionErrorHandlingTests`, `TestWebApplicationFactory`. Factory tích hợp thay SQL Server bằng InMemory riêng và bỏ job nền; cookie/antiforgery đi qua pipeline thật. Ví dụ ở đây dựa cấu trúc/nhánh trong code và các test này, không phải báo cáo đã chạy test trong phiên viết tài liệu.
+
+## 7. Cách chạy và thử
+
+Chuẩn bị .NET SDK theo `global.json` (.NET 10), SQL Server 2022 và **database demo riêng đã áp đủ migration**. Chọn cách dựng SQL hoặc EF theo [database/README.md](../database/README.md). Cấu hình kết nối qua user-secrets/biến môi trường theo môi trường của người vận hành; không sao chép cấu hình thật vào tài liệu. Cả cấu hình chung/Development đều AutoMigrate=false.
+
+Sau khi đã đặt biến cấu hình kết nối tới database demo, đứng ở gốc repo:
+
+```bash
+dotnet restore
+: "${ConnectionStrings__Default:?Hãy cấu hình database demo riêng trước}"
+ASPNETCORE_ENVIRONMENT=Development Database__AutoMigrate=false \
+  dotnet run --project HomestayBooking.Web --no-launch-profile --urls http://localhost:5012
+```
+
+Đây là hướng dẫn cho người đọc tự chạy trên môi trường demo, không phải lệnh đã thực thi khi viết tài liệu. `--no-launch-profile` tránh dùng profile đang có cấu hình khác. Mở `http://localhost:5012/swagger`; mở cùng origin để đăng nhập web rồi dùng cookie khi Try it out. Nếu cấu hình yêu cầu HTTPS, dùng origin HTTPS đã chuẩn bị và giữ nguyên origin giữa đăng nhập/gọi API.
+
+### Tài khoản mẫu Development
+
+**Mật khẩu: xem `SeedData.DefaultPassword`**. Các định danh sau đúng SeedData.cs; không áp cho Production.
+
+| Đăng nhập | Vai trò/chức vụ |
+|---|---|
+| AD001 | Employee / Administrator |
+| QL001 | Employee / Manager |
+| KT001 | Employee / Accountant |
+| NV001, NV002 | Employee / Consultant |
+| 0912000001 | Owner Approved + Customer |
+| 0912000002, 0912000003, 0912000004, 0912000005 | Owner Approved |
+| 0912000006 | Owner PendingReview |
+| 0987000001, 0987000003, 0987000004, 0987000005, 0987000007, 0987000009, 0987000010, 0987000012, 0987000013 | Customer |
+
+Khách 0987000002, 0987000006, 0987000008, 0987000011, 0987000014 là hồ sơ không tài khoản, không dùng các hồ sơ này để đăng nhập. Chi tiết tên/hồ sơ ở [database.md](database.md#7-dữ-liệu-mẫu-và-tài-khoản-để-thuyết-trình).
+
+### curl lấy cookie qua form rồi gọi API
+
+Ví dụ dùng tài khoản Customer 0987000001 và GET đếm thông báo. Đăng nhập là **form URL-encoded**, không phải POST JSON tới một API login. Mật khẩu được ghi bằng chỗ điền `<mật khẩu mẫu>`, không có giá trị thật trong tài liệu. Token lấy từ HTML giống cách TestWebApplicationFactory.TokenFromAsync làm; script giữ cả cookie antiforgery và cookie Identity.
+
+```bash
+FUJI_DEMO_URL='http://localhost:5012'
+FUJI_DEMO_TMP=$(mktemp -d)
+curl -sS -c "$FUJI_DEMO_TMP/cookies.txt" \
+  "$FUJI_DEMO_URL/Account/Login" -o "$FUJI_DEMO_TMP/login.html"
+FUJI_FORM_TOKEN=$(python3 - "$FUJI_DEMO_TMP/login.html" <<'PY'
+import html
+import sys
+from html.parser import HTMLParser
+
+class TokenParser(HTMLParser):
+    def handle_starttag(self, tag, attrs):
+        values = dict(attrs)
+        if tag == "input" and values.get("name") == "__RequestVerificationToken":
+            print(html.unescape(values["value"]))
+
+TokenParser().feed(open(sys.argv[1], encoding="utf-8").read())
+PY
+)
+curl -sS -i -b "$FUJI_DEMO_TMP/cookies.txt" -c "$FUJI_DEMO_TMP/cookies.txt" \
+  --data-urlencode 'PhoneNumber=0987000001' \
+  --data-urlencode 'Password=<mật khẩu mẫu>' \
+  --data-urlencode "__RequestVerificationToken=$FUJI_FORM_TOKEN" \
+  "$FUJI_DEMO_URL/Account/Login"
+# Đăng nhập đúng: 302; 200 kèm form lỗi là đăng nhập chưa thành công.
+curl -sS -i -b "$FUJI_DEMO_TMP/cookies.txt" \
+  "$FUJI_DEMO_URL/api/notifications/unread-count"
+# Thành công: 200 và {"count": ...}; chưa đăng nhập: 401.
+rm -r "$FUJI_DEMO_TMP"
+```
+
+Để thử ghi khóa lịch bằng curl: đăng nhập bằng số chủ đã duyệt, GET `/Owner/Calendar` với cookie để lấy token mới, rồi POST JSON tới `/api/rooms/{roomId}/blocks` với `-H "RequestVerificationToken=$FUJI_FORM_TOKEN"`, `-H 'Content-Type: application/json'` và cookie jar. Chọn roomId thực sự thuộc chủ, khoảng ngày tương lai đang trống; xem mẫu JSON ở mục 3.6. Có cookie đăng nhập nhưng thiếu token vẫn trả 400.
+
+Để trình diễn các lỗi mà không ghi dữ liệu, thử GET tìm kiếm với minPrice lớn hơn maxPrice (400), GET tra cứu thiếu phone (404), GET unread-count không cookie (401). Không gửi webhook Production hay dùng dữ liệu mẫu để ghi nhận một giao dịch tài chính thật.
