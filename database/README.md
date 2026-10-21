@@ -7,6 +7,7 @@ Dựng database SQL Server cho ứng dụng trên một máy hoặc server mới
 | `schema.sql` | Toàn bộ schema (bảng, khóa, CHECK, index) **sinh tự động từ EF Core migrations**, không sửa tay |
 | `deploy.sql` | Chạy `schema.sql` với kiểm tra database đích và `XACT_ABORT` |
 | `data/sample_data.sql` | Dữ liệu mẫu đầy đủ xuất từ database trắng seed Development; nạp sau `deploy.sql`, chỉ vào database chưa có dữ liệu |
+| `data/full_data.sql` | Dữ liệu đầy đủ xuất từ database dev `HomestayBooking_v5` ngày 21/10/2026 (seed + dữ liệu thao tác thử/QA); nạp sau `deploy.sql` **thay cho** `sample_data.sql`, cách chạy giống mục *Nạp dữ liệu mẫu bằng SQL*. Ảnh bill/ảnh upload không nằm trong SQL |
 | `verify.sql` | Kiểm tra sau khi dựng: số bảng/khóa/index, migration đã áp, các ràng buộc chính. Chỉ đọc |
 | `tests/data_consistency.sql` | Đối chiếu 33 quy tắc dữ liệu liên bảng, chỉ đọc; dùng được trên mọi database đã deploy, có LỆCH thì mã thoát khác 0 |
 | `tests/constraints.sql` | Thử ràng buộc trên database **mới dựng, chưa seed** (mục 4) |
