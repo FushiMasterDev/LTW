@@ -488,3 +488,8 @@ $RECYCLE.BIN/
 HomestayBooking.Web/App_Data/
 # Playwright CLI output (may contain credentials)
 .playwright-cli/
+
+# Skill cho trợ lý AI (Claude Code, Codex) — chỉ dùng trên máy
+.agents/
+.claude/
+skills-lock.json
