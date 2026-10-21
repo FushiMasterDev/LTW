@@ -12,12 +12,14 @@ namespace HomestayBooking.Web.Areas.Admin.Controllers;
 public class AmenitiesController : AdminController
 {
     private readonly ApplicationDbContext _db;
+    private readonly CatalogEditorService _editor;
     private readonly CatalogDeletionService _deletion;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public AmenitiesController(ApplicationDbContext db, IStringLocalizer<SharedResource> localizer, CatalogDeletionService deletion)
+    public AmenitiesController(ApplicationDbContext db, IStringLocalizer<SharedResource> localizer, CatalogDeletionService deletion, CatalogEditorService editor)
     {
         _db = db;
+        _editor = editor;
         _deletion = deletion;
         _localizer = localizer;
     }
@@ -47,15 +49,13 @@ public class AmenitiesController : AdminController
             return View("Form", model);
         }
 
-        _db.Amenities.Add(new Amenity { Name = model.Name.Trim(), Icon = NormalizeIcon(model.Icon) });
         try
         {
-            await _db.SaveChangesAsync();
+            await _editor.SaveAmenityAsync(0, model.Name, model.Icon);
         }
-        catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
+        catch (CatalogConflictException ex)
         {
-            // Request khác vừa ghi cùng giá trị sau bước kiểm tra trùng ở trên
-            ModelState.AddModelError(nameof(model.Name), _localizer["Tên này đã tồn tại."]);
+            ModelState.AddModelError(ex.Field, _localizer[ex.ResourceKey]);
             return View("Form", model);
         }
 
@@ -90,16 +90,13 @@ public class AmenitiesController : AdminController
             return View("Form", model);
         }
 
-        amenity.Name = model.Name.Trim();
-        amenity.Icon = NormalizeIcon(model.Icon);
         try
         {
-            await _db.SaveChangesAsync();
+            await _editor.SaveAmenityAsync(id, model.Name, model.Icon);
         }
-        catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
+        catch (CatalogConflictException ex)
         {
-            // Request khác vừa ghi cùng giá trị sau bước kiểm tra trùng ở trên
-            ModelState.AddModelError(nameof(model.Name), _localizer["Tên này đã tồn tại."]);
+            ModelState.AddModelError(ex.Field, _localizer[ex.ResourceKey]);
             return View("Form", model);
         }
 
@@ -127,15 +124,9 @@ public class AmenitiesController : AdminController
         return RedirectToAction(nameof(Index));
     }
 
-    private static string? NormalizeIcon(string? icon) =>
-        string.IsNullOrWhiteSpace(icon) ? null : icon.Trim();
-
     private async Task ValidateUniqueNameAsync(AmenityFormViewModel model)
     {
-        var name = model.Name?.Trim();
-        if (!string.IsNullOrEmpty(name) && await _db.Amenities.AnyAsync(a => a.Name == name && a.Id != model.Id))
-        {
+        if (await _editor.AmenityExistsAsync(model.Id, model.Name))
             ModelState.AddModelError(nameof(model.Name), _localizer["Tên này đã tồn tại."]);
-        }
     }
 }

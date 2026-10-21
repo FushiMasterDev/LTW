@@ -13,12 +13,14 @@ namespace HomestayBooking.Web.Areas.Admin.Controllers;
 public class RoomCategoriesController : AdminController
 {
     private readonly ApplicationDbContext _db;
+    private readonly CatalogEditorService _editor;
     private readonly CatalogDeletionService _deletion;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public RoomCategoriesController(ApplicationDbContext db, IStringLocalizer<SharedResource> localizer, CatalogDeletionService deletion)
+    public RoomCategoriesController(ApplicationDbContext db, IStringLocalizer<SharedResource> localizer, CatalogDeletionService deletion, CatalogEditorService editor)
     {
         _db = db;
+        _editor = editor;
         _deletion = deletion;
         _localizer = localizer;
     }
@@ -48,15 +50,13 @@ public class RoomCategoriesController : AdminController
             return View("Form", model);
         }
 
-        _db.RoomCategories.Add(new RoomCategory { Name = model.Name.Trim() });
         try
         {
-            await _db.SaveChangesAsync();
+            await _editor.SaveCategoryAsync(0, model.Name);
         }
-        catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
+        catch (CatalogConflictException ex)
         {
-            // Request khác vừa ghi cùng giá trị sau bước kiểm tra trùng ở trên
-            ModelState.AddModelError(nameof(model.Name), _localizer["Tên này đã tồn tại."]);
+            ModelState.AddModelError(ex.Field, _localizer[ex.ResourceKey]);
             return View("Form", model);
         }
 
@@ -91,15 +91,13 @@ public class RoomCategoriesController : AdminController
             return View("Form", model);
         }
 
-        category.Name = model.Name.Trim();
         try
         {
-            await _db.SaveChangesAsync();
+            await _editor.SaveCategoryAsync(id, model.Name);
         }
-        catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
+        catch (CatalogConflictException ex)
         {
-            // Request khác vừa ghi cùng giá trị sau bước kiểm tra trùng ở trên
-            ModelState.AddModelError(nameof(model.Name), _localizer["Tên này đã tồn tại."]);
+            ModelState.AddModelError(ex.Field, _localizer[ex.ResourceKey]);
             return View("Form", model);
         }
 
@@ -128,10 +126,7 @@ public class RoomCategoriesController : AdminController
 
     private async Task ValidateUniqueNameAsync(RoomCategoryFormViewModel model)
     {
-        var name = model.Name?.Trim();
-        if (!string.IsNullOrEmpty(name) && await _db.RoomCategories.AnyAsync(t => t.Name == name && t.Id != model.Id))
-        {
+        if (await _editor.CategoryExistsAsync(model.Id, model.Name))
             ModelState.AddModelError(nameof(model.Name), _localizer["Tên này đã tồn tại."]);
-        }
     }
 }

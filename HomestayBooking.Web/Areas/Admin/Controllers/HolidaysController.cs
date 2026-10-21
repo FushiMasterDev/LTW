@@ -16,12 +16,14 @@ public class HolidaysController : AdminController
     private const string DateFormat = "yyyy-MM-dd";
 
     private readonly ApplicationDbContext _db;
+    private readonly CatalogEditorService _editor;
     private readonly CatalogDeletionService _deletion;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public HolidaysController(ApplicationDbContext db, IStringLocalizer<SharedResource> localizer, CatalogDeletionService deletion)
+    public HolidaysController(ApplicationDbContext db, IStringLocalizer<SharedResource> localizer, CatalogDeletionService deletion, CatalogEditorService editor)
     {
         _db = db;
+        _editor = editor;
         _deletion = deletion;
         _localizer = localizer;
     }
@@ -57,7 +59,7 @@ public class HolidaysController : AdminController
     public async Task<IActionResult> Create(HolidayFormViewModel model)
     {
         model.IsNew = true;
-        if (model.Date.HasValue && await _db.Holidays.AnyAsync(h => h.Date == model.Date.Value))
+        if (model.Date.HasValue && await _editor.HolidayExistsAsync(model.Date.Value))
         {
             ModelState.AddModelError(nameof(model.Date), _localizer["Ngày này đã có trong danh sách."]);
         }
@@ -66,20 +68,18 @@ public class HolidaysController : AdminController
             return View("Form", model);
         }
 
-        _db.Holidays.Add(new Holiday { Date = model.Date!.Value, Name = model.Name.Trim() });
         try
         {
-            await _db.SaveChangesAsync();
+            await _editor.CreateHolidayAsync(model.Date!.Value, model.Name);
         }
-        catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
+        catch (CatalogConflictException ex)
         {
-            // Request khác vừa thêm cùng ngày sau bước kiểm tra trùng ở trên
-            ModelState.AddModelError(nameof(model.Date), _localizer["Ngày này đã có trong danh sách."]);
+            ModelState.AddModelError(ex.Field, _localizer[ex.ResourceKey]);
             return View("Form", model);
         }
 
         TempData["Success"] = _localizer["Đã thêm \"{0}\".", model.Name.Trim()].Value;
-        return RedirectToAction(nameof(Index), new { year = model.Date.Value.Year });
+        return RedirectToAction(nameof(Index), new { year = model.Date!.Value.Year });
     }
 
     public async Task<IActionResult> Edit(string id)
@@ -111,8 +111,7 @@ public class HolidaysController : AdminController
             return View("Form", model);
         }
 
-        holiday.Name = model.Name.Trim();
-        await _db.SaveChangesAsync();
+        await _editor.UpdateHolidayAsync(holiday.Date, model.Name);
         TempData["Success"] = _localizer["Đã cập nhật \"{0}\".", holiday.Name].Value;
         return RedirectToAction(nameof(Index), new { year = holiday.Date.Year });
     }

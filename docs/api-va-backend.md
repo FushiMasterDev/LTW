@@ -10,11 +10,11 @@ Tài liệu đối chiếu trực tiếp `Program.cs`, controller MVC/API, các 
 |---|---|
 | `Program.cs` | Đăng ký dependency injection, Identity, policy, cookie, localization, Swagger; dựng middleware, route, seed và bootstrap |
 | `Controllers/` | Trang khách, tài khoản, đối tác, thông báo; một số action trả JSON hỗ trợ trang MVC |
-| `Controllers/Api/` | 7 controller Web API, tổng 10 endpoint được liệt kê ở phần 3 |
+| `Controllers/Api/` | 7 controller với 10 endpoint cũ ở phần 3; `Desktop/` có 42 endpoint mới ở phần 8 |
 | `Areas/Owner`, `Areas/Staff`, `Areas/Accounting`, `Areas/Admin` | Các workspace MVC theo nghiệp vụ/vai trò |
 | `Services/` | Đặt phòng, giá/tồn phòng, thanh toán, đổi/hủy, hợp đồng, giấy tờ, đối soát, tài khoản, báo cáo, thông báo |
 | `Identity/` | Chuẩn hóa điện thoại, tìm/kiểm tài khoản, dựng claim, thông báo lỗi Identity tiếng Việt |
-| `Models/Entities`, `Models/ViewModels` | Entity lưu database; dữ liệu form/trang. DTO API hiện khai báo ngay trong controller |
+| `Models/Entities`, `Models/ViewModels` | Entity lưu database; dữ liệu form/trang. DTO API cũ khai báo trong controller; DTO desktop ở `DesktopApi/` |
 | `Data/`, `Data/Migrations` | DbContext, cấu hình EF, migration và các phần SeedData |
 | `BackgroundJobs/BookingTimeoutJob.cs` | Job chạy ngay lượt đầu và mỗi phút, mỗi tác vụ có scope/try-catch riêng |
 | `Views/`, `TagHelpers/`, `ViewComponents/`, `Resources/` | Razor, thành phần giao diện và bản dịch |
@@ -25,11 +25,11 @@ Tài liệu đối chiếu trực tiếp `Program.cs`, controller MVC/API, các 
 1. Nếu `ReverseProxy:Enabled`: có thể đặt scheme HTTPS cho kết nối từ loopback khi AssumeHttps bật; sau đó `UseForwardedHeaders` nhận X-Forwarded-For/Proto. Chỉ tin loopback, giới hạn một proxy.
 2. Middleware đăng ký header bảo mật cho response: X-Content-Type-Options=nosniff, X-Frame-Options=DENY, Referrer-Policy=strict-origin-when-cross-origin, Permissions-Policy tắt camera/microphone/geolocation/payment, CSP gồm frame-ancestors/base-uri/form-action/object-src. CSP chưa siết đầy đủ script-src.
 3. Ngoài Development: `UseExceptionHandler("/Home/Error")`; HSTS chỉ bật nếu không dùng reverse proxy. Trong Development: `UseSwagger`, `UseSwaggerUI`.
-4. `UseStatusCodePagesWithReExecute("/Home/StatusCode/{0}")` cho phản hồi lỗi chưa có body.
+4. `UseStatusCodePagesWithReExecute("/Home/StatusCode/{0}")` giữ nguyên cho web/API cũ; `/api/desktop` dùng status pages JSON riêng, không re-execute HTML.
 5. Nếu không dùng proxy: HTTPS redirection, riêng `/healthz` được bỏ qua chuyển hướng.
 6. `UseStaticFiles` phục vụ file có sẵn và upload phát sinh lúc chạy.
 7. `UseRequestLocalization`: mặc định vi-VN; hỗ trợ en-US. Ưu tiên query culture rồi cookie, không dùng ngôn ngữ trình duyệt.
-8. `UseRouting` → `UseSession` → `UseAuthentication` → `UseAuthorization`.
+8. `UseRouting` → `UseRateLimiter` (chỉ desktop login) → `UseSession` → `UseAuthentication` → `UseAuthorization`.
 9. Ánh xạ static assets; route area `{area:exists}/{controller=Dashboard}/{action=Index}/{id?}`, route MVC mặc định `{controller=Home}/{action=Index}/{id?}`; `MapControllers` cho attribute route API; `/healthz` cho phép ẩn danh.
 
 `SeedData.InitializeAsync` và `AdminBootstrapService.RunAsync` được gọi trước `app.Run()`, không phải middleware cho từng request. AutoMigrate mặc định tắt; thiếu migration thì startup dừng. Startup Development có thể ghi dữ liệu mẫu và job nền có thể đổi dữ liệu sau khi ứng dụng chạy.
@@ -46,7 +46,7 @@ flowchart TD
     Static --> Local[Localization]
     Local --> Route[Routing]
     Route --> Session[Session]
-    Session --> Auth[Authentication cookie]
+    Session --> Auth[Cookie mac dinh va Bearer desktop]
     Auth --> Policy[Authorization policy]
     Policy --> MVC[Controller va antiforgery filter]
     MVC --> Service[Service nghiep vu]
@@ -72,7 +72,7 @@ flowchart TD
 
 ### Identity và hai cổng đăng nhập
 
-ASP.NET Core Identity dùng `ApplicationUser`, `IdentityRole`, bảng AspNetUsers/AspNetRoles và **cookie dùng chung giữa web và API**. Không thấy đăng ký JWT Bearer hay hệ thống token đăng nhập riêng cho API trong Program.cs. Cột token/login ngoài của Identity không đồng nghĩa đang có API JWT hoặc Google login hoạt động; Program.cs chưa cấu hình Google authentication. Khách tự đăng ký chưa có bước OTP.
+ASP.NET Core Identity dùng `ApplicationUser`, `IdentityRole`, bảng AspNetUsers/AspNetRoles và **cookie là scheme mặc định cho web và 10 API cũ**. Nhóm `/api/desktop` đăng ký thêm JWT Bearer, chỉ dành cho nhân viên (phần 8). Cột token/login ngoài của Identity không đồng nghĩa đang có API JWT hoặc Google login hoạt động; Program.cs chưa cấu hình Google authentication. Khách tự đăng ký chưa có bước OTP.
 
 | Cổng | Định danh gửi form | Cách tìm tài khoản |
 |---|---|---|
@@ -158,7 +158,7 @@ Ngoại lệ: `BankWebhookController` bỏ kiểm antiforgery, xác thực máy 
 
 ## 3. Danh sách 10 endpoint Web API
 
-**Đối chiếu: 7 controller, 10 action có `[Http*]` trong `Controllers/Api/`: 1 webhook + 1 tra cứu đơn + 1 tìm homestay + 1 thông báo + 2 thao tác đơn của chủ + 2 thao tác khóa lịch + 2 API phòng = 10 endpoint.** Không tính action MVC, health check hay Swagger. Route có `{id:int}` yêu cầu ID số nguyên; `{code}` là mã đơn chuỗi. JSON response dùng camelCase. Các trường trạng thái/loại ngày/lý do trong DTO response dưới đây được controller chuyển **chuỗi**, không phải số enum.
+**Đối chiếu nhóm API cũ: 7 controller, 10 action có `[Http*]` trực tiếp trong `Controllers/Api/` (không tính `Desktop/`): 1 webhook + 1 tra cứu đơn + 1 tìm homestay + 1 thông báo + 2 thao tác đơn của chủ + 2 thao tác khóa lịch + 2 API phòng = 10 endpoint.** Không tính action MVC, health check hay Swagger. Route có `{id:int}` yêu cầu ID số nguyên; `{code}` là mã đơn chuỗi. JSON response dùng camelCase. Các trường trạng thái/loại ngày/lý do trong DTO response dưới đây được controller chuyển **chuỗi**, không phải số enum.
 
 Các mã trong bảng là nhánh nghiệp vụ/controller; API cần đăng nhập còn có 401/403. Binding/validation tự động có thể trả 400. Ví dụ GET dùng URL/query, **không gửi JSON body**; JSON đi kèm là response. Ví dụ POST có cả JSON body và response. Dữ liệu minh họa chỉ thể hiện cấu trúc và cần các điều kiện nghiệp vụ tương ứng.
 
@@ -537,3 +537,114 @@ rm -r "$FUJI_DEMO_TMP"
 Để thử ghi khóa lịch bằng curl: đăng nhập bằng số chủ đã duyệt, GET `/Owner/Calendar` với cookie để lấy token mới, rồi POST JSON tới `/api/rooms/{roomId}/blocks` với `-H "RequestVerificationToken=$FUJI_FORM_TOKEN"`, `-H 'Content-Type: application/json'` và cookie jar. Chọn roomId thực sự thuộc chủ, khoảng ngày tương lai đang trống; xem mẫu JSON ở mục 3.6. Có cookie đăng nhập nhưng thiếu token vẫn trả 400.
 
 Để trình diễn các lỗi mà không ghi dữ liệu, thử GET tìm kiếm với minPrice lớn hơn maxPrice (400), GET tra cứu thiếu phone (404), GET unread-count không cookie (401). Không gửi webhook Production hay dùng dữ liệu mẫu để ghi nhận một giao dịch tài chính thật.
+
+
+## 8. API cho ứng dụng desktop
+
+42 endpoint ở `/api/desktop/...` dành cho WinForms nhân viên Fuji. Đây là lớp DTO/HTTP gọi các service hiện có; không thêm nghiệp vụ hoặc CORS. Web MVC và 10 API ở phần 3 vẫn dùng hợp đồng cũ. Các API desktop kế thừa `DesktopController`, chỉ nhận Bearer, không chấp nhận cookie Identity, và bỏ antiforgery riêng cho nhóm này.
+
+### Đăng nhập và vòng đời token
+
+`POST /api/desktop/auth/login`, JSON `{"employeeCode":"NV001","password":"<mật khẩu>"}` trả:
+
+```json
+{
+  "accessToken": "<JWT>",
+  "expiresAt": "2026-10-21T16:00:00Z",
+  "employee": {"id": 1, "code": "NV001", "fullName": "Nhân viên mẫu", "position": "Consultant"}
+}
+```
+
+Gửi `Authorization: Bearer <accessToken>` cho các request sau. `GET /api/desktop/auth/me` trả cùng cấu trúc employee. Không tạo cookie, không có refresh token; khi hết hạn đăng nhập lại. Sai mã/sai mật khẩu, khách/chủ, tài khoản không Active hoặc bị khóa đều trả 401 với cùng câu: “Thông tin đăng nhập không đúng hoặc tài khoản tạm thời không thể đăng nhập.” Identity vẫn đếm sai và khóa tạm giống web. API gọi `CheckPasswordSignInAsync` với `lockoutOnFailure: true` và dựng claim bằng `IUserClaimsPrincipalFactory<ApplicationUser>`; role, NameIdentifier, person_id và employee_position giữ nguyên tên claim, không map sang tên khác.
+
+Token có security stamp. Mỗi request kiểm lại trạng thái Active, stamp và lockout; sau đó dựng lại claim nhân viên, nên khóa tài khoản/đổi stamp/nghỉ việc/đổi chức vụ có hiệu lực ngay. Không ghi token hoặc mật khẩu vào log. `AccountController` hiện không ghi sự kiện đăng nhập vào AccountActivityLog; desktop giữ cùng hành vi.
+
+Section `DesktopApi`: `SigningKey` tối thiểu 32 byte UTF-8 (HS256), `Issuer` mặc định `FujiHomestay`, `Audience` mặc định `FujiDesktop`, `TokenMinutes` mặc định 60 (1–1440). Khóa thật nằm trong user-secrets hoặc `DesktopApi__SigningKey`, không commit. Development/Testing thiếu khóa sinh ngẫu nhiên mỗi lần chạy; khởi động lại làm token cũ hết hiệu lực. Production thiếu/sai khóa hoặc cấu hình không hợp lệ: web vẫn chạy, desktop bị vô hiệu hóa, login trả 503 ProblemDetails và log cảnh báo. `LoginPermitLimit` mặc định 10, `LoginWindowSeconds` mặc định 60; fixed window theo IP, chỉ áp POST desktop login. Giới hạn có thể cấu hình qua biến `DesktopApi__...`. Mẫu và hướng dẫn: [runbook Mac](deploy/self-host-mac.md).
+
+### Hợp đồng dữ liệu
+
+Danh sách trả `{ "items": [...], "page": 1, "totalPages": 3, "totalCount": 24 }`, 10 mục/trang qua `PaginatedList`, page ngoài khoảng được kẹp về trang hợp lệ. Lựa chọn dropdown cũng phân trang; client lặp đến `totalPages`. Các mảng trong chi tiết đơn/khách và báo cáo tổng hợp là dữ liệu con của tài liệu, không phân trang độc lập. `DateOnly` là `yyyy-MM-dd`, mọi thời điểm là UTC hậu tố `Z` (kể cả datetime2 SQL Server). Enum trong DTO desktop là tên dạng chữ; không đổi JsonOptions toàn cục hoặc JSON báo giá MVC. `holidays/{id}` dùng ngày yyyy-MM-dd, ngày là khóa chính không đổi khi PUT.
+
+### Endpoint và quyền
+
+Mọi endpoint trừ login yêu cầu nhân viên đang làm việc, tài khoản Active và Bearer hợp lệ.
+
+| Method | Đường dẫn sau `/api/desktop` | Service / dữ liệu | Quyền |
+|---|---|---|---|
+| POST | `/auth/login` | AccountLookupService + SignInManager; employeeCode/password | Anonymous, rate limit |
+| GET | `/auth/me` | Hồ sơ nhân viên từ claim và database | Employee |
+| GET | `/{areas,amenities,room-categories,holidays}` và `/{id}` | DTO danh mục, danh sách có page | Employee |
+| POST | `/{areas,amenities,room-categories,holidays}` | CatalogEditorService dùng chung MVC, 201 + Location | Management |
+| PUT | `/{areas,amenities,room-categories,holidays}/{id}` | CatalogEditorService; 200 | Management |
+| DELETE | `/{areas,amenities,room-categories,holidays}/{id}` | CatalogDeletionService, giữ kiểm đang dùng/audit; 204 | Management |
+| GET | `/bookings` | StaffBookingService.SearchAsync: q, status, homestayId, checkInFrom, checkInTo, assignedEmployeeId, unassigned, page | Consultant/Manager/Administrator |
+| GET | `/bookings/{id}` | DetailsAsync: booking, nights, history, changes, payments, audit | Consultant/Manager/Administrator |
+| POST | `/bookings` | CreateForCustomerAsync: phone, fullName, email?, roomTypeId, checkIn, checkOut, guests, specialRequests?, channel, submissionId (GUID bắt buộc khác rỗng); 201 | Consultant/Manager/Administrator |
+| POST | `/bookings/{id}/assign` | AssignAsync: `{employeeId}` | Consultant/Manager/Administrator |
+| POST | `/bookings/{id}/status` | ChangeStatusAsync: `{status,newRoomId?,note}` | Consultant/Manager/Administrator |
+| GET | `/assignees` | AssigneesAsync, page | Consultant/Manager/Administrator |
+| GET | `/booking-homestays` | HomestaysAsync, page; hiện chỉ id/tên homestay | Consultant/Manager/Administrator |
+| GET | `/availability` | StaffAvailabilityAsync: checkIn, checkOut, areaId?, guests=1, page | Consultant/Manager/Administrator |
+| GET | `/customers` | CustomerService.SearchAsync: q?, page | Consultant/Manager/Administrator |
+| GET | `/customers/{id}` | DetailsAsync, giữ che định danh của Tư vấn | Consultant/Manager/Administrator |
+| PUT | `/customers/{id}` | UpdateAsync: note?, fullName?, email?, phoneNumber? (giữ luật không đổi điện thoại) | Consultant/Manager/Administrator |
+| GET | `/receipts` | AccountingService.ReceiptsAsync: status=Submitted, page; trả fileUrl | Accounting |
+| GET | `/receipts/{paymentId}/file` | ReceiptFileStore; MIME gốc, file riêng tư như web | Accounting |
+| POST | `/receipts/{paymentId}/approve` | ReceiptReviewService.ApproveAsync; 204 | Accounting; service chỉ Accountant/Manager |
+| POST | `/receipts/{paymentId}/reject` | RejectAsync: `{reason}`; 204 | Accounting; service chỉ Accountant/Manager |
+| GET | `/reports/{management,bookings,financial,employees,homestays}` | ReportService tương ứng: from, to, homestayId?, areaId?; employees/homestays thêm page | Management |
+
+`Accounting` gồm Accountant/Manager/Administrator; Administrator chỉ đọc bill, service giữ chặn duyệt/từ chối như web. `Management` gồm Manager/Administrator. Accountant bị 403 ở đơn/khách/phòng trống; Consultant bị 403 ở receipts/reports/ghi danh mục. Service vẫn kiểm quyền lần nữa. Khoảng báo cáo gồm hai ngày đầu/cuối theo giờ Việt Nam.
+
+### Mã phản hồi
+
+| HTTP | Ý nghĩa desktop |
+|---|---|
+| 200 / 201 / 204 | Đọc/sửa thành công; tạo có Location; xóa hoặc duyệt/từ chối bill không có body |
+| 400 | ValidationProblemDetails của model binding/DataAnnotations, hoặc BookingException đã dịch bằng IStringLocalizer |
+| 401 | Thiếu/hết hạn/sai chữ ký/issuer/audience, cookie không có Bearer, tài khoản bị thu hồi; ProblemDetails JSON |
+| 403 | Không đạt policy chức vụ; ProblemDetails JSON |
+| 404 | Không có bản ghi/file/route desktop; ProblemDetails JSON |
+| 409 | Trùng giá trị duy nhất hoặc DbUpdateConcurrencyException; ProblemDetails JSON |
+| 429 | Vượt số lần POST login theo IP; ProblemDetails JSON và Retry-After |
+| 503 | Desktop chưa cấu hình hợp lệ; không làm web ngừng chạy |
+| 500 | Lỗi bất ngờ trong action desktop, ProblemDetails chung, không lộ exception; log nội bộ |
+
+Bộ lọc exception chỉ gắn trên base desktop. Status pages desktop không re-execute HTML; status/error pages và lỗi API cũ giữ nguyên. Swagger chỉ Development, có nút Authorize Bearer và security requirement riêng cho endpoint desktop được bảo vệ.
+
+### Lệnh curl mẫu (không chứa token thật)
+
+Chạy trên database demo riêng ở cổng 5016. Thay ngày theo dữ liệu thật và nhập mật khẩu mẫu qua terminal, không ghi vào file. `TOKEN` chỉ giữ trong bộ nhớ shell; không bật `set -x`.
+
+```bash
+FUJI_DESKTOP_URL='http://localhost:5016'
+read -rs 'FUJI_DESKTOP_PASSWORD?Mật khẩu nhân viên: '; echo
+export FUJI_DESKTOP_PASSWORD
+# Lặp lần lượt NV001 (Staff), KT001 (Accounting), QL001 (Management).
+FUJI_DESKTOP_CODE='NV001'
+FUJI_DESKTOP_LOGIN=$(python3 -c 'import json,os,sys; print(json.dumps({"employeeCode":sys.argv[1],"password":os.environ["FUJI_DESKTOP_PASSWORD"]}))' "$FUJI_DESKTOP_CODE" |
+  curl -fsS "$FUJI_DESKTOP_URL/api/desktop/auth/login" -H 'Content-Type: application/json' --data-binary @-)
+TOKEN=$(printf '%s' "$FUJI_DESKTOP_LOGIN" | python3 -c 'import json,sys; print(json.load(sys.stdin)["accessToken"])')
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/auth/me" -H "Authorization: Bearer $TOKEN"
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/areas?page=1" -H "Authorization: Bearer $TOKEN"
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/bookings?page=1" -H "Authorization: Bearer $TOKEN"
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/assignees" -H "Authorization: Bearer $TOKEN"
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/booking-homestays" -H "Authorization: Bearer $TOKEN"
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/customers?q=&page=1" -H "Authorization: Bearer $TOKEN"
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/availability?checkIn=2026-10-25&checkOut=2026-10-26&guests=2" -H "Authorization: Bearer $TOKEN"
+# Sau khi đăng nhập lại bằng KT001:
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/receipts?status=Submitted&page=1" -H "Authorization: Bearer $TOKEN"
+# Sau khi đăng nhập lại bằng QL001:
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/reports/management?from=2026-10-01&to=2026-10-31" -H "Authorization: Bearer $TOKEN"
+unset TOKEN FUJI_DESKTOP_LOGIN FUJI_DESKTOP_PASSWORD
+```
+
+Ví dụ đặt hộ (chỉ trên demo riêng, thay ID/ngày, tái sử dụng cùng submissionId khi retry):
+
+```bash
+curl -i "$FUJI_DESKTOP_URL/api/desktop/bookings" \
+  -H 'Authorization: Bearer <accessToken>' -H 'Content-Type: application/json' \
+  --data '{"phone":"<số điện thoại>","fullName":"Khách mẫu","roomTypeId":1,"checkIn":"2026-10-25","checkOut":"2026-10-26","guests":2,"channel":"Phone","submissionId":"ab323187-95bf-4a38-9878-8ea7c280e3d9"}'
+```
+
+Tài liệu nền tảng chính thức dùng để đối chiếu cấu hình: [JWT Bearer và claim mapping](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/configure-jwt-bearer-authentication?view=aspnetcore-10.0), [rate limiter và OnRejected](https://learn.microsoft.com/en-us/aspnet/core/performance/rate-limit-samples?view=aspnetcore-10.0). Kết quả xác minh thực tế ở [báo cáo desktop](api/desktop-api-report.md).
