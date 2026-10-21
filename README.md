@@ -136,7 +136,7 @@ Mật khẩu chung: **`Fuji@2026`**
 
 ## 5. Web API
 
-Toàn bộ có trên `/swagger`. Trả JSON; lỗi trả `ProblemDetails` (400/404).
+Toàn bộ có trên `/swagger` trong Development. 10 endpoint cũ bên dưới giữ nguyên xác thực và hợp đồng; nhóm desktop riêng dùng JWT Bearer, xem [API cho ứng dụng desktop](docs/api-va-backend.md#8-api-cho-ứng-dụng-desktop).
 
 | Method | Endpoint | Mô tả | Quyền |
 |---|---|---|---|
@@ -150,8 +150,16 @@ Toàn bộ có trên `/swagger`. Trả JSON; lỗi trả `ProblemDetails` (400/4
 | POST | `/api/rooms/{roomId}/blocks` | Khóa đêm `[start, end)`, body `{ "start", "end", "reason": "OtherChannel"/"Maintenance", "note" }`; trùng thì 409 kèm danh sách đêm | Chủ homestay của phòng |
 | DELETE | `/api/rooms/{roomId}/blocks/{blockId}` | Mở khóa | Chủ homestay của phòng |
 | POST | `/api/bank-webhook/sepay` | Nhận giao dịch tiền vào từ SePay (khóa API) | Máy chủ ngân hàng |
+| POST / GET | `/api/desktop/auth/login`, `/api/desktop/auth/me` | Mã nhân viên + mật khẩu → JWT / hồ sơ hiện tại | Nhân viên |
+| GET / POST / PUT / DELETE | `/api/desktop/{areas,amenities,room-categories,holidays}` và `/{id}` | Đọc/ghi danh mục qua service dùng chung với web | Employee đọc; Management ghi |
+| GET / POST | `/api/desktop/bookings`, `/{id}`, `/{id}/assign`, `/{id}/status` | Tìm, xem, đặt hộ (submissionId), giao/đổi trạng thái | Consultant/Manager/Administrator |
+| GET | `/api/desktop/{assignees,booking-homestays,availability}` | Lựa chọn và phòng trống | Consultant/Manager/Administrator |
+| GET / PUT | `/api/desktop/customers`, `/{id}` | Tìm, xem, sửa khách qua CustomerService | Consultant/Manager/Administrator |
+| GET / POST | `/api/desktop/receipts`, `/{paymentId}/file`, `/{paymentId}/{approve,reject}` | Đọc bill, file riêng tư, duyệt/từ chối | Accounting; service kiểm quyền ghi |
+| GET | `/api/desktop/reports/{management,bookings,financial,employees,homestays}` | Báo cáo theo ReportQuery | Management |
 
-- API ghi dùng cookie đăng nhập nên phải gửi token chống giả mạo qua header `RequestVerificationToken` (lấy từ input `__RequestVerificationToken` trên trang); thiếu token trả 400. Chưa đăng nhập trả 401, sai vai trò trả 403, đơn/phòng của chủ khác trả 404.
+- Các API ghi trong nhóm cũ dùng cookie đăng nhập nên phải gửi token chống giả mạo qua header `RequestVerificationToken` (lấy từ input `__RequestVerificationToken` trên trang); thiếu token trả 400. Chưa đăng nhập trả 401, sai vai trò trả 403, đơn/phòng của chủ khác trả 404.
+- API desktop chỉ nhận Bearer, không nhận cookie; không cần antiforgery. Production cần `DesktopApi__SigningKey` bí mật ≥32 byte; thiếu khóa thì login desktop trả 503, web vẫn chạy.
 - Lịch phòng của chủ (`/Owner/Calendar`) gọi API khóa/mở ngày bằng AJAX, không tải lại trang; không có JavaScript thì form vẫn gửi thường.
 - Đặt phòng, hủy/đổi đơn của khách và các thao tác nội bộ khác đi qua form MVC có antiforgery.
 

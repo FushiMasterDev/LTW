@@ -90,10 +90,16 @@ Các URL cần cấu hình:
 | `BankAccount__FallbackQrImageUrl` | Mặc định trống ở Production; chỉ điền đường dẫn/URL ảnh QR đã kiểm đúng tài khoản thật (ví dụ `/uploads/verified-bank-qr.png`). Không dùng ảnh QR mẫu trong repo |
 | `BankAccount__BankCode`, `AccountNumber`, `AccountName` | Tài khoản nhận cọc, quyết định nội dung QR và khớp tiền; không dùng số ví dụ |
 | `BankAccount__WebhookApiKey` | **Trống**; webhook trả 503, không ghi dữ liệu |
+| `DesktopApi__SigningKey` | Khóa bí mật ngẫu nhiên tối thiểu 32 byte UTF-8 cho JWT HS256; để trống/sai cấu hình thì chỉ desktop login trả 503, web vẫn khởi động và log cảnh báo |
+| `DesktopApi__Issuer`, `DesktopApi__Audience` | Mặc định `FujiHomestay`, `FujiDesktop`; phải nhất quán khi cấp/kiểm token |
+| `DesktopApi__TokenMinutes` | Mặc định 60, từ 1–1440 phút. Hết hạn thì đăng nhập lại |
+| `DesktopApi__LoginPermitLimit`, `DesktopApi__LoginWindowSeconds` | Mặc định 10 lần/60 giây/IP, chỉ POST desktop login; không có global limiter |
 | `AllowedHosts` | hostname thật + `127.0.0.1;localhost` để health check nội bộ hoạt động |
 | `ReverseProxy__Enabled` | `true`; chỉ tin X-Forwarded-For/Proto từ proxy loopback, không tin X-Forwarded-Host; app bỏ redirect/HSTS, proxy lo TLS |
 | `ReverseProxy__AssumeHttps` | `true`; coi socket loopback là HTTPS trước forwarded headers, hỗ trợ Funnel thiếu X-Forwarded-Proto và antiforgery Secure |
 | `DataProtection__KeysPath` | thư mục tuyệt đối `$FUJI_HOME/data/App_Data/keys`, giữ nguyên qua mọi release |
+
+Để bật API nhân viên WinForms, sinh khóa bằng `openssl rand -base64 48`, rồi điền trực tiếp vào file bí mật `production.env` ngoài repo (quyền 600). Không đưa khóa vào tài liệu, lệnh git hay log. Khóa dùng nguyên chuỗi UTF-8, không giải mã base64. Thay khóa và khởi động lại sẽ thu hồi toàn bộ token cũ; khóa tài khoản/đổi security stamp có hiệu lực ngay trên request Bearer tiếp theo. Desktop gửi HTTPS với `Authorization: Bearer <accessToken>`, không dùng cookie hoặc antiforgery. Không cấu hình CORS. Development/Testing khi thiếu khóa sinh khóa ngẫu nhiên mỗi lần khởi động; Production không sinh khóa để bật desktop tự động. Swagger vẫn chỉ Development.
 
 Nếu dùng QR dự phòng, tự xuất QR từ ngân hàng thật, kiểm số tài khoản bằng ứng dụng ngân hàng rồi chép **ngoài repo**:
 

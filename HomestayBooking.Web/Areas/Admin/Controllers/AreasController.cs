@@ -12,12 +12,14 @@ namespace HomestayBooking.Web.Areas.Admin.Controllers;
 public class AreasController : AdminController
 {
     private readonly ApplicationDbContext _db;
+    private readonly CatalogEditorService _editor;
     private readonly CatalogDeletionService _deletion;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public AreasController(ApplicationDbContext db, IStringLocalizer<SharedResource> localizer, CatalogDeletionService deletion)
+    public AreasController(ApplicationDbContext db, IStringLocalizer<SharedResource> localizer, CatalogDeletionService deletion, CatalogEditorService editor)
     {
         _db = db;
+        _editor = editor;
         _deletion = deletion;
         _localizer = localizer;
     }
@@ -47,15 +49,13 @@ public class AreasController : AdminController
             return View("Form", model);
         }
 
-        _db.Areas.Add(new Area { Name = model.Name.Trim(), Province = model.Province.Trim(), AreaGroup = model.AreaGroup });
         try
         {
-            await _db.SaveChangesAsync();
+            await _editor.SaveAreaAsync(0, model.Name, model.Province, model.AreaGroup);
         }
-        catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
+        catch (CatalogConflictException ex)
         {
-            // Request khác vừa ghi cùng giá trị sau bước kiểm tra trùng ở trên
-            ModelState.AddModelError(nameof(model.Name), _localizer["Khu vực này đã có trong tỉnh/thành."]);
+            ModelState.AddModelError(ex.Field, _localizer[ex.ResourceKey]);
             return View("Form", model);
         }
 
@@ -90,17 +90,13 @@ public class AreasController : AdminController
             return View("Form", model);
         }
 
-        area.Name = model.Name.Trim();
-        area.Province = model.Province.Trim();
-        area.AreaGroup = model.AreaGroup;
         try
         {
-            await _db.SaveChangesAsync();
+            await _editor.SaveAreaAsync(id, model.Name, model.Province, model.AreaGroup);
         }
-        catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
+        catch (CatalogConflictException ex)
         {
-            // Request khác vừa ghi cùng giá trị sau bước kiểm tra trùng ở trên
-            ModelState.AddModelError(nameof(model.Name), _localizer["Khu vực này đã có trong tỉnh/thành."]);
+            ModelState.AddModelError(ex.Field, _localizer[ex.ResourceKey]);
             return View("Form", model);
         }
 
@@ -129,13 +125,7 @@ public class AreasController : AdminController
 
     private async Task ValidateUniqueNameAsync(AreaFormViewModel model)
     {
-        // Unique theo (tỉnh/thành, tên): "Trung tâm" có thể có ở nhiều tỉnh
-        var name = model.Name?.Trim();
-        var province = model.Province?.Trim();
-        if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(province)
-            && await _db.Areas.AnyAsync(a => a.Name == name && a.Province == province && a.Id != model.Id))
-        {
+        if (await _editor.AreaExistsAsync(model.Id, model.Name, model.Province))
             ModelState.AddModelError(nameof(model.Name), _localizer["Khu vực này đã có trong tỉnh/thành."]);
-        }
     }
 }

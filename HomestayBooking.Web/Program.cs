@@ -1,4 +1,5 @@
 using HomestayBooking.Web;
+using HomestayBooking.Web.DesktopApi;
 using HomestayBooking.Web.BackgroundJobs;
 using HomestayBooking.Web.Data;
 using HomestayBooking.Web.Identity;
@@ -84,6 +85,8 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy(AppPolicies.ChangeRequestFinance, p => p.RequireRole(AppRoles.Employee)
         .RequireClaim(AppClaimTypes.EmployeePosition, nameof(EmployeePosition.Accountant)));
 
+builder.Services.AddDesktopApi(builder.Configuration);
+
 builder.Services.AddScoped<AccountLookupService>();
 builder.Services.AddScoped<AccountActivityLogger>();
 
@@ -132,6 +135,7 @@ builder.Services.AddScoped<CompensationService>();
 builder.Services.AddScoped<ReportService>();
 builder.Services.AddScoped<AccountAdminService>();
 builder.Services.AddScoped<CatalogDeletionService>();
+builder.Services.AddScoped<CatalogEditorService>();
 builder.Services.AddScoped<GuestCustomerService>();
 builder.Services.AddScoped<OwnerRegistrationQueryService>();
 builder.Services.AddScoped<AdminBootstrapService>();
@@ -224,7 +228,13 @@ builder.Services.AddSession(o =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(o =>
 {
-    o.SwaggerDoc("v1", new() { Title = "Fuji Homestay API", Version = "v1", Description = "API công khai cho tìm kiếm, lịch trống, báo giá, tra cứu đơn và số thông báo chưa đọc." });
+    o.SwaggerDoc("v1", new() { Title = "Fuji Homestay API", Version = "v1", Description = "API công khai, API cookie cho chủ/thông báo, webhook ngân hàng và API JWT Bearer dành riêng cho nhân viên WinForms (/api/desktop)." });
+    o.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.OpenApiSecurityScheme
+    {
+        Type = Microsoft.OpenApi.SecuritySchemeType.Http, Scheme = "bearer", BearerFormat = "JWT",
+        Description = "Đăng nhập POST /api/desktop/auth/login, sau đó nhập accessToken. Chỉ dùng cho nhóm desktop.",
+    });
+    o.OperationFilter<DesktopSwaggerFilter>();
     var xml = Path.Combine(AppContext.BaseDirectory, $"{typeof(Program).Assembly.GetName().Name}.xml");
     if (File.Exists(xml)) o.IncludeXmlComments(xml);
     // Chỉ đưa Web API (/api/...) lên Swagger; các action MVC có attribute route (alias /{id}) không phải API
@@ -232,6 +242,8 @@ builder.Services.AddSwaggerGen(o =>
 });
 
 var app = builder.Build();
+// Eagerly validate the isolated configuration and log disabled state without stopping the website.
+_ = app.Services.GetRequiredService<DesktopApiRuntime>();
 
 if (reverseProxyEnabled)
 {
@@ -277,7 +289,13 @@ else
     app.UseSwaggerUI();
 }
 
-app.UseStatusCodePagesWithReExecute("/Home/StatusCode/{0}");
+app.UseWhen(context => !context.Request.Path.StartsWithSegments("/api/desktop"),
+    branch => branch.UseStatusCodePagesWithReExecute("/Home/StatusCode/{0}"));
+// Also cover unmatched desktop routes without re-executing an HTML error page.
+app.UseWhen(context => context.Request.Path.StartsWithSegments("/api/desktop"), branch =>
+    branch.UseStatusCodePages(async context => await DesktopApiRegistration.WriteProblemAsync(
+        context.HttpContext, context.HttpContext.Response.StatusCode,
+        Microsoft.AspNetCore.WebUtilities.ReasonPhrases.GetReasonPhrase(context.HttpContext.Response.StatusCode))));
 // The public proxy owns TLS/HSTS/redirection; never redirect its HTTP backend.
 if (!reverseProxyEnabled)
     app.UseWhen(context => context.Request.Path != "/healthz", branch => branch.UseHttpsRedirection());
@@ -288,6 +306,7 @@ app.UseStaticFiles();
 app.UseRequestLocalization(); // cấu hình ở RequestLocalizationOptions phía trên
 
 app.UseRouting();
+app.UseRateLimiter();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
