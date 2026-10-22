@@ -9,7 +9,7 @@ namespace HomestayBooking.Web.Services;
 
 public record OwnerRegistrationInput(string FullName, string PhoneNumber, string HomestayName,
     string Address, int AreaId, string ContactPhone, string? Description = null,
-    string? BankName = null, string? BankAccountNo = null, string? BankAccountName = null);
+    string? BankName = null, string? BankAccountNo = null, string? BankAccountName = null, string? BookingCode = null);
 public record OwnerActivationInvitation(int RegistrationId, string Token);
 public record OwnerSubmissionResult(OwnerRegistration Registration, IReadOnlyList<string> Missing)
 {
@@ -18,7 +18,8 @@ public record OwnerSubmissionResult(OwnerRegistration Registration, IReadOnlyLis
 
 /// <summary>FR-25/26: duyệt người chủ riêng; giấy tờ pháp lý mới gắn từng homestay (D17).</summary>
 public partial class OwnerRegistrationService(ApplicationDbContext db, UserManager<ApplicationUser> users,
-    NotificationService notifications, ReceiptFileStore files, TimeProvider clock)
+    NotificationService notifications, ReceiptFileStore files, TimeProvider clock,
+    BookingCodeVerificationService verification, AccountActivityLogger activityLogger)
 {
     private DateTime Now => clock.GetUtcNow().UtcDateTime;
     public static string RegistrationUrl(int id) => $"/Staff/OwnerRegistrations/{id}";
@@ -36,7 +37,7 @@ public partial class OwnerRegistrationService(ApplicationDbContext db, UserManag
     public Task<OwnerRegistration> RegisterAsync(OwnerRegistrationInput input, string password, Actor? actor = null) =>
         WriteAsync(async () =>
         {
-            var (person, owner) = await PreparePersonAsync(input, actor, assisted: false);
+            var (person, owner, verified) = await PreparePersonAsync(input, actor, assisted: false);
             var account = person.Account;
             if (account is null)
             {
@@ -44,6 +45,9 @@ public partial class OwnerRegistrationService(ApplicationDbContext db, UserManag
                 account = new ApplicationUser { Person = person, Status = AccountStatus.Active,
                     PasswordChangedAt = Now, CreatedAt = Now, UpdatedAt = Now };
                 EnsureIdentity(await users.CreateAsync(account, password));
+                if (verified)
+                    activityLogger.Add(account.Id, AccountEventType.AccountCreated, ActorType.Owner, account.Id,
+                        "Tự đăng ký chủ, gắn hồ sơ có sẵn sau xác minh bằng mã đơn");
             }
             if (!await users.IsInRoleAsync(account, AppRoles.Owner))
                 EnsureIdentity(await users.AddToRoleAsync(account, AppRoles.Owner));
@@ -55,11 +59,11 @@ public partial class OwnerRegistrationService(ApplicationDbContext db, UserManag
         WriteAsync(async () =>
         {
             await PartnerServiceSupport.EmployeeAsync(db, actor, EmployeePosition.Consultant, EmployeePosition.Manager, EmployeePosition.Administrator);
-            var (_, owner) = await PreparePersonAsync(input, null, assisted: true);
+            var (_, owner, _) = await PreparePersonAsync(input, null, assisted: true);
             return await CreateDraftAsync(input, owner, OwnerRegistrationSource.EmployeeAssisted, actor);
         });
 
-    private async Task<(PersonProfile Person, Owner Owner)> PreparePersonAsync(OwnerRegistrationInput input, Actor? actor, bool assisted)
+    private async Task<(PersonProfile Person, Owner Owner, bool Verified)> PreparePersonAsync(OwnerRegistrationInput input, Actor? actor, bool assisted)
     {
         var phone = PhoneNumberNormalizer.ToE164(input.PhoneNumber)
             ?? throw new BookingException("Số điện thoại không hợp lệ.");
@@ -75,6 +79,7 @@ public partial class OwnerRegistrationService(ApplicationDbContext db, UserManag
         if (person?.Owner is not null && await db.OwnerRegistrations.AnyAsync(r => r.OwnerId == person.Owner.Id
             && OwnerRegistration.OpenStatuses.Contains(r.Status)))
             throw new BookingException("Chủ đã có một hồ sơ đang xử lý.");
+        var verified = !assisted && await verification.VerifyAsync(person, input.BookingCode);
         person ??= new PersonProfile { PhoneNumber = phone, CreatedAt = Now };
         person.FullName = input.FullName.Trim(); person.UpdatedAt = Now;
         person.Owner ??= new Owner { CreatedAt = Now };
@@ -83,7 +88,7 @@ public partial class OwnerRegistrationService(ApplicationDbContext db, UserManag
         if (person.Id == 0) db.PersonProfiles.Add(person);
         // Identity cần PersonId thật trước khi tạo Account; toàn bộ vẫn nằm trong cùng transaction.
         await db.SaveChangesAsync();
-        return (person, person.Owner);
+        return (person, person.Owner, verified);
     }
 
     internal async Task ValidateHomestayAsync(OwnerRegistrationInput input)

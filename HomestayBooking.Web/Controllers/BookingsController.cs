@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HomestayBooking.Web.Controllers;
 
@@ -440,6 +441,7 @@ public partial class BookingsController : Controller
     public IActionResult Lookup() => View(new BookingLookupViewModel());
 
     [HttpPost]
+    [EnableRateLimiting(PublicRateLimits.Policy)]
     public async Task<IActionResult> Lookup(BookingLookupViewModel model)
     {
         if (!ModelState.IsValid)

@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HomestayBooking.Web.Controllers;
 
@@ -53,6 +54,7 @@ public class PartnerController(
     }
 
     [HttpPost]
+    [EnableRateLimiting(PublicRateLimits.Policy)]
     public async Task<IActionResult> Index(PartnerRegisterViewModel model)
     {
         if (User.IsActiveEmployee())

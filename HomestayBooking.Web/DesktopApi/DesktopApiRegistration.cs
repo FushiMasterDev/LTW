@@ -83,7 +83,10 @@ public static class DesktopApiRegistration
             {
                 if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retry))
                     context.HttpContext.Response.Headers.RetryAfter = Math.Ceiling(retry.TotalSeconds).ToString(CultureInfo.InvariantCulture);
-                await WriteProblemAsync(context.HttpContext, 429, "Too Many Requests", ct);
+                context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                if (context.HttpContext.Request.Path.StartsWithSegments("/api"))
+                    await WriteProblemAsync(context.HttpContext, 429, "Too Many Requests", ct);
+                // MVC để body trống: status code pages re-execute trang HTML, giữ mã 429.
             };
         });
         return services;

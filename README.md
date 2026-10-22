@@ -14,6 +14,8 @@ Tài liệu chi tiết: [`QUY_TRINH_BTL.md`](QUY_TRINH_BTL.md) (yêu cầu, nghi
 - [Cơ sở dữ liệu: bảng, quan hệ, trạng thái và dữ liệu mẫu](docs/database.md).
 - [Backend, đăng nhập, phân quyền và danh sách API](docs/api-va-backend.md).
 
+Đăng ký khách và chủ tự đăng ký bằng SĐT đã có đơn cần nhập đúng mã một đơn cũ để xác minh trước khi liên kết hồ sơ; chưa có đơn thì giữ luồng cũ. Sai 5 lần/15 phút khóa xác minh SĐT 15 phút. Tra cứu đơn và hai form đăng ký dùng chung giới hạn theo IP mặc định 10 lần/phút (`RateLimits`); vượt giới hạn trả 429. Chi tiết và kiểm thử: [bản sửa bảo mật](docs/security/account-takeover-fix.md).
+
 ## Công nghệ
 
 | Phần | Dùng |
@@ -143,7 +145,7 @@ Toàn bộ có trên `/swagger` trong Development. 10 endpoint cũ bên dưới 
 | GET | `/api/homestays?areaId=&checkIn=&checkOut=&guests=&minPrice=&maxPrice=&categoryId=&amenityIds=&sort=&page=` | Tìm kiếm, lọc, phân trang | Công khai |
 | GET | `/api/rooms/{roomTypeId}/availability?from=&to=` | Các đêm đã kín (tối đa 92 đêm) | Công khai |
 | GET | `/api/rooms/{roomTypeId}/quote?checkIn=&checkOut=` | Báo giá từng đêm, tổng tiền, cọc, số phòng còn trống | Công khai |
-| GET | `/api/bookings/{code}?phone=` | Tra cứu đơn bằng mã + SĐT | Công khai |
+| GET | `/api/bookings/{code}?phone=` | Tra cứu đơn bằng mã + SĐT, rate limit IP | Công khai |
 | GET | `/api/notifications/unread-count` | Số thông báo chưa đọc | Đã đăng nhập |
 | POST | `/api/bookings/{id}/confirm` | Xác nhận đơn đã đặt cọc (body tùy chọn `{ "roomId": 12 }`) | Chủ homestay của đơn |
 | POST | `/api/bookings/{id}/reject` | Từ chối đơn, body `{ "reason": "..." }`, hoàn 100% cọc | Chủ homestay của đơn |

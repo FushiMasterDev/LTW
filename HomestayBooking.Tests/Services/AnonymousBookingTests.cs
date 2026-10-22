@@ -27,7 +27,7 @@ public sealed class AnonymousBookingTests
         var http = new DefaultHttpContext { User = user };
         http.Features.Set<ISessionFeature>(new SessionFeature { Session = new TestSession() });
         var controller = new BookingsController(h.Db, h.H.Bookings(), h.H.Pricing(), h.H.Refunds(), h.H.Receipts(), new ReceiptFileStore(env.Object),
-            new(Options.Create(h.H.Bank)), new(h.Db, h.P.Users, new(h.Db, new HttpContextAccessor())), h.H.Vouchers(), h.P.Users, env.Object, h.H.Clock,
+            new(Options.Create(h.H.Bank)), h.P.Customers(), h.H.Vouchers(), h.P.Users, env.Object, h.H.Clock,
             new KeyLocalizer(), new(h.Db, h.H.Changes(), new EphemeralDataProtectionProvider(), h.H.Clock, Options.Create(h.H.Options)))
         { ControllerContext = new() { HttpContext = http } };
         return (controller, h.Guests());

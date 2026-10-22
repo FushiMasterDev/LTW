@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HomestayBooking.Web.Controllers;
 
@@ -86,6 +87,7 @@ public class AccountController : Controller
 
     [AllowAnonymous]
     [HttpPost]
+    [EnableRateLimiting(PublicRateLimits.Policy)]
     public async Task<IActionResult> Register(RegisterViewModel model)
     {
         if (!ModelState.IsValid)
@@ -93,7 +95,7 @@ public class AccountController : Controller
             return View(model);
         }
 
-        var result = await _customers.RegisterAsync(model.FullName, model.PhoneNumber, model.Email, model.Password);
+        var result = await _customers.RegisterAsync(model.FullName, model.PhoneNumber, model.Email, model.Password, model.BookingCode);
         if (!result.Succeeded)
         {
             foreach (var error in result.Errors)

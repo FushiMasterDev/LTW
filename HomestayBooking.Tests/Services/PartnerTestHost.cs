@@ -35,12 +35,20 @@ internal sealed class PartnerTestHost : IDisposable
         var services = new ServiceCollection();
         services.AddLogging(); services.AddDataProtection().UseEphemeralDataProtectionProvider();
         services.AddSingleton(Db);
+        services.AddMemoryCache();
+        services.AddSingleton<TimeProvider>(H.Clock);
+        services.AddSingleton<BookingCodeVerificationAttempts>();
         services.AddIdentityCore<ApplicationUser>().AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
         Services = services.BuildServiceProvider();
         var env = new Mock<IWebHostEnvironment>(); env.SetupGet(e => e.ContentRootPath).Returns(DirectoryPath);
-        Registrations = new(Db, Users, new NotificationService(Db), new ReceiptFileStore(env.Object), H.Clock);
+        Registrations = new(Db, Users, new NotificationService(Db), new ReceiptFileStore(env.Object), H.Clock,
+            Verification(), new AccountActivityLogger(Db, new HttpContextAccessor()));
     }
+    public BookingCodeVerificationService Verification(ApplicationDbContext? db = null) =>
+        new(db ?? Db, Services.GetRequiredService<BookingCodeVerificationAttempts>());
+    public CustomerAccountService Customers(ApplicationDbContext? db = null) =>
+        new(db ?? Db, Users, new AccountActivityLogger(db ?? Db, new HttpContextAccessor()), Verification(db));
     public static async Task<PartnerTestHost> CreateAsync()
     {
         var h = new PartnerTestHost();
