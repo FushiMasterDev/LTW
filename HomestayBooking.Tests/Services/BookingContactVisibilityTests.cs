@@ -45,7 +45,7 @@ public sealed class BookingContactVisibilityTests
         var principal = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, h.Customer.AccountId!),
             new Claim(ClaimTypes.Role, "Customer"), new Claim(AppClaimTypes.PersonId, h.H.Customer.PersonId.ToString())], "test"));
         var controller = new BookingsController(h.Db, h.H.Bookings(), h.H.Pricing(), h.H.Refunds(), h.H.Receipts(), files, new(Options.Create(h.H.Bank)),
-            new(h.Db, h.P.Users, new(h.Db, new HttpContextAccessor())), h.H.Vouchers(), h.P.Users, env.Object, h.H.Clock,
+            h.P.Customers(), h.H.Vouchers(), h.P.Users, env.Object, h.H.Clock,
             Mock.Of<IStringLocalizer<SharedResource>>(), new(h.Db, h.H.Changes(), new EphemeralDataProtectionProvider(), h.H.Clock, Options.Create(h.H.Options)))
         { ControllerContext = new() { HttpContext = new DefaultHttpContext { User = principal } } };
         var model = Assert.IsType<BookingDetailsViewModel>(Assert.IsType<ViewResult>(await controller.Details(b.Code)).Model);

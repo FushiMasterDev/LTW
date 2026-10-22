@@ -8,6 +8,9 @@ namespace HomestayBooking.Web.Models.ViewModels;
 /// <summary>FR-25: form công khai "Trở thành đối tác", map sang OwnerRegistrationInput.</summary>
 public class PartnerRegisterViewModel
 {
+    [Display(Name = "Mã đơn đã đặt (nếu từng đặt phòng bằng số này)")]
+    public string? BookingCode { get; set; }
+
     [Required(ErrorMessage = "Vui lòng nhập {0}.")]
     [StringLength(200, ErrorMessage = "{0} tối đa {1} ký tự.")]
     [Display(Name = "Tên homestay")]
@@ -72,7 +75,7 @@ public class PartnerRegisterViewModel
     public bool SignedIn { get; set; }
 
     public OwnerRegistrationInput ToInput() => new(FullName, PhoneNumber, HomestayName, Address, AreaId ?? 0, ContactPhone,
-        Description, BankName, BankAccountNo, BankAccountName);
+        Description, BankName, BankAccountNo, BankAccountName, BookingCode);
 }
 
 /// <param name="Registration">Hồ sơ gần nhất của chủ (MineAsync).</param>

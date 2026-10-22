@@ -14,22 +14,25 @@ public record RegisterResult(ApplicationUser? User, IReadOnlyList<string> Errors
 
 /// <summary>
 /// Tài khoản khách hàng (v5 mục 5.1, 5.3). Tạm thời đăng ký bằng SĐT + mật khẩu, Account Active ngay;
-/// bước xác thực OTP sẽ thêm sau. SĐT đã có hồ sơ (ví dụ nhân viên tạo khi khách gọi điện) thì gắn Account vào hồ sơ đó.
+/// bước xác thực OTP sẽ thêm sau. Hồ sơ đã có đơn phải xác minh bằng mã đơn trước khi gắn Account.
 /// </summary>
 public class CustomerAccountService
 {
     private readonly ApplicationDbContext _db;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly AccountActivityLogger _activityLogger;
+    private readonly BookingCodeVerificationService _verification;
 
-    public CustomerAccountService(ApplicationDbContext db, UserManager<ApplicationUser> userManager, AccountActivityLogger activityLogger)
+    public CustomerAccountService(ApplicationDbContext db, UserManager<ApplicationUser> userManager, AccountActivityLogger activityLogger,
+        BookingCodeVerificationService verification)
     {
         _db = db;
         _userManager = userManager;
         _activityLogger = activityLogger;
+        _verification = verification;
     }
 
-    public async Task<RegisterResult> RegisterAsync(string fullName, string phoneNumber, string? email, string password)
+    public async Task<RegisterResult> RegisterAsync(string fullName, string phoneNumber, string? email, string password, string? bookingCode = null)
     {
         var e164 = PhoneNumberNormalizer.ToE164(phoneNumber);
         if (e164 is null)
@@ -47,13 +50,17 @@ public class CustomerAccountService
             return new(null, ["Số điện thoại này đã có tài khoản. Vui lòng đăng nhập."]);
         }
 
+        bool verified;
+        try { verified = await _verification.VerifyAsync(person, bookingCode); }
+        catch (BookingException ex) { return new(null, [ex.ResourceKey]); }
+
         var now = DateTime.UtcNow;
         if (person is null)
         {
             person = new PersonProfile { PhoneNumber = e164 };
             _db.PersonProfiles.Add(person);
         }
-        // Hồ sơ có sẵn: người đăng ký là chủ SĐT nên được cập nhật tên/email
+        // Hồ sơ có đơn chỉ được cập nhật sau khi xác minh bằng mã đơn.
         person.FullName = fullName.Trim();
         person.Email = string.IsNullOrWhiteSpace(email) ? person.Email : email.Trim();
         person.UpdatedAt = now;
@@ -78,7 +85,8 @@ public class CustomerAccountService
             return new(null, role.Errors.Select(e => e.Description).ToList());
         }
 
-        _activityLogger.Add(user.Id, AccountEventType.AccountCreated, ActorType.Customer, user.Id, "Tự đăng ký (SĐT + mật khẩu)");
+        _activityLogger.Add(user.Id, AccountEventType.AccountCreated, ActorType.Customer, user.Id,
+            verified ? "Tự đăng ký, gắn hồ sơ có sẵn sau xác minh bằng mã đơn" : "Tự đăng ký (SĐT + mật khẩu)");
         _activityLogger.Add(user.Id, AccountEventType.RoleAssigned, ActorType.System, null, AppRoles.Customer);
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();

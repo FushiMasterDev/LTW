@@ -39,7 +39,7 @@ public class CustomerAccountServiceTests
     }
 
     [Fact]
-    public async Task Register_PhoneOfCallCenterCustomer_AttachesAccountToExistingProfile()
+    public async Task Register_PhoneOfCallCenterCustomerWithoutBookings_AttachesAccountToExistingProfile()
     {
         using var scope = await NewScopeAsync();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();

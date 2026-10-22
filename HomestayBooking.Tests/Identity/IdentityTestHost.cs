@@ -34,6 +34,10 @@ internal static class IdentityTestHost
         services.AddScoped<AccountLookupService>();
         services.AddScoped<AccountActivityLogger>();
         services.AddScoped<CustomerAccountService>();
+        services.AddMemoryCache();
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<BookingCodeVerificationAttempts>();
+        services.AddScoped<BookingCodeVerificationService>();
         return services.BuildServiceProvider();
     }
 

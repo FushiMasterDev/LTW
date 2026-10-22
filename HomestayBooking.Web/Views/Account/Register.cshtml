@@ -4,7 +4,7 @@
     ViewData["Title"] = L["Đăng ký"];
 }
 <div class="auth-card">
-    <partial name="_AuthAside" model="@(new AuthAsideModel("Tạo tài khoản khách hàng", ["Đặt phòng và thanh toán cọc bằng QR.", "Theo dõi mọi đơn đặt phòng ở một nơi.", "Đơn đã đặt qua tổng đài sẽ tự hiện nếu dùng cùng số điện thoại."]))" />
+    <partial name="_AuthAside" model="@(new AuthAsideModel("Tạo tài khoản khách hàng", ["Đặt phòng và thanh toán cọc bằng QR.", "Theo dõi mọi đơn đặt phòng ở một nơi.", "Nhập mã một đơn đã đặt để xác minh và liên kết các đơn cũ theo số điện thoại."]))" />
     <div class="auth-form">
         <h1>@L["Đăng ký"]</h1>
         <p class="auth-form__lead">@L["Số điện thoại là tên đăng nhập của bạn."]</p>
@@ -13,6 +13,7 @@
             <input type="hidden" asp-for="ReturnUrl" />
             <form-field asp-for="FullName" autocomplete="name" autofocus="true" />
             <form-field asp-for="PhoneNumber" type="tel" autocomplete="username" inputmode="tel" placeholder="09xx xxx xxx" />
+            <form-field asp-for="BookingCode" autocomplete="off" />
             <form-field asp-for="Email" type="email" autocomplete="email" />
             <div class="row g-3">
                 <div class="col-sm-6"><form-field asp-for="Password" type="password" autocomplete="new-password" wrapper="mb-0" /></div>

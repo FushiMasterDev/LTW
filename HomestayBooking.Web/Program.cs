@@ -86,9 +86,13 @@ builder.Services.AddAuthorizationBuilder()
         .RequireClaim(AppClaimTypes.EmployeePosition, nameof(EmployeePosition.Accountant)));
 
 builder.Services.AddDesktopApi(builder.Configuration);
+builder.Services.AddPublicRateLimits(builder.Configuration);
 
 builder.Services.AddScoped<AccountLookupService>();
 builder.Services.AddScoped<AccountActivityLogger>();
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<BookingCodeVerificationAttempts>();
+builder.Services.AddScoped<BookingCodeVerificationService>();
 
 // Nghiệp vụ đặt phòng và thanh toán (fuji_homestay_database_v1 mục 6, 7)
 builder.Services.AddOptions<BookingOptions>()

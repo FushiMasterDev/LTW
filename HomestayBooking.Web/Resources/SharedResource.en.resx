@@ -3015,4 +3015,22 @@
   <data name="Không tải được mã QR theo đơn. Hãy chuyển khoản đúng tài khoản, số tiền và nội dung bên cạnh." xml:space="preserve">
     <value>The booking QR could not be loaded. Transfer to the account shown with the exact amount and reference.</value>
   </data>
+  <data name="Mã đơn đã đặt (nếu từng đặt phòng bằng số này)" xml:space="preserve">
+    <value>Previous booking code (if you have booked with this phone number)</value>
+  </data>
+  <data name="Số điện thoại này đã có đơn đặt phòng. Vui lòng nhập đúng mã một đơn đã đặt để xác minh, hoặc liên hệ Fuji." xml:space="preserve">
+    <value>This phone number has existing bookings. Please enter a correct previous booking code to verify, or contact Fuji.</value>
+  </data>
+  <data name="Thử quá nhiều lần, vui lòng thử lại sau 15 phút." xml:space="preserve">
+    <value>Too many attempts. Please try again in 15 minutes.</value>
+  </data>
+  <data name="Thử quá nhiều lần" xml:space="preserve">
+    <value>Too many requests</value>
+  </data>
+  <data name="Bạn đã gửi quá nhiều yêu cầu. Vui lòng chờ rồi thử lại." xml:space="preserve">
+    <value>You have sent too many requests. Please wait and try again.</value>
+  </data>
+  <data name="Nhập mã một đơn đã đặt để xác minh và liên kết các đơn cũ theo số điện thoại." xml:space="preserve">
+    <value>Enter a previous booking code to verify and link your past bookings by phone number.</value>
+  </data>
 </root>

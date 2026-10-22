@@ -29,7 +29,7 @@ Tài liệu đối chiếu trực tiếp `Program.cs`, controller MVC/API, các 
 5. Nếu không dùng proxy: HTTPS redirection, riêng `/healthz` được bỏ qua chuyển hướng.
 6. `UseStaticFiles` phục vụ file có sẵn và upload phát sinh lúc chạy.
 7. `UseRequestLocalization`: mặc định vi-VN; hỗ trợ en-US. Ưu tiên query culture rồi cookie, không dùng ngôn ngữ trình duyệt.
-8. `UseRouting` → `UseRateLimiter` (chỉ desktop login) → `UseSession` → `UseAuthentication` → `UseAuthorization`.
+8. `UseRouting` → `UseRateLimiter` (policy riêng cho desktop login và nhóm tra cứu/đăng ký công khai; không có global limiter) → `UseSession` → `UseAuthentication` → `UseAuthorization`.
 9. Ánh xạ static assets; route area `{area:exists}/{controller=Dashboard}/{action=Index}/{id?}`, route MVC mặc định `{controller=Home}/{action=Index}/{id?}`; `MapControllers` cho attribute route API; `/healthz` cho phép ẩn danh.
 
 `SeedData.InitializeAsync` và `AdminBootstrapService.RunAsync` được gọi trước `app.Run()`, không phải middleware cho từng request. AutoMigrate mặc định tắt; thiếu migration thì startup dừng. Startup Development có thể ghi dữ liệu mẫu và job nền có thể đổi dữ liệu sau khi ứng dụng chạy.
@@ -78,9 +78,15 @@ ASP.NET Core Identity dùng `ApplicationUser`, `IdentityRole`, bảng AspNetUser
 |---|---|---|
 | `/Account/Login` | PhoneNumber, Password, RememberMe, ReturnUrl | Chuẩn hóa điện thoại E.164 → PersonProfiles → tài khoản có Customer hoặc Owner |
 | `/Account/EmployeeLogin` | EmployeeCode, Password, RememberMe, ReturnUrl | Mã nhân viên trim/viết hoa → Employees còn Active → tài khoản có role Employee |
-| `/Account/Register` | Họ tên, điện thoại, email tùy chọn, mật khẩu và dữ liệu xác nhận theo form | CustomerAccountService tạo hồ sơ và tài khoản Customer |
+| `/Account/Register` | Họ tên, điện thoại, email tùy chọn, mật khẩu, xác nhận mật khẩu, BookingCode tùy chọn | CustomerAccountService tạo hồ sơ và tài khoản Customer; hồ sơ có đơn cần xác minh mã đơn |
 
 Khách **không cần tài khoản để đặt phòng**. GuestCustomerService tạo/tìm hồ sơ khách; sau tạo đơn, MVC giữ quyền xem bằng session. Tra cứu tại `/Bookings/Lookup` cần mã đơn + điện thoại của người liên hệ hoặc người đặt; khớp thì lưu mã đơn vào session. API tra cứu công khai chỉ trả tóm tắt, không thiết lập quyền session MVC. `/Bookings/Mine` cần đăng nhập; trang đổi của khách cần role Customer và đúng người đặt.
+
+Đăng ký khách (`POST /Account/Register`) và chủ tự đăng ký (`POST /Partner/Index`, form tại `/Partner`) chỉ gắn tài khoản vào hồ sơ trùng SĐT chưa có Account sau khi xác minh **mã một đơn thuộc Customer của hồ sơ**, nếu Customer đã có ít nhất một đơn (mọi trạng thái). `BookingCode` được trim, so sánh không phân biệt hoa thường; mã của khách khác không hợp lệ, kể cả khi SĐT liên hệ của đơn đó trùng. Thiếu/sai mã bị từ chối trước mọi thao tác ghi DB. SĐT mới hoặc hồ sơ chưa có đơn vẫn theo luồng cũ. Nhân viên hỗ trợ đăng ký chủ và các trường hợp service đang từ chối giữ nguyên. Khi ghép sau xác minh, AccountActivityLog ghi AccountCreated với mô tả “xác minh bằng mã đơn”, không ghi mã đơn.
+
+Hai luồng dùng chung bộ đếm theo SĐT E.164: sai (kể cả bỏ trống mã) 5 lần trong cửa sổ trượt 15 phút thì khóa xác minh 15 phút tính từ lần thứ 5; trong thời gian khóa, mã đúng cũng bị chặn. Bộ đếm dùng IMemoryCache trên một instance và TimeProvider; mất khi khởi động lại, cần DB/Redis nếu chạy nhiều instance.
+
+`POST /Bookings/Lookup`, `GET /api/bookings/{code}?phone=`, `POST /Account/Register` và `POST /Partner/Index` dùng chung ngân sách theo IP, fixed window **10 lần/60 giây** mặc định, không xếp hàng. Cấu hình riêng `RateLimits:PermitLimit` và `RateLimits:WindowSeconds` (biến môi trường `RateLimits__PermitLimit`, `RateLimits__WindowSeconds`). Đổi route/mã đơn/SĐT không đặt lại ngân sách của IP đó. Vượt giới hạn trả **429 + Retry-After**: MVC hiển thị trang HTML `/Home/StatusCode/429`, API trả `application/problem+json`. GET các form, đăng nhập web và các API khác không chịu policy này. Desktop login vẫn dùng policy và cấu hình DesktopApi riêng. IP lấy từ kết nối sau cấu hình proxy tin cậy hiện có; không tin trực tiếp header do client gửi.
 
 `AppSignInManager` chỉ cho AccountStatus.Active đăng nhập. Sai mật khẩu tối đa **5 lần → khóa tạm 5 phút** theo Identity; AccountStatus.Locked/Disabled là trạng thái nghiệp vụ riêng. Mọi thất bại đăng nhập dùng thông báo chung để hạn chế dò tài khoản. Mật khẩu tối thiểu 8 ký tự được đặt ở Program.cs; các yêu cầu Identity khác không được ghi đè tại đó.
 
@@ -233,7 +239,7 @@ Response 200 giả định giá hai đêm đều 400.000 và còn 2 phòng:
 
 | Method | Route | Quyền cần có | Tham số/Body | Kết quả (HTTP + dạng JSON) | Chức năng |
 |---|---|---|---|---|---|
-| GET | `/api/bookings/{code}` | Công khai, phải khớp mã + điện thoại | Query phone; chấp nhận số Việt Nam được PhoneNumberNormalizer chuẩn hóa | 200 BookingSummary `{code,status,homestay,roomType,checkIn,checkOut,guests,totalAmount,depositAmount,holdExpiresAt}`; 404 ProblemDetails | Xem trạng thái/số tiền tóm tắt; thiếu/sai phone hay không có mã đều 404 |
+| GET | `/api/bookings/{code}` | Công khai, phải khớp mã + điện thoại | Query phone; chấp nhận số Việt Nam được PhoneNumberNormalizer chuẩn hóa | 200 BookingSummary `{code,status,homestay,roomType,checkIn,checkOut,guests,totalAmount,depositAmount,holdExpiresAt}`; 404 ProblemDetails; 429 ProblemDetails + Retry-After | Xem trạng thái/số tiền tóm tắt; thiếu/sai phone hay không có mã đều 404; rate limit IP dùng chung với tra cứu MVC/đăng ký |
 
 Mã được trim/viết hoa; phone khớp điện thoại người liên hệ **hoặc** người đặt. Không trả địa chỉ/hướng dẫn nhận phòng hay toàn bộ entity.
 
@@ -443,6 +449,7 @@ Kế toán POST `/Accounting/Settlements/Send/{id}` khi không còn đơn chưa 
 | 403 | Đã đăng nhập nhưng không đạt policy | Không redirect AccessDenied; không có DTO lỗi riêng bảo đảm JSON |
 | 404 | Không có bản ghi/không thuộc chủ, tra cứu sai điện thoại, không có giá | Nhánh API chủ động dùng ProblemDetails; route không tồn tại/Swagger Production có thể là trang lỗi HTML |
 | 409 | Đơn bị cập nhật đồng thời hoặc trùng đêm khóa | OwnerBookings: ProblemDetails; RoomBlocks: ConflictProblem riêng, có danh sách conflicts |
+| 429 | Vượt giới hạn IP ở tra cứu đơn/đăng ký | Retry-After; API tra cứu trả ProblemDetails JSON, MVC re-execute trang HTML `/Home/StatusCode/429` |
 | 503 | Webhook chưa cấu hình khóa | ProblemDetails title `Bank webhook is disabled`; không có nghĩa toàn bộ website thanh toán bị tắt |
 | 500 | Ngoại lệ không bắt được | Ngoài Development, ExceptionHandler re-execute `/Home/Error`, có thể trả HTML kể cả request API; không có global handler bảo đảm JSON ProblemDetails cho mọi lỗi |
 

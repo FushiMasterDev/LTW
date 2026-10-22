@@ -105,6 +105,9 @@ public class SimulateBankViewModel
 
 public class RegisterViewModel
 {
+    [Display(Name = "Mã đơn đã đặt (nếu từng đặt phòng bằng số này)")]
+    public string? BookingCode { get; set; }
+
     [Required(ErrorMessage = "Vui lòng nhập {0}.")]
     [StringLength(100, ErrorMessage = "{0} tối đa {1} ký tự.")]
     [Display(Name = "Họ tên")]

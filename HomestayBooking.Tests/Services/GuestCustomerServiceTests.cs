@@ -74,7 +74,7 @@ public sealed class GuestCustomerServiceTests
         // Ngay trước lần lưu đầu, một bản cùng SĐT xuất hiện → unique lỗi → rollback và chạy lại đúng một lần.
         var race = new RaceInterceptor("+84977555003");
         await using var db = h.H.NewContext(race);
-        var guests = new GuestCustomerService(db, new CustomerAccountService(db, h.P.Users, new AccountActivityLogger(db, new HttpContextAccessor())), h.H.Clock);
+        var guests = new GuestCustomerService(db, h.P.Customers(db), h.H.Clock);
         var customer = await guests.FindOrCreateAsync("0977555003", "Khách đua", null, Guest);
         Assert.True(race.Fired);
         Assert.Equal(1, await h.Db.PersonProfiles.CountAsync(p => p.PhoneNumber == "+84977555003"));

@@ -1,5 +1,7 @@
 using HomestayBooking.Web.Data;
 using HomestayBooking.Web.Identity;
+using HomestayBooking.Web.Services;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,6 +21,8 @@ public class BookingsApiController(ApplicationDbContext db) : ControllerBase
     /// <response code="200">Tóm tắt đơn.</response>
     /// <response code="404">Không có đơn khớp mã và số điện thoại.</response>
     [HttpGet("{code}")]
+    [EnableRateLimiting(PublicRateLimits.Policy)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType<BookingSummary>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<BookingSummary>> Lookup(string code, [FromQuery] string? phone)
