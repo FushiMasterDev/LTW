@@ -40,7 +40,7 @@ public sealed class DesktopApiConfigurationTests
     }
 
     [Fact]
-    public async Task SwaggerHasBearerOnlyForDesktopAndKeepsLegacyRoutes()
+    public async Task WebSwaggerListsOnlyLegacyApiWithoutDesktopOrBearer()
     {
         using var root = new TestWebApplicationFactory();
         using var host = root.WithWebHostBuilder(b => b.UseEnvironment("Development"));
@@ -48,19 +48,9 @@ public sealed class DesktopApiConfigurationTests
         var response = await client.GetAsync("/swagger/v1/swagger.json");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var doc = await response.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Equal("bearer", doc.GetProperty("components").GetProperty("securitySchemes").GetProperty("Bearer").GetProperty("scheme").GetString());
-        var paths = doc.GetProperty("paths");
-        Assert.True(paths.GetProperty("/api/desktop/auth/me").GetProperty("get").TryGetProperty("security", out _));
-        Assert.False(paths.GetProperty("/api/desktop/auth/login").GetProperty("post").TryGetProperty("security", out _));
-        Assert.False(paths.GetProperty("/api/homestays").GetProperty("get").TryGetProperty("security", out _));
-        Assert.Equal(10, paths.EnumerateObject().Where(p => !p.Name.StartsWith("/api/desktop/"))
-            .Sum(p => p.Value.EnumerateObject().Count(o => new[] { "get", "post", "put", "delete" }.Contains(o.Name))));
-        Assert.Equal(42, paths.EnumerateObject().Where(p => p.Name.StartsWith("/api/desktop/owner/"))
-            .Sum(p => p.Value.EnumerateObject().Count(o => new[] { "get", "post", "put", "delete" }.Contains(o.Name))));
-        Assert.False(paths.GetProperty("/api/desktop/owner/auth/login").GetProperty("post").TryGetProperty("security", out _));
-        Assert.True(paths.GetProperty("/api/desktop/owner/auth/me").GetProperty("get").TryGetProperty("security", out _));
-        Assert.Equal("Desktop Owner", paths.GetProperty("/api/desktop/owner/auth/me").GetProperty("get").GetProperty("tags")[0].GetString());
-        Assert.Equal(43, paths.EnumerateObject().Where(p => p.Name.StartsWith("/api/desktop/") && !p.Name.StartsWith("/api/desktop/owner/"))
-            .Sum(p => p.Value.EnumerateObject().Count(o => new[] { "get", "post", "put", "delete" }.Contains(o.Name))));
+        Assert.False(doc.TryGetProperty("components", out var components) && components.TryGetProperty("securitySchemes", out _));
+        var paths = doc.GetProperty("paths").EnumerateObject().ToList();
+        Assert.DoesNotContain(paths, p => p.Name.StartsWith("/api/desktop/"));
+        Assert.Equal(10, paths.Sum(p => p.Value.EnumerateObject().Count(o => new[] { "get", "post", "put", "delete" }.Contains(o.Name))));
     }
 }
