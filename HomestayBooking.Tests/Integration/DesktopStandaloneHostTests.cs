@@ -119,6 +119,12 @@ public sealed class DesktopStandaloneHostTests
                 var paths = swagger.GetProperty("paths").EnumerateObject().ToList();
                 Assert.All(paths, p => Assert.StartsWith("/api/desktop/", p.Name));
                 Assert.Equal(85, paths.Sum(p => p.Value.EnumerateObject().Count()));
+                Assert.Equal("bearer", swagger.GetProperty("components").GetProperty("securitySchemes").GetProperty("Bearer").GetProperty("scheme").GetString());
+                var docPaths = swagger.GetProperty("paths");
+                Assert.False(docPaths.GetProperty("/api/desktop/auth/login").GetProperty("post").TryGetProperty("security", out _));
+                Assert.True(docPaths.GetProperty("/api/desktop/auth/me").GetProperty("get").TryGetProperty("security", out _));
+                Assert.False(docPaths.GetProperty("/api/desktop/owner/auth/login").GetProperty("post").TryGetProperty("security", out _));
+                Assert.Equal("Desktop Owner", docPaths.GetProperty("/api/desktop/owner/auth/me").GetProperty("get").GetProperty("tags")[0].GetString());
                 await Expect(await host.Client.GetAsync("/swagger/index.html"), HttpStatusCode.OK);
                 foreach (var path in new[] { "/", "/Account/Login", "/Owner/Dashboard", "/api/homestays", "/api/payments/webhook", "/healthz", "/images/demo/room-studio.webp", "/App_Data/fuji-desktop.db" })
                     await Problem(await host.Client.GetAsync(path), HttpStatusCode.NotFound);

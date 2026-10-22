@@ -123,17 +123,13 @@ builder.Services.AddSession(o =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(o =>
 {
-    o.SwaggerDoc("v1", new() { Title = "Fuji Homestay API", Version = "v1", Description = "API công khai, API cookie cho chủ/thông báo, webhook ngân hàng và API JWT Bearer cho nhân viên và chủ homestay đã duyệt trên WinForms (/api/desktop)." });
-    o.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.OpenApiSecurityScheme
-    {
-        Type = Microsoft.OpenApi.SecuritySchemeType.Http, Scheme = "bearer", BearerFormat = "JWT",
-        Description = "Đăng nhập POST /api/desktop/auth/login (nhân viên) hoặc /api/desktop/owner/auth/login (chủ), sau đó nhập accessToken. Chỉ dùng cho nhóm desktop.",
-    });
-    o.OperationFilter<DesktopSwaggerFilter>();
+    o.SwaggerDoc("v1", new() { Title = "Fuji Homestay API", Version = "v1", Description = "API công khai cho tìm kiếm, lịch trống, báo giá, tra cứu đơn và số thông báo chưa đọc." });
     var xml = Path.Combine(AppContext.BaseDirectory, $"{typeof(Program).Assembly.GetName().Name}.xml");
     if (File.Exists(xml)) o.IncludeXmlComments(xml);
-    // Chỉ đưa Web API (/api/...) lên Swagger; các action MVC có attribute route (alias /{id}) không phải API
-    o.DocInclusionPredicate((_, api) => api.RelativePath?.StartsWith("api/", StringComparison.OrdinalIgnoreCase) == true);
+    // Chỉ đưa Web API (/api/...) lên Swagger; các action MVC có attribute route (alias /{id}) không phải API.
+    // Nhóm /api/desktop dành cho WinForms, có Swagger riêng ở HomestayBooking.DesktopHost.
+    o.DocInclusionPredicate((_, api) => api.RelativePath?.StartsWith("api/", StringComparison.OrdinalIgnoreCase) == true
+        && !api.RelativePath.StartsWith("api/desktop/", StringComparison.OrdinalIgnoreCase));
 });
 
 var app = builder.Build();

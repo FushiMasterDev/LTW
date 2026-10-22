@@ -138,7 +138,7 @@ Mật khẩu chung: **`Fuji@2026`**
 
 ## 5. Web API
 
-Toàn bộ có trên `/swagger` trong Development. 10 endpoint cũ bên dưới giữ nguyên xác thực và hợp đồng; nhóm desktop riêng dùng JWT Bearer, xem [API cho ứng dụng desktop](docs/api-va-backend.md#8-api-cho-ứng-dụng-desktop).
+Swagger `/swagger` của web (chỉ Development) liệt kê đúng 10 endpoint cũ bên dưới. Nhóm `/api/desktop` cho WinForms dùng JWT Bearer, không hiện trên Swagger của web mà ở Swagger riêng của `HomestayBooking.DesktopHost`; xem [API cho ứng dụng desktop](docs/api-va-backend.md#8-api-cho-ứng-dụng-desktop).
 
 | Method | Endpoint | Mô tả | Quyền |
 |---|---|---|---|

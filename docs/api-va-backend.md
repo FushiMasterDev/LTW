@@ -158,7 +158,7 @@ API công khai không cần đăng nhập. API của chủ và thông báo sử 
 
 `AutoValidateAntiforgeryToken` áp dụng toàn cục: POST/DELETE API dùng cookie phải gửi **header RequestVerificationToken** cùng cookie antiforgery và cookie đăng nhập. Lấy request token từ input `__RequestVerificationToken` trên form, ví dụ `/Owner/Calendar` sau đăng nhập. Token lấy trước đăng nhập có thể không phù hợp principal sau đăng nhập; nên lấy lại từ trang đã xác thực trước lệnh ghi. GET không cần token CSRF.
 
-Swagger UI ở `/swagger` và mô tả `/swagger/v1/swagger.json` **chỉ bật trong Development**. Production không đăng ký các middleware này và trả **404**. Swagger chỉ chứa route bắt đầu `api/`, không gom action MVC vào danh sách này. Có thể đăng nhập cùng origin bằng trang web rồi thử API đọc trong Swagger; chưa có cấu hình security scheme/nút cấp token đăng nhập riêng, cũng chưa khai báo tham số antiforgery tự động cho API ghi. Muốn thử POST/DELETE dùng cookie cần tự gửi header token, ví dụ bằng curl.
+Swagger UI ở `/swagger` và mô tả `/swagger/v1/swagger.json` **chỉ bật trong Development**. Production không đăng ký các middleware này và trả **404**. Swagger chỉ chứa route bắt đầu `api/` (trừ nhóm `api/desktop/` dành cho WinForms), không gom action MVC vào danh sách này. Có thể đăng nhập cùng origin bằng trang web rồi thử API đọc trong Swagger; chưa có cấu hình security scheme/nút cấp token đăng nhập riêng, cũng chưa khai báo tham số antiforgery tự động cho API ghi. Muốn thử POST/DELETE dùng cookie cần tự gửi header token, ví dụ bằng curl.
 
 Ngoại lệ: `BankWebhookController` bỏ kiểm antiforgery, xác thực máy chủ bằng `Authorization: Apikey <khóa đã cấu hình>`. Không dùng cookie chủ/khách cho webhook. So khóa bằng so sánh thời gian cố định. Nếu `BankAccount:WebhookApiKey` chưa cấu hình, action trả **503 ProblemDetails** trước khi kiểm header; có khóa nhưng header thiếu/sai trả **401**. Dữ liệu không hợp lệ có thể bị model validation chặn 400 trước khi vào action. Chỉ có webhook SePay được triển khai ở Controllers/Api; enum Casso không phải bằng chứng có endpoint Casso.
 
@@ -675,7 +675,7 @@ Mọi ID ngoài sở hữu của chủ hiện tại trả 404 giống ID không 
 
 Danh sách độc lập dùng DesktopPage; mảng con trong editor/chi tiết/lịch là một tài liệu hoàn chỉnh, không phân trang riêng. `TimeOnly` là HH:mm:ss, ngày yyyy-MM-dd, timestamp UTC hậu tố Z; enum chỉ chuyển thành chữ trong DTO desktop. Sau upload giấy tờ pháp lý, client gọi lại editor để nhận trạng thái chờ duyệt mới. Editor trả đủ amenities/categories cho form chọn; chủ không có quyền thêm/xóa danh mục chung hoặc tạo/xóa homestay vì web không có các thao tác đó.
 
-Ảnh công khai chỉ nhận JPG/PNG/WEBP; giấy tờ nhận thêm PDF. Cả hai dùng kiểm dung lượng 1 byte–5MB, tên, MIME, chữ ký và cấu trúc file hiện có; không tin đuôi/MIME của client. Giấy tờ ở ngoài wwwroot, DTO chỉ chứa `/api/desktop/owner/documents/{id}/file`, không có đường dẫn lưu trữ thật. Ảnh công khai giữ URL do service tạo. Swagger Development tách tag `Desktop Owner` và không yêu cầu Bearer cho hai endpoint login.
+Ảnh công khai chỉ nhận JPG/PNG/WEBP; giấy tờ nhận thêm PDF. Cả hai dùng kiểm dung lượng 1 byte–5MB, tên, MIME, chữ ký và cấu trúc file hiện có; không tin đuôi/MIME của client. Giấy tờ ở ngoài wwwroot, DTO chỉ chứa `/api/desktop/owner/documents/{id}/file`, không có đường dẫn lưu trữ thật. Ảnh công khai giữ URL do service tạo. Swagger của DesktopHost tách tag `Desktop Owner` và không yêu cầu Bearer cho hai endpoint login.
 
 ### Mã phản hồi
 
@@ -691,7 +691,7 @@ Danh sách độc lập dùng DesktopPage; mảng con trong editor/chi tiết/l�
 | 503 | Desktop chưa cấu hình hợp lệ; không làm web ngừng chạy |
 | 500 | Lỗi bất ngờ trong action desktop, ProblemDetails chung, không lộ exception; log nội bộ |
 
-Bộ lọc exception chỉ gắn trên base desktop. Status pages desktop không re-execute HTML; status/error pages và lỗi API cũ giữ nguyên. Swagger chỉ Development, có nút Authorize Bearer và security requirement riêng cho endpoint desktop được bảo vệ.
+Bộ lọc exception chỉ gắn trên base desktop. Status pages desktop không re-execute HTML; status/error pages và lỗi API cũ giữ nguyên. Swagger của web chỉ liệt kê 10 endpoint cũ (ẩn `/api/desktop`). Nhóm desktop xem ở Swagger của DesktopHost, có nút Authorize Bearer và security requirement riêng cho endpoint được bảo vệ.
 
 ### Lệnh curl mẫu (không chứa token thật)
 
