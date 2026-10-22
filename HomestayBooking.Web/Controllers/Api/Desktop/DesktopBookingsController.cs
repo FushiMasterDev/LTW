@@ -91,7 +91,7 @@ public sealed class DesktopBookingsController(ApplicationDbContext db, StaffBook
         Ok(DesktopPage<AssigneeDto>.Slice((await bookings.AssigneesAsync(await CurrentActorAsync()))
             .Select(e => new AssigneeDto(e.EmployeeId, e.EmployeeCode, e.FullName, e.Position.ToString())), page));
 
-    /// <summary>Lựa chọn homestay từ HomestaysAsync, phân trang. Service hiện chỉ cung cấp id/tên homestay.</summary>
+    /// <summary>Lựa chọn homestay từ HomestaysAsync, phân trang.</summary>
     /// <response code="200">Trang lựa chọn homestay.</response>
     /// <response code="400">Tham số không hợp lệ.</response>
     [HttpGet("booking-homestays")]
@@ -99,6 +99,18 @@ public sealed class DesktopBookingsController(ApplicationDbContext db, StaffBook
     public async Task<ActionResult<DesktopPage<BookingHomestayDto>>> Homestays([FromQuery] int? page) =>
         Ok(DesktopPage<BookingHomestayDto>.Slice((await bookings.HomestaysAsync(await CurrentActorAsync()))
             .Select(h => new BookingHomestayDto(h.Id, h.Name)), page));
+
+    /// <summary>Loại phòng đặt hộ của homestay, không phân trang; activeRoomCount đếm phòng đang kinh doanh, chưa xét ngày lưu trú.</summary>
+    /// <response code="200">Danh sách loại phòng theo điều kiện bán chung; mảng rỗng nếu không có loại phù hợp.</response>
+    /// <response code="401">Thiếu hoặc sai Bearer token.</response>
+    /// <response code="403">Không có quyền thao tác đặt hộ.</response>
+    /// <response code="404">Không có homestay.</response>
+    [HttpGet("booking-homestays/{homestayId:int}/room-types")]
+    [ProducesResponseType<IReadOnlyList<BookingRoomTypeDto>>(200)]
+    [ProducesResponseType<ProblemDetails>(404)]
+    public async Task<ActionResult<IReadOnlyList<BookingRoomTypeDto>>> RoomTypes(int homestayId) =>
+        Ok((await bookings.RoomTypesAsync(homestayId, await CurrentActorAsync()))
+            .Select(t => new BookingRoomTypeDto(t.Id, t.Name, t.CategoryId, t.CategoryName, t.MaxGuests, t.ActiveRoomCount)).ToList());
 
     /// <summary>Phòng trống theo StaffAvailabilityAsync; khoảng [checkIn, checkOut), ngày yyyy-MM-dd, phân trang.</summary>
     /// <response code="200">Trang lựa chọn còn phòng và giá.</response>

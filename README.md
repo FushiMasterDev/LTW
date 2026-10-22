@@ -154,6 +154,7 @@ Toàn bộ có trên `/swagger` trong Development. 10 endpoint cũ bên dưới 
 | GET / POST / PUT / DELETE | `/api/desktop/{areas,amenities,room-categories,holidays}` và `/{id}` | Đọc/ghi danh mục qua service dùng chung với web | Employee đọc; Management ghi |
 | GET / POST | `/api/desktop/bookings`, `/{id}`, `/{id}/assign`, `/{id}/status` | Tìm, xem, đặt hộ (submissionId), giao/đổi trạng thái | Consultant/Manager/Administrator |
 | GET | `/api/desktop/{assignees,booking-homestays,availability}` | Lựa chọn và phòng trống | Consultant/Manager/Administrator |
+| GET | `/api/desktop/booking-homestays/{homestayId:int}/room-types` | Loại phòng đặt hộ theo homestay, không phân trang | Consultant/Manager/Administrator |
 | GET / PUT | `/api/desktop/customers`, `/{id}` | Tìm, xem, sửa khách qua CustomerService | Consultant/Manager/Administrator |
 | GET / POST | `/api/desktop/receipts`, `/{paymentId}/file`, `/{paymentId}/{approve,reject}` | Đọc bill, file riêng tư, duyệt/từ chối | Accounting; service kiểm quyền ghi |
 | GET | `/api/desktop/reports/{management,bookings,financial,employees,homestays}` | Báo cáo theo ReportQuery | Management |

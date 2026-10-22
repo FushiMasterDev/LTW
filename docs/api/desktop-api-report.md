@@ -4,7 +4,7 @@ Nhánh làm việc: `feature/desktop-api`, mã nguồn gốc `e5f2aed`. Không �
 
 ## Phạm vi đã triển khai
 
-42 endpoint REST riêng `/api/desktop`, DTO riêng, JSON camelCase, enum dạng chữ trong DTO desktop, ngày `yyyy-MM-dd`, timestamp UTC có hậu tố Z. Danh sách có `{items,page,totalPages,totalCount}`, 10 mục/trang qua `PaginatedList`; mảng con trong tài liệu chi tiết/báo cáo tổng hợp không phân trang độc lập.
+43 endpoint REST riêng `/api/desktop`, DTO riêng, JSON camelCase, enum dạng chữ trong DTO desktop, ngày `yyyy-MM-dd`, timestamp UTC có hậu tố Z. Danh sách có `{items,page,totalPages,totalCount}`, 10 mục/trang qua `PaginatedList`; riêng lựa chọn loại phòng theo homestay trả mảng không phân trang, mảng con trong tài liệu chi tiết/báo cáo tổng hợp không phân trang độc lập.
 
 | Nhóm | Endpoint (method + đường dẫn sau `/api/desktop`) | Số |
 |---|---|---:|
@@ -14,12 +14,12 @@ Nhánh làm việc: `feature/desktop-api`, mã nguồn gốc `e5f2aed`. Không �
 | Loại phòng | GET/POST `/room-categories`; GET/PUT/DELETE `/room-categories/{id}` | 5 |
 | Ngày lễ | GET/POST `/holidays`; GET/PUT/DELETE `/holidays/{yyyy-MM-dd}` | 5 |
 | Đơn | GET/POST `/bookings`, GET `/bookings/{id}`, POST `/bookings/{id}/assign`, POST `/bookings/{id}/status` | 5 |
-| Lựa chọn / tồn phòng | GET `/assignees`, `/booking-homestays`, `/availability` | 3 |
+| Lựa chọn / tồn phòng | GET `/assignees`, `/booking-homestays`, `/booking-homestays/{homestayId:int}/room-types`, `/availability` | 4 |
 | Khách | GET `/customers`, GET/PUT `/customers/{id}` | 3 |
 | Bill | GET `/receipts`, GET `/receipts/{paymentId}/file`, POST `/receipts/{paymentId}/approve`, POST `/receipts/{paymentId}/reject` | 4 |
 | Báo cáo | GET `/reports/{management,bookings,financial,employees,homestays}` | 5 |
 
-Đơn/khách/phòng trống dùng đúng StaffBookingService, CustomerService, AvailabilityService. Bill dùng AccountingService/ReceiptReviewService/ReceiptFileStore. Báo cáo gọi từng phương thức ReportService. Không sửa các service nghiệp vụ này. Đặt hộ nhận submissionId GUID bắt buộc khác rỗng, chuyển nguyên cho cơ chế chống gửi lặp hiện có.
+Đơn/khách/phòng trống dùng đúng StaffBookingService, CustomerService, AvailabilityService. Bill dùng AccountingService/ReceiptReviewService/ReceiptFileStore. Báo cáo gọi từng phương thức ReportService. Bổ sung method đọc RoomTypesAsync trong StaffBookingService ngày 22/10/2026 như mục xử lý bên dưới; giữ nguyên nghiệp vụ các method cũ. Đặt hộ nhận submissionId GUID bắt buộc khác rỗng, chuyển nguyên cho cơ chế chống gửi lặp hiện có.
 
 ## Xác thực, quyền và lỗi
 
@@ -74,6 +74,14 @@ Năm ca kiểm tra bổ sung qua HTTP/form MVC thật trong `/private/tmp/LTW-ca
 
 Chưa phát hiện lỗi hồi quy cụ thể khi review. Giới hạn: ca unique race trong DesktopApiTests ném exception giả từ action filter; chưa kiểm thử tranh chấp ghi thực sự đi qua CatalogEditorService trên SQL Server. Bộ test trong repo cũng chưa có các ca tạo/sửa thành công qua đủ bốn form Admin như lượt review tạm.
 
+### Bổ sung loại phòng đặt hộ — 22/10/2026
+
+- Trước sửa: `dotnet test HomestayBooking.sln -c Release --no-restore --filter "FullyQualifiedName~DesktopApi|FullyQualifiedName~StaffBooking" --logger "console;verbosity=minimal"` → **62 pass, 0 fail, 0 skip**.
+- Sau sửa: `dotnet build HomestayBooking.sln -c Release` → **0 warning, 0 error**. Restore có dòng chẩn đoán macOS `CSSM_ModuleLoad(): CSSMERR_DL_MDS_ERROR`, lệnh vẫn thoát 0.
+- `dotnet test HomestayBooking.sln -c Release --no-build --no-restore --filter "FullyQualifiedName~DesktopApi|FullyQualifiedName~StaffBooking" --logger "console;verbosity=minimal"` → **66 pass, 0 fail, 0 skip**. Swagger kiểm đúng **43 desktop + 10 API cũ**.
+- Thêm ba test RoomTypes trong DesktopApiTests: đối chiếu đủ trường với một homestay seed; SQLite thực thi truy vấn lọc, đếm đúng phòng Active và trả đủ 11 loại không phân trang, loại loại phòng/phòng ngừng kinh doanh hoặc không có phòng, trả mảng rỗng cho homestay ngừng hoạt động/hợp đồng không hợp lệ/không còn phòng Active; 404 ProblemDetails và 401. Thêm một ca Kế toán 403 vào theory policy. Test service hiện có kiểm thêm việc từ chối actor không hợp lệ ở method mới; helper BackofficeTestHost truyền AvailabilityService vào constructor mới.
+- `git diff --check` không báo lỗi. Không commit, không dùng Docker, không tạo/sửa database SQL Server, không đụng `docs/bao-cao/`. Test chỉ dùng InMemory/SQLite trong bộ nhớ của fixture. Không chạy lại toàn bộ test/curl trên SQL Server trong phiên sandbox này; dành cho lượt kiểm tra tiếp theo trên Mac theo prompt.
+
 ## Database, app, crawl và curl
 
 - Kiểm DB_ID trước khi tạo; `HomestayBooking_DesktopApi` **chưa tồn tại**. Tạo DB mới, thực thi nguyên `database/deploy.sql` (mở rộng `:r schema.sql`, thay TargetDb, chạy từng batch GO theo thứ tự và cùng session, giữ các SET option). Không xóa/recreate DB.
@@ -85,7 +93,7 @@ Chưa phát hiện lỗi hồi quy cụ thể khi review. Giới hạn: ca uniqu
 
 ## Cần người dùng quyết định
 
-1. `StaffBookingService.HomestaysAsync` chỉ có id/tên homestay, chưa có danh sách loại phòng để dựng dropdown đặt hộ như mong muốn. API giữ đúng dữ liệu service; `/availability` có roomTypeId/tên theo khoảng ngày. Cần quyết định hợp đồng mở rộng service đọc cho WinForms ở đợt sau; phiên này không đổi nghiệp vụ.
+1. **Đã xử lý — 22/10/2026:** thêm `GET /api/desktop/booking-homestays/{homestayId:int}/room-types` gọi `StaffBookingService.RoomTypesAsync`, service kiểm actor bằng EmployeeAsync. Trả mảng không phân trang gồm `id`, `name`, `categoryId`, `categoryName`, `maxGuests`, `activeRoomCount`. Dùng lại `AvailabilityService.SellableRooms()` để lọc theo trạng thái homestay/loại phòng/phòng, sức chứa và hợp đồng hiện hành. Số phòng là số đang kinh doanh, tồn và giá theo ngày vẫn qua `/availability` và kiểm lại lúc tạo đơn. Homestay không tồn tại trả 404 ProblemDetails qua DesktopExceptionFilter, không có loại phù hợp trả 200 với mảng rỗng. StaffPolicy giữ Kế toán 403, thiếu Bearer 401. Không đổi HomestaysAsync, StaffHomestayOption hay màn web.
 
 ## Phạm vi commit
 
