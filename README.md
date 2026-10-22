@@ -160,11 +160,24 @@ Toàn bộ có trên `/swagger` trong Development. 10 endpoint cũ bên dưới 
 | GET / PUT | `/api/desktop/customers`, `/{id}` | Tìm, xem, sửa khách qua CustomerService | Consultant/Manager/Administrator |
 | GET / POST | `/api/desktop/receipts`, `/{paymentId}/file`, `/{paymentId}/{approve,reject}` | Đọc bill, file riêng tư, duyệt/từ chối | Accounting; service kiểm quyền ghi |
 | GET | `/api/desktop/reports/{management,bookings,financial,employees,homestays}` | Báo cáo theo ReportQuery | Management |
+| POST / GET | `/api/desktop/owner/auth/login`, `/api/desktop/owner/auth/me` | SĐT + mật khẩu → JWT / hồ sơ chủ | Login công khai; Owner đã duyệt |
+| GET | `/api/desktop/owner/{dashboard,schedule,calendar}` | Tổng quan, lịch nhận/trả, lịch tháng riêng của chủ | ApprovedOwner |
+| GET / POST | `/api/desktop/owner/bookings`, `/{id}`, `/{id}/{confirm,reject,check-in,complete,no-show}` | Đơn đã cọc của mình, mọi thao tác như web | ApprovedOwner |
+| GET / POST / PUT / DELETE | `/api/desktop/owner/homestays/...` | Editor, vị trí, tiện nghi, loại phòng/phòng/giá, ảnh, chính sách, giấy tờ; multipart upload | ApprovedOwner, đúng sở hữu |
+| POST / DELETE | `/api/desktop/owner/homestays/{id}/rooms/{roomId}/blocks` và `/{blockId}` | Khóa/mở đêm qua RoomBlockService | ApprovedOwner, đúng sở hữu |
+| GET / POST | `/api/desktop/owner/reviews`, `/{id}/reply` | Xem/trả lời đánh giá | ApprovedOwner, đúng sở hữu |
+| GET / POST | `/api/desktop/owner/settlements`, `/{id}`, `/{id}/{confirm,discrepancy}` | Đối soát đã gửi, xác nhận/phản hồi sai lệch | ApprovedOwner, đúng sở hữu |
+| GET | `/api/desktop/owner/documents/{id}/file` | Giấy tờ riêng tư qua endpoint kiểm quyền | ApprovedOwner, đúng sở hữu |
 
 - Các API ghi trong nhóm cũ dùng cookie đăng nhập nên phải gửi token chống giả mạo qua header `RequestVerificationToken` (lấy từ input `__RequestVerificationToken` trên trang); thiếu token trả 400. Chưa đăng nhập trả 401, sai vai trò trả 403, đơn/phòng của chủ khác trả 404.
-- API desktop chỉ nhận Bearer, không nhận cookie; không cần antiforgery. Production cần `DesktopApi__SigningKey` bí mật ≥32 byte; thiếu khóa thì login desktop trả 503, web vẫn chạy.
+- API desktop gồm **43 endpoint nhân viên + 42 endpoint chủ**, chỉ nhận Bearer, không nhận cookie; không cần antiforgery. Production cần `DesktopApi__SigningKey` bí mật ≥32 byte; thiếu khóa thì login desktop trả 503, web vẫn chạy.
+- Token hai nhóm gọi chéo → 403; ID của chủ khác → 404; khóa tài khoản/đổi stamp/hủy duyệt thu hồi token ngay. Bảng endpoint/request/curl đầy đủ ở [mục 8](docs/api-va-backend.md#8-api-cho-ứng-dụng-desktop), kết quả kiểm tra ở [báo cáo API chủ](docs/api/desktop-api-owner-report.md).
 - Lịch phòng của chủ (`/Owner/Calendar`) gọi API khóa/mở ngày bằng AJAX, không tải lại trang; không có JavaScript thì form vẫn gửi thường.
 - Đặt phòng, hủy/đổi đơn của khách và các thao tác nội bộ khác đi qua form MVC có antiforgery.
+
+### API desktop chạy độc lập trên Windows
+
+[`HomestayBooking.DesktopHost`](HomestayBooking.DesktopHost/README.md) dùng lại đủ 85 endpoint desktop và Identity thật, lưu một file SQLite, không cần SQL Server/Mac/mạng khi sử dụng. Chạy `dotnet run --project HomestayBooking.DesktopHost`, mặc định `http://localhost:5080/swagger`; lần đầu nạp dữ liệu demo, lần sau dùng lại file. Hướng dẫn publish Windows self-contained, tài khoản, reset và LAN ở [README của host](HomestayBooking.DesktopHost/README.md); [báo cáo kiểm tra](docs/api/desktop-host-report.md).
 
 ## 6. Kiểm thử
 

@@ -33,7 +33,7 @@ public static partial class SeedData
 
     private static async Task SeedDemoImagesAsync(ApplicationDbContext db, IServiceProvider services)
     {
-        if (services.GetService(typeof(IWebHostEnvironment)) is not IWebHostEnvironment env || !env.IsDevelopment())
+        if (services.GetService(typeof(IWebHostEnvironment)) is not IWebHostEnvironment env)
         {
             return;
         }

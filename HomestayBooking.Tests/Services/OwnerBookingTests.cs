@@ -57,9 +57,11 @@ public sealed class OwnerBookingTests : IDisposable
         {
             User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(AppClaimTypes.PersonId, personId.ToString())], "test")),
         };
-        return new OwnerBookingsController(_host.Db, _host.Bookings(), localizer.Object, _host.Clock,
-            new ChangeRequestUiService(_host.Db, _host.Changes(), new EphemeralDataProtectionProvider(), _host.Clock,
-                Microsoft.Extensions.Options.Options.Create(_host.Options)))
+        var bookings = _host.Bookings();
+        var changeUi = new ChangeRequestUiService(_host.Db, _host.Changes(), new EphemeralDataProtectionProvider(), _host.Clock,
+            Microsoft.Extensions.Options.Options.Create(_host.Options));
+        return new OwnerBookingsController(new OwnerBookingQueryService(_host.Db, bookings, _host.Clock, changeUi),
+            bookings, localizer.Object)
         {
             ControllerContext = new ControllerContext { HttpContext = http },
             TempData = new TempDataDictionary(http, Mock.Of<ITempDataProvider>()),

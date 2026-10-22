@@ -20,25 +20,15 @@ namespace HomestayBooking.Web.Areas.Owner.Controllers;
 [Authorize(Policy = AppPolicies.ApprovedOwner)]
 public class BookingsController : Controller
 {
-    private readonly ApplicationDbContext _db;
+    private readonly OwnerBookingQueryService _queries;
     private readonly BookingService _bookings;
     private readonly IStringLocalizer<SharedResource> _localizer;
-    private readonly TimeProvider _clock;
-    private readonly ChangeRequestUiService _changeUi;
 
-    public BookingsController(ApplicationDbContext db, BookingService bookings, IStringLocalizer<SharedResource> localizer, TimeProvider clock, ChangeRequestUiService changeUi)
+    public BookingsController(OwnerBookingQueryService queries, BookingService bookings, IStringLocalizer<SharedResource> localizer)
     {
-        _db = db;
+        _queries = queries;
         _bookings = bookings;
         _localizer = localizer;
-        _clock = clock;
-        _changeUi = changeUi;
-    }
-
-    private IQueryable<Booking> OwnBookings()
-    {
-        var personId = User.PersonId();
-        return _db.Bookings.Where(b => b.Homestay.Owner.PersonId == personId && b.DepositedAt != null);
     }
 
     private Actor CurrentActor => new(ActorType.Owner, User.FindFirstValue(ClaimTypes.NameIdentifier));
@@ -47,59 +37,15 @@ public class BookingsController : Controller
     public async Task<IActionResult> Index(BookingStatus? status, string? q, int? page, DateOnly? arrivals = null)
     {
         if (arrivals is { } date) return RedirectToAction("Index", "Schedule", new { date = date.ToString("yyyy-MM-dd") });
-        var query = OwnBookings().AsNoTracking();
-        if (status is not null)
-        {
-            query = query.Where(b => b.Status == status);
-        }
-        if (!string.IsNullOrWhiteSpace(q))
-        {
-            var term = q.Trim();
-            var phone = PhoneNumberNormalizer.ToE164(term);
-            query = query.Where(b => b.Code.Contains(term) || b.ContactName.Contains(term) || (phone != null && b.ContactPhone == phone));
-        }
-
-        var rows = query
-            // Chờ xác nhận → sắp ở / đang ở (CheckIn gần nhất trước) → đã đóng (CheckIn gần đây trước)
-            .OrderBy(b => b.Status == BookingStatus.Deposited ? 0
-                : b.Status == BookingStatus.Confirmed || b.Status == BookingStatus.CheckedIn ? 1 : 2)
-            .ThenBy(b => b.Status == BookingStatus.Deposited || b.Status == BookingStatus.Confirmed || b.Status == BookingStatus.CheckedIn
-                ? b.CheckIn : DateOnly.MaxValue)
-            .ThenByDescending(b => b.CheckIn)
-            .Select(b => new OwnerBookingRow(
-                b.Id, b.Code, b.Status, b.ContactName, b.ContactPhone, b.Homestay.Name, b.RoomType.Name, b.Room.RoomCode,
-                b.CheckIn, b.CheckOut, b.Guests, b.TotalAmount, b.ConfirmDeadlineAt));
-
         ViewData["Status"] = status;
         ViewData["Query"] = q;
-        return View(await PaginatedList<OwnerBookingRow>.CreateAsync(rows, page));
+        return View(await _queries.SearchAsync(User.PersonId(), status, q, page));
     }
 
     public async Task<IActionResult> Details(int id)
     {
-        var booking = await OwnBookings().AsNoTracking()
-            .Include(b => b.Homestay)
-            .Include(b => b.RoomType)
-            .Include(b => b.Room)
-            .Include(b => b.Nights)
-            .Include(b => b.Histories)
-            .SingleOrDefaultAsync(b => b.Id == id);
-        if (booking is null)
-        {
-            return NotFound();
-        }
-
-        // Phòng để đổi khi xác nhận (Q8): cùng tiêu chí "trống" với lúc đặt
-        var freeIds = booking.Status == BookingStatus.Deposited
-            ? await _bookings.FreeRoomIdsAsync(booking.RoomTypeId, booking.CheckIn, booking.CheckOut)
-            : [];
-        var freeRooms = await _db.Rooms.AsNoTracking()
-            .Where(r => freeIds.Contains(r.Id))
-            .OrderBy(r => r.RoomCode)
-            .Select(r => new OwnerRoomOption(r.Id, r.RoomCode))
-            .ToListAsync();
-        var history = await _changeUi.HistoryAsync([booking.Id]);
-        return View(new OwnerBookingDetailsViewModel(booking, freeRooms, VietnamTime.Today(_clock)) { ChangeHistory = history });
+        var model = await _queries.DetailsAsync(id, User.PersonId());
+        return model is null ? NotFound() : View(model);
     }
 
     [HttpPost]
@@ -113,7 +59,7 @@ public class BookingsController : Controller
         if (string.IsNullOrEmpty(reason) || reason.Length > 500)
         {
             TempData["Error"] = _localizer["Vui lòng nhập lý do từ chối (tối đa 500 ký tự)."].Value;
-            return await OwnBookings().AnyAsync(b => b.Id == id) ? RedirectToAction(nameof(Details), new { id }) : NotFound();
+            return (await _queries.FindAsync(id, User.PersonId())) is not null ? RedirectToAction(nameof(Details), new { id }) : NotFound();
         }
         return await RunAsync(id, "Đã từ chối đơn {0}. Fuji sẽ hoàn 100% tiền cọc cho khách.",
             b => _bookings.ChangeStatusAsync(b, BookingStatus.Rejected, CurrentActor, reason));
@@ -134,7 +80,7 @@ public class BookingsController : Controller
     /// <summary>Đơn không thuộc homestay của mình → 404, không lộ là đơn có tồn tại.</summary>
     private async Task<IActionResult> RunAsync(int id, string successMessage, Func<Booking, Task> action)
     {
-        var booking = await OwnBookings().SingleOrDefaultAsync(b => b.Id == id);
+        var booking = await _queries.FindAsync(id, User.PersonId());
         if (booking is null)
         {
             return NotFound();

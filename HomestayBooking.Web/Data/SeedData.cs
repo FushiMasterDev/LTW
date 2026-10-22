@@ -175,9 +175,6 @@ public static partial class SeedData
     {
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-
         if (db.Database.IsRelational())
         {
             var options = scope.ServiceProvider.GetRequiredService<IOptions<DatabaseOptions>>().Value;
@@ -204,21 +201,26 @@ public static partial class SeedData
             await db.Database.EnsureCreatedAsync();
         }
 
+        var environment = scope.ServiceProvider.GetService<IWebHostEnvironment>();
+        await SeedAsync(scope.ServiceProvider, environment?.IsDevelopment() == true);
+    }
+
+    /// <summary>Seed demo đầy đủ vào schema đã tạo. Bên gọi quản lý scope/transaction; không áp migration SQL Server.</summary>
+    public static Task SeedDevelopmentDataAsync(IServiceProvider scopedServices) => SeedAsync(scopedServices, includeDemo: true);
+
+    private static async Task SeedAsync(IServiceProvider services, bool includeDemo)
+    {
+        var db = services.GetRequiredService<ApplicationDbContext>();
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         await SeedRolesAsync(roleManager);
         await SeedCategoriesAsync(db);
-
-        // Dữ liệu nền dùng ở mọi môi trường; chỉ Development được tạo dữ liệu demo.
-        var environment = scope.ServiceProvider.GetService<IWebHostEnvironment>();
-        if (environment is null || !environment.IsDevelopment())
-        {
-            return;
-        }
-
+        if (!includeDemo) return;
         await SeedPeopleAsync(db, userManager);
         await SeedHomestaysAsync(db);
-        await SeedSampleBookingsAsync(db, scope.ServiceProvider);
-        await SeedOperationsAsync(db, scope.ServiceProvider);
-        await SeedDemoImagesAsync(db, scope.ServiceProvider);
+        await SeedSampleBookingsAsync(db, services);
+        await SeedOperationsAsync(db, services);
+        await SeedDemoImagesAsync(db, services);
     }
 
     private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)

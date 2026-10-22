@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Security.Claims;
 using System.Threading.RateLimiting;
+using HomestayBooking.Web.Data;
 using HomestayBooking.Web.Identity;
 using HomestayBooking.Web.Models;
 using HomestayBooking.Web.Models.Entities;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
 
 namespace HomestayBooking.Web.DesktopApi;
 
@@ -47,11 +49,20 @@ public static class DesktopApiRegistration
                         var user = await signIn.ValidateSecurityStampAsync(context.Principal);
                         if (user is null || await signIn.UserManager.IsLockedOutAsync(user))
                         { context.Fail("Account unavailable or security stamp changed."); return; }
-                        // Refresh employment/role claims too, so termination or a position change is effective immediately.
+                        // Refresh current claims, retaining the login's role family so a role change cannot repurpose an old token.
                         var factory = context.HttpContext.RequestServices.GetRequiredService<IUserClaimsPrincipalFactory<ApplicationUser>>();
                         var fresh = await factory.CreateAsync(user);
-                        if (!fresh.IsInRole(AppRoles.Employee) || !fresh.IsActiveEmployee())
-                        { context.Fail("Active employee required."); return; }
+                        var employeeToken = context.Principal!.IsInRole(AppRoles.Employee);
+                        var eligible = employeeToken
+                            ? fresh.IsInRole(AppRoles.Employee) && fresh.IsActiveEmployee()
+                            : context.Principal.IsInRole(AppRoles.Owner) && fresh.IsInRole(AppRoles.Owner)
+                                && fresh.IsApprovedOwner() && !fresh.IsInRole(AppRoles.Employee);
+                        if (eligible && !employeeToken)
+                        {
+                            var db = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+                            eligible = await db.Owners.AnyAsync(o => o.PersonId == user.PersonId && o.Person.Employee == null);
+                        }
+                        if (!eligible) { context.Fail("Active employee or approved owner required."); return; }
                         context.Principal = new ClaimsPrincipal(new ClaimsIdentity(fresh.Claims,
                             JwtBearerDefaults.AuthenticationScheme, identity.Value.ClaimsIdentity.UserNameClaimType, identity.Value.ClaimsIdentity.RoleClaimType));
                     },

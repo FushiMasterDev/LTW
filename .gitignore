@@ -493,3 +493,6 @@ HomestayBooking.Web/App_Data/
 .agents/
 .claude/
 skills-lock.json
+
+# Dữ liệu SQLite, file upload và khóa runtime của host desktop
+HomestayBooking.DesktopHost/App_Data/

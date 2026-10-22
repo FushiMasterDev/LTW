@@ -18,49 +18,16 @@ namespace HomestayBooking.Web.Areas.Owner.Controllers;
 [Authorize(Roles = AppRoles.Owner)]
 public class DashboardController : Controller
 {
-    private readonly ApplicationDbContext _db;
-    private readonly OwnerScheduleService _schedule;
-    private readonly TimeProvider _clock;
-
-    public DashboardController(ApplicationDbContext db, OwnerScheduleService schedule, TimeProvider clock)
-    {
-        _db = db;
-        _schedule = schedule;
-        _clock = clock;
-    }
+    private readonly OwnerDashboardService _dashboard;
+    public DashboardController(OwnerDashboardService dashboard) => _dashboard = dashboard;
 
     public async Task<IActionResult> Index()
     {
-        // Chủ homestay chỉ thấy dữ liệu của mình (NFR-04)
-        var personId = User.PersonId();
-        var owner = await _db.Owners.AsNoTracking()
-            .Where(o => o.PersonId == personId)
-            .Select(o => new
-            {
-                Registration = o.Registrations
-                    .OrderByDescending(r => r.CreatedAt)
-                    .Select(r => new { r.Status, r.ReviewNote })
-                    .FirstOrDefault(),
-                Homestays = o.Homestays
-                    .OrderBy(h => h.Name)
-                    .Select(h => new OwnerHomestayRow(h.Id, h.Name, h.Area.Name, h.RoomTypes.SelectMany(t => t.Rooms).Count(), h.Status))
-                    .ToList(),
-            })
-            .SingleOrDefaultAsync();
-        if (owner is null)
-        {
-            return Forbid();
-        }
-
-        var today = VietnamTime.Today(_clock);
-        var summary = User.IsApprovedOwner()
-            ? await _schedule.OwnerBookingSummaryAsync(new Actor(ActorType.Owner, User.FindFirstValue(ClaimTypes.NameIdentifier))) : null;
-        return View(new OwnerDashboardViewModel(
-            owner.Registration?.Status, owner.Registration?.ReviewNote, owner.Homestays)
-        {
-            ArrivalsToday = summary?.ArrivalsToday, PendingConfirmation = summary?.PendingConfirmation, OverdueConfirmation = summary?.OverdueConfirmation
-        });
+        var model = await _dashboard.ReadAsync(User.PersonId(), User.IsApprovedOwner(),
+            new Actor(ActorType.Owner, User.FindFirstValue(ClaimTypes.NameIdentifier)));
+        return model is null ? Forbid() : View(model);
     }
+
 }
 
 public record OwnerHomestayRow(int Id, string Name, string AreaName, int RoomCount, HomestayStatus Status);

@@ -288,7 +288,7 @@ public static partial class SeedData
             };
         }
 
-        await using var transaction = db.Database.IsRelational() ? await db.Database.BeginTransactionAsync() : null;
+        await using var transaction = db.Database.IsRelational() && db.Database.CurrentTransaction is null ? await db.Database.BeginTransactionAsync() : null;
         var requests = new List<BookingChangeRequest>();
         var first = bookings[0];
         requests.Add(Quote(first, ChangeRequestType.ChangeDates, first.CheckIn.AddDays(7), first.CheckOut.AddDays(7),

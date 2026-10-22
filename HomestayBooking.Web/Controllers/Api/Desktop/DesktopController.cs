@@ -14,7 +14,7 @@ namespace HomestayBooking.Web.Controllers.Api.Desktop;
 
 /// <summary>Bearer only. Ngày yyyy-MM-dd, mọi timestamp UTC (hậu tố Z). Không nhận cookie hoặc yêu cầu antiforgery.</summary>
 [ApiController]
-[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = AppPolicies.Employee)]
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 [IgnoreAntiforgeryToken]
 [ServiceFilter(typeof(DesktopExceptionFilter))]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -23,7 +23,11 @@ namespace HomestayBooking.Web.Controllers.Api.Desktop;
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
-public abstract class DesktopController(ApplicationDbContext db) : ControllerBase
+public abstract class DesktopApiController : ControllerBase;
+
+/// <summary>Giữ nguyên policy nhân viên cho toàn bộ endpoint đợt 1.</summary>
+[Authorize(Policy = AppPolicies.Employee)]
+public abstract class DesktopController(ApplicationDbContext db) : DesktopApiController
 {
     protected ApplicationDbContext Db { get; } = db;
     protected async Task<Actor> CurrentActorAsync() => new(ActorType.Employee,
