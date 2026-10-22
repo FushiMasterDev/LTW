@@ -154,7 +154,7 @@ launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.fuji.homestay
 launchctl print "gui/$(id -u)/com.fuji.homestay"
 ```
 
-Funnel tự phục hồi nhờ cấu hình `--bg` của Tailscale, không cần LaunchAgent cloudflared. LaunchAgent app chạy `run.sh` foreground, KeepAlive giám sát đúng PID dotnet. `stop.sh` tạo cờ bảo trì để app không được tự bật lại; `start.sh` xóa cờ đó. Không xóa `start.lock` khi còn lượt khởi động; nếu máy tắt đột ngột, kiểm PID/cổng trước khi xóa lock cũ.
+Funnel tự phục hồi nhờ cấu hình `--bg` của Tailscale, không cần LaunchAgent cloudflared. LaunchAgent app chạy `run.sh` foreground, KeepAlive giám sát đúng PID dotnet. `stop.sh` tạo cờ bảo trì để app không được tự bật lại; `start.sh` xóa cờ đó. Khi LaunchAgent đã nạp, `start.sh` (kể cả bên trong `update.sh`) nhờ launchd khởi động bằng `launchctl kickstart -k` thay vì tự chạy `run.sh`, nên app luôn được launchd giám sát sau mỗi lần cập nhật. Không xóa `start.lock` khi còn lượt khởi động; nếu máy tắt đột ngột, kiểm PID/cổng trước khi xóa lock cũ.
 
 Gỡ tự chạy (không xóa dữ liệu):
 
