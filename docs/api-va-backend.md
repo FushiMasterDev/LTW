@@ -72,7 +72,7 @@ flowchart TD
 
 ### Identity và hai cổng đăng nhập
 
-ASP.NET Core Identity dùng `ApplicationUser`, `IdentityRole`, bảng AspNetUsers/AspNetRoles và **cookie là scheme mặc định cho web và 10 API cũ**. Nhóm `/api/desktop` đăng ký thêm JWT Bearer, chỉ dành cho nhân viên (phần 8). Cột token/login ngoài của Identity không đồng nghĩa đang có API JWT hoặc Google login hoạt động; Program.cs chưa cấu hình Google authentication. Khách tự đăng ký chưa có bước OTP.
+ASP.NET Core Identity dùng `ApplicationUser`, `IdentityRole`, bảng AspNetUsers/AspNetRoles và **cookie là scheme mặc định cho web và 10 API cũ**. Nhóm `/api/desktop` đăng ký thêm JWT Bearer cho nhân viên và chủ homestay đã duyệt (phần 8). Cột token/login ngoài của Identity không đồng nghĩa đang có API JWT hoặc Google login hoạt động; Program.cs chưa cấu hình Google authentication. Khách tự đăng ký chưa có bước OTP.
 
 | Cổng | Định danh gửi form | Cách tìm tài khoản |
 |---|---|---|
@@ -548,7 +548,11 @@ rm -r "$FUJI_DEMO_TMP"
 
 ## 8. API cho ứng dụng desktop
 
-43 endpoint ở `/api/desktop/...` dành cho WinForms nhân viên Fuji. Đây là lớp DTO/HTTP gọi các service hiện có; không thêm nghiệp vụ hoặc CORS. Web MVC và 10 API ở phần 3 vẫn dùng hợp đồng cũ. Các API desktop kế thừa `DesktopController`, chỉ nhận Bearer, không chấp nhận cookie Identity, và bỏ antiforgery riêng cho nhóm này.
+85 endpoint desktop: 43 endpoint nhân viên ở `/api/desktop/...` và 42 endpoint chủ ở `/api/desktop/owner/...`. Đây là lớp DTO/HTTP gọi các service hiện có; không thêm nghiệp vụ hoặc CORS. Web MVC và 10 API ở phần 3 vẫn dùng hợp đồng cũ. Các API desktop kế thừa `DesktopApiController` qua `DesktopController` (nhân viên) hoặc `DesktopOwnerController` (chủ), chỉ nhận Bearer, không chấp nhận cookie Identity, và bỏ antiforgery riêng cho nhóm này.
+
+### Host SQLite độc lập trên Windows
+
+Project [`HomestayBooking.DesktopHost`](../HomestayBooking.DesktopHost/README.md) phục vụ riêng đủ 85 endpoint bên dưới từ controller/service/Identity của Web, mặc định `http://localhost:5080`, Swagger `/swagger`. Chạy `dotnet run --project HomestayBooking.DesktopHost`; không cần SQL Server hay máy Mac, bản publish self-contained chạy offline. Dữ liệu demo đầy đủ nạp một lần vào `App_Data/fuji-desktop.db` cạnh executable; upload/bill/giấy tờ lưu dưới `App_Data`. Web vẫn dùng SQL Server và pipeline cũ. Cách publish/reset/cấu hình JWT/LAN cùng giới hạn ảnh static ở [README host](../HomestayBooking.DesktopHost/README.md), khác biệt SQLite và bằng chứng kiểm thử ở [báo cáo host](api/desktop-host-report.md).
 
 ### Đăng nhập và vòng đời token
 
@@ -564,7 +568,7 @@ rm -r "$FUJI_DEMO_TMP"
 
 Gửi `Authorization: Bearer <accessToken>` cho các request sau. `GET /api/desktop/auth/me` trả cùng cấu trúc employee. Không tạo cookie, không có refresh token; khi hết hạn đăng nhập lại. Sai mã/sai mật khẩu, khách/chủ, tài khoản không Active hoặc bị khóa đều trả 401 với cùng câu: “Thông tin đăng nhập không đúng hoặc tài khoản tạm thời không thể đăng nhập.” Identity vẫn đếm sai và khóa tạm giống web. API gọi `CheckPasswordSignInAsync` với `lockoutOnFailure: true` và dựng claim bằng `IUserClaimsPrincipalFactory<ApplicationUser>`; role, NameIdentifier, person_id và employee_position giữ nguyên tên claim, không map sang tên khác.
 
-Token có security stamp. Mỗi request kiểm lại trạng thái Active, stamp và lockout; sau đó dựng lại claim nhân viên, nên khóa tài khoản/đổi stamp/nghỉ việc/đổi chức vụ có hiệu lực ngay. Không ghi token hoặc mật khẩu vào log. `AccountController` hiện không ghi sự kiện đăng nhập vào AccountActivityLog; desktop giữ cùng hành vi.
+Token có security stamp. Mỗi request kiểm lại trạng thái Active, stamp và lockout; sau đó dựng lại claim từ factory. Token nhân viên vẫn yêu cầu nhân viên đang làm việc; token chủ vẫn yêu cầu Owner đã duyệt, không là nhân viên. Khóa tài khoản/đổi stamp/nghỉ việc/đổi chức vụ/hủy duyệt có hiệu lực ngay. Token cũ không được chuyển sang nhóm vai trò khác khi tài khoản đổi vai trò. Không ghi token hoặc mật khẩu vào log. `AccountController` hiện không ghi sự kiện đăng nhập vào AccountActivityLog; desktop giữ cùng hành vi.
 
 Section `DesktopApi`: `SigningKey` tối thiểu 32 byte UTF-8 (HS256), `Issuer` mặc định `FujiHomestay`, `Audience` mặc định `FujiDesktop`, `TokenMinutes` mặc định 60 (1–1440). Khóa thật nằm trong user-secrets hoặc `DesktopApi__SigningKey`, không commit. Development/Testing thiếu khóa sinh ngẫu nhiên mỗi lần chạy; khởi động lại làm token cũ hết hiệu lực. Production thiếu/sai khóa hoặc cấu hình không hợp lệ: web vẫn chạy, desktop bị vô hiệu hóa, login trả 503 ProblemDetails và log cảnh báo. `LoginPermitLimit` mặc định 10, `LoginWindowSeconds` mặc định 60; fixed window theo IP, chỉ áp POST desktop login. Giới hạn có thể cấu hình qua biến `DesktopApi__...`. Mẫu và hướng dẫn: [runbook Mac](deploy/self-host-mac.md).
 
@@ -574,7 +578,7 @@ Danh sách trả `{ "items": [...], "page": 1, "totalPages": 3, "totalCount": 24
 
 ### Endpoint và quyền
 
-Mọi endpoint trừ login yêu cầu nhân viên đang làm việc, tài khoản Active và Bearer hợp lệ.
+Các endpoint nhân viên trong bảng sau (trừ login) yêu cầu nhân viên đang làm việc, tài khoản Active và Bearer hợp lệ.
 
 | Method | Đường dẫn sau `/api/desktop` | Service / dữ liệu | Quyền |
 |---|---|---|---|
@@ -606,6 +610,73 @@ Mọi endpoint trừ login yêu cầu nhân viên đang làm việc, tài khoả
 
 Form đặt hộ lấy homestay từ `/booking-homestays`, rồi gọi `/booking-homestays/{homestayId}/room-types`. Mỗi phần tử gồm `id`, `name`, `categoryId`, `categoryName`, `maxGuests`, `activeRoomCount`. Service dùng lại `AvailabilityService.SellableRooms()` không truyền ngày: homestay Active có hợp đồng Active đang hiệu lực, loại phòng Active có sức chứa ít nhất một khách và có phòng Active. `activeRoomCount` đếm phòng đang kinh doanh; `/availability` kiểm tồn phòng và giá theo ngày lưu trú, thao tác tạo đơn vẫn kiểm lại toàn bộ điều kiện. Homestay tồn tại nhưng không có loại phù hợp trả `200 []`; ID không tồn tại trả 404 ProblemDetails. Kế toán trả 403, thiếu Bearer trả 401.
 
+### API chủ homestay (đợt 2)
+
+`POST /api/desktop/owner/auth/login` nhận `{"phoneNumber":"0912000001","password":"<mật khẩu>"}`. SĐT được chuẩn hóa qua `FindForPhoneLoginAsync`, mật khẩu/khóa/không Active được xử lý bằng SignInManager giống web. Chỉ Owner đạt `AppPolicies.ApprovedOwner`, không có hồ sơ nhân viên, được cấp token. Khách, nhân viên, chủ chưa duyệt, SĐT/mật khẩu sai và tài khoản khóa đều nhận 401 với cùng thông báo của login nhân viên. Rate limiter `DesktopLogin` dùng chung giới hạn IP cho cả hai cổng login.
+
+```json
+{
+  "accessToken": "<JWT>",
+  "expiresAt": "2026-10-22T07:00:00Z",
+  "owner": {"id": 1, "fullName": "Chủ homestay", "phoneNumber": "+84912000001"}
+}
+```
+
+`GET /api/desktop/owner/auth/me` trả đối tượng `owner`. Dùng chung cấu hình khóa, issuer, audience và thời hạn `DesktopApi`; không tạo cookie, không có refresh token. Mọi endpoint chủ được bảo vệ bằng Bearer và `ApprovedOwner`; token nhân viên gọi nhóm chủ → 403, token chủ gọi nhóm nhân viên → 403, chỉ gửi cookie → 401. Dashboard web cho phép chủ chưa duyệt xem tiến độ hồ sơ vẫn giữ nguyên; desktop yêu cầu duyệt ngay từ login.
+
+Mọi ID ngoài sở hữu của chủ hiện tại trả 404 giống ID không tồn tại, kể cả ID con nằm dưới homestay của mình. Đơn chưa cọc và đối soát nháp cũng trả 404. Không nhận ownerId/accountId của người khác từ client. Các thao tác dưới đây chỉ là lớp HTTP gọi service; kiểm quyền/trạng thái/ghi audit/thông báo/transaction của web vẫn chạy.
+
+Đường dẫn trong bảng tính sau `/api/desktop/owner`. Tất cả trừ login yêu cầu **ApprovedOwner**.
+
+| Method | Đường dẫn | Request / kết quả và service |
+|---|---|---|
+| POST | `/auth/login` | `{phoneNumber,password}`; JWT + owner, Anonymous + DesktopLogin |
+| GET | `/auth/me` | Hồ sơ chủ theo claim hiện tại |
+| GET | `/dashboard?page=` | OwnerDashboardService: trạng thái hồ sơ, homestay DesktopPage, số đơn chờ/quá hạn/nhận hôm nay |
+| GET | `/schedule?period=today&homestayId=&date=` | OwnerScheduleService: today/tomorrow/week; date tùy chọn yyyy-MM-dd, khoảng gồm hai đầu |
+| GET | `/bookings?status=&q=&page=` | OwnerBookingQueryService: chỉ đơn đã cọc, cùng tìm SĐT/tên/mã và thứ tự ưu tiên như web |
+| GET | `/bookings/{id}` | Chi tiết, freeRooms, today, nights, history, changes; không có entity/định danh nội bộ nhân viên |
+| POST | `/bookings/{id}/confirm` | `{roomId:null}` hoặc `{}`; BookingService.ConfirmAsync, trả `{id,code,status}` |
+| POST | `/bookings/{id}/reject` | `{reason}` 1–500 ký tự; từ chối/hoàn cọc qua BookingService |
+| POST | `/bookings/{id}/check-in` | Nhận phòng; giữ kiểm ngày nhận của service |
+| POST | `/bookings/{id}/complete` | Hoàn thành đơn đang ở |
+| POST | `/bookings/{id}/no-show` | Không đến từ ngày sau ngày nhận phòng |
+| GET | `/calendar?homestayId=&roomId=&month=2026-11` | Lưới tuần của tháng như web, RoomBlockService; không có roomId trả mọi phòng, có roomId lọc đêm của phòng đó |
+| POST | `/homestays/{id}/rooms/{roomId}/blocks` | `{start,end,reason,note?}`; end không tính đêm; 201, reason OtherChannel/Maintenance; trùng 409 ProblemDetails + conflicts |
+| DELETE | `/homestays/{id}/rooms/{roomId}/blocks/{blockId}` | Mở khóa từ hôm nay, kiểm cả home/room/block; 204 |
+| GET | `/homestays?q=&page=` | HomestayContentService.OwnerHomestaysAsync, mọi trạng thái, DesktopPage |
+| GET | `/homestays/{id}` | Editor: thông tin, vị trí, roomTypes/rooms/prices, images, amenities, categories, policies, documents |
+| GET | `/homestays/areas?page=` | Khu vực cho form vị trí, cùng nguồn AvailabilityService như web; DesktopPage |
+| PUT | `/homestays/{id}/content` | `{name,descriptionHtml?,checkinGuideHtml?,contactPhone,checkinTime,checkoutTime}`; giữ tiện nghi, làm sạch HTML/SĐT qua service |
+| PUT | `/homestays/{id}/location` | `{address,areaId,latitude?,longitude?}`; trả status và upcomingBookingCodes; thay vị trí có thể về PendingReview |
+| PUT | `/homestays/{id}/amenities` | `{amenityIds:[1,2]}`; giữ các trường nội dung khác |
+| POST | `/homestays/{id}/room-types` | `{name,categoryId,maxGuests,areaM2?,description?,weekdayPrice,weekendPrice,holidayPrice}`; RoomService, 201 + id |
+| PUT | `/homestays/{id}/room-types/{typeId}` | `{name,categoryId,maxGuests,areaM2?,description?}` |
+| PUT | `/homestays/{id}/room-types/{typeId}/active` | `{active}`; trả upcomingBookingCodes |
+| PUT | `/homestays/{id}/room-types/{typeId}/prices` | `{dayType,effectiveFrom,price}`; dayType Weekday/Weekend/Holiday, chỉ sửa giá chưa có hiệu lực |
+| POST | `/homestays/{id}/room-types/{typeId}/rooms` | `{code}`; 201 + phòng |
+| PUT | `/homestays/{id}/rooms/{roomId}` | `{code}`; đổi mã phòng |
+| PUT | `/homestays/{id}/rooms/{roomId}/active` | `{active}`; không tắt phòng bán cuối cùng; trả upcomingBookingCodes |
+| POST | `/homestays/{id}/images` | multipart: file, typeId?, cover, sortOrder; HomestayImageService, 201 |
+| PUT | `/homestays/{id}/images/{imageId}` | `{typeId:null,sortOrder:0}`; thay liên kết loại phòng/thứ tự |
+| POST | `/homestays/{id}/images/{imageId}/cover` | Chọn ảnh bìa |
+| DELETE | `/homestays/{id}/images/{imageId}` | Không xóa bìa duy nhất của homestay Active; 204 |
+| PUT | `/homestays/{id}/policies` | `{scope,name,rules:[{minDaysBefore,refundPercent}]}`; scope All/Holiday, thay phiên bản qua HomestayPolicyService |
+| DELETE | `/homestays/{id}/policies/{scope}` | Gỡ chính sách riêng theo All/Holiday, giữ snapshot đơn cũ; 204 |
+| POST | `/homestays/{id}/documents` | multipart: file, type (BusinessLicense/FireSafety/PropertyPhoto/Other), expiry?; HomestayDocumentService, 201 + metadata/link riêng tư |
+| DELETE | `/homestays/{id}/documents/{documentId}` | Chỉ nháp/chờ duyệt; giữ file lịch sử như web; 204 |
+| GET | `/documents/{id}/file` | OwnerRegistrationQueryService.OpenDocumentAsync; MIME và tên tải gốc, kiểm cả giấy tờ hồ sơ lịch sử |
+| GET | `/reviews?homestayId=&page=` | ReviewService.ListAsync, reviews DesktopPage + average/count; không hiện đánh giá ẩn |
+| POST | `/reviews/{id}/reply` | `{reply}` 1–1000 ký tự; ReviewService.ReplyAsync, văn bản thuần |
+| GET | `/settlements?status=&page=` | SettlementService.ListAsync; không có bảng nháp, DesktopPage |
+| GET | `/settlements/{id}` | SettlementService.DetailsAsync: snapshot, dòng đơn, khoản bù riêng, lịch sử |
+| POST | `/settlements/{id}/confirm` | SettlementService.ConfirmAsync, Sent → Confirmed |
+| POST | `/settlements/{id}/discrepancy` | `{note}` 1–500 ký tự; ReportDiscrepancyAsync, audit và thông báo kế toán |
+
+Danh sách độc lập dùng DesktopPage; mảng con trong editor/chi tiết/lịch là một tài liệu hoàn chỉnh, không phân trang riêng. `TimeOnly` là HH:mm:ss, ngày yyyy-MM-dd, timestamp UTC hậu tố Z; enum chỉ chuyển thành chữ trong DTO desktop. Sau upload giấy tờ pháp lý, client gọi lại editor để nhận trạng thái chờ duyệt mới. Editor trả đủ amenities/categories cho form chọn; chủ không có quyền thêm/xóa danh mục chung hoặc tạo/xóa homestay vì web không có các thao tác đó.
+
+Ảnh công khai chỉ nhận JPG/PNG/WEBP; giấy tờ nhận thêm PDF. Cả hai dùng kiểm dung lượng 1 byte–5MB, tên, MIME, chữ ký và cấu trúc file hiện có; không tin đuôi/MIME của client. Giấy tờ ở ngoài wwwroot, DTO chỉ chứa `/api/desktop/owner/documents/{id}/file`, không có đường dẫn lưu trữ thật. Ảnh công khai giữ URL do service tạo. Swagger Development tách tag `Desktop Owner` và không yêu cầu Bearer cho hai endpoint login.
+
 ### Mã phản hồi
 
 | HTTP | Ý nghĩa desktop |
@@ -613,9 +684,9 @@ Form đặt hộ lấy homestay từ `/booking-homestays`, rồi gọi `/booking
 | 200 / 201 / 204 | Đọc/sửa thành công; tạo có Location; xóa hoặc duyệt/từ chối bill không có body |
 | 400 | ValidationProblemDetails của model binding/DataAnnotations, hoặc BookingException đã dịch bằng IStringLocalizer |
 | 401 | Thiếu/hết hạn/sai chữ ký/issuer/audience, cookie không có Bearer, tài khoản bị thu hồi; ProblemDetails JSON |
-| 403 | Không đạt policy chức vụ; ProblemDetails JSON |
+| 403 | Không đạt policy vai trò/chức vụ; ProblemDetails JSON |
 | 404 | Không có bản ghi/file/route desktop; ProblemDetails JSON |
-| 409 | Trùng giá trị duy nhất hoặc DbUpdateConcurrencyException; ProblemDetails JSON |
+| 409 | Trùng lịch khóa phòng (có `conflicts`), trùng giá trị duy nhất hoặc DbUpdateConcurrencyException; ProblemDetails JSON |
 | 429 | Vượt số lần POST login theo IP; ProblemDetails JSON và Retry-After |
 | 503 | Desktop chưa cấu hình hợp lệ; không làm web ngừng chạy |
 | 500 | Lỗi bất ngờ trong action desktop, ProblemDetails chung, không lộ exception; log nội bộ |
@@ -660,3 +731,32 @@ curl -i "$FUJI_DESKTOP_URL/api/desktop/bookings" \
 ```
 
 Tài liệu nền tảng chính thức dùng để đối chiếu cấu hình: [JWT Bearer và claim mapping](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/configure-jwt-bearer-authentication?view=aspnetcore-10.0), [rate limiter và OnRejected](https://learn.microsoft.com/en-us/aspnet/core/performance/rate-limit-samples?view=aspnetcore-10.0). Kết quả xác minh thực tế ở [báo cáo desktop](api/desktop-api-report.md).
+
+### Curl mẫu cho chủ (thực hiện trên database demo riêng)
+
+```bash
+FUJI_DESKTOP_URL='http://localhost:5016'
+read -r 'FUJI_OWNER_PHONE?SĐT chủ đã duyệt: '
+read -rs 'FUJI_OWNER_PASSWORD?Mật khẩu chủ: '; echo
+export FUJI_OWNER_PHONE FUJI_OWNER_PASSWORD
+FUJI_OWNER_LOGIN=$(python3 -c 'import json,os; print(json.dumps({"phoneNumber":os.environ["FUJI_OWNER_PHONE"],"password":os.environ["FUJI_OWNER_PASSWORD"]}))' |
+  curl -fsS "$FUJI_DESKTOP_URL/api/desktop/owner/auth/login" -H 'Content-Type: application/json' --data-binary @-)
+FUJI_OWNER_TOKEN=$(printf '%s' "$FUJI_OWNER_LOGIN" | python3 -c 'import json,sys; print(json.load(sys.stdin)["accessToken"])')
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/owner/auth/me" -H "Authorization: Bearer $FUJI_OWNER_TOKEN"
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/owner/dashboard" -H "Authorization: Bearer $FUJI_OWNER_TOKEN"
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/owner/schedule?period=week" -H "Authorization: Bearer $FUJI_OWNER_TOKEN"
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/owner/homestays?page=1" -H "Authorization: Bearer $FUJI_OWNER_TOKEN"
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/owner/bookings?status=Deposited&page=1" -H "Authorization: Bearer $FUJI_OWNER_TOKEN"
+# Thay các ID bằng dữ liệu thuộc chính chủ đang đăng nhập.
+FUJI_OWNER_HOME_ID=1
+FUJI_OWNER_BOOKING_ID=1
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/owner/calendar?homestayId=$FUJI_OWNER_HOME_ID&month=2026-11" -H "Authorization: Bearer $FUJI_OWNER_TOKEN"
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/owner/bookings/$FUJI_OWNER_BOOKING_ID/confirm"   -H "Authorization: Bearer $FUJI_OWNER_TOKEN" -H 'Content-Type: application/json' --data '{}'
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/owner/homestays/$FUJI_OWNER_HOME_ID/images"   -H "Authorization: Bearer $FUJI_OWNER_TOKEN" -F 'file=@/path/to/photo.png;type=image/png' -F 'cover=false' -F 'sortOrder=0'
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/owner/homestays/$FUJI_OWNER_HOME_ID/documents"   -H "Authorization: Bearer $FUJI_OWNER_TOKEN" -F 'file=@/path/to/license.pdf;type=application/pdf' -F 'type=BusinessLicense' -F 'expiry=2027-12-31'
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/owner/reviews?homestayId=$FUJI_OWNER_HOME_ID" -H "Authorization: Bearer $FUJI_OWNER_TOKEN"
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/owner/settlements" -H "Authorization: Bearer $FUJI_OWNER_TOKEN"
+unset FUJI_OWNER_TOKEN FUJI_OWNER_LOGIN FUJI_OWNER_PASSWORD FUJI_OWNER_PHONE
+```
+
+Kết quả kiểm tra đợt 2 và giới hạn xác minh: [báo cáo API chủ](api/desktop-api-owner-report.md).

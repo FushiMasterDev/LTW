@@ -43,117 +43,8 @@ var cookieSecurePolicy = builder.Environment.IsDevelopment()
     ? CookieSecurePolicy.SameAsRequest
     : CookieSecurePolicy.Always;
 
-builder.Services.AddDbContext<ApplicationDbContext>(o =>
-    o.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
-
-builder.Services.AddOptions<DatabaseOptions>()
-    .Bind(builder.Configuration.GetSection(DatabaseOptions.Section));
-
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>(o =>
-    {
-        o.Password.RequiredLength = 8;
-        // Email nằm ở PERSON_PROFILE và có thể trống; định danh đăng nhập là SĐT hoặc mã nhân viên (v5)
-        o.User.RequireUniqueEmail = false;
-        o.Lockout.MaxFailedAccessAttempts = 5;
-        o.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-    })
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddSignInManager<AppSignInManager>()
-    .AddClaimsPrincipalFactory<AppClaimsPrincipalFactory>()
-    .AddErrorDescriber<VietnameseIdentityErrorDescriber>()
-    .AddDefaultTokenProviders();
-
-builder.Services.AddAuthorizationBuilder()
-    .AddPolicy(AppPolicies.Employee, p => p
-        .RequireRole(AppRoles.Employee)
-        .RequireClaim(AppClaimTypes.EmployeePosition))
-    .AddPolicy(AppPolicies.Management, p => p
-        .RequireRole(AppRoles.Employee)
-        .RequireClaim(AppClaimTypes.EmployeePosition,
-            nameof(EmployeePosition.Manager), nameof(EmployeePosition.Administrator)))
-    .AddPolicy(AppPolicies.Accounting, p => p
-        .RequireRole(AppRoles.Employee)
-        .RequireClaim(AppClaimTypes.EmployeePosition,
-            nameof(EmployeePosition.Accountant), nameof(EmployeePosition.Manager), nameof(EmployeePosition.Administrator)))
-    .AddPolicy(AppPolicies.ApprovedOwner, p => p
-        .RequireRole(AppRoles.Owner)
-        .RequireClaim(AppClaimTypes.OwnerApproved, "true"));
-
-builder.Services.AddAuthorizationBuilder()
-    .AddPolicy(AppPolicies.ChangeRequestApprove, p => p.RequireRole(AppRoles.Employee)
-        .RequireClaim(AppClaimTypes.EmployeePosition, nameof(EmployeePosition.Manager)))
-    .AddPolicy(AppPolicies.ChangeRequestFinance, p => p.RequireRole(AppRoles.Employee)
-        .RequireClaim(AppClaimTypes.EmployeePosition, nameof(EmployeePosition.Accountant)));
-
-builder.Services.AddDesktopApi(builder.Configuration);
-builder.Services.AddPublicRateLimits(builder.Configuration);
-
-builder.Services.AddScoped<AccountLookupService>();
-builder.Services.AddScoped<AccountActivityLogger>();
-builder.Services.AddMemoryCache();
-builder.Services.AddSingleton<BookingCodeVerificationAttempts>();
-builder.Services.AddScoped<BookingCodeVerificationService>();
-
-// Nghiệp vụ đặt phòng và thanh toán (fuji_homestay_database_v1 mục 6, 7)
-builder.Services.AddOptions<BookingOptions>()
-    .Bind(builder.Configuration.GetSection(BookingOptions.Section))
-    .ValidateDataAnnotations()
-    .ValidateOnStart();
-builder.Services.Configure<BankAccountOptions>(builder.Configuration.GetSection(BankAccountOptions.Section));
-builder.Services.Configure<VoucherOptions>(builder.Configuration.GetSection(VoucherOptions.Section));
-builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddScoped<PricingService>();
-builder.Services.AddScoped<AccountingService>();
-builder.Services.AddScoped<BookingCodeGenerator>();
-builder.Services.AddScoped<RefundService>();
-builder.Services.AddScoped<NotificationService>();
-builder.Services.AddScoped<VoucherService>();
-builder.Services.AddScoped<BookingService>();
-builder.Services.AddScoped<BookingChangeRequestService>();
-builder.Services.AddScoped<ChangeRequestUiService>();
-builder.Services.AddScoped<BankMatchingService>();
-builder.Services.AddScoped<ReceiptReviewService>();
-builder.Services.AddScoped<VietQrService>();
-builder.Services.AddScoped<CustomerAccountService>();
-builder.Services.AddScoped<OwnerRegistrationService>();
-builder.Services.AddScoped<ContractService>();
-builder.Services.AddScoped<HomestayAccessService>();
-builder.Services.AddScoped<HomestayContentService>();
-builder.Services.AddScoped<RoomService>();
-builder.Services.AddScoped<HomestayImageService>();
-builder.Services.AddScoped<RoomBlockService>();
-builder.Services.AddScoped<HomestayDocumentService>();
-builder.Services.AddScoped<HomestayPolicyService>();
-builder.Services.AddScoped<HomestayReviewService>();
-builder.Services.AddScoped<AvailabilityService>();
-builder.Services.AddScoped<StaffBookingService>();
-builder.Services.AddScoped<CustomerService>();
-builder.Services.AddScoped<OverbookingService>();
-builder.Services.AddScoped<ReviewService>();
-builder.Services.AddScoped<IMessageSender, LoggingMessageSender>();
-builder.Services.AddScoped<MessageService>();
-builder.Services.AddScoped<ReminderService>();
-builder.Services.AddScoped<OwnerScheduleService>();
-builder.Services.AddScoped<SettlementService>();
-builder.Services.AddScoped<CompensationService>();
-builder.Services.AddScoped<ReportService>();
-builder.Services.AddScoped<AccountAdminService>();
-builder.Services.AddScoped<CatalogDeletionService>();
-builder.Services.AddScoped<CatalogEditorService>();
-builder.Services.AddScoped<GuestCustomerService>();
-builder.Services.AddScoped<OwnerRegistrationQueryService>();
-builder.Services.AddScoped<AdminBootstrapService>();
-builder.Services.Configure<AdminBootstrapOptions>(builder.Configuration.GetSection(AdminBootstrapOptions.Section));
-builder.Services.AddOptions<SettlementOptions>()
-    .Bind(builder.Configuration.GetSection(SettlementOptions.Section))
-    .ValidateDataAnnotations()
-    .ValidateOnStart();
-builder.Services.AddOptions<ReminderOptions>()
-    .Bind(builder.Configuration.GetSection(ReminderOptions.Section))
-    .ValidateDataAnnotations()
-    .ValidateOnStart();
-builder.Services.AddSingleton<ReceiptFileStore>();
-builder.Services.AddHostedService<BookingTimeoutJob>();
+builder.Services.AddHomestayCore(builder.Configuration,
+    o => o.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
 // Kiểm tra lại cookie mỗi phút: tài khoản bị vô hiệu hóa hoặc đổi security stamp sẽ bị đăng xuất
 builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(1));
@@ -232,11 +123,11 @@ builder.Services.AddSession(o =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(o =>
 {
-    o.SwaggerDoc("v1", new() { Title = "Fuji Homestay API", Version = "v1", Description = "API công khai, API cookie cho chủ/thông báo, webhook ngân hàng và API JWT Bearer dành riêng cho nhân viên WinForms (/api/desktop)." });
+    o.SwaggerDoc("v1", new() { Title = "Fuji Homestay API", Version = "v1", Description = "API công khai, API cookie cho chủ/thông báo, webhook ngân hàng và API JWT Bearer cho nhân viên và chủ homestay đã duyệt trên WinForms (/api/desktop)." });
     o.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.OpenApiSecurityScheme
     {
         Type = Microsoft.OpenApi.SecuritySchemeType.Http, Scheme = "bearer", BearerFormat = "JWT",
-        Description = "Đăng nhập POST /api/desktop/auth/login, sau đó nhập accessToken. Chỉ dùng cho nhóm desktop.",
+        Description = "Đăng nhập POST /api/desktop/auth/login (nhân viên) hoặc /api/desktop/owner/auth/login (chủ), sau đó nhập accessToken. Chỉ dùng cho nhóm desktop.",
     });
     o.OperationFilter<DesktopSwaggerFilter>();
     var xml = Path.Combine(AppContext.BaseDirectory, $"{typeof(Program).Assembly.GetName().Name}.xml");

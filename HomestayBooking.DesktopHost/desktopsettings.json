@@ -1,0 +1,12 @@
+{
+  "DesktopHost": {
+    "DatabasePath": "App_Data/fuji-desktop.db"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "Microsoft.EntityFrameworkCore": "Warning"
+    }
+  }
+}

@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\HomestayBooking.Web\HomestayBooking.Web.csproj" />
+    <ProjectReference Include="../HomestayBooking.DesktopHost/HomestayBooking.DesktopHost.csproj" />
   </ItemGroup>
 
 </Project>

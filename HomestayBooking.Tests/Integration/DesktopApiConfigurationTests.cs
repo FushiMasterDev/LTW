@@ -55,7 +55,12 @@ public sealed class DesktopApiConfigurationTests
         Assert.False(paths.GetProperty("/api/homestays").GetProperty("get").TryGetProperty("security", out _));
         Assert.Equal(10, paths.EnumerateObject().Where(p => !p.Name.StartsWith("/api/desktop/"))
             .Sum(p => p.Value.EnumerateObject().Count(o => new[] { "get", "post", "put", "delete" }.Contains(o.Name))));
-        Assert.Equal(43, paths.EnumerateObject().Where(p => p.Name.StartsWith("/api/desktop/"))
+        Assert.Equal(42, paths.EnumerateObject().Where(p => p.Name.StartsWith("/api/desktop/owner/"))
+            .Sum(p => p.Value.EnumerateObject().Count(o => new[] { "get", "post", "put", "delete" }.Contains(o.Name))));
+        Assert.False(paths.GetProperty("/api/desktop/owner/auth/login").GetProperty("post").TryGetProperty("security", out _));
+        Assert.True(paths.GetProperty("/api/desktop/owner/auth/me").GetProperty("get").TryGetProperty("security", out _));
+        Assert.Equal("Desktop Owner", paths.GetProperty("/api/desktop/owner/auth/me").GetProperty("get").GetProperty("tags")[0].GetString());
+        Assert.Equal(43, paths.EnumerateObject().Where(p => p.Name.StartsWith("/api/desktop/") && !p.Name.StartsWith("/api/desktop/owner/"))
             .Sum(p => p.Value.EnumerateObject().Count(o => new[] { "get", "post", "put", "delete" }.Contains(o.Name))));
     }
 }
