@@ -158,6 +158,7 @@ public sealed class DesktopApiTests(DesktopApiFixture fixture) : IClassFixture<D
     [InlineData("KT001", "/api/desktop/customers")]
     [InlineData("KT001", "/api/desktop/assignees")]
     [InlineData("KT001", "/api/desktop/booking-homestays")]
+    [InlineData("KT001", "/api/desktop/booking-homestays/1/room-types")]
     [InlineData("KT001", "/api/desktop/availability")]
     [InlineData("KT001", "/api/desktop/reports/financial?from=2026-01-01&to=2026-02-01")]
     public async Task PositionPoliciesUseBearerClaims(string code, string path)
@@ -274,6 +275,100 @@ public sealed class DesktopApiTests(DesktopApiFixture fixture) : IClassFixture<D
         // Same service transition as web: owner-deposited booking -> Confirmed.
         var deposited = sqlite.WithDb(db => db.Bookings.First(row => row.Status == BookingStatus.Deposited).Id);
         Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync($"/api/desktop/bookings/{deposited}/status", new { status = "Confirmed", note = "Desktop confirmation" })).StatusCode);
+    }
+
+    [Fact]
+    public async Task ConsultantGetsSeededHomestayRoomTypesWithCategoryCapacityAndActiveRoomCount()
+    {
+        var (client, _) = await Login("NV001");
+        var homeId = Root.WithDb(db => db.RoomTypes.Where(t => t.IsActive && t.Rooms.Any(r => r.IsActive)
+            && t.Homestay.Status == HomestayStatus.Active
+            && db.Contracts.Any(c => c.HomestayId == t.HomestayId && c.Status == ContractStatus.Active
+                && c.StartDate <= Today && c.EndDate >= Today)).Select(t => t.HomestayId).First());
+        var expected = Root.WithDb(db => db.RoomTypes.Where(t => t.HomestayId == homeId && t.IsActive && t.Rooms.Any(r => r.IsActive))
+            .OrderBy(t => t.Name).ThenBy(t => t.Id)
+            .Select(t => new BookingRoomTypeDto(t.Id, t.Name, t.CategoryId, t.Category.Name, t.MaxGuests, t.Rooms.Count(r => r.IsActive))).ToList());
+
+        var actual = await client.GetFromJsonAsync<List<BookingRoomTypeDto>>($"/api/desktop/booking-homestays/{homeId}/room-types");
+        Assert.NotEmpty(expected);
+        Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public async Task RoomTypesUseSellableScopeExcludeInactiveInventoryAndReturnAllOptionsWithoutPagination()
+    {
+        using var sqlite = await DesktopSqliteHost.CreateAsync();
+        var (client, _) = await Login("NV001", sqlite.Host);
+        var homeId = sqlite.WithDb(db => db.Homestays.Where(h => h.Status == HomestayStatus.Active
+            && db.Contracts.Any(c => c.HomestayId == h.Id && c.Status == ContractStatus.Active
+                && c.StartDate <= Today && c.EndDate >= Today.AddDays(30))).Select(h => h.Id).First());
+        var expected = sqlite.WithDb(db =>
+        {
+            foreach (var type in db.RoomTypes.Where(t => t.HomestayId == homeId)) type.IsActive = false;
+            var categoryId = db.RoomCategories.Select(c => c.Id).First();
+            var types = Enumerable.Range(1, 11).Select(i => new RoomType
+            {
+                HomestayId = homeId, CategoryId = categoryId, Name = $"Desktop {i:00}", MaxGuests = i,
+                Rooms = [new() { RoomCode = "A" }, new() { RoomCode = "B", IsActive = false }],
+                Prices = Enum.GetValues<DayType>().Select(day => new RoomTypePrice { DayType = day, Price = 500000 }).ToList(),
+            }).ToList();
+            db.RoomTypes.AddRange(types);
+            db.RoomTypes.AddRange(
+                new RoomType { HomestayId = homeId, CategoryId = categoryId, Name = "Inactive type", MaxGuests = 2,
+                    IsActive = false, Rooms = [new() { RoomCode = "A" }] },
+                new RoomType { HomestayId = homeId, CategoryId = categoryId, Name = "Inactive rooms", MaxGuests = 2,
+                    Rooms = [new() { RoomCode = "A", IsActive = false }] },
+                new RoomType { HomestayId = homeId, CategoryId = categoryId, Name = "No rooms", MaxGuests = 2 });
+            db.SaveChanges();
+            return types.Select(t => t.Id).ToArray();
+        });
+        var url = $"/api/desktop/booking-homestays/{homeId}/room-types";
+        var actual = (await client.GetFromJsonAsync<List<BookingRoomTypeDto>>(url))!;
+        Assert.Equal(expected, actual.Select(t => t.Id));
+        Assert.All(actual, t => Assert.Equal(1, t.ActiveRoomCount));
+
+        foreach (var status in Enum.GetValues<HomestayStatus>().Where(s => s != HomestayStatus.Active))
+        {
+            sqlite.WithDb(db => { db.Homestays.Single(h => h.Id == homeId).Status = status; return db.SaveChanges(); });
+            Assert.Empty((await client.GetFromJsonAsync<List<BookingRoomTypeDto>>(url))!);
+        }
+        sqlite.WithDb(db => { db.Homestays.Single(h => h.Id == homeId).Status = HomestayStatus.Active; return db.SaveChanges(); });
+        foreach (var condition in new[] { "expired-status", "terminated", "expired-date", "future", "missing" })
+        {
+            sqlite.WithDb(db =>
+            {
+                foreach (var contract in db.Contracts.Where(c => c.HomestayId == homeId))
+                {
+                    contract.Status = condition == "expired-status" ? ContractStatus.Expired
+                        : condition == "terminated" ? ContractStatus.Terminated : ContractStatus.Active;
+                    contract.StartDate = condition == "future" ? Today.AddDays(1) : Today.AddDays(-30);
+                    contract.EndDate = condition == "expired-date" ? Today.AddDays(-1) : Today.AddDays(30);
+                    if (condition == "missing") db.Contracts.Remove(contract);
+                }
+                return db.SaveChanges();
+            });
+            Assert.Empty((await client.GetFromJsonAsync<List<BookingRoomTypeDto>>(url))!);
+        }
+        // Existing homestays without sellable types are also 200/[], including when only rooms are disabled.
+        sqlite.WithDb(db =>
+        {
+            db.Contracts.Add(new() { HomestayId = homeId, ContractNo = "Desktop-RoomTypes", StartDate = Today.AddDays(-1),
+                EndDate = Today.AddDays(30), CommissionRate = 0.12m });
+            foreach (var room in db.Rooms.Where(r => r.RoomType.HomestayId == homeId)) room.IsActive = false;
+            return db.SaveChanges();
+        });
+        Assert.Empty((await client.GetFromJsonAsync<List<BookingRoomTypeDto>>(url))!);
+    }
+
+    [Fact]
+    public async Task RoomTypesMissingHomestayIs404AndRequiresBearer()
+    {
+        const string url = "/api/desktop/booking-homestays/9999999/room-types";
+        using var anonymous = Host.CreateClient();
+        await Problem(await anonymous.GetAsync(url), HttpStatusCode.Unauthorized);
+        var (client, _) = await Login("NV001");
+        var problem = await Problem(await client.GetAsync(url), HttpStatusCode.NotFound);
+        Assert.Equal("Không tìm thấy homestay.", problem.GetProperty("detail").GetString());
     }
 
     [Fact]

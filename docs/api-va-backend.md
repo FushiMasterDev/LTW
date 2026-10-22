@@ -10,7 +10,7 @@ Tài liệu đối chiếu trực tiếp `Program.cs`, controller MVC/API, các 
 |---|---|
 | `Program.cs` | Đăng ký dependency injection, Identity, policy, cookie, localization, Swagger; dựng middleware, route, seed và bootstrap |
 | `Controllers/` | Trang khách, tài khoản, đối tác, thông báo; một số action trả JSON hỗ trợ trang MVC |
-| `Controllers/Api/` | 7 controller với 10 endpoint cũ ở phần 3; `Desktop/` có 42 endpoint mới ở phần 8 |
+| `Controllers/Api/` | 7 controller với 10 endpoint cũ ở phần 3; `Desktop/` có 43 endpoint mới ở phần 8 |
 | `Areas/Owner`, `Areas/Staff`, `Areas/Accounting`, `Areas/Admin` | Các workspace MVC theo nghiệp vụ/vai trò |
 | `Services/` | Đặt phòng, giá/tồn phòng, thanh toán, đổi/hủy, hợp đồng, giấy tờ, đối soát, tài khoản, báo cáo, thông báo |
 | `Identity/` | Chuẩn hóa điện thoại, tìm/kiểm tài khoản, dựng claim, thông báo lỗi Identity tiếng Việt |
@@ -541,7 +541,7 @@ rm -r "$FUJI_DEMO_TMP"
 
 ## 8. API cho ứng dụng desktop
 
-42 endpoint ở `/api/desktop/...` dành cho WinForms nhân viên Fuji. Đây là lớp DTO/HTTP gọi các service hiện có; không thêm nghiệp vụ hoặc CORS. Web MVC và 10 API ở phần 3 vẫn dùng hợp đồng cũ. Các API desktop kế thừa `DesktopController`, chỉ nhận Bearer, không chấp nhận cookie Identity, và bỏ antiforgery riêng cho nhóm này.
+43 endpoint ở `/api/desktop/...` dành cho WinForms nhân viên Fuji. Đây là lớp DTO/HTTP gọi các service hiện có; không thêm nghiệp vụ hoặc CORS. Web MVC và 10 API ở phần 3 vẫn dùng hợp đồng cũ. Các API desktop kế thừa `DesktopController`, chỉ nhận Bearer, không chấp nhận cookie Identity, và bỏ antiforgery riêng cho nhóm này.
 
 ### Đăng nhập và vòng đời token
 
@@ -563,7 +563,7 @@ Section `DesktopApi`: `SigningKey` tối thiểu 32 byte UTF-8 (HS256), `Issuer`
 
 ### Hợp đồng dữ liệu
 
-Danh sách trả `{ "items": [...], "page": 1, "totalPages": 3, "totalCount": 24 }`, 10 mục/trang qua `PaginatedList`, page ngoài khoảng được kẹp về trang hợp lệ. Lựa chọn dropdown cũng phân trang; client lặp đến `totalPages`. Các mảng trong chi tiết đơn/khách và báo cáo tổng hợp là dữ liệu con của tài liệu, không phân trang độc lập. `DateOnly` là `yyyy-MM-dd`, mọi thời điểm là UTC hậu tố `Z` (kể cả datetime2 SQL Server). Enum trong DTO desktop là tên dạng chữ; không đổi JsonOptions toàn cục hoặc JSON báo giá MVC. `holidays/{id}` dùng ngày yyyy-MM-dd, ngày là khóa chính không đổi khi PUT.
+Danh sách trả `{ "items": [...], "page": 1, "totalPages": 3, "totalCount": 24 }`, 10 mục/trang qua `PaginatedList`, page ngoài khoảng được kẹp về trang hợp lệ. Lựa chọn dropdown cũng phân trang; client lặp đến `totalPages`, riêng `/booking-homestays/{homestayId}/room-types` trả mảng không phân trang. Các mảng trong chi tiết đơn/khách và báo cáo tổng hợp là dữ liệu con của tài liệu, không phân trang độc lập. `DateOnly` là `yyyy-MM-dd`, mọi thời điểm là UTC hậu tố `Z` (kể cả datetime2 SQL Server). Enum trong DTO desktop là tên dạng chữ; không đổi JsonOptions toàn cục hoặc JSON báo giá MVC. `holidays/{id}` dùng ngày yyyy-MM-dd, ngày là khóa chính không đổi khi PUT.
 
 ### Endpoint và quyền
 
@@ -583,7 +583,8 @@ Mọi endpoint trừ login yêu cầu nhân viên đang làm việc, tài khoả
 | POST | `/bookings/{id}/assign` | AssignAsync: `{employeeId}` | Consultant/Manager/Administrator |
 | POST | `/bookings/{id}/status` | ChangeStatusAsync: `{status,newRoomId?,note}` | Consultant/Manager/Administrator |
 | GET | `/assignees` | AssigneesAsync, page | Consultant/Manager/Administrator |
-| GET | `/booking-homestays` | HomestaysAsync, page; hiện chỉ id/tên homestay | Consultant/Manager/Administrator |
+| GET | `/booking-homestays` | HomestaysAsync, page | Consultant/Manager/Administrator |
+| GET | `/booking-homestays/{homestayId:int}/room-types` | StaffBookingService.RoomTypesAsync; mảng loại phòng đặt hộ không phân trang | Consultant/Manager/Administrator |
 | GET | `/availability` | StaffAvailabilityAsync: checkIn, checkOut, areaId?, guests=1, page | Consultant/Manager/Administrator |
 | GET | `/customers` | CustomerService.SearchAsync: q?, page | Consultant/Manager/Administrator |
 | GET | `/customers/{id}` | DetailsAsync, giữ che định danh của Tư vấn | Consultant/Manager/Administrator |
@@ -595,6 +596,8 @@ Mọi endpoint trừ login yêu cầu nhân viên đang làm việc, tài khoả
 | GET | `/reports/{management,bookings,financial,employees,homestays}` | ReportService tương ứng: from, to, homestayId?, areaId?; employees/homestays thêm page | Management |
 
 `Accounting` gồm Accountant/Manager/Administrator; Administrator chỉ đọc bill, service giữ chặn duyệt/từ chối như web. `Management` gồm Manager/Administrator. Accountant bị 403 ở đơn/khách/phòng trống; Consultant bị 403 ở receipts/reports/ghi danh mục. Service vẫn kiểm quyền lần nữa. Khoảng báo cáo gồm hai ngày đầu/cuối theo giờ Việt Nam.
+
+Form đặt hộ lấy homestay từ `/booking-homestays`, rồi gọi `/booking-homestays/{homestayId}/room-types`. Mỗi phần tử gồm `id`, `name`, `categoryId`, `categoryName`, `maxGuests`, `activeRoomCount`. Service dùng lại `AvailabilityService.SellableRooms()` không truyền ngày: homestay Active có hợp đồng Active đang hiệu lực, loại phòng Active có sức chứa ít nhất một khách và có phòng Active. `activeRoomCount` đếm phòng đang kinh doanh; `/availability` kiểm tồn phòng và giá theo ngày lưu trú, thao tác tạo đơn vẫn kiểm lại toàn bộ điều kiện. Homestay tồn tại nhưng không có loại phù hợp trả `200 []`; ID không tồn tại trả 404 ProblemDetails. Kế toán trả 403, thiếu Bearer trả 401.
 
 ### Mã phản hồi
 
@@ -630,6 +633,8 @@ curl -fsS "$FUJI_DESKTOP_URL/api/desktop/areas?page=1" -H "Authorization: Bearer
 curl -fsS "$FUJI_DESKTOP_URL/api/desktop/bookings?page=1" -H "Authorization: Bearer $TOKEN"
 curl -fsS "$FUJI_DESKTOP_URL/api/desktop/assignees" -H "Authorization: Bearer $TOKEN"
 curl -fsS "$FUJI_DESKTOP_URL/api/desktop/booking-homestays" -H "Authorization: Bearer $TOKEN"
+# Thay 1 bằng id homestay vừa chọn:
+curl -fsS "$FUJI_DESKTOP_URL/api/desktop/booking-homestays/1/room-types" -H "Authorization: Bearer $TOKEN"
 curl -fsS "$FUJI_DESKTOP_URL/api/desktop/customers?q=&page=1" -H "Authorization: Bearer $TOKEN"
 curl -fsS "$FUJI_DESKTOP_URL/api/desktop/availability?checkIn=2026-10-25&checkOut=2026-10-26&guests=2" -H "Authorization: Bearer $TOKEN"
 # Sau khi đăng nhập lại bằng KT001:

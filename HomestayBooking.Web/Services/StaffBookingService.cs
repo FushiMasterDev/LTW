@@ -25,11 +25,12 @@ public record StaffBookingDetails(Booking Booking, IReadOnlyList<BookingStatusHi
     IReadOnlyList<BookingChangeRequest> Changes, IReadOnlyList<Payment> Payments, IReadOnlyList<AuditLog> Audit);
 
 public record StaffHomestayOption(int Id, string Name);
+public record StaffRoomTypeOption(int Id, string Name, int CategoryId, string CategoryName, int MaxGuests, int ActiveRoomCount);
 public record BookingAssignee(int EmployeeId, string EmployeeCode, string? FullName, EmployeePosition Position);
 
 /// <summary>FR-09: nhân viên thao tác qua luật đặt phòng chung, không có đường duyệt tiền hoặc hủy trực tiếp.</summary>
 public class StaffBookingService(ApplicationDbContext db, BookingService bookings, NotificationService notifications, TimeProvider clock,
-    GuestCustomerService guests)
+    GuestCustomerService guests, AvailabilityService availability)
 {
     internal static Task<Employee> EmployeeAsync(ApplicationDbContext db, Actor actor) =>
         PartnerServiceSupport.EmployeeAsync(db, actor, EmployeePosition.Consultant, EmployeePosition.Manager, EmployeePosition.Administrator);
@@ -50,6 +51,21 @@ public class StaffBookingService(ApplicationDbContext db, BookingService booking
         await EmployeeAsync(db, actor);
         return await db.Homestays.AsNoTracking().OrderBy(h => h.Name)
             .Select(h => new StaffHomestayOption(h.Id, h.Name)).ToListAsync();
+    }
+
+    /// <summary>Loại phòng đặt hộ theo điều kiện bán chung; số phòng đang kinh doanh, chưa xét ngày lưu trú.</summary>
+    public async Task<IReadOnlyList<StaffRoomTypeOption>> RoomTypesAsync(int homestayId, Actor actor)
+    {
+        await EmployeeAsync(db, actor);
+        if (!await db.Homestays.AsNoTracking().AnyAsync(h => h.Id == homestayId))
+            throw new BookingException("Không tìm thấy homestay.");
+
+        var rooms = availability.SellableRooms().Where(r => r.RoomType.HomestayId == homestayId);
+        return await db.RoomTypes.AsNoTracking()
+            .Where(t => t.HomestayId == homestayId && rooms.Any(r => r.RoomTypeId == t.Id))
+            .OrderBy(t => t.Name).ThenBy(t => t.Id)
+            .Select(t => new StaffRoomTypeOption(t.Id, t.Name, t.CategoryId, t.Category.Name, t.MaxGuests,
+                rooms.Count(r => r.RoomTypeId == t.Id))).ToListAsync();
     }
 
     internal static string RequiredNote(string? note)

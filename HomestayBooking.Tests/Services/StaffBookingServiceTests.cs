@@ -58,6 +58,7 @@ public sealed class StaffBookingServiceTests
         var actor = who == "accountant" ? h.P.Accountant : who == "owner" ? h.Owner : who == "customer" ? new Actor(ActorType.Customer) : h.Consultant with { AccountId = h.Manager.AccountId };
         await Assert.ThrowsAsync<BookingException>(() => h.Staff().SearchAsync(new(), actor));
         await Assert.ThrowsAsync<BookingException>(() => h.Staff().DetailsAsync(b.Id, actor));
+        await Assert.ThrowsAsync<BookingException>(() => h.Staff().RoomTypesAsync(b.HomestayId, actor));
         await Assert.ThrowsAsync<BookingException>(() => h.Staff().AssignAsync(b.Id, h.Manager.EmployeeId!.Value, actor));
         await Assert.ThrowsAsync<BookingException>(() => h.Staff().ChangeStatusAsync(b.Id, BookingStatus.CheckedIn, null, "Đã gọi", actor));
     }

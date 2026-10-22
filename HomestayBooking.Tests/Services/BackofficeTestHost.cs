@@ -16,7 +16,7 @@ internal sealed class BackofficeTestHost : IDisposable
     public Actor Manager => P.Manager;
     public Actor Consultant => P.Consultant;
     public AvailabilityService Availability(ApplicationDbContext? db = null) => new(db ?? Db, H.Clock, Options.Create(H.Options));
-    public StaffBookingService Staff(ApplicationDbContext? db = null) => new(db ?? Db, H.Bookings(db), new(db ?? Db), H.Clock, Guests(db));
+    public StaffBookingService Staff(ApplicationDbContext? db = null) => new(db ?? Db, H.Bookings(db), new(db ?? Db), H.Clock, Guests(db), Availability(db));
     public GuestCustomerService Guests(ApplicationDbContext? db = null) =>
         new(db ?? Db, new CustomerAccountService(db ?? Db, P.Users, new AccountActivityLogger(db ?? Db, new HttpContextAccessor())), H.Clock);
     public CustomerService Customers(ApplicationDbContext? db = null) => new(db ?? Db, H.Vouchers(db), H.Clock);

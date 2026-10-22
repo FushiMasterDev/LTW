@@ -14,7 +14,7 @@ public sealed class DesktopExceptionFilter(IStringLocalizer<SharedResource> loca
     [
         "Không tìm thấy loại phòng.", "Không tìm thấy đơn đặt phòng.", "Không tìm thấy khách hàng.", "Không tìm thấy khoản thanh toán.",
         "Không tìm thấy ảnh bill.", "Không tìm thấy bill.", "Không tìm thấy khu vực.", "Không tìm thấy tiện nghi.",
-        "Không tìm thấy danh mục loại phòng.", "Không tìm thấy ngày lễ.",
+        "Không tìm thấy danh mục loại phòng.", "Không tìm thấy ngày lễ.", "Không tìm thấy homestay.",
     ];
 
     public void OnException(ExceptionContext context)

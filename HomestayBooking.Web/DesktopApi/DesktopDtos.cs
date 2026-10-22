@@ -59,6 +59,8 @@ public record BookingDetailsDto(BookingDto Booking, IReadOnlyList<BookingNightDt
     IReadOnlyList<BookingChangeDto> Changes, IReadOnlyList<PaymentDto> Payments, IReadOnlyList<AuditDto> Audit);
 public record AssigneeDto(int EmployeeId, string EmployeeCode, string? FullName, string Position);
 public record BookingHomestayDto(int Id, string Name);
+/// <summary>ActiveRoomCount là số phòng đang kinh doanh, không phải tồn phòng theo ngày lưu trú.</summary>
+public record BookingRoomTypeDto(int Id, string Name, int CategoryId, string CategoryName, int MaxGuests, int ActiveRoomCount);
 public record AvailabilityDto(int HomestayId, string HomestayName, int AreaId, string AreaName, int RoomTypeId,
     string RoomTypeName, int CategoryId, int MaxGuests, int FreeRooms, int TotalRooms, decimal? TotalPrice, double? Rating, int ReviewCount);
 public record CustomerDto(int Id, string? FullName, string PhoneNumber, string? Email, string? Note, string? CitizenId, string? StudentId, bool HasAccount);
