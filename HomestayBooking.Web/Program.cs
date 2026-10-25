@@ -6,6 +6,8 @@ using HomestayBooking.Web.Models;
 using HomestayBooking.Web.Models.Entities;
 using HomestayBooking.Web.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Net;
@@ -62,7 +64,29 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(o =>
     .AddErrorDescriber<VietnameseIdentityErrorDescriber>()
     .AddDefaultTokenProviders();
 
+var desktopSigningKey = builder.Configuration["DesktopAuth:SigningKey"];
+var desktopValidationKey = !string.IsNullOrWhiteSpace(desktopSigningKey) && desktopSigningKey.Length >= 32
+    ? desktopSigningKey
+    : Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+builder.Services.AddAuthentication().AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = builder.Configuration["DesktopAuth:Issuer"] ?? "FujiHomestay",
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["DesktopAuth:Audience"] ?? "FujiHomestay.Desktop",
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(desktopValidationKey)),
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.FromSeconds(30)
+    };
+});
+
 builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("DesktopConsultant", p => p.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+        .RequireAuthenticatedUser().RequireRole(AppRoles.Employee)
+        .RequireClaim(AppClaimTypes.EmployeePosition, nameof(EmployeePosition.Consultant)))
     .AddPolicy(AppPolicies.Employee, p => p
         .RequireRole(AppRoles.Employee)
         .RequireClaim(AppClaimTypes.EmployeePosition))

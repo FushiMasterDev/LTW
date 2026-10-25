@@ -1,0 +1,14 @@
+using HomestayBooking.Desktop.Models;
+using System.Text.Json;
+namespace HomestayBooking.Desktop.View;
+public partial class FrmCustomerManagement : Form
+{
+    private int _page=1; private int _totalPages=1;private int _customerId;
+    public FrmCustomerManagement(){InitializeComponent();btnSearchCustomer.Click+=async(_,_)=>{_page=1;await SearchAsync();};btnCustPrev.Click+=async(_,_)=>{if(_page>1){_page--;await SearchAsync();}};btnCustNext.Click+=async(_,_)=>{if(_page<_totalPages){_page++;await SearchAsync();}};btnSaveCustomer.Click+=async(_,_)=>await SaveAsync();dgvCustomers.SelectionChanged+=async(_,_)=>await LoadCustomerAsync();}
+    private async Task SearchAsync(){try{var data=await DesktopApi.GetAsync<JsonElement>($"customers?q={Uri.EscapeDataString(txtCustomerSearch.Text)}&page={_page}");_page=data.GetProperty("page").GetInt32();_totalPages=data.GetProperty("totalPages").GetInt32();dgvCustomers.DataSource=data.GetProperty("items").EnumerateArray().Select(e=>JsonSerializer.Deserialize<Dictionary<string,object?>>(e.GetRawText())!).ToList();lblCustPage.Text=$"Trang {_page} / {_totalPages}";btnCustPrev.Enabled=_page>1;btnCustNext.Enabled=_page<_totalPages;}catch(Exception ex){DesktopApi.ShowError(this,ex);}}
+    private async Task LoadCustomerAsync(){try{if(dgvCustomers.CurrentRow is null)return;var raw=dgvCustomers.CurrentRow.Cells["id"].Value;_customerId=raw is JsonElement id?id.GetInt32():Convert.ToInt32(raw);var data=await DesktopApi.GetAsync<JsonElement>($"customers/{_customerId}");var c=data.GetProperty("customer");txtCustFullName.Text=Get(c,"fullName");txtCustPhone.Text=Get(c,"phoneNumber");txtCustEmail.Text=Get(c,"email");txtCustCitizenId.Text=Get(c,"citizenId");txtCustStudentId.Text=Get(c,"studentId");txtCustNote.Text=Get(c,"note");var has=c.GetProperty("hasAccount").GetBoolean();txtCustFullName.ReadOnly=has;txtCustEmail.ReadOnly=has;lblAccountBadge.Text=has?"Khách đã có tài khoản Web (chỉ sửa được ghi chú)":"Khách vãng lai / đặt hộ (có thể sửa họ tên, email)";dgvCustomerBookings.DataSource=List(data,"bookings");dgvCustomerVouchers.DataSource=List(data,"vouchers");}catch(Exception ex){DesktopApi.ShowError(this,ex);}}
+    private static string Get(JsonElement data,string key)=>data.TryGetProperty(key,out var v)&&v.ValueKind!=JsonValueKind.Null?v.ToString():string.Empty;
+    private static List<Dictionary<string,object?>> List(JsonElement d,string prop)=>d.GetProperty(prop).EnumerateArray().Select(e=>JsonSerializer.Deserialize<Dictionary<string,object?>>(e.GetRawText())!).ToList();
+    private async Task SaveAsync(){try{await DesktopApi.PutAsync<object>($"customers/{_customerId}",new{note=txtCustNote.Text,fullName=txtCustFullName.ReadOnly?null:txtCustFullName.Text,email=txtCustEmail.ReadOnly?null:txtCustEmail.Text,phoneNumber=txtCustPhone.Text});MessageBox.Show("Đã lưu thông tin khách hàng.");}catch(Exception ex){DesktopApi.ShowError(this,ex);}}
+}
+
