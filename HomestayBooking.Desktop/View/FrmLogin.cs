@@ -45,15 +45,18 @@ public partial class FrmLogin : Form
 
             var session = await response.Content.ReadFromJsonAsync<EmployeeSession>();
             if (session is null) { ShowMessage("Máy chủ trả về dữ liệu đăng nhập không hợp lệ."); return; }
-            if (!string.Equals(session.Position, "Consultant", StringComparison.Ordinal))
+            if (!string.Equals(session.Position, "Consultant", StringComparison.Ordinal)
+                && !string.Equals(session.Position, "Accountant", StringComparison.Ordinal))
             {
-                ShowMessage("Phân hệ desktop hiện được cấu hình cho nhân viên tư vấn.");
+                ShowMessage("Phân hệ desktop hiện được cấu hình cho nhân viên tư vấn và kế toán.");
                 return;
             }
             Properties.Settings.Default.RememberEmployeeCode = chkRemember.Checked ? code : string.Empty;
             Properties.Settings.Default.Save();
             Hide();
-            using var home = new FrmEmployeeHome(session);
+            using Form home = session.Position == "Accountant"
+                ? new FrmAccountantDashboard(session)
+                : new FrmEmployeeHome(session);
             home.ShowDialog(this);
             txtPassword.Clear();
             Show();
