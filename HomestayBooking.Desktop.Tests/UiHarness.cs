@@ -85,6 +85,16 @@ internal static class Ui
         var name = string.Concat($"{test}-man-hinh".Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c));
         bitmap.Save(Path.Combine(dir, name + ".png"));
         File.WriteAllLines(Path.Combine(dir, name + ".txt"), DialogWatcher.DescribeWindows());
+        // Stack managed của mọi luồng lúc đang kẹt (cần dotnet-stack trên PATH, CI cài sẵn).
+        try
+        {
+            using var stack = Process.Start(new ProcessStartInfo("dotnet-stack", $"report --process-id {Environment.ProcessId}")
+                { RedirectStandardOutput = true, UseShellExecute = false })!;
+            var text = stack.StandardOutput.ReadToEnd();
+            stack.WaitForExit(30000);
+            File.WriteAllText(Path.Combine(dir, name + "-stack.txt"), text);
+        }
+        catch (Exception ex) { File.WriteAllText(Path.Combine(dir, name + "-stack.txt"), ex.ToString()); }
     }
 
     /// <summary>Bơm message loop để các handler async của form chạy tiếp, tới khi điều kiện đúng.</summary>
