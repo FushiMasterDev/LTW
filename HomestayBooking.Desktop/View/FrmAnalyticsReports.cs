@@ -44,7 +44,7 @@ internal partial class FrmAnalyticsReports : Form, IAccountantRefreshable
     {
         try
         {
-            var rows = await _api.GetAsync<List<AdminAreaDto>>("accountant/areas") ?? [];
+            var rows = await _api.GetAllAsync<AdminAreaDto>("areas");
             cboArea.DataSource = new[] { new AdminAreaDto(0, "Tất cả khu vực", "", "") }.Concat(rows).ToList();
             cboArea.DisplayMember = nameof(AdminAreaDto.Name); cboArea.ValueMember = nameof(AdminAreaDto.Id);
         }
@@ -58,8 +58,8 @@ internal partial class FrmAnalyticsReports : Form, IAccountantRefreshable
         lblDeposited.Text = $"{Get(bookings, "depositedCohort")}\nĐơn đã cọc";
         lblRevenue.Text = $"{Money(finance, "completedRoomAmount")} đ\nDoanh thu phòng hoàn tất";
         lblNet.Text = $"{Money(finance, "fujiNet")} đ\nDoanh thu ròng Fuji";
-        dgvBreakdown.DataSource = report.GetProperty("bookings").GetProperty("breakdown").EnumerateArray().Select(e => new { Trạng_thái = Get(e, "status"), Số_lượng = Get(e, "count") }).ToList();
-        dgvEmployees.DataSource = report.GetProperty("employees").EnumerateArray().Select(e => new { Mã_NV = Get(e, "employeeCode"), Họ_tên = Get(e, "fullName"), Được_giao = Get(e, "assigned"), Đã_xác_nhận = Get(e, "confirmed"), Đã_hủy = Get(e, "cancelled") }).ToList();
+        dgvBreakdown.DataSource = report.GetProperty("bookings").GetProperty("breakdown").EnumerateArray().Select(e => new { Trạng_thái = Get(e, "status"), Kênh = Get(e, "channel"), Số_lượng = Get(e, "count") }).ToList();
+        dgvEmployees.DataSource = report.GetProperty("employees").EnumerateArray().Select(e => new { Mã_NV = Get(e, "code"), Họ_tên = Get(e, "name"), Đơn_tạo = Get(e, "created"), Đã_xác_nhận = Get(e, "confirmed"), Tỷ_lệ_chốt = Get(e, "conversionPercent"), Đang_xử_lý = Get(e, "assignedOpen") }).ToList();
         dgvHomestays.DataSource = report.GetProperty("homestays").EnumerateArray().Select(e => new { Homestay = Get(e, "name"), Đánh_giá = Get(e, "rating"), Lượt_đánh_giá = Get(e, "reviewCount") }).ToList();
     }
     private static string Get(JsonElement e, string key) => e.TryGetProperty(key, out var v) ? v.ToString() : "—";

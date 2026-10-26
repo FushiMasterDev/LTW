@@ -19,6 +19,7 @@ internal sealed class AdminController
     public Task<T?> PostAsync<T>(string path, object body) => SendAsync<T>(HttpMethod.Post, path, body);
     public Task<T?> PutAsync<T>(string path, object body) => SendAsync<T>(HttpMethod.Put, path, body);
     public Task<T?> DeleteAsync<T>(string path) => SendAsync<T>(HttpMethod.Delete, path);
+    public Task<List<T>> GetAllAsync<T>(string path) => DesktopApi.AllPagesAsync(page => GetAsync<Models.Accountant.PagedDto<T>>(DesktopApi.WithPage(path, page)));
 
     private async Task<T?> SendAsync<T>(HttpMethod method, string path, object? body = null)
     {
@@ -28,23 +29,14 @@ internal sealed class AdminController
         using var response = await Http.SendAsync(request);
         if (!response.IsSuccessStatusCode)
         {
-            var text = await response.Content.ReadAsStringAsync();
-            string? detail = null;
-            try
-            {
-                using var document = JsonDocument.Parse(text);
-                if (document.RootElement.TryGetProperty("detail", out var d)) detail = d.GetString();
-                if (string.IsNullOrWhiteSpace(detail) && document.RootElement.TryGetProperty("message", out var m)) detail = m.GetString();
-            }
-            catch (JsonException) { }
+            var message = DesktopApi.ErrorMessage(response.StatusCode, await response.Content.ReadAsStringAsync());
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
                 AppSession.Current = null;
                 Application.Restart();
                 throw new OperationCanceledException("Phiên đăng nhập đã hết hạn.");
             }
-            if (response.StatusCode == HttpStatusCode.NotFound) throw new InvalidOperationException("Máy chủ chưa cung cấp API này cho ứng dụng Desktop.");
-            throw new InvalidOperationException(detail ?? $"Yêu cầu thất bại ({(int)response.StatusCode}).");
+            throw new InvalidOperationException(message);
         }
         if (response.StatusCode == HttpStatusCode.NoContent || response.Content.Headers.ContentLength == 0) return default;
         return await response.Content.ReadFromJsonAsync<T>(Json);

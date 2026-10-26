@@ -41,13 +41,14 @@ public partial class FrmLogin : Form
             using var response = await Client.PostAsJsonAsync($"{baseUrl}/api/desktop/auth/login", new { employeeCode = code, password });
             if (!response.IsSuccessStatusCode)
             {
-                var error = await response.Content.ReadFromJsonAsync<ApiError>();
-                ShowMessage(error?.Message ?? "Không thể đăng nhập. Vui lòng kiểm tra kết nối máy chủ.");
+                ShowMessage(DesktopApi.ErrorMessage(response.StatusCode, await response.Content.ReadAsStringAsync()));
                 return;
             }
 
-            var session = await response.Content.ReadFromJsonAsync<EmployeeSession>();
-            if (session is null) { ShowMessage("Máy chủ trả về dữ liệu đăng nhập không hợp lệ."); return; }
+            var login = await response.Content.ReadFromJsonAsync<LoginResponse>();
+            if (login?.Employee is null) { ShowMessage("Máy chủ trả về dữ liệu đăng nhập không hợp lệ."); return; }
+            var session = new EmployeeSession(login.Employee.Code, login.Employee.FullName ?? login.Employee.Code,
+                login.Employee.Position, "", login.AccessToken, login.ExpiresAt);
             if (!string.Equals(session.Position, "Consultant", StringComparison.Ordinal)
                 && !string.Equals(session.Position, "Accountant", StringComparison.Ordinal)
                 && !string.Equals(session.Position, "Manager", StringComparison.Ordinal)
@@ -84,27 +85,8 @@ public partial class FrmLogin : Form
         finally { SetBusy(false); }
     }
 
-    private async void OpenForgotPassword()
-    {
-        var code = txtEmployeeCode.Text.Trim();
-        if (code.Length == 0)
-        {
-            ShowMessage("Hãy nhập mã nhân viên để yêu cầu hướng dẫn đặt lại mật khẩu.");
-            txtEmployeeCode.Focus();
-            return;
-        }
-
-        SetBusy(true);
-        try
-        {
-            var baseUrl = DesktopSettings.ApiBaseUrl.TrimEnd('/');
-            using var response = await Client.PostAsJsonAsync($"{baseUrl}/api/desktop/auth/forgot-password", new { employeeCode = code });
-            var result = await response.Content.ReadFromJsonAsync<ApiError>();
-            ShowMessage(result?.Message ?? "Vui lòng liên hệ quản trị viên hệ thống để được hỗ trợ đặt lại mật khẩu.");
-        }
-        catch (HttpRequestException) { ShowMessage("Không kết nối được máy chủ. Vui lòng liên hệ quản trị viên."); }
-        finally { SetBusy(false); }
-    }
+    // Nhân viên không tự đặt lại mật khẩu; quản trị viên cấp lại trên web.
+    private void OpenForgotPassword() => ShowMessage("Vui lòng liên hệ quản trị viên hệ thống để được hỗ trợ đặt lại mật khẩu.");
 
     private void TogglePassword()
     {
@@ -136,4 +118,5 @@ public partial class FrmLogin : Form
     }
 }
 
-internal sealed record ApiError(string Message);
+internal sealed record LoginEmployee(int Id, string Code, string? FullName, string Position);
+internal sealed record LoginResponse(string AccessToken, DateTime ExpiresAt, LoginEmployee Employee);

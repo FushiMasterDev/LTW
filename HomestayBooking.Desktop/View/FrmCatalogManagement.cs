@@ -11,6 +11,7 @@ internal partial class FrmCatalogManagement : Form, IAccountantRefreshable
     private readonly AdminController _api;
     private string _active = "areas";
     private int? _selectedId;
+    private string? _selectedHoliday;
     public FrmCatalogManagement() : this(AppSession.Current ?? new EmployeeSession("", "", "Manager", "", "", DateTime.MaxValue)) { }
     public FrmCatalogManagement(EmployeeSession session)
     {
@@ -22,21 +23,21 @@ internal partial class FrmCatalogManagement : Form, IAccountantRefreshable
     public async Task RefreshDataAsync() => await SelectTabAsync(_active);
     private async Task SelectTabAsync(string tab)
     {
-        _active = tab; _selectedId = null; Clear(); lblIdLabel.Visible = tab != "holidays"; txtId.Visible = tab != "holidays";
+        _active = tab; Clear(); lblIdLabel.Visible = tab != "holidays"; txtId.Visible = tab != "holidays";
         txtAreaName.Visible = tab == "areas"; txtProvince.Visible = tab == "areas"; cboAreaGroup.Visible = tab == "areas";
         txtAmenityName.Visible = tab == "amenities"; txtAmenityIcon.Visible = tab == "amenities";
         txtCategoryName.Visible = tab == "room-categories"; dtpHolidayDate.Visible = tab == "holidays"; txtHolidayName.Visible = tab == "holidays";
         try
         {
-            object? data = tab switch
+            object data = tab switch
             {
-                "areas" => await _api.GetAsync<List<AdminAreaDto>>("accountant/areas"),
-                "amenities" => await _api.GetAsync<List<AdminCatalogItemDto>>("accountant/amenities"),
-                "room-categories" => await _api.GetAsync<List<AdminCatalogItemDto>>("accountant/room-categories"),
-                _ => await _api.GetAsync<List<AdminHolidayDto>>("accountant/holidays")
+                "areas" => await _api.GetAllAsync<AdminAreaDto>("areas"),
+                "amenities" => await _api.GetAllAsync<AdminAmenityDto>("amenities"),
+                "room-categories" => await _api.GetAllAsync<AdminCatalogItemDto>("room-categories"),
+                _ => await _api.GetAllAsync<AdminHolidayDto>("holidays")
             };
             dgvItems.DataSource = data;
-            lblStatus.Text = $"Danh mục: {tab} · Máy chủ hiện chỉ hỗ trợ tải danh sách.";
+            lblStatus.Text = $"Danh mục: {tab}";
         }
         catch (Exception ex) { lblStatus.Text = ex.Message; }
     }
@@ -44,19 +45,44 @@ internal partial class FrmCatalogManagement : Form, IAccountantRefreshable
     {
         if (dgvItems.CurrentRow?.DataBoundItem is null) return;
         var item = dgvItems.CurrentRow.DataBoundItem;
-        if (item is AdminAreaDto area) { _selectedId = area.Id; txtAreaName.Text = area.Name; txtProvince.Text = area.Province; cboAreaGroup.Text = area.Group; }
-        else if (item is AdminCatalogItemDto catalog) { _selectedId = catalog.Id; if (_active == "amenities") txtAmenityName.Text = catalog.Name; else txtCategoryName.Text = catalog.Name; }
-        else if (item is AdminHolidayDto holiday) { dtpHolidayDate.Value = DateTime.TryParse(holiday.Date, out var date) ? date : DateTime.Today; txtHolidayName.Text = holiday.Name; }
+        if (item is AdminAreaDto area) { _selectedId = area.Id; txtId.Text = area.Id.ToString(); txtAreaName.Text = area.Name; txtProvince.Text = area.Province; cboAreaGroup.Text = area.AreaGroup; }
+        else if (item is AdminAmenityDto amenity) { _selectedId = amenity.Id; txtId.Text = amenity.Id.ToString(); txtAmenityName.Text = amenity.Name; txtAmenityIcon.Text = amenity.Icon ?? ""; }
+        else if (item is AdminCatalogItemDto category) { _selectedId = category.Id; txtId.Text = category.Id.ToString(); txtCategoryName.Text = category.Name; }
+        // Ngày lễ dùng chính ngày làm khóa nên chỉ sửa được tên.
+        else if (item is AdminHolidayDto holiday) { _selectedHoliday = holiday.Date; dtpHolidayDate.Value = DateTime.TryParse(holiday.Date, out var date) ? date : DateTime.Today; dtpHolidayDate.Enabled = false; txtHolidayName.Text = holiday.Name; }
     }
+    private string? SelectedKey => _active == "holidays" ? _selectedHoliday : _selectedId?.ToString();
     private async Task SaveAsync(bool update)
     {
-        MessageBox.Show(this, "Backend hiện chưa cung cấp API tạo/cập nhật danh mục Desktop. Dữ liệu không được thay đổi.", "Chưa hỗ trợ", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        await Task.CompletedTask;
+        if (update && SelectedKey is null) { MessageBox.Show(this, "Chọn một mục trong danh sách để cập nhật."); return; }
+        object body = _active switch
+        {
+            "areas" => new { name = txtAreaName.Text.Trim(), province = txtProvince.Text.Trim(), areaGroup = string.IsNullOrWhiteSpace(cboAreaGroup.Text) ? "InnerCity" : cboAreaGroup.Text },
+            "amenities" => new { name = txtAmenityName.Text.Trim(), icon = string.IsNullOrWhiteSpace(txtAmenityIcon.Text) ? null : txtAmenityIcon.Text.Trim() },
+            "room-categories" => new { name = txtCategoryName.Text.Trim() },
+            _ when update => new { name = txtHolidayName.Text.Trim() },
+            _ => new { date = dtpHolidayDate.Value.ToString("yyyy-MM-dd"), name = txtHolidayName.Text.Trim() }
+        };
+        try
+        {
+            if (update) await _api.PutAsync<JsonElement>($"{_active}/{SelectedKey}", body);
+            else await _api.PostAsync<JsonElement>(_active, body);
+            await SelectTabAsync(_active);
+            lblStatus.Text = update ? "Đã cập nhật." : "Đã thêm.";
+        }
+        catch (Exception ex) { DesktopApi.ShowError(this, ex); }
     }
     private async Task DeleteAsync()
     {
-        MessageBox.Show(this, "Backend hiện chưa cung cấp API xóa danh mục Desktop. Dữ liệu không được thay đổi.", "Chưa hỗ trợ", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        await Task.CompletedTask;
+        if (SelectedKey is not { } key) { MessageBox.Show(this, "Chọn một mục trong danh sách để xóa."); return; }
+        if (MessageBox.Show(this, "Xóa mục này? Mục đang được dùng sẽ không xóa được.", "Xóa danh mục", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
+        try
+        {
+            await _api.DeleteAsync<object>($"{_active}/{key}");
+            await SelectTabAsync(_active);
+            lblStatus.Text = "Đã xóa.";
+        }
+        catch (Exception ex) { DesktopApi.ShowError(this, ex); }
     }
-    private void Clear() { _selectedId = null; txtAreaName.Clear(); txtProvince.Clear(); txtAmenityName.Clear(); txtAmenityIcon.Clear(); txtCategoryName.Clear(); txtHolidayName.Clear(); dtpHolidayDate.Enabled = true; }
+    private void Clear() { _selectedId = null; _selectedHoliday = null; txtId.Clear(); txtAreaName.Clear(); txtProvince.Clear(); txtAmenityName.Clear(); txtAmenityIcon.Clear(); txtCategoryName.Clear(); txtHolidayName.Clear(); dtpHolidayDate.Enabled = true; }
 }
