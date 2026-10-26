@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.fuji.desktophost</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/usr/local/share/dotnet/dotnet</string>
+		<string>/Users/REPLACE_ME/LTW/HomestayBooking.DesktopHost/bin/Debug/net10.0/HomestayBooking.DesktopHost.dll</string>
+		<string>--urls</string>
+		<string>http://0.0.0.0:5080</string>
+	</array>
+	<key>WorkingDirectory</key>
+	<string>/Users/REPLACE_ME/LTW/HomestayBooking.DesktopHost/bin/Debug/net10.0</string>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>/opt/homebrew/bin:/usr/local/bin:/usr/local/share/dotnet:/usr/bin:/bin:/usr/sbin:/sbin</string>
+	</dict>
+	<key>KeepAlive</key>
+	<true/>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>ThrottleInterval</key>
+	<integer>15</integer>
+	<key>StandardOutPath</key>
+	<string>/Users/REPLACE_ME/Library/Logs/fuji-desktophost.log</string>
+	<key>StandardErrorPath</key>
+	<string>/Users/REPLACE_ME/Library/Logs/fuji-desktophost.log</string>
+</dict>
+</plist>
