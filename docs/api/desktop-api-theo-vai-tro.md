@@ -83,10 +83,13 @@ Mọi lỗi là JSON dạng ProblemDetails, câu tiếng Việt nằm ở trư�
 | Thêm/sửa/xóa danh mục | ❌ | ❌ | ✅ | ✅ | ❌ |
 | Xem bill cọc | ❌ | ✅ | ✅ | ✅ | ❌ |
 | Duyệt/từ chối bill cọc | ❌ | ✅ | ✅ | ⚠️ | ❌ |
+| Xem giao dịch ngân hàng | ❌ | ✅ | ✅ | ✅ | ❌ |
+| Khớp tay/chuyển trả/bỏ qua giao dịch | ❌ | ✅ | ✅ | ⚠️ | ❌ |
+| Cọc bổ sung (xem, xác nhận, từ chối) | ❌ | ✅ | ❌ | ❌ | ❌ |
 | Báo cáo | ❌ | ❌ | ✅ | ✅ | ❌ |
 | Toàn bộ API chủ (`/owner/...`) | ❌ | ❌ | ❌ | ❌ | ✅ |
 
-⚠️ Quản trị viên xem được bill nhưng nghiệp vụ chỉ cho **Kế toán và Quản lý** duyệt/từ chối; quản trị viên gọi sẽ nhận 400.
+⚠️ Quản trị viên xem được bill và giao dịch nhưng nghiệp vụ chỉ cho **Kế toán và Quản lý** xử lý; quản trị viên gọi sẽ nhận 400.
 
 ## 3. Nhân viên tư vấn
 
@@ -176,6 +179,27 @@ Giống nhân viên tư vấn: `POST /auth/login` với `{ "employeeCode": "KT00
 
 Ảnh bill là file riêng tư: WinForms phải tải bằng `HttpClient` có header Bearer rồi hiện trong `PictureBox`, không mở link trực tiếp bằng trình duyệt.
 
+### Giao dịch ngân hàng
+
+| Phương thức | Đường dẫn | Chức năng |
+|---|---|---|
+| GET | `/bank-transactions` | Mặc định chỉ các khoản cần xử lý tay (chuyển thiếu, đến muộn, không rõ đơn). Lọc `status` (`Matched`, `ManuallyMatched`, `Underpaid`, `LatePayment`, `Unmatched`, `Refunded`, `Ignored`), `all=true` để xem mọi giao dịch, `q` (nội dung chuyển khoản, mã giao dịch, mã đơn), `page` |
+| POST | `/bank-transactions/{id}/match` | Khớp tay với đơn đang chờ thanh toán `{ "bookingCode": "FJ261020-001", "note": null }` → trả `{ id, code, status }`, đơn chuyển sang đã cọc |
+| POST | `/bank-transactions/{id}/refund` | Ghi nhận đã chuyển trả, bắt buộc mã chuyển hoàn `{ "bankRef": "FT2610...", "note": null }` |
+| POST | `/bank-transactions/{id}/ignore` | Bỏ qua tiền vào không liên quan đặt phòng, bắt buộc lý do `{ "reason": "Khoản thu nội bộ" }` |
+
+Giao dịch đã xử lý rồi thì gọi lại sẽ nhận 400.
+
+### Cọc bổ sung (chỉ Kế toán)
+
+| Phương thức | Đường dẫn | Chức năng |
+|---|---|---|
+| GET | `/additional-deposits` | Khoản cọc bổ sung đã nộp của yêu cầu đổi đơn đang chờ tiền, cũ nhất trước, `page`. Có `paymentId`, `changeRequestId`, mã đơn, khách, số tiền, cách nộp, hạn nộp, ghi chú duyệt; `fileUrl` khi khách nộp ảnh bill (tải như bill cọc) |
+| POST | `/additional-deposits/{changeRequestId}/confirm` | Xác nhận tiền và áp dụng thay đổi `{ "note": "Đã nhận đủ" }` → trả `{ changeRequestId, status, rejectionReason }`. `status` là `Applied`, hoặc `Rejected` nếu giá đã đổi (lý do ở `rejectionReason`) |
+| POST | `/additional-deposits/{changeRequestId}/reject` | Từ chối khoản cọc bổ sung, nhả phòng giữ cho yêu cầu `{ "reason": "Sai số tiền" }` |
+
+Người gửi yêu cầu hoặc người đã duyệt nghiệp vụ không được tự xác nhận tiền (400).
+
 ### Danh mục (chỉ đọc)
 
 Như mục 3: `/areas`, `/amenities`, `/room-categories`, `/holidays`.
@@ -191,7 +215,7 @@ Kế toán **không** dùng được API đơn, khách hàng, phòng trống (40
 ### Được dùng
 
 - **Mọi API của nhân viên tư vấn** (mục 3): đơn, đặt hộ, giao đơn, khách hàng, phòng trống.
-- **Mọi API của kế toán** (mục 4): xem, duyệt, từ chối bill cọc.
+- **API của kế toán** (mục 4): xem, duyệt, từ chối bill cọc; xem và xử lý giao dịch ngân hàng. Riêng cọc bổ sung chỉ Kế toán (403).
 - Thêm/sửa/xóa danh mục và báo cáo (dưới đây).
 
 ### Quản lý danh mục

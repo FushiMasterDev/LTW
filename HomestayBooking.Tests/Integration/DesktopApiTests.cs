@@ -161,6 +161,8 @@ public sealed class DesktopApiTests(DesktopApiFixture fixture) : IClassFixture<D
     [InlineData("KT001", "/api/desktop/booking-homestays/1/room-types")]
     [InlineData("KT001", "/api/desktop/availability")]
     [InlineData("KT001", "/api/desktop/reports/financial?from=2026-01-01&to=2026-02-01")]
+    [InlineData("NV001", "/api/desktop/bank-transactions")]
+    [InlineData("QL001", "/api/desktop/additional-deposits")]
     public async Task PositionPoliciesUseBearerClaims(string code, string path)
     {
         var (client, _) = await Login(code);
@@ -423,6 +425,77 @@ public sealed class DesktopApiTests(DesktopApiFixture fixture) : IClassFixture<D
         var (admin, _) = await Login("AD001");
         Assert.Equal(HttpStatusCode.OK, (await admin.GetAsync("/api/desktop/receipts")).StatusCode);
         await Problem(await admin.PostAsync($"/api/desktop/receipts/{ids[1]}/approve", null), HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task BankTransactionsListMatchRefundIgnoreThroughAccountingService()
+    {
+        // Seeded AwaitingPayment holds expire at startup and the receipt test owns the PaymentSubmitted ones; reopen the newest Deposited.
+        var booking = Root.WithDb(db =>
+        {
+            var b = db.Bookings.Where(b => b.Status == BookingStatus.Deposited).OrderByDescending(b => b.Id).First();
+            b.Status = BookingStatus.AwaitingPayment; db.SaveChanges();
+            return new { b.Code, Due = b.DepositAmount - b.DiscountAmount };
+        });
+        var txIds = Root.WithDb(db =>
+        {
+            var rows = Enumerable.Range(1, 3).Select(i => new BankTransaction { ProviderTransactionId = $"DESKTOP-TX-{i}",
+                Amount = booking.Due + 1_000_000, TransferContent = $"DESKTOP TX {i}", TransactionTime = DateTime.UtcNow, MatchStatus = BankMatchStatus.Unmatched }).ToList();
+            db.BankTransactions.AddRange(rows); db.SaveChanges();
+            return rows.Select(t => t.Id).ToArray();
+        });
+        var (client, _) = await Login("KT001");
+        var list = await client.GetFromJsonAsync<JsonElement>("/api/desktop/bank-transactions?q=DESKTOP-TX");
+        Assert.Equal(3, list.GetProperty("totalCount").GetInt32());
+        Assert.EndsWith("Z", list.GetProperty("items")[0].GetProperty("transactionTime").GetString());
+        await Problem(await client.GetAsync("/api/desktop/bank-transactions?status=bad"), HttpStatusCode.BadRequest);
+
+        await Problem(await client.PostAsJsonAsync($"/api/desktop/bank-transactions/{txIds[0]}/match", new { bookingCode = "NOPE" }), HttpStatusCode.NotFound);
+        var matched = await client.PostAsJsonAsync($"/api/desktop/bank-transactions/{txIds[0]}/match", new { bookingCode = booking.Code });
+        Assert.Equal(HttpStatusCode.OK, matched.StatusCode);
+        Assert.Equal("Deposited", (await matched.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("status").GetString());
+
+        await Problem(await client.PostAsJsonAsync($"/api/desktop/bank-transactions/{txIds[1]}/refund", new { bankRef = "" }), HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsJsonAsync($"/api/desktop/bank-transactions/{txIds[1]}/refund", new { bankRef = "FT-DESKTOP" })).StatusCode);
+        await Problem(await client.PostAsJsonAsync($"/api/desktop/bank-transactions/{txIds[1]}/refund", new { bankRef = "FT-DESKTOP" }), HttpStatusCode.BadRequest);
+        await Problem(await client.PostAsJsonAsync("/api/desktop/bank-transactions/9999999/refund", new { bankRef = "FT-X" }), HttpStatusCode.NotFound);
+
+        await Problem(await client.PostAsJsonAsync($"/api/desktop/bank-transactions/{txIds[2]}/ignore", new { reason = "" }), HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsJsonAsync($"/api/desktop/bank-transactions/{txIds[2]}/ignore", new { reason = "Internal transfer" })).StatusCode);
+
+        var statuses = Root.WithDb(db => db.BankTransactions.Where(t => txIds.Contains(t.Id)).OrderBy(t => t.Id).Select(t => t.MatchStatus).ToArray());
+        Assert.Equal([BankMatchStatus.ManuallyMatched, BankMatchStatus.Refunded, BankMatchStatus.Ignored], statuses);
+    }
+
+    [Fact]
+    public async Task AdditionalDepositsListAndRejectOnlyForAccountant()
+    {
+        var id = Root.WithDb(db =>
+        {
+            var b = db.Bookings.First(row => row.Status == BookingStatus.Deposited);
+            var manager = db.Users.Single(u => u.Person.Employee!.EmployeeCode == "QL001").Id;
+            var request = new BookingChangeRequest { BookingId = b.Id, RequestType = ChangeRequestType.ChangeDates, RequestedByType = ActorType.Employee,
+                NewCheckIn = b.CheckIn.AddDays(5), NewCheckOut = b.CheckOut.AddDays(5), DecisionNote = "Desktop approval", AdditionalDeposit = 100000,
+                PaymentDeadlineAt = DateTime.UtcNow.AddHours(1), Status = ChangeRequestStatus.AwaitingPayment, DecidedByAccountId = manager, DecidedAt = DateTime.UtcNow };
+            db.BookingChangeRequests.Add(request); db.SaveChanges();
+            db.Payments.Add(new() { BookingId = b.Id, ChangeRequestId = request.Id, Type = PaymentType.AdditionalDeposit,
+                Method = PaymentMethod.ManualReceipt, ReceiptImageUrl = "receipts/desktop.png", Amount = 100000, Status = PaymentStatus.Submitted });
+            db.SaveChanges();
+            return request.Id;
+        });
+        var (client, _) = await Login("KT001");
+        // Oldest first, so the new deposit is on the last page.
+        var pages = (await client.GetFromJsonAsync<JsonElement>("/api/desktop/additional-deposits")).GetProperty("totalPages").GetInt32();
+        var list = await client.GetFromJsonAsync<JsonElement>($"/api/desktop/additional-deposits?page={pages}");
+        var row = list.GetProperty("items").EnumerateArray().Single(r => r.GetProperty("changeRequestId").GetInt32() == id);
+        Assert.EndsWith($"/api/desktop/receipts/{row.GetProperty("paymentId").GetInt32()}/file", row.GetProperty("fileUrl").GetString());
+
+        await Problem(await client.PostAsJsonAsync($"/api/desktop/additional-deposits/{id}/confirm", new { note = "" }), HttpStatusCode.BadRequest);
+        await Problem(await client.PostAsJsonAsync("/api/desktop/additional-deposits/9999999/reject", new { reason = "Missing" }), HttpStatusCode.NotFound);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsJsonAsync($"/api/desktop/additional-deposits/{id}/reject", new { reason = "Wrong amount" })).StatusCode);
+        await Problem(await client.PostAsJsonAsync($"/api/desktop/additional-deposits/{id}/reject", new { reason = "Again" }), HttpStatusCode.BadRequest);
+        Assert.Equal(ChangeRequestStatus.Rejected, Root.WithDb(db => db.BookingChangeRequests.Single(r => r.Id == id).Status));
+        Assert.Equal(PaymentStatus.Rejected, Root.WithDb(db => db.Payments.Single(p => p.ChangeRequestId == id).Status));
     }
 
     [Theory]

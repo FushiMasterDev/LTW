@@ -118,7 +118,7 @@ public sealed class DesktopStandaloneHostTests
                 var swagger = await host.Client.GetFromJsonAsync<JsonElement>("/swagger/v1/swagger.json");
                 var paths = swagger.GetProperty("paths").EnumerateObject().ToList();
                 Assert.All(paths, p => Assert.StartsWith("/api/desktop/", p.Name));
-                Assert.Equal(85, paths.Sum(p => p.Value.EnumerateObject().Count()));
+                Assert.Equal(92, paths.Sum(p => p.Value.EnumerateObject().Count()));
                 Assert.Equal("bearer", swagger.GetProperty("components").GetProperty("securitySchemes").GetProperty("Bearer").GetProperty("scheme").GetString());
                 var docPaths = swagger.GetProperty("paths");
                 Assert.False(docPaths.GetProperty("/api/desktop/auth/login").GetProperty("post").TryGetProperty("security", out _));
