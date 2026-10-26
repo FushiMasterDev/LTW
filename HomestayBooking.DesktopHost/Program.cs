@@ -81,6 +81,12 @@ public partial class DesktopHostProgram
         }));
         app.UseStatusCodePages(async context => await DesktopApiRegistration.WriteProblemAsync(context.HttpContext,
             context.HttpContext.Response.StatusCode, Microsoft.AspNetCore.WebUtilities.ReasonPhrases.GetReasonPhrase(context.HttpContext.Response.StatusCode)));
+        // Như web: thông báo luôn tiếng Việt, không theo ngôn ngữ của Windows chạy host.
+        app.UseRequestLocalization(o =>
+        {
+            o.SetDefaultCulture("vi-VN").AddSupportedCultures("vi-VN").AddSupportedUICultures("vi-VN");
+            o.RequestCultureProviders.Clear();
+        });
         app.UseSwagger();
         app.UseSwaggerUI();
         app.UseRouting();
