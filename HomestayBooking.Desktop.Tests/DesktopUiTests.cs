@@ -40,7 +40,7 @@ public sealed class DesktopUiTests
         Ui.Click(Ui.Field<Guna2Button>(login, "btnLogin"));
         Ui.Until(() => opened is not null && login.Visible, $"mở {dashboard.Name} rồi quay lại màn đăng nhập");
         Assert.Empty(Errors);
-    });
+    }, arguments: [code, dashboard]);
 
     [Fact]
     public void WrongPasswordShowsServerMessage() => Ui.Run(() =>
@@ -192,7 +192,7 @@ public sealed class DesktopUiTests
         var status = Ui.Field<Guna2HtmlLabel>(form, "lblStatus");
         Ui.Until(() => status.Text == "Đã thêm.", "thêm ngày lễ");
 
-        DataGridViewRow Row() => grid.Rows.Cast<DataGridViewRow>().Single(r => (string)r.Cells["Date"].Value == "2031-12-29");
+        DataGridViewRow Row() => grid.Rows.Cast<DataGridViewRow>().Single(r => (string?)r.Cells["Date"].Value == "2031-12-29");
         grid.CurrentCell = Row().Cells["Date"];
         Ui.Field<Guna2TextBox>(form, "txtHolidayName").Text = "Ngày lễ test đã sửa";
         Ui.Click(Ui.Field<Guna2Button>(form, "btnUpdate"));
@@ -202,7 +202,7 @@ public sealed class DesktopUiTests
         grid.CurrentCell = Row().Cells["Date"];
         Ui.Click(Ui.Field<Guna2Button>(form, "btnDelete"));
         Ui.Until(() => status.Text == "Đã xóa.", "xóa ngày lễ");
-        Assert.DoesNotContain(grid.Rows.Cast<DataGridViewRow>(), r => (string)r.Cells["Date"].Value == "2031-12-29");
+        Assert.DoesNotContain(grid.Rows.Cast<DataGridViewRow>(), r => (string?)r.Cells["Date"].Value == "2031-12-29");
         Assert.Empty(Errors);
     });
 }
