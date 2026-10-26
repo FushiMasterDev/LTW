@@ -196,7 +196,7 @@ partial class FrmLogin
         AutoScaleMode = AutoScaleMode.Font;
         AutoSize = true;
         BackColor = Color.White;
-        BackgroundImage = (Image?)resources.GetObject("$this.BackgroundImage")!;
+
         ClientSize = new Size(1196, 759);
         Controls.Add(card);
         Font = new Font("Segoe UI", 9F);
