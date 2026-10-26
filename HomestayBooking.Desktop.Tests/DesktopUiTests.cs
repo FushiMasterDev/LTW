@@ -30,7 +30,7 @@ public sealed class DesktopUiTests
         using var timer = new System.Windows.Forms.Timer { Interval = 200 };
         timer.Tick += (_, _) =>
         {
-            var form = Application.OpenForms.Cast<Form>().FirstOrDefault(f => f.GetType() == dashboard);
+            var form = Application.OpenForms.Cast<Form>().FirstOrDefault(f => f.GetType() == dashboard && !f.InvokeRequired);
             if (form is null) return;
             timer.Stop();
             Ui.Settle(1500);
