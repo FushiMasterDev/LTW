@@ -13,6 +13,7 @@ partial class FrmLogin
     private Guna2Button btnForgot = null!;
     private Guna2Button btnShowPassword = null!;
     private Guna2CheckBox chkRemember = null!;
+    private Guna2TextBox txtServerUrl = null!;
 
     protected override void Dispose(bool disposing)
     {
@@ -43,6 +44,7 @@ partial class FrmLogin
         chkRemember = new Guna2CheckBox();
         btnForgot = new Guna2Button();
         btnLogin = new Guna2Button();
+        txtServerUrl = new Guna2TextBox();
         guna2HtmlLabel1 = new Guna2HtmlLabel();
         guna2HtmlLabel2 = new Guna2HtmlLabel();
         card.SuspendLayout();
@@ -60,6 +62,7 @@ partial class FrmLogin
         card.Controls.Add(chkRemember);
         card.Controls.Add(btnForgot);
         card.Controls.Add(btnLogin);
+        card.Controls.Add(txtServerUrl);
         card.CustomizableEdges = customizableEdges11;
         card.FillColor = Color.White;
         card.Font = new Font("Times New Roman", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
@@ -71,7 +74,7 @@ partial class FrmLogin
         card.ShadowDecoration.CustomizableEdges = customizableEdges12;
         card.ShadowDecoration.Depth = 12;
         card.ShadowDecoration.Enabled = true;
-        card.Size = new Size(457, 500);
+        card.Size = new Size(457, 560);
         card.TabIndex = 0;
         // 
         // txtEmployeeCode
@@ -91,6 +94,21 @@ partial class FrmLogin
         txtEmployeeCode.ShadowDecoration.CustomizableEdges = customizableEdges2;
         txtEmployeeCode.Size = new Size(368, 48);
         txtEmployeeCode.TabIndex = 0;
+        // 
+        // txtServerUrl
+        // 
+        txtServerUrl.BorderColor = Color.FromArgb(220, 227, 231);
+        txtServerUrl.BorderRadius = 10;
+        txtServerUrl.Cursor = Cursors.IBeam;
+        txtServerUrl.DefaultText = "";
+        txtServerUrl.Font = new Font("Segoe UI", 9F);
+        txtServerUrl.Location = new Point(36, 438);
+        txtServerUrl.Margin = new Padding(4, 5, 4, 5);
+        txtServerUrl.Name = "txtServerUrl";
+        txtServerUrl.PlaceholderText = "Địa chỉ máy chủ, ví dụ http://localhost:5080";
+        txtServerUrl.SelectedText = "";
+        txtServerUrl.Size = new Size(368, 40);
+        txtServerUrl.TabIndex = 6;
         // 
         // txtPassword
         // 
@@ -184,7 +202,7 @@ partial class FrmLogin
         // 
         guna2HtmlLabel2.BackColor = Color.Transparent;
         guna2HtmlLabel2.ForeColor = Color.DarkGray;
-        guna2HtmlLabel2.Location = new Point(20, 451);
+        guna2HtmlLabel2.Location = new Point(20, 511);
         guna2HtmlLabel2.Name = "guna2HtmlLabel2";
         guna2HtmlLabel2.Size = new Size(311, 27);
         guna2HtmlLabel2.TabIndex = 7;

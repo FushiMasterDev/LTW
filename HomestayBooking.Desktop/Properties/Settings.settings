@@ -2,7 +2,7 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)">
   <Profiles />
   <Settings>
-    <Setting Name="ApiBaseUrl" Type="(String)" Scope="User"><Value Profile="(Default)">https://localhost:7286</Value></Setting>
+    <Setting Name="ApiBaseUrl" Type="(String)" Scope="User"><Value Profile="(Default)">http://localhost:5080</Value></Setting>
     <Setting Name="RememberEmployeeCode" Type="(String)" Scope="User"><Value Profile="(Default)" /></Setting>
   </Settings>
 </SettingsFile>

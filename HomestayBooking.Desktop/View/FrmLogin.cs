@@ -17,6 +17,7 @@ public partial class FrmLogin : Form
         BackgroundImage = (Image?)resources.GetObject("$this.BackgroundImage")!;
         chkRemember.Checked = !string.IsNullOrEmpty(Properties.Settings.Default.RememberEmployeeCode);
         txtEmployeeCode.Text = Properties.Settings.Default.RememberEmployeeCode;
+        txtServerUrl.Text = Properties.Settings.Default.ApiBaseUrl;
         btnLogin.Click += async (_, _) => await LoginAsync();
         btnForgot.Click += (_, _) => OpenForgotPassword();
         btnShowPassword.Click += (_, _) => TogglePassword();
@@ -33,6 +34,15 @@ public partial class FrmLogin : Form
             ShowMessage("Vui lòng nhập mã nhân viên và mật khẩu.");
             return;
         }
+        var server = txtServerUrl.Text.Trim().TrimEnd('/');
+        if (!Uri.TryCreate(server, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))
+        {
+            ShowMessage("Địa chỉ máy chủ không hợp lệ, ví dụ http://localhost:5080 hoặc http://100.75.198.67:5080.");
+            txtServerUrl.Focus();
+            return;
+        }
+        // Chỉ lưu xuống máy khi đăng nhập thành công (Settings.Save bên dưới).
+        Properties.Settings.Default.ApiBaseUrl = server;
 
         SetBusy(true);
         try
@@ -72,7 +82,7 @@ public partial class FrmLogin : Form
         }
         catch (HttpRequestException)
         {
-            ShowMessage("Không kết nối được máy chủ. Hãy kiểm tra địa chỉ API và mạng.");
+            ShowMessage($"Không kết nối được máy chủ {DesktopSettings.ApiBaseUrl}. Hãy kiểm tra địa chỉ máy chủ và mạng (Tailscale).");
         }
         catch (TaskCanceledException)
         {
@@ -100,6 +110,7 @@ public partial class FrmLogin : Form
         btnForgot.Enabled = !busy;
         txtEmployeeCode.Enabled = !busy;
         txtPassword.Enabled = !busy;
+        txtServerUrl.Enabled = !busy;
         btnLogin.Text = busy ? "ĐANG XỬ LÝ..." : "ĐĂNG NHẬP";
         UseWaitCursor = busy;
     }
