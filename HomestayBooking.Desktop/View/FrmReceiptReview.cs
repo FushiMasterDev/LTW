@@ -6,7 +6,7 @@ using HomestayBooking.Desktop.Models.Accountant;
 
 namespace HomestayBooking.Desktop.View;
 
-internal partial class FrmReceiptReview : Form
+internal partial class FrmReceiptReview : Form, IAccountantRefreshable
 {
     private readonly AccountantController? _api;
     private List<ReceiptDto> _rows = [];
@@ -29,6 +29,17 @@ internal partial class FrmReceiptReview : Form
         btnResetImage.Click += (_, _) => { _zoom = 1f; ApplyZoom(); };
         Shown += async (_, _) => await LoadRowsAsync();
     }
+    public FrmReceiptReview(EmployeeSession session, bool canReview) : this(session)
+    {
+        if (!canReview)
+        {
+            btnApprove.Visible = false;
+            btnReject.Visible = false;
+            txtRejectReason.Visible = false;
+            lblImageMessage.Text = "Chế độ Chỉ xem (Quản trị viên)";
+        }
+    }
+    public Task RefreshDataAsync() => LoadRowsAsync();
     private async Task LoadRowsAsync()
     {
         try
@@ -43,11 +54,21 @@ internal partial class FrmReceiptReview : Form
     private async Task SelectReceiptAsync()
     {
         UpdateSelection();
-        var receipt = Selected; if (receipt is null || _api is null) return;
+        picReceipt.Image?.Dispose();
+        picReceipt.Image = null;
+        var receipt = Selected;
+        if (receipt is null || _api is null) { lblImageMessage.Text = "Chọn một bill để xem ảnh"; return; }
+        lblImageMessage.Text = "Đang tải bill an toàn...";
         try
         {
             var (bytes, contentType) = await _api.GetReceiptFileAsync(receipt.PaymentId);
-            if (contentType == "application/pdf") { lblImageMessage.Text = "Bill là PDF. Đang lưu tệp tạm..."; var path = Path.Combine(Path.GetTempPath(), $"receipt-{receipt.PaymentId}.pdf"); await File.WriteAllBytesAsync(path, bytes); lblImageMessage.Text = $"PDF đã lưu: {path}"; return; }
+            if (contentType == "application/pdf")
+            {
+                var path = Path.Combine(Path.GetTempPath(), $"receipt-{receipt.PaymentId}.pdf");
+                await File.WriteAllBytesAsync(path, bytes);
+                lblImageMessage.Text = $"PDF đã lưu vào thư mục tạm: {path}";
+                return;
+            }
             using var stream = new MemoryStream(bytes); using var source = Image.FromStream(stream); picReceipt.Image?.Dispose(); picReceipt.Image = new Bitmap(source); _zoom = 1f; ApplyZoom(); lblImageMessage.Text = "";
         }
         catch (Exception ex) { lblImageMessage.Text = ex.Message; }
@@ -55,14 +76,22 @@ internal partial class FrmReceiptReview : Form
     private void ApplyZoom()
     {
         if (picReceipt.Image is null) return;
-        picReceipt.SizeMode = _zoom <= 1f ? PictureBoxSizeMode.Zoom : PictureBoxSizeMode.StretchImage;
-        if (_zoom > 1f) { picReceipt.Width = (int)(picReceipt.Parent!.ClientSize.Width * _zoom); picReceipt.Height = (int)(picReceipt.Parent.ClientSize.Height * _zoom); }
-        else { picReceipt.Dock = DockStyle.Fill; }
+        if (_zoom <= 1f)
+        {
+            picReceipt.Dock = DockStyle.Fill;
+            picReceipt.SizeMode = PictureBoxSizeMode.Zoom;
+            return;
+        }
+        picReceipt.Dock = DockStyle.None;
+        picReceipt.SizeMode = PictureBoxSizeMode.Normal;
+        picReceipt.Size = new Size((int)(picReceipt.Image.Width * _zoom), (int)(picReceipt.Image.Height * _zoom));
+        picReceipt.Location = new Point(10, 58);
     }
     private void UpdateSelection()
     {
         var r = Selected; lblBookingCodeValue.Text = r?.BookingCode ?? "—"; lblAmountDueValue.Text = r is null ? "—" : $"{r.AmountDue:N0} đ";
-        lblTransferContentValue.Text = r?.TransferContent ?? "—"; lblRejectionCountValue.Text = r is null ? "—" : r.PreviousRejections.ToString();
+        lblTransferContentValue.Text = $"Nội dung chuyển khoản: {r?.TransferContent ?? "—"}"; lblRejectionCountValue.Text = r is null ? "Số lần từ chối: —" : $"Số lần từ chối: {r.PreviousRejections}";
+        lblRejectionCountValue.ForeColor = r?.PreviousRejections > 0 ? Color.FromArgb(200,90,50) : Color.FromArgb(104,120,124);
         var enabled = r?.Status == "Submitted"; btnApprove.Enabled = enabled; btnReject.Enabled = enabled;
     }
     private async Task ApproveAsync()

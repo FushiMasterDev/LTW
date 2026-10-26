@@ -25,23 +25,36 @@ public partial class FrmCreateBooking
         lblPageInfo = new Label(); lblResult = new Label(); lblSearchTitle = new Label(); lblCreateTitle = new Label();
         SuspendLayout();
 
-        var green = Color.FromArgb(19, 132, 111); var greenHover = Color.FromArgb(16, 112, 94);
+        var green = Color.FromArgb(30, 58, 47); var greenHover = Color.FromArgb(43, 76, 61);
         var ink = Color.FromArgb(30, 58, 47); var muted = Color.FromArgb(104, 120, 124); var border = Color.FromArgb(220, 227, 231);
-        foreach (var panel in new[] { pnlSearchAvailability, pnlCreateBooking }) { panel.FillColor = Color.White; panel.BorderRadius = 14; panel.Padding = new Padding(12); }
-        foreach (var combo in new[] { cboArea, cboHomestay, cboRoomType, cboChannel }) { combo.BorderRadius = 8; combo.BorderColor = border; combo.Font = new Font("Segoe UI", 9F); combo.ForeColor = ink; combo.ItemHeight = 28; }
-        foreach (var picker in new[] { dtpCheckIn, dtpCheckOut }) { picker.BorderRadius = 8; picker.FillColor = Color.White; picker.BorderColor = border; picker.ForeColor = ink; picker.Font = new Font("Segoe UI", 9F); picker.Height = 34; }
-        numGuests.BorderRadius = 8; numGuests.BorderColor = border; numGuests.Font = new Font("Segoe UI", 9F); numGuests.Height = 34; numGuests.Minimum = 1; numGuests.Value = 1;
-        foreach (var input in new[] { txtPhone, txtFullName, txtEmail, txtSpecialRequests }) { input.BorderRadius = 8; input.BorderColor = border; input.Font = new Font("Segoe UI", 9F); input.ForeColor = ink; }
+       
         txtPhone.PlaceholderText = "Số điện thoại *"; txtFullName.PlaceholderText = "Họ tên người ở *"; txtEmail.PlaceholderText = "Email (không bắt buộc)";
         txtSpecialRequests.PlaceholderText = "Yêu cầu đặc biệt (không bắt buộc)"; txtSpecialRequests.Multiline = true;
+        pnlSearchAvailability.FillColor=Color.White; pnlSearchAvailability.BorderRadius=15; pnlSearchAvailability.Padding=new Padding(12);
+        pnlCreateBooking.FillColor=Color.White; pnlCreateBooking.BorderRadius=15; pnlCreateBooking.Padding=new Padding(12);
+        cboArea.BorderRadius=12; cboArea.BorderColor=border; cboArea.Font=new Font("Segoe UI",9F); cboArea.ForeColor=ink; cboArea.ItemHeight=28;
+        cboHomestay.BorderRadius=12; cboHomestay.BorderColor=border; cboHomestay.Font=new Font("Segoe UI",9F); cboHomestay.ForeColor=ink; cboHomestay.ItemHeight=28;
+        cboRoomType.BorderRadius=12; cboRoomType.BorderColor=border; cboRoomType.Font=new Font("Segoe UI",9F); cboRoomType.ForeColor=ink; cboRoomType.ItemHeight=28;
+        cboChannel.BorderRadius=12; cboChannel.BorderColor=border; cboChannel.Font=new Font("Segoe UI",9F); cboChannel.ForeColor=ink; cboChannel.ItemHeight=28;
+        dtpCheckIn.BorderRadius=12; dtpCheckIn.FillColor=Color.White; dtpCheckIn.BorderColor=border; dtpCheckIn.ForeColor=ink; dtpCheckIn.Font=new Font("Segoe UI",9F);
+        dtpCheckOut.BorderRadius=12; dtpCheckOut.FillColor=Color.White; dtpCheckOut.BorderColor=border; dtpCheckOut.ForeColor=ink; dtpCheckOut.Font=new Font("Segoe UI",9F);
+        numGuests.BorderRadius=12; numGuests.BorderColor=border; numGuests.Font=new Font("Segoe UI",9F); numGuests.Minimum=1; numGuests.Value=1;
+        txtPhone.BorderRadius=12; txtPhone.BorderColor=border; txtPhone.Font=new Font("Segoe UI",9F); txtPhone.ForeColor=ink;
+        txtFullName.BorderRadius=12; txtFullName.BorderColor=border; txtFullName.Font=new Font("Segoe UI",9F); txtFullName.ForeColor=ink;
+        txtEmail.BorderRadius=12; txtEmail.BorderColor=border; txtEmail.Font=new Font("Segoe UI",9F); txtEmail.ForeColor=ink;
+        txtSpecialRequests.BorderRadius=12; txtSpecialRequests.BorderColor=border; txtSpecialRequests.Font=new Font("Segoe UI",9F); txtSpecialRequests.ForeColor=ink;
+        btnCheckAvailability.FillColor=Color.FromArgb(200,90,50); btnCheckAvailability.ForeColor=Color.White; btnCheckAvailability.BorderRadius=18; btnCheckAvailability.Font=new Font("Segoe UI",9F,FontStyle.Bold); btnCheckAvailability.HoverState.FillColor=Color.FromArgb(174,73,39);
+        btnSubmitBooking.FillColor=green; btnSubmitBooking.ForeColor=Color.White; btnSubmitBooking.BorderRadius=21; btnSubmitBooking.Font=new Font("Segoe UI",9F,FontStyle.Bold); btnSubmitBooking.HoverState.FillColor=greenHover;
+        btnPrevPage.FillColor=Color.FromArgb(250,247,242); btnPrevPage.ForeColor=green; btnPrevPage.BorderRadius=17; btnPrevPage.Font=new Font("Segoe UI",9F,FontStyle.Bold);
+        btnNextPage.FillColor=Color.FromArgb(250,247,242); btnNextPage.ForeColor=green; btnNextPage.BorderRadius=17; btnNextPage.Font=new Font("Segoe UI",9F,FontStyle.Bold);
+        btnResetForm.FillColor=Color.FromArgb(250,247,242); btnResetForm.ForeColor=green; btnResetForm.BorderRadius=19; btnResetForm.Font=new Font("Segoe UI",9F,FontStyle.Bold);
         dgvAvailability.ThemeStyle.HeaderStyle.BackColor = green; dgvAvailability.ThemeStyle.HeaderStyle.ForeColor = Color.White; dgvAvailability.ThemeStyle.HeaderStyle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
         dgvAvailability.ThemeStyle.RowsStyle.BackColor = Color.White; dgvAvailability.ThemeStyle.RowsStyle.ForeColor = ink; dgvAvailability.ThemeStyle.RowsStyle.Font = new Font("Segoe UI", 9F);
         dgvAvailability.ThemeStyle.AlternatingRowsStyle.BackColor = Color.FromArgb(243, 247, 246); dgvAvailability.ThemeStyle.GridColor = Color.FromArgb(234, 240, 238);
         dgvAvailability.BackgroundColor = Color.White; dgvAvailability.BorderStyle = BorderStyle.None; dgvAvailability.ColumnHeadersHeight = 34; dgvAvailability.RowTemplate.Height = 30;
-        foreach (var button in new[] { btnCheckAvailability, btnSubmitBooking }) { button.FillColor = green; button.ForeColor = Color.White; button.BorderRadius = 8; button.Font = new Font("Segoe UI", 9F, FontStyle.Bold); button.HoverState.FillColor = greenHover; }
-        foreach (var button in new[] { btnPrevPage, btnNextPage, btnResetForm }) { button.FillColor = Color.FromArgb(239, 246, 244); button.ForeColor = green; button.BorderRadius = 8; button.Font = new Font("Segoe UI", 9F, FontStyle.Bold); button.HoverState.FillColor = Color.FromArgb(224, 239, 234); }
+    
 
-        Text = "Tra cứu & Đặt phòng hộ"; BackColor = Color.FromArgb(243, 247, 246); Font = new Font("Segoe UI", 9F); AutoScaleMode = AutoScaleMode.Font; ClientSize = new Size(900, 650); MinimumSize = new Size(900, 650);
+        Text = "Tra cứu & Đặt phòng hộ"; BackColor = Color.FromArgb(250, 247, 242); Font = new Font("Segoe UI", 9F); AutoScaleMode = AutoScaleMode.Font; ClientSize = new Size(900, 650); MinimumSize = new Size(900, 650);
         pnlSearchAvailability.Location = new Point(16, 16); pnlSearchAvailability.Size = new Size(868, 292); pnlSearchAvailability.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         pnlCreateBooking.Location = new Point(16, 320); pnlCreateBooking.Size = new Size(868, 314); pnlCreateBooking.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         lblSearchTitle.Location = new Point(16, 12); lblSearchTitle.Size = new Size(400, 25); lblSearchTitle.Font = new Font("Segoe UI", 11F, FontStyle.Bold); lblSearchTitle.ForeColor = ink; lblSearchTitle.Text = "Tra cứu phòng trống";

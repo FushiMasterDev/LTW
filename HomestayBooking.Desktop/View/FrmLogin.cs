@@ -1,7 +1,8 @@
-using System.Net.Http.Json;
-using System.Text.Json;
 using Guna.UI2.WinForms;
 using HomestayBooking.Desktop.Models;
+using HomestayBooking.Desktop.Properties;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace HomestayBooking.Desktop.View;
 
@@ -12,6 +13,8 @@ public partial class FrmLogin : Form
     public FrmLogin()
     {
         InitializeComponent();
+        System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FrmLogin));
+        BackgroundImage = (Image?)resources.GetObject("$this.BackgroundImage")!;
         chkRemember.Checked = !string.IsNullOrEmpty(Properties.Settings.Default.RememberEmployeeCode);
         txtEmployeeCode.Text = Properties.Settings.Default.RememberEmployeeCode;
         btnLogin.Click += async (_, _) => await LoginAsync();
@@ -46,17 +49,22 @@ public partial class FrmLogin : Form
             var session = await response.Content.ReadFromJsonAsync<EmployeeSession>();
             if (session is null) { ShowMessage("Máy chủ trả về dữ liệu đăng nhập không hợp lệ."); return; }
             if (!string.Equals(session.Position, "Consultant", StringComparison.Ordinal)
-                && !string.Equals(session.Position, "Accountant", StringComparison.Ordinal))
+                && !string.Equals(session.Position, "Accountant", StringComparison.Ordinal)
+                && !string.Equals(session.Position, "Manager", StringComparison.Ordinal)
+                && !string.Equals(session.Position, "Administrator", StringComparison.Ordinal))
             {
-                ShowMessage("Phân hệ desktop hiện được cấu hình cho nhân viên tư vấn và kế toán.");
+                ShowMessage("Chức vụ này chưa được hỗ trợ trên ứng dụng desktop.");
                 return;
             }
             Properties.Settings.Default.RememberEmployeeCode = chkRemember.Checked ? code : string.Empty;
             Properties.Settings.Default.Save();
             Hide();
-            using Form home = session.Position == "Accountant"
-                ? new FrmAccountantDashboard(session)
-                : new FrmEmployeeHome(session);
+            using Form home = session.Position switch
+            {
+                "Accountant" => new FrmAccountantDashboard(session),
+                "Manager" or "Administrator" => new FrmAdminDashboard(session),
+                _ => new FrmEmployeeHome(session)
+            };
             home.ShowDialog(this);
             txtPassword.Clear();
             Show();

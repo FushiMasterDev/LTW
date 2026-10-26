@@ -20,16 +20,21 @@ internal sealed class AccountantController
         _token = session.AccessToken;
     }
 
-    public Task<PagedDto<ReceiptDto>?> GetReceiptsAsync(string status, int page) => SendAsync<PagedDto<ReceiptDto>>(HttpMethod.Get, $"receipts?status={Uri.EscapeDataString(status)}&page={page}");
-    public Task<object?> ApproveReceiptAsync(int id) => SendAsync<object>(HttpMethod.Post, $"receipts/{id}/approve");
-    public Task<object?> RejectReceiptAsync(int id, string reason) => SendAsync<object>(HttpMethod.Post, $"receipts/{id}/reject", new RejectReceiptRequest { Reason = reason });
-    public Task<List<HolidayDto>?> GetHolidaysAsync() => SendAsync<List<HolidayDto>>(HttpMethod.Get, "holidays");
-    public Task<List<AreaDto>?> GetAreasAsync() => SendAsync<List<AreaDto>>(HttpMethod.Get, "areas");
-    public Task<List<CatalogItemDto>?> GetRoomCategoriesAsync() => SendAsync<List<CatalogItemDto>>(HttpMethod.Get, "room-categories");
-    public Task<List<CatalogItemDto>?> GetAmenitiesAsync() => SendAsync<List<CatalogItemDto>>(HttpMethod.Get, "amenities");
+    public Task<PagedDto<ReceiptDto>?> GetReceiptsAsync(string status, int page) => SendAsync<PagedDto<ReceiptDto>>(HttpMethod.Get, $"accountant/receipts?status={Uri.EscapeDataString(status)}&page={page}");
+    public Task<object?> ApproveReceiptAsync(int id) => SendAsync<object>(HttpMethod.Post, $"accountant/receipts/{id}/approve");
+    public Task<object?> RejectReceiptAsync(int id, string reason) => SendAsync<object>(HttpMethod.Post, $"accountant/receipts/{id}/reject", new RejectReceiptRequest { Reason = reason });
+    public Task<List<HolidayDto>?> GetHolidaysAsync() => SendAsync<List<HolidayDto>>(HttpMethod.Get, "accountant/holidays");
+    public Task<List<AreaDto>?> GetAreasAsync() => SendAsync<List<AreaDto>>(HttpMethod.Get, "accountant/areas");
+    public Task<List<CatalogItemDto>?> GetRoomCategoriesAsync() => SendAsync<List<CatalogItemDto>>(HttpMethod.Get, "accountant/room-categories");
+    public Task<List<CatalogItemDto>?> GetAmenitiesAsync() => SendAsync<List<CatalogItemDto>>(HttpMethod.Get, "accountant/amenities");
+    public Task<PagedDto<BankTransactionDto>?> GetBankTransactionsAsync(string? status, int page) => SendAsync<PagedDto<BankTransactionDto>>(HttpMethod.Get, $"accountant/bank-transactions?status={Uri.EscapeDataString(status ?? "")}&page={page}");
+    public Task<PagedDto<AdditionalDepositDto>?> GetAdditionalDepositsAsync(int page) => SendAsync<PagedDto<AdditionalDepositDto>>(HttpMethod.Get, $"accountant/additional-deposits?page={page}");
+    public Task<object?> RefundTransactionAsync(int id, string bankRef, string? note) => SendAsync<object>(HttpMethod.Post, $"accountant/bank-transactions/{id}/refund", new { bankRef, note });
+    public Task<object?> ConfirmAdditionalDepositAsync(int id, string note) => SendAsync<object>(HttpMethod.Post, $"accountant/additional-deposits/{id}/confirm", new { note });
+    public Task<object?> RejectAdditionalDepositAsync(int id, string note) => SendAsync<object>(HttpMethod.Post, $"accountant/additional-deposits/{id}/reject", new { note });
     public async Task<(byte[] Bytes, string ContentType)> GetReceiptFileAsync(int id)
     {
-        using var request = CreateRequest(HttpMethod.Get, $"receipts/{id}/file");
+        using var request = CreateRequest(HttpMethod.Get, $"accountant/receipts/{id}/file");
         using var response = await Http.SendAsync(request);
         await EnsureSuccessAsync(response);
         return (await response.Content.ReadAsByteArrayAsync(), response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream");
@@ -41,7 +46,7 @@ internal sealed class AccountantController
         if (body is not null) request.Content = JsonContent.Create(body, options: Json);
         using var response = await Http.SendAsync(request);
         await EnsureSuccessAsync(response);
-        if (response.Content.Headers.ContentLength == 0) return default;
+        if (response.StatusCode == HttpStatusCode.NoContent || response.Content.Headers.ContentLength == 0) return default;
         return await response.Content.ReadFromJsonAsync<T>(Json);
     }
 
