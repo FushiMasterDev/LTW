@@ -54,16 +54,18 @@ public class CustomerService(ApplicationDbContext db, VoucherService vouchers, T
         if (input.PhoneNumber is not null && PhoneNumberNormalizer.ToE164(input.PhoneNumber) != customer.Person.PhoneNumber)
             throw new BookingException("Không được sửa số điện thoại định danh của khách.");
         var name = input.FullName?.Trim(); var email = input.Email?.Trim();
+        // "" = xóa email; lưu null để GuestCustomerService còn tự điền email ở lần đặt sau.
+        var storedEmail = string.IsNullOrEmpty(email) ? null : email;
         if (input.FullName is not null && (string.IsNullOrWhiteSpace(name) || name.Length > 100)) throw new BookingException("Họ tên khách không hợp lệ.");
         if (email is { Length: > 256 } || (!string.IsNullOrEmpty(email) && !new EmailAddressAttribute().IsValid(email)))
             throw new BookingException("Email khách không hợp lệ.");
-        if (customer.Person.Account != null && ((name != null && name != customer.Person.FullName) || (email != null && email != customer.Person.Email)))
+        if (customer.Person.Account != null && ((name != null && name != customer.Person.FullName) || (email != null && storedEmail != customer.Person.Email)))
             throw new BookingException("Khách đã có tài khoản phải tự sửa họ tên/email.");
         var old = new { customer.Note, customer.Person.FullName, customer.Person.Email };
         if (input.Note is not null)
             customer.Note = string.IsNullOrWhiteSpace(input.Note) ? null : input.Note.Trim();
         if (name != null) customer.Person.FullName = name;
-        if (email != null) customer.Person.Email = email;
+        if (email != null) customer.Person.Email = storedEmail;
         customer.UpdatedAt = clock.GetUtcNow().UtcDateTime; customer.Person.UpdatedAt = customer.UpdatedAt;
         PartnerServiceSupport.Audit(db, clock, actor, "Customers", id.ToString(), old,
             new { customer.Note, customer.Person.FullName, customer.Person.Email });

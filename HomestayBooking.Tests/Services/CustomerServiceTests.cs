@@ -76,6 +76,15 @@ public sealed class CustomerServiceTests
         Assert.Contains("Điện thoại", System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(audit.OldValues!).GetProperty("FullName").GetString());
     }
 
+    [Fact]
+    public async Task EmptyEmailClearsToNull()
+    {
+        using var h = await BackofficeTestHost.CreateAsync(); var c = new Customer { Person = new() { PhoneNumber = "+84912345678", FullName = "Khách", Email = "cu@example.com" } };
+        h.Db.Add(c); await h.Db.SaveChangesAsync();
+        var dto = await h.Customers().UpdateAsync(c.Id, new("", Email: "  "), h.Consultant);
+        Assert.Null(dto.Email); Assert.Null((await h.Db.PersonProfiles.SingleAsync(p => p.Id == c.PersonId)).Email);
+    }
+
     [Theory]
     [InlineData("accountant")] [InlineData("owner")] [InlineData("customer")]
     public async Task UnauthorizedActorsCannotReadOrEditCustomer(string who)
