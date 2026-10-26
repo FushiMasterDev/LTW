@@ -91,14 +91,16 @@ internal static class Ui
     public static void Until(Func<bool> condition, string what, int timeoutMs = 20000)
     {
         LastStep = what;
-        Console.WriteLine($"  … {what}");
+        Console.WriteLine($"  … {what} ({DateTime.UtcNow:HH:mm:ss})");
         var watch = Stopwatch.StartNew();
         Volatile.Write(ref _stepStarted, Environment.TickCount64);
         while (!condition())
         {
             if (watch.ElapsedMilliseconds > timeoutMs)
                 throw new TimeoutException($"Hết {timeoutMs} ms vẫn chưa thấy: {what}. Hộp thoại đã hiện: {string.Join(" | ", DialogWatcher.Seen)}");
+            var pump = Stopwatch.StartNew();
             Application.DoEvents();
+            if (pump.ElapsedMilliseconds > 2000) Console.WriteLine($"  !! DoEvents mất {pump.ElapsedMilliseconds} ms lúc chờ: {what} ({DateTime.UtcNow:HH:mm:ss})");
             Thread.Sleep(20);
         }
         Volatile.Write(ref _stepStarted, 0);
