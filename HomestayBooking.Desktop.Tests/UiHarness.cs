@@ -39,6 +39,18 @@ internal static class Ui
         }) { IsBackground = true };
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
+        // Một bước chờ quá 25 giây mà luồng giao diện không trả lại (vòng lặp modal lạ): chụp màn hình lúc đang kẹt.
+        var stuck = new Thread(() =>
+        {
+            var shot = false;
+            while (thread.IsAlive && !shot)
+            {
+                Thread.Sleep(1000);
+                if (Volatile.Read(ref _stepStarted) is var t && t > 0 && Environment.TickCount64 - t > 25000)
+                { ScreenSnapshot($"{test}-KET-{LastStep}"); shot = true; }
+            }
+        }) { IsBackground = true };
+        stuck.Start();
         // Có gì chặn luồng giao diện (hộp thoại lạ, vòng lặp modal) thì chụp toàn màn hình rồi báo lỗi, không treo cả lượt chạy.
         if (!thread.Join(TimeSpan.FromMinutes(2)))
         {
@@ -60,6 +72,7 @@ internal static class Ui
     }
 
     public static string LastStep { get; private set; } = "";
+    private static long _stepStarted;
 
     private static void ScreenSnapshot(string test)
     {
@@ -69,7 +82,9 @@ internal static class Ui
         var bounds = Screen.PrimaryScreen!.Bounds;
         using var bitmap = new Bitmap(bounds.Width, bounds.Height);
         using (var g = Graphics.FromImage(bitmap)) g.CopyFromScreen(bounds.Location, Point.Empty, bounds.Size);
-        bitmap.Save(Path.Combine(dir, $"{test}-TREO-man-hinh.png"));
+        var name = string.Concat($"{test}-man-hinh".Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c));
+        bitmap.Save(Path.Combine(dir, name + ".png"));
+        File.WriteAllLines(Path.Combine(dir, name + ".txt"), DialogWatcher.DescribeWindows());
     }
 
     /// <summary>Bơm message loop để các handler async của form chạy tiếp, tới khi điều kiện đúng.</summary>
@@ -78,6 +93,7 @@ internal static class Ui
         LastStep = what;
         Console.WriteLine($"  … {what}");
         var watch = Stopwatch.StartNew();
+        Volatile.Write(ref _stepStarted, Environment.TickCount64);
         while (!condition())
         {
             if (watch.ElapsedMilliseconds > timeoutMs)
@@ -85,6 +101,7 @@ internal static class Ui
             Application.DoEvents();
             Thread.Sleep(20);
         }
+        Volatile.Write(ref _stepStarted, 0);
     }
 
     public static void Settle(int ms = 500)
@@ -165,6 +182,24 @@ internal sealed class DialogWatcher : IDisposable
     }
 
     public static IReadOnlyList<string> Messages => Seen.Distinct().ToList();
+
+    /// <summary>Các cửa sổ đang hiện của tiến trình test (lớp, tiêu đề, kích thước) để biết cái gì đang kẹt.</summary>
+    public static List<string> DescribeWindows()
+    {
+        var pid = (uint)Environment.ProcessId;
+        var rows = new List<string>();
+        EnumWindows((hwnd, _) =>
+        {
+            GetWindowThreadProcessId(hwnd, out var owner);
+            if (owner == pid && IsWindowVisible(hwnd) && GetWindowRect(hwnd, out var r))
+                rows.Add($"{ClassName(hwnd)} | {Text(hwnd)} | {r.Left},{r.Top} {r.Right - r.Left}x{r.Bottom - r.Top}");
+            return true;
+        }, IntPtr.Zero);
+        return rows;
+    }
+
+    [StructLayout(LayoutKind.Sequential)] private struct Rect { public int Left, Top, Right, Bottom; }
+    [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr hwnd, out Rect rect);
 
     public void Dispose() => _stop.Cancel();
 
