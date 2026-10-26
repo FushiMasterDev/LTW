@@ -23,4 +23,7 @@ public static class AppPolicies
 
     /// <summary>Chỉ Kế toán xác nhận khoản cọc bổ sung.</summary>
     public const string ChangeRequestFinance = "ChangeRequestFinance";
+
+    /// <summary>Desktop report access for Manager and Administrator accounts.</summary>
+    public const string DesktopManagement = "DesktopManagement";
 }
