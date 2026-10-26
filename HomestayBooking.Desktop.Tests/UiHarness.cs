@@ -30,7 +30,8 @@ internal static class Ui
             catch (Exception ex) { error = ex; }
             finally
             {
-                foreach (var f in Application.OpenForms.Cast<Form>().ToList())
+                // Application.OpenForms dùng chung cả tiến trình: chỉ đụng form của luồng này, tránh SendMessage sang luồng test khác.
+                foreach (var f in Application.OpenForms.Cast<Form>().Where(f => !f.IsDisposed && !f.InvokeRequired).ToList())
                 {
                     try { Snapshot(f, test); f.Dispose(); }
                     catch (Exception ex) { Console.WriteLine($"[{test}] không đóng được {f.GetType().Name}: {ex.Message}"); }
