@@ -17,7 +17,8 @@ internal partial class FrmCatalogManagement : Form, IAccountantRefreshable
     {
         InitializeComponent(); _api = new AdminController(session);
         btnAreas.Click += async (_, _) => await SelectTabAsync("areas"); btnAmenities.Click += async (_, _) => await SelectTabAsync("amenities"); btnCategories.Click += async (_, _) => await SelectTabAsync("room-categories"); btnHolidays.Click += async (_, _) => await SelectTabAsync("holidays");
-        dgvItems.SelectionChanged += (_, _) => SelectRow(); btnAdd.Click += async (_, _) => await SaveAsync(false); btnUpdate.Click += async (_, _) => await SaveAsync(true); btnDelete.Click += async (_, _) => await DeleteAsync(); btnClear.Click += (_, _) => Clear();
+        // CurrentCellChanged thay vì SelectionChanged: lúc SelectionChanged chạy, CurrentRow có thể vẫn là dòng cũ (đã sửa nhầm ngày lễ).
+        dgvItems.CurrentCellChanged += (_, _) => SelectRow(); btnAdd.Click += async (_, _) => await SaveAsync(false); btnUpdate.Click += async (_, _) => await SaveAsync(true); btnDelete.Click += async (_, _) => await DeleteAsync(); btnClear.Click += (_, _) => Clear();
         Shown += async (_, _) => await RefreshDataAsync();
     }
     public async Task RefreshDataAsync() => await SelectTabAsync(_active);
