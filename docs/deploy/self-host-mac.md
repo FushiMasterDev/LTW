@@ -165,6 +165,19 @@ launchctl bootout "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.fuji.homestay.b
 launchctl bootout "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.fuji.homestay.plist"
 ```
 
+### DesktopHost cho WinForms (cổng 5080, tùy chọn)
+
+`com.fuji.desktophost.plist` cho [DesktopHost](../../HomestayBooking.DesktopHost/README.md) (SQLite, dữ liệu demo) tự chạy khi đăng nhập, KeepAlive, nghe `0.0.0.0:5080` để máy Windows trong LAN/Tailscale gọi tới. Khác app Production, agent chạy thẳng bản build Debug **trong checkout repo**, nên build trước và giữ nguyên thư mục repo. Chạy từ gốc repo:
+
+```bash
+dotnet build HomestayBooking.DesktopHost
+sed -e "s#/Users/REPLACE_ME/LTW#$PWD#g" -e "s#/Users/REPLACE_ME#$HOME#g" deploy/mac/com.fuji.desktophost.plist > "$HOME/Library/LaunchAgents/com.fuji.desktophost.plist"
+plutil -lint "$HOME/Library/LaunchAgents/com.fuji.desktophost.plist"
+launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.fuji.desktophost.plist"
+```
+
+Log ở `~/Library/Logs/fuji-desktophost.log`. Sau khi build bản mới: `launchctl kickstart -k "gui/$(id -u)/com.fuji.desktophost"`. Dừng hẳn: `launchctl bootout "gui/$(id -u)/com.fuji.desktophost"` (`pkill` vô ích vì launchd bật lại). Agent không giữ máy thức; đặt `sudo pmset -a sleep 0` nếu cần chạy liên tục.
+
 ## 6. Thanh toán (0đ): VietQR → tải bill → kế toán duyệt → chủ xác nhận
 
 Không đăng ký/liên kết SePay; giữ `BankAccount__WebhookApiKey=''`. POST JSON hợp lệ tới `/api/bank-webhook/sepay` trả **503 Bank webhook is disabled** trước khi xử lý tiền. Payload sai định dạng có thể bị model validation trả 400; không có giao dịch nào được nhận khi khóa trống.
