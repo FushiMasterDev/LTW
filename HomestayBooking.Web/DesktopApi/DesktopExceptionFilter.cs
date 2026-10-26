@@ -16,7 +16,7 @@ public sealed class DesktopExceptionFilter(IStringLocalizer<SharedResource> loca
         "Không tìm thấy ảnh bill.", "Không tìm thấy bill.", "Không tìm thấy khu vực.", "Không tìm thấy tiện nghi.",
         "Không tìm thấy danh mục loại phòng.", "Không tìm thấy ngày lễ.", "Không tìm thấy homestay.", "Không tìm thấy phòng.", "Không tìm thấy khóa ngày.",
         "Không tìm thấy ảnh.", "Không tìm thấy giấy tờ.", "Không tìm thấy đánh giá.", "Không tìm thấy bảng đối soát.",
-        "File giấy tờ không còn trên máy chủ.",
+        "File giấy tờ không còn trên máy chủ.", "Không tìm thấy giao dịch.", "Không tìm thấy yêu cầu.",
     ];
 
     public void OnException(ExceptionContext context)

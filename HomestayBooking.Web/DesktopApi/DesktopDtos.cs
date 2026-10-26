@@ -41,7 +41,11 @@ public record AssignRequest([Range(1, int.MaxValue)] int EmployeeId);
 public record StatusRequest([property: JsonConverter(typeof(JsonStringEnumConverter<BookingStatus>))] BookingStatus Status,
     [Required, StringLength(500)] string Note, int? NewRoomId = null);
 public record ReasonRequest([Required, StringLength(500)] string Reason);
+public record NoteRequest([Required, StringLength(500)] string Note);
+public record MatchRequest([Required, StringLength(20)] string BookingCode, [StringLength(500)] string? Note = null);
+public record RefundRequest([Required, StringLength(100)] string BankRef, [StringLength(500)] string? Note = null);
 public record BookingStatusDto(int Id, string Code, string Status);
+public record ChangeRequestDecisionDto(int ChangeRequestId, string Status, string? RejectionReason);
 /// <summary>Timestamp UTC; các ngày lưu trú là yyyy-MM-dd, không chuyển múi giờ.</summary>
 public record BookingDto(int Id, string Code, int CustomerId, string ContactName, string ContactPhone, string SourceChannel,
     int HomestayId, string? HomestayName, int RoomTypeId, string? RoomTypeName, int RoomId, string? RoomCode,
@@ -72,6 +76,13 @@ public record ReceiptDto(int PaymentId, string BookingCode, string BookingStatus
     string HomestayName, decimal Amount, decimal AmountDue, string? TransferContent, string Status, DateTime SubmittedAt,
     DateTime HoldExpiresAt, int PreviousRejections, string? ReviewedBy, DateTime? ReviewedAt, string? RejectReason,
     int? SettlementId, string FileUrl);
+public record BankTransactionDto(int Id, string Provider, string ProviderTransactionId, decimal Amount, string? TransferContent,
+    DateTime TransactionTime, string MatchStatus, string? BookingCode, string? BookingStatus, decimal? BookingAmountDue, string? Note,
+    string? ProcessedBy, DateTime? ProcessedAt, string? RefundBankRef, int? SettlementId);
+/// <summary>FileUrl chỉ có khi khách nộp ảnh bill; khoản tự khớp ngân hàng có BankTransactionId.</summary>
+public record AdditionalDepositDto(int PaymentId, int ChangeRequestId, string BookingCode, string ContactName, string ContactPhone,
+    string HomestayName, decimal Amount, string Method, DateTime SubmittedAt, DateTime? PaymentDeadlineAt, string? DecisionNote,
+    int? BankTransactionId, string? TransferContent, int? SettlementId, string? FileUrl);
 
 public static class DesktopMapping
 {
