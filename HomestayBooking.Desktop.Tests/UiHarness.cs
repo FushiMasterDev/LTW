@@ -28,12 +28,21 @@ internal static class Ui
             catch (Exception ex) { error = ex; }
             finally
             {
-                foreach (var f in Application.OpenForms.Cast<Form>().ToList()) { Snapshot(f, test); f.Dispose(); }
+                foreach (var f in Application.OpenForms.Cast<Form>().ToList())
+                {
+                    try { Snapshot(f, test); f.Dispose(); }
+                    catch (Exception ex) { Console.WriteLine($"[{test}] không đóng được {f.GetType().Name}: {ex.Message}"); }
+                }
             }
-        });
+        }) { IsBackground = true };
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
-        thread.Join();
+        // Có gì chặn luồng giao diện (hộp thoại lạ, vòng lặp modal) thì chụp toàn màn hình rồi báo lỗi, không treo cả lượt chạy.
+        if (!thread.Join(TimeSpan.FromMinutes(2)))
+        {
+            ScreenSnapshot(test);
+            throw new TimeoutException($"{test} treo quá 2 phút. Bước cuối: {LastStep}. Hộp thoại: {string.Join(" | ", DialogWatcher.Seen)}");
+        }
         if (error is not null) ExceptionDispatchInfo.Throw(error);
     }
 
@@ -48,9 +57,24 @@ internal static class Ui
         bitmap.Save(Path.Combine(dir, $"{test}-{form.GetType().Name}-{Environment.TickCount64}.png"));
     }
 
+    public static string LastStep { get; private set; } = "";
+
+    private static void ScreenSnapshot(string test)
+    {
+        var dir = Environment.GetEnvironmentVariable("SCREENSHOT_DIR");
+        if (dir is null) return;
+        Directory.CreateDirectory(dir);
+        var bounds = Screen.PrimaryScreen!.Bounds;
+        using var bitmap = new Bitmap(bounds.Width, bounds.Height);
+        using (var g = Graphics.FromImage(bitmap)) g.CopyFromScreen(bounds.Location, Point.Empty, bounds.Size);
+        bitmap.Save(Path.Combine(dir, $"{test}-TREO-man-hinh.png"));
+    }
+
     /// <summary>Bơm message loop để các handler async của form chạy tiếp, tới khi điều kiện đúng.</summary>
     public static void Until(Func<bool> condition, string what, int timeoutMs = 20000)
     {
+        LastStep = what;
+        Console.WriteLine($"  … {what}");
         var watch = Stopwatch.StartNew();
         while (!condition())
         {
@@ -83,6 +107,8 @@ internal static class Ui
     public static void Click(Control control)
     {
         Assert.True(control.Enabled, $"{control.Name} đang bị tắt");
+        LastStep = $"bấm {control.Name} ({control.Text})";
+        Console.WriteLine($"  … {LastStep}");
         typeof(Control).GetMethod("OnClick", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(control, [EventArgs.Empty]);
     }
 

@@ -60,7 +60,7 @@ public sealed class DesktopUiTests
         var form = Ui.Show(new FrmBookingManagement());
         var grid = Ui.Field<Guna2DataGridView>(form, "dgvBookings");
         Ui.Until(() => grid.Rows.Count > 0, "danh sách đơn");
-        Assert.True(grid.Columns.Contains("code") && grid.Columns.Contains("status"), "bảng đơn phải có cột code/status");
+        Assert.True(grid.Columns["code"]!.Visible && grid.Columns["status"]!.Visible && !grid.Columns["customerId"]!.Visible, "bảng đơn chỉ hiện cột cần đọc");
         Ui.Until(() => Ui.Field<Guna2ComboBox>(form, "cboAssignTo").Items.Count > 0, "danh sách nhân viên nhận đơn");
         grid.CurrentCell = grid.Rows[0].Cells["code"];
         var nights = Ui.Field<Guna2DataGridView>(form, "dgvBookingNights");
@@ -93,7 +93,7 @@ public sealed class DesktopUiTests
         Ui.Click(Ui.Field<Guna2Button>(form, "btnCheckAvailability"));
         var offers = Ui.Field<Guna2DataGridView>(form, "dgvAvailability");
         Ui.Until(() => offers.Rows.Count > 0, "phòng trống");
-        offers.CurrentCell = offers.Rows[0].Cells["roomTypeId"];
+        offers.CurrentCell = offers.Rows[0].Cells["homestayName"];
         typeof(DataGridView).GetMethod("OnCellDoubleClick", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
             .Invoke(offers, [new DataGridViewCellEventArgs(0, 0)]);
         var roomType = Ui.Field<Guna2ComboBox>(form, "cboRoomType");
@@ -171,7 +171,7 @@ public sealed class DesktopUiTests
     {
         var form = Ui.Show(new FrmAnalyticsReports(Ui.Login("QL001")));
         var state = Ui.Field<Guna2HtmlLabel>(form, "lblReportState");
-        Ui.Until(() => state.Text.StartsWith("Dữ liệu từ"), "báo cáo quản lý");
+        Ui.Until(() => state.Text?.StartsWith("Dữ liệu từ") == true, "báo cáo quản lý");
         Assert.True(Ui.Field<Guna2DataGridView>(form, "dgvEmployees").Columns.Contains("Mã_NV"));
         Assert.True(Ui.Field<Guna2ComboBox>(form, "cboArea").Items.Count > 1);
     });
