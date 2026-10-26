@@ -19,6 +19,8 @@ internal static class Ui
         Exception? error = null;
         var thread = new Thread(() =>
         {
+            // Như Application.Run: continuation của handler async quay về luồng giao diện.
+            SynchronizationContext.SetSynchronizationContext(new WindowsFormsSynchronizationContext());
             using var dialogs = new DialogWatcher();
             try
             {
