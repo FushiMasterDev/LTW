@@ -4,6 +4,8 @@ REST API cho WinForms chạy ngay trên Windows, không cần SQL Server, máy M
 
 ## Chạy từ mã nguồn trên Windows
 
+Hướng dẫn từng bước cho người mới, kèm test Swagger/PowerShell: [docs/api/chay-desktop-host-windows.md](../docs/api/chay-desktop-host-windows.md).
+
 Cài **.NET 10 SDK x64, phiên bản 10.0.400 trở lên** theo `global.json`. Mở PowerShell tại thư mục chứa `HomestayBooking.sln`:
 
 ```powershell
