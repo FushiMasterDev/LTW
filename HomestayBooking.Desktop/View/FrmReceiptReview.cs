@@ -51,8 +51,11 @@ internal partial class FrmReceiptReview : Form, IAccountantRefreshable
         }
         catch (Exception ex) { Models.DesktopApi.ShowError(this, ex); }
     }
+    // Bấm nhanh sang bill khác: ảnh bill cũ tải về sau không được đè lên bill đang chọn (duyệt nhầm).
+    private int _receiptVersion;
     private async Task SelectReceiptAsync()
     {
+        var version = ++_receiptVersion;
         UpdateSelection();
         picReceipt.Image?.Dispose();
         picReceipt.Image = null;
@@ -62,6 +65,7 @@ internal partial class FrmReceiptReview : Form, IAccountantRefreshable
         try
         {
             var (bytes, contentType) = await _api.GetReceiptFileAsync(receipt.PaymentId);
+            if (version != _receiptVersion) return;
             if (contentType == "application/pdf")
             {
                 var path = Path.Combine(Path.GetTempPath(), $"receipt-{receipt.PaymentId}.pdf");
@@ -71,7 +75,7 @@ internal partial class FrmReceiptReview : Form, IAccountantRefreshable
             }
             using var stream = new MemoryStream(bytes); using var source = Image.FromStream(stream); picReceipt.Image?.Dispose(); picReceipt.Image = new Bitmap(source); _zoom = 1f; ApplyZoom(); lblImageMessage.Text = "";
         }
-        catch (Exception ex) { lblImageMessage.Text = ex.Message; }
+        catch (Exception ex) { if (version == _receiptVersion) lblImageMessage.Text = ex.Message; }
     }
     private void ApplyZoom()
     {
