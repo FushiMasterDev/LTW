@@ -1,6 +1,6 @@
 # Prompt: Làm lại giao diện WinForms kéo thả được (đợt 1/3): khung chung, đăng nhập, chủ homestay
 
-Chạy trên **máy Windows**. Repo `https://github.com/FushiMasterDev/LTW`, nhánh **`feature/desktop-ui-rebuild-1`**.
+Chạy trên **máy Windows**. Repo `https://github.com/FushiMasterDev/LTW`, nhánh **`feature/desktop-ui-rebuild`**.
 
 Làm lại giao diện chia 3 đợt:
 
@@ -19,7 +19,7 @@ Mục 2 (quy ước Designer) áp dụng cho cả 3 đợt.
    ```powershell
    git clone https://github.com/FushiMasterDev/LTW.git D:\LTW
    cd D:\LTW
-   git switch feature/desktop-ui-rebuild-1
+   git switch feature/desktop-ui-rebuild
    dotnet build HomestayBooking.sln
    ```
 3. Chạy **DesktopHost ngay trên máy Windows này** để test, không dùng host trên Mac. Host trên Mac là dữ liệu demo dùng chung, test sẽ ghi dữ liệu vào đó.
@@ -162,5 +162,5 @@ Lưu ý dữ liệu:
   - kết quả mở Designer;
   - lỗi API phát hiện;
   - việc còn lại cho đợt 2.
-- **Commit** theo từng bước trên nhánh `feature/desktop-ui-rebuild-1` (khung chung → đăng nhập → từng màn chủ), message tiếng Việt kiểu `feat(desktop): ...`. **Không push, không merge, không tạo PR**; người dùng tự push để Claude review.
+- **Commit** theo từng bước trên nhánh `feature/desktop-ui-rebuild` (khung chung → đăng nhập → từng màn chủ), message tiếng Việt kiểu `feat(desktop): ...`. **Không push, không merge, không tạo PR**; người dùng tự push để Claude review.
 - Không đụng `docs/bao-cao/`, `deploy/`. Không thêm dòng Co-Authored-By, không ghi tên công cụ AI trong file hay commit.
