@@ -30,6 +30,8 @@ internal sealed class AccountantController
     /// <summary>status null = các khoản cần xử lý tay (chuyển thiếu, đến muộn, không rõ đơn).</summary>
     public Task<PagedDto<BankTransactionDto>?> GetBankTransactionsAsync(string? status, int page) => SendAsync<PagedDto<BankTransactionDto>>(HttpMethod.Get, status is null ? $"bank-transactions?page={page}" : $"bank-transactions?status={Uri.EscapeDataString(status)}&page={page}");
     public Task<PagedDto<AdditionalDepositDto>?> GetAdditionalDepositsAsync(int page) => SendAsync<PagedDto<AdditionalDepositDto>>(HttpMethod.Get, $"additional-deposits?page={page}");
+    public Task<object?> MatchTransactionAsync(int id, string bookingCode, string? note) => SendAsync<object>(HttpMethod.Post, $"bank-transactions/{id}/match", new { bookingCode, note });
+    public Task<object?> IgnoreTransactionAsync(int id, string reason) => SendAsync<object>(HttpMethod.Post, $"bank-transactions/{id}/ignore", new { reason });
     public Task<object?> RefundTransactionAsync(int id, string bankRef, string? note) => SendAsync<object>(HttpMethod.Post, $"bank-transactions/{id}/refund", new { bankRef, note });
     public Task<object?> ConfirmAdditionalDepositAsync(int changeRequestId, string note) => SendAsync<object>(HttpMethod.Post, $"additional-deposits/{changeRequestId}/confirm", new { note });
     public Task<object?> RejectAdditionalDepositAsync(int changeRequestId, string reason) => SendAsync<object>(HttpMethod.Post, $"additional-deposits/{changeRequestId}/reject", new { reason });

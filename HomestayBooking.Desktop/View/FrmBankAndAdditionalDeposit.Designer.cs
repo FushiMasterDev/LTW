@@ -2,7 +2,7 @@ using Guna.UI2.WinForms;
 namespace HomestayBooking.Desktop.View;
 partial class FrmBankAndAdditionalDeposit
 {
- private Guna2TabControl tabs=null!; private TabPage tabTransactions=null!,tabDeposits=null!; private Guna2DataGridView dgvTransactions=null!,dgvDeposits=null!; private Guna2TextBox txtRefundBankRef=null!,txtFinanceNote=null!,txtRejectionReason=null!,txtTransactionNote=null!; private Guna2ComboBox cboMatchStatus=null!; private Guna2Button btnMarkRefunded=null!,btnConfirmDeposit=null!,btnRejectDeposit=null!,btnRefresh=null!,btnTransactionPrev=null!,btnTransactionNext=null!,btnDepositPrev=null!,btnDepositNext=null!; private Guna2HtmlLabel lblTransactionPage=null!,lblDepositPage=null!;
+ private Guna2TabControl tabs=null!; private TabPage tabTransactions=null!,tabDeposits=null!; private Guna2DataGridView dgvTransactions=null!,dgvDeposits=null!; private Guna2TextBox txtRefundBankRef=null!,txtFinanceNote=null!,txtRejectionReason=null!,txtTransactionNote=null!; private Guna2ComboBox cboMatchStatus=null!; private Guna2TextBox txtMatchBookingCode=null!; private Guna2Button btnMatchTransaction=null!,btnIgnoreTransaction=null!; private Guna2Button btnMarkRefunded=null!,btnConfirmDeposit=null!,btnRejectDeposit=null!,btnRefresh=null!,btnTransactionPrev=null!,btnTransactionNext=null!,btnDepositPrev=null!,btnDepositNext=null!; private Guna2HtmlLabel lblTransactionPage=null!,lblDepositPage=null!;
     private void InitializeComponent()
     {
         Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges1 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
@@ -48,6 +48,9 @@ partial class FrmBankAndAdditionalDeposit
         txtRefundBankRef = new Guna2TextBox();
         txtTransactionNote = new Guna2TextBox();
         btnMarkRefunded = new Guna2Button();
+        txtMatchBookingCode = new Guna2TextBox();
+        btnMatchTransaction = new Guna2Button();
+        btnIgnoreTransaction = new Guna2Button();
         tabDeposits = new TabPage();
         dgvDeposits = new Guna2DataGridView();
         lblDepositPage = new Guna2HtmlLabel();
@@ -105,6 +108,9 @@ partial class FrmBankAndAdditionalDeposit
         tabTransactions.Controls.Add(txtRefundBankRef);
         tabTransactions.Controls.Add(txtTransactionNote);
         tabTransactions.Controls.Add(btnMarkRefunded);
+        tabTransactions.Controls.Add(txtMatchBookingCode);
+        tabTransactions.Controls.Add(btnMatchTransaction);
+        tabTransactions.Controls.Add(btnIgnoreTransaction);
         tabTransactions.Location = new Point(224, 4);
         tabTransactions.Name = "tabTransactions";
         tabTransactions.Size = new Size(922, 755);
@@ -273,6 +279,46 @@ partial class FrmBankAndAdditionalDeposit
         btnMarkRefunded.Size = new Size(280, 42);
         btnMarkRefunded.TabIndex = 8;
         btnMarkRefunded.Text = "Ghi nhận đã hoàn giao dịch";
+        // 
+        // txtMatchBookingCode
+        // 
+        txtMatchBookingCode.BorderColor = Color.FromArgb(220, 227, 231);
+        txtMatchBookingCode.BorderRadius = 12;
+        txtMatchBookingCode.DefaultText = "";
+        txtMatchBookingCode.Font = new Font("Segoe UI", 9F);
+        txtMatchBookingCode.Location = new Point(26, 631);
+        txtMatchBookingCode.Margin = new Padding(4, 5, 4, 5);
+        txtMatchBookingCode.Name = "txtMatchBookingCode";
+        txtMatchBookingCode.PlaceholderText = "Mã đơn cần khớp, ví dụ FJ261020-001";
+        txtMatchBookingCode.SelectedText = "";
+        txtMatchBookingCode.Size = new Size(291, 42);
+        txtMatchBookingCode.TabIndex = 9;
+        // 
+        // btnMatchTransaction
+        // 
+        btnMatchTransaction.BorderRadius = 21;
+        btnMatchTransaction.Enabled = false;
+        btnMatchTransaction.FillColor = Color.FromArgb(30, 58, 47);
+        btnMatchTransaction.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+        btnMatchTransaction.ForeColor = Color.White;
+        btnMatchTransaction.Location = new Point(325, 631);
+        btnMatchTransaction.Name = "btnMatchTransaction";
+        btnMatchTransaction.Size = new Size(300, 42);
+        btnMatchTransaction.TabIndex = 10;
+        btnMatchTransaction.Text = "Khớp tay với mã đơn";
+        // 
+        // btnIgnoreTransaction
+        // 
+        btnIgnoreTransaction.BorderRadius = 21;
+        btnIgnoreTransaction.Enabled = false;
+        btnIgnoreTransaction.FillColor = Color.FromArgb(104, 120, 124);
+        btnIgnoreTransaction.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+        btnIgnoreTransaction.ForeColor = Color.White;
+        btnIgnoreTransaction.Location = new Point(632, 631);
+        btnIgnoreTransaction.Name = "btnIgnoreTransaction";
+        btnIgnoreTransaction.Size = new Size(280, 42);
+        btnIgnoreTransaction.TabIndex = 11;
+        btnIgnoreTransaction.Text = "Bỏ qua (ghi chú là lý do)";
         // 
         // tabDeposits
         // 
