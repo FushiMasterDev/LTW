@@ -20,21 +20,23 @@ internal sealed class AccountantController
         _token = session.AccessToken;
     }
 
-    public Task<PagedDto<ReceiptDto>?> GetReceiptsAsync(string status, int page) => SendAsync<PagedDto<ReceiptDto>>(HttpMethod.Get, $"accountant/receipts?status={Uri.EscapeDataString(status)}&page={page}");
-    public Task<object?> ApproveReceiptAsync(int id) => SendAsync<object>(HttpMethod.Post, $"accountant/receipts/{id}/approve");
-    public Task<object?> RejectReceiptAsync(int id, string reason) => SendAsync<object>(HttpMethod.Post, $"accountant/receipts/{id}/reject", new RejectReceiptRequest { Reason = reason });
-    public Task<List<HolidayDto>?> GetHolidaysAsync() => SendAsync<List<HolidayDto>>(HttpMethod.Get, "accountant/holidays");
-    public Task<List<AreaDto>?> GetAreasAsync() => SendAsync<List<AreaDto>>(HttpMethod.Get, "accountant/areas");
-    public Task<List<CatalogItemDto>?> GetRoomCategoriesAsync() => SendAsync<List<CatalogItemDto>>(HttpMethod.Get, "accountant/room-categories");
-    public Task<List<CatalogItemDto>?> GetAmenitiesAsync() => SendAsync<List<CatalogItemDto>>(HttpMethod.Get, "accountant/amenities");
-    public Task<PagedDto<BankTransactionDto>?> GetBankTransactionsAsync(string? status, int page) => SendAsync<PagedDto<BankTransactionDto>>(HttpMethod.Get, $"accountant/bank-transactions?status={Uri.EscapeDataString(status ?? "")}&page={page}");
-    public Task<PagedDto<AdditionalDepositDto>?> GetAdditionalDepositsAsync(int page) => SendAsync<PagedDto<AdditionalDepositDto>>(HttpMethod.Get, $"accountant/additional-deposits?page={page}");
-    public Task<object?> RefundTransactionAsync(int id, string bankRef, string? note) => SendAsync<object>(HttpMethod.Post, $"accountant/bank-transactions/{id}/refund", new { bankRef, note });
-    public Task<object?> ConfirmAdditionalDepositAsync(int id, string note) => SendAsync<object>(HttpMethod.Post, $"accountant/additional-deposits/{id}/confirm", new { note });
-    public Task<object?> RejectAdditionalDepositAsync(int id, string note) => SendAsync<object>(HttpMethod.Post, $"accountant/additional-deposits/{id}/reject", new { note });
+    public Task<PagedDto<ReceiptDto>?> GetReceiptsAsync(string status, int page) => SendAsync<PagedDto<ReceiptDto>>(HttpMethod.Get, $"receipts?status={Uri.EscapeDataString(status)}&page={page}");
+    public Task<object?> ApproveReceiptAsync(int id) => SendAsync<object>(HttpMethod.Post, $"receipts/{id}/approve");
+    public Task<object?> RejectReceiptAsync(int id, string reason) => SendAsync<object>(HttpMethod.Post, $"receipts/{id}/reject", new RejectReceiptRequest { Reason = reason });
+    public Task<List<HolidayDto>> GetHolidaysAsync() => GetAllAsync<HolidayDto>("holidays");
+    public Task<List<AreaDto>> GetAreasAsync() => GetAllAsync<AreaDto>("areas");
+    public Task<List<CatalogItemDto>> GetRoomCategoriesAsync() => GetAllAsync<CatalogItemDto>("room-categories");
+    public Task<List<CatalogItemDto>> GetAmenitiesAsync() => GetAllAsync<CatalogItemDto>("amenities");
+    /// <summary>status null = các khoản cần xử lý tay (chuyển thiếu, đến muộn, không rõ đơn).</summary>
+    public Task<PagedDto<BankTransactionDto>?> GetBankTransactionsAsync(string? status, int page) => SendAsync<PagedDto<BankTransactionDto>>(HttpMethod.Get, status is null ? $"bank-transactions?page={page}" : $"bank-transactions?status={Uri.EscapeDataString(status)}&page={page}");
+    public Task<PagedDto<AdditionalDepositDto>?> GetAdditionalDepositsAsync(int page) => SendAsync<PagedDto<AdditionalDepositDto>>(HttpMethod.Get, $"additional-deposits?page={page}");
+    public Task<object?> RefundTransactionAsync(int id, string bankRef, string? note) => SendAsync<object>(HttpMethod.Post, $"bank-transactions/{id}/refund", new { bankRef, note });
+    public Task<object?> ConfirmAdditionalDepositAsync(int changeRequestId, string note) => SendAsync<object>(HttpMethod.Post, $"additional-deposits/{changeRequestId}/confirm", new { note });
+    public Task<object?> RejectAdditionalDepositAsync(int changeRequestId, string reason) => SendAsync<object>(HttpMethod.Post, $"additional-deposits/{changeRequestId}/reject", new { reason });
+    private Task<List<T>> GetAllAsync<T>(string path) => DesktopApi.AllPagesAsync(page => SendAsync<PagedDto<T>>(HttpMethod.Get, DesktopApi.WithPage(path, page)));
     public async Task<(byte[] Bytes, string ContentType)> GetReceiptFileAsync(int id)
     {
-        using var request = CreateRequest(HttpMethod.Get, $"accountant/receipts/{id}/file");
+        using var request = CreateRequest(HttpMethod.Get, $"receipts/{id}/file");
         using var response = await Http.SendAsync(request);
         await EnsureSuccessAsync(response);
         return (await response.Content.ReadAsByteArrayAsync(), response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream");
@@ -60,17 +62,13 @@ internal sealed class AccountantController
     private static async Task EnsureSuccessAsync(HttpResponseMessage response)
     {
         if (response.IsSuccessStatusCode) return;
-        var text = await response.Content.ReadAsStringAsync();
-        string? detail = null;
-        try { var error = JsonSerializer.Deserialize<AccountantApiError>(text, Json); detail = error?.Detail ?? error?.Message; } catch (JsonException) { }
-        var message = detail ?? $"Yêu cầu thất bại ({(int)response.StatusCode}).";
+        var message = DesktopApi.ErrorMessage(response.StatusCode, await response.Content.ReadAsStringAsync());
         if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
             AppSession.Current = null;
             Application.Restart();
             throw new OperationCanceledException("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
         }
-        if (response.StatusCode == HttpStatusCode.NotFound) message = "Backend chưa cung cấp REST API này cho Desktop.";
         throw new InvalidOperationException(message);
     }
 }

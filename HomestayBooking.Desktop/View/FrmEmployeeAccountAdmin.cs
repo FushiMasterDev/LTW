@@ -21,8 +21,9 @@ internal partial class FrmEmployeeAccountAdmin : Form, IAccountantRefreshable
     }
     public async Task RefreshDataAsync()
     {
-        try { var rows = await _api.GetAsync<JsonElement>("employees"); dgvEmployees.DataSource = rows.ValueKind == JsonValueKind.Array ? rows.EnumerateArray().Select(e => JsonSerializer.Deserialize<Dictionary<string, object?>>(e.GetRawText())!).ToList() : null; }
-        catch (Exception ex) { lblStatus.Text = ex.Message; }
+        // Desktop API chưa có quản trị tài khoản nhân viên; không gọi endpoint không tồn tại.
+        lblStatus.Text = "Máy chủ chưa cung cấp API quản lý tài khoản nhân viên cho Desktop. Hãy dùng trang Admin trên web.";
+        await Task.CompletedTask;
     }
     private void Unsupported() => MessageBox.Show(this, "Backend hiện chưa cung cấp API quản trị tài khoản nhân sự cho Desktop. Không có thay đổi nào được lưu.", "Chưa hỗ trợ", MessageBoxButtons.OK, MessageBoxIcon.Information);
 }
