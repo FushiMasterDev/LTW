@@ -23,6 +23,7 @@ public sealed class DesktopUiTests
     public void LoginOpensDashboardForPosition(string code, Type dashboard) => Ui.Run(() =>
     {
         var login = Ui.Show(new FrmLogin());
+        Assert.Equal(Ui.ApiUrl, Ui.Field<Guna2TextBox>(login, "txtServerUrl").Text);
         Ui.Field<Guna2TextBox>(login, "txtEmployeeCode").Text = code;
         Ui.Field<Guna2TextBox>(login, "txtPassword").Text = "Fuji@2026";
         Form? opened = null;
@@ -51,6 +52,18 @@ public sealed class DesktopUiTests
         Ui.Click(Ui.Field<Guna2Button>(login, "btnLogin"));
         Ui.Until(() => !DialogWatcher.Seen.IsEmpty, "thông báo đăng nhập sai");
         Assert.DoesNotContain(DialogWatcher.Messages, m => m.Contains("không hợp lệ") || m.Contains("Không kết nối"));
+    });
+
+    [Fact]
+    public void InvalidServerAddressIsRejectedBeforeCallingApi() => Ui.Run(() =>
+    {
+        var login = Ui.Show(new FrmLogin());
+        Ui.Field<Guna2TextBox>(login, "txtServerUrl").Text = "100.75.198.67:5080";
+        Ui.Field<Guna2TextBox>(login, "txtEmployeeCode").Text = "NV001";
+        Ui.Field<Guna2TextBox>(login, "txtPassword").Text = "Fuji@2026";
+        Ui.Click(Ui.Field<Guna2Button>(login, "btnLogin"));
+        Ui.Until(() => DialogWatcher.Messages.Any(m => m.StartsWith("Địa chỉ máy chủ không hợp lệ")), "báo địa chỉ máy chủ sai");
+        Assert.Equal(Ui.ApiUrl, Properties.Settings.Default.ApiBaseUrl);
     });
 
     [Fact]

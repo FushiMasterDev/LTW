@@ -10,7 +10,7 @@ internal sealed partial class Settings : global::System.Configuration.Applicatio
 
     [global::System.Configuration.UserScopedSettingAttribute()]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-    [global::System.Configuration.DefaultSettingValueAttribute("https://localhost:7286")]
+    [global::System.Configuration.DefaultSettingValueAttribute("http://localhost:5080")]
     public string ApiBaseUrl { get => (string)this["ApiBaseUrl"]; set => this["ApiBaseUrl"] = value; }
 
     [global::System.Configuration.UserScopedSettingAttribute()]
