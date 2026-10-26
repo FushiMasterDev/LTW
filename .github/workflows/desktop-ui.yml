@@ -38,7 +38,7 @@ jobs:
         run: |
           $env:ASPNETCORE_ENVIRONMENT = "Development"
           Start-Process dotnet -ArgumentList @("run", "--no-build", "-c", "Release", "--project", "HomestayBooking.DesktopHost", "--",
-            "--urls", $env:FUJI_API_URL, "--DesktopHost:DatabasePath", "$env:RUNNER_TEMP\fuji-ui.db") `
+            "--urls", $env:FUJI_API_URL, "--DesktopHost:DatabasePath", "$env:RUNNER_TEMP\fuji-ui.db", "--DesktopApi:LoginPermitLimit", "1000") `
             -RedirectStandardOutput host.log -RedirectStandardError host.err
           $ready = $false
           for ($i = 0; $i -lt 90 -and -not $ready; $i++) {
