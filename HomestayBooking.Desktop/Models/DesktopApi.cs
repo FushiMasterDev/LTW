@@ -84,6 +84,18 @@ internal static class DesktopApi
         return table;
     }
 
+    /// <summary>Chỉ hiện các cột cần đọc, đúng thứ tự và tiêu đề tiếng Việt; cột khác (id...) vẫn còn để code đọc.</summary>
+    public static void ShowColumns(DataGridView grid, params (string Name, string Header)[] columns)
+    {
+        foreach (DataGridViewColumn column in grid.Columns) column.Visible = false;
+        for (var i = 0; i < columns.Length; i++)
+        {
+            if (!grid.Columns.Contains(columns[i].Name)) continue;
+            var column = grid.Columns[columns[i].Name]!;
+            column.Visible = true; column.HeaderText = columns[i].Header; column.DisplayIndex = i;
+        }
+    }
+
     private static object Cell(JsonElement v) => v.ValueKind switch
     {
         JsonValueKind.String => v.GetString()!,
