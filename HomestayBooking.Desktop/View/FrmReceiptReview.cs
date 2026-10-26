@@ -22,7 +22,7 @@ internal partial class FrmReceiptReview : Form, IAccountantRefreshable
         btnSearch.Click += async (_, _) => { _page = 1; await LoadRowsAsync(); };
         btnPrevPage.Click += async (_, _) => { if (_page > 1) { _page--; await LoadRowsAsync(); } };
         btnNextPage.Click += async (_, _) => { if (_page < _totalPages) { _page++; await LoadRowsAsync(); } };
-        dgvReceipts.SelectionChanged += async (_, _) => await SelectReceiptAsync();
+        dgvReceipts.CurrentCellChanged += async (_, _) => await SelectReceiptAsync();
         btnApprove.Click += async (_, _) => await ApproveAsync(); btnReject.Click += async (_, _) => await RejectAsync();
         btnZoomIn.Click += (_, _) => { _zoom = Math.Min(3f, _zoom + 0.15f); ApplyZoom(); }; btnZoomOut.Click += (_, _) => { _zoom = Math.Max(0.25f, _zoom - 0.15f); ApplyZoom(); };
         btnRotate.Click += (_, _) => { if (picReceipt.Image is not null) picReceipt.Image.RotateFlip(RotateFlipType.Rotate90FlipNone); picReceipt.Invalidate(); };

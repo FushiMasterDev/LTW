@@ -23,9 +23,9 @@ internal partial class FrmBankAndAdditionalDeposit : Form, IAccountantRefreshabl
         tabs.SelectedIndexChanged += async (_, _) => await RefreshCurrentAsync();
         btnTransactionPrev.Click += async (_, _) => { if (_transactionPage > 1) { _transactionPage--; await LoadTransactionsAsync(); } }; btnTransactionNext.Click += async (_, _) => { if (_transactionPage < _transactionPages) { _transactionPage++; await LoadTransactionsAsync(); } };
         btnDepositPrev.Click += async (_, _) => { if (_depositPage > 1) { _depositPage--; await LoadDepositsAsync(); } }; btnDepositNext.Click += async (_, _) => { if (_depositPage < _depositPages) { _depositPage++; await LoadDepositsAsync(); } };
-        dgvTransactions.SelectionChanged += (_, _) => UpdateTransactionButtons();
+        dgvTransactions.CurrentCellChanged += (_, _) => UpdateTransactionButtons();
         btnMatchTransaction.Click += async (_, _) => await MatchTransactionAsync(); btnIgnoreTransaction.Click += async (_, _) => await IgnoreTransactionAsync();
-        dgvDeposits.SelectionChanged += (_, _) => UpdateDepositButtons();
+        dgvDeposits.CurrentCellChanged += (_, _) => UpdateDepositButtons();
         btnMarkRefunded.Click += async (_, _) => await RefundTransactionAsync(); btnConfirmDeposit.Click += async (_, _) => await DecideDepositAsync(true); btnRejectDeposit.Click += async (_, _) => await DecideDepositAsync(false);
     }
     public Task RefreshDataAsync() => RefreshCurrentAsync();
