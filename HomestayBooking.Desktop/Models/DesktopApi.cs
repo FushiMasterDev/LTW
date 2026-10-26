@@ -1,3 +1,4 @@
+using System.Data;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -67,5 +68,31 @@ internal static class DesktopApi
         if (typeof(T) == typeof(object) || response.Content.Headers.ContentLength == 0) return default;
         return await response.Content.ReadFromJsonAsync<T>(Json);
     }
+    /// <summary>Mảng JSON thành DataTable để DataGridView hiện mỗi key một cột (Dictionary chỉ bind ra Keys/Values/Count).</summary>
+    public static DataTable ToTable(IEnumerable<JsonElement> rows)
+    {
+        var list = rows.ToList();
+        var table = new DataTable();
+        foreach (var name in list.SelectMany(r => r.EnumerateObject().Select(p => p.Name)).Distinct())
+            table.Columns.Add(name, typeof(object));
+        foreach (var row in list)
+        {
+            var values = table.NewRow();
+            foreach (var p in row.EnumerateObject()) values[p.Name] = Cell(p.Value);
+            table.Rows.Add(values);
+        }
+        return table;
+    }
+
+    private static object Cell(JsonElement v) => v.ValueKind switch
+    {
+        JsonValueKind.String => v.GetString()!,
+        JsonValueKind.Number => v.TryGetInt64(out var n) ? n : v.GetDecimal(),
+        JsonValueKind.True => true,
+        JsonValueKind.False => false,
+        JsonValueKind.Null or JsonValueKind.Undefined => DBNull.Value,
+        _ => v.GetRawText(),
+    };
+
     public static void ShowError(IWin32Window owner, Exception ex) => MessageBox.Show(owner, ex.Message, "Fuji Homestay", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 }

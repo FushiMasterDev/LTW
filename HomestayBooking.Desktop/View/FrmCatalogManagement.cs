@@ -48,8 +48,8 @@ internal partial class FrmCatalogManagement : Form, IAccountantRefreshable
         if (item is AdminAreaDto area) { _selectedId = area.Id; txtId.Text = area.Id.ToString(); txtAreaName.Text = area.Name; txtProvince.Text = area.Province; cboAreaGroup.Text = area.AreaGroup; }
         else if (item is AdminAmenityDto amenity) { _selectedId = amenity.Id; txtId.Text = amenity.Id.ToString(); txtAmenityName.Text = amenity.Name; txtAmenityIcon.Text = amenity.Icon ?? ""; }
         else if (item is AdminCatalogItemDto category) { _selectedId = category.Id; txtId.Text = category.Id.ToString(); txtCategoryName.Text = category.Name; }
-        // Ngày lễ dùng chính ngày làm khóa nên chỉ sửa được tên.
-        else if (item is AdminHolidayDto holiday) { _selectedHoliday = holiday.Date; dtpHolidayDate.Value = DateTime.TryParse(holiday.Date, out var date) ? date : DateTime.Today; dtpHolidayDate.Enabled = false; txtHolidayName.Text = holiday.Name; }
+        // Ngày lễ dùng chính ngày làm khóa: Cập nhật chỉ đổi tên của ngày đang chọn.
+        else if (item is AdminHolidayDto holiday) { _selectedHoliday = holiday.Date; dtpHolidayDate.Value = DateTime.TryParse(holiday.Date, out var date) ? date : DateTime.Today; txtHolidayName.Text = holiday.Name; }
     }
     private string? SelectedKey => _active == "holidays" ? _selectedHoliday : _selectedId?.ToString();
     private async Task SaveAsync(bool update)

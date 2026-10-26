@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HomestayBooking.DesktopHost
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HomestayBooking.Desktop", "HomestayBooking.Desktop\HomestayBooking.Desktop.csproj", "{A33FC415-2B83-4AFF-B698-ED2E53D48E67}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HomestayBooking.Desktop.Tests", "HomestayBooking.Desktop.Tests\HomestayBooking.Desktop.Tests.csproj", "{B642BA53-87CA-4DC8-B4A3-A7A4B399D262}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,18 @@ Global
 		{A33FC415-2B83-4AFF-B698-ED2E53D48E67}.Release|x64.Build.0 = Release|Any CPU
 		{A33FC415-2B83-4AFF-B698-ED2E53D48E67}.Release|x86.ActiveCfg = Release|Any CPU
 		{A33FC415-2B83-4AFF-B698-ED2E53D48E67}.Release|x86.Build.0 = Release|Any CPU
+		{B642BA53-87CA-4DC8-B4A3-A7A4B399D262}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B642BA53-87CA-4DC8-B4A3-A7A4B399D262}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B642BA53-87CA-4DC8-B4A3-A7A4B399D262}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B642BA53-87CA-4DC8-B4A3-A7A4B399D262}.Debug|x64.Build.0 = Debug|Any CPU
+		{B642BA53-87CA-4DC8-B4A3-A7A4B399D262}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B642BA53-87CA-4DC8-B4A3-A7A4B399D262}.Debug|x86.Build.0 = Debug|Any CPU
+		{B642BA53-87CA-4DC8-B4A3-A7A4B399D262}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B642BA53-87CA-4DC8-B4A3-A7A4B399D262}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B642BA53-87CA-4DC8-B4A3-A7A4B399D262}.Release|x64.ActiveCfg = Release|Any CPU
+		{B642BA53-87CA-4DC8-B4A3-A7A4B399D262}.Release|x64.Build.0 = Release|Any CPU
+		{B642BA53-87CA-4DC8-B4A3-A7A4B399D262}.Release|x86.ActiveCfg = Release|Any CPU
+		{B642BA53-87CA-4DC8-B4A3-A7A4B399D262}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
