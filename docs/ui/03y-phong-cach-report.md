@@ -174,7 +174,7 @@ Thực hiện trên `feature/foundation`, bắt đầu từ `b78007d` (commit t�
 
 ### Ảnh AI
 
-Tám ảnh đã tạo bằng công cụ image generation ChatGPT, ngày 18/10/2026; đã xem ảnh gốc, nén WebP bằng Pillow và xem lại trong trình duyệt. Phong cách chung được đặt ở đầu từng lệnh. **Nguyên văn đầy đủ mọi lệnh tạo ảnh:** [credits.md](credits.md), từng mục theo đúng tên file dưới đây. Ảnh AI chỉ trang trí; ảnh phòng, thẻ homestay, gallery và chồng ảnh đối tác giữ dữ liệu thật.
+Tám ảnh đã tạo bằng công cụ tạo ảnh AI, ngày 18/10/2026; đã xem ảnh gốc, nén WebP bằng Pillow và xem lại trong trình duyệt. Phong cách chung được đặt ở đầu từng lệnh. **Nguyên văn đầy đủ mọi lệnh tạo ảnh:** [credits.md](credits.md), từng mục theo đúng tên file dưới đây. Ảnh AI chỉ trang trí; ảnh phòng, thẻ homestay, gallery và chồng ảnh đối tác giữ dữ liệu thật.
 
 | File trong `wwwroot/images/ai/` | Kích thước | Bytes | Dùng ở / lệnh tạo |
 |---|---|---|---|
@@ -187,7 +187,7 @@ Tám ảnh đã tạo bằng công cụ image generation ChatGPT, ngày 18/10/20
 | `area-other-province.webp` | 1200×1600 | 196,230 | Fallback AreaGroup.OtherProvince; [lệnh](credits.md#area-other-provincewebp) |
 | `status-lost.webp` | 1600×1000 | 193,300 | Trang 404/lỗi máy chủ; [lệnh](credits.md#status-lostwebp) |
 
-Hero preload đúng ảnh theo media desktop/điện thoại; có kích thước và decoding. Ảnh khác dưới fold dùng lazy khi phù hợp; khu vực/gallery có kích thước sẵn. Đã xóa `hero-hoan-kiem*.jpg`, `images/auth-veranda.webp`, cập nhật credit hero sang “Ảnh trang trí tạo bằng AI (ChatGPT)”. Giữ bản ảnh seed veranda trong demo vì vẫn được dữ liệu/UI Kit sử dụng. Không còn tham chiếu các ảnh trang trí cũ trong mã app.
+Hero preload đúng ảnh theo media desktop/điện thoại; có kích thước và decoding. Ảnh khác dưới fold dùng lazy khi phù hợp; khu vực/gallery có kích thước sẵn. Đã xóa `hero-hoan-kiem*.jpg`, `images/auth-veranda.webp`, cập nhật credit hero sang “Ảnh trang trí tạo bằng AI”. Giữ bản ảnh seed veranda trong demo vì vẫn được dữ liệu/UI Kit sử dụng. Không còn tham chiếu các ảnh trang trí cũ trong mã app.
 
 ### Kiểm tra và vòng chụp → sửa
 

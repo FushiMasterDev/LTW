@@ -66,4 +66,4 @@ Không JS vẫn thấy nội dung. Ẩn reveal chỉ khi script head và lớp k
 
 ## Không làm
 
-Không bịa số liệu, đánh giá, phí, thuế, đối tác thanh toán hoặc cam kết dịch vụ. Không thêm ảnh stock vào thẻ homestay. Ảnh trang trí tạo bằng AI (ChatGPT), lưu images/ai và ghi nguyên văn prompt trong credits.md; hero có bản điện thoại. Không dùng AI làm ảnh phòng/homestay/gallery. Không inline style trong markup, không màu ngoài tokens, không thư viện mới. Không đổi Services, Data, Entities, migration hoặc database. Controller chỉ được thêm ảnh khu vực vào truy vấn đã có. Không tắt app người dùng cổng 5011.
+Không bịa số liệu, đánh giá, phí, thuế, đối tác thanh toán hoặc cam kết dịch vụ. Không thêm ảnh stock vào thẻ homestay. Ảnh trang trí tạo bằng AI, lưu images/ai và ghi nguyên văn prompt trong credits.md; hero có bản điện thoại. Không dùng AI làm ảnh phòng/homestay/gallery. Không inline style trong markup, không màu ngoài tokens, không thư viện mới. Không đổi Services, Data, Entities, migration hoặc database. Controller chỉ được thêm ảnh khu vực vào truy vấn đã có. Không tắt app người dùng cổng 5011.
