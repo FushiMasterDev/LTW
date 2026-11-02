@@ -1,6 +1,6 @@
 # Báo cáo QA giao diện — bước 06
 
-Ngày 19/10/2026, nhánh `feature/foundation`, kiểm trên HEAD `9e076f1` (sau B9) rồi sửa ở `77e0526`. Claude tự làm bước này theo yêu cầu người dùng. App kiểm thử chạy riêng cổng 5012 (Release, Development, SQL Server container `sql-homestay`), không đụng cổng 5011. Ảnh chụp không commit, nằm ở `/private/tmp/claude-501/-Users-phamngocphu-Downloads-LTW/d5b5bcfe-95ef-4718-b0eb-3298b33edca2/scratchpad/qa/` (thư mục tạm của phiên).
+Ngày 19/10/2026, nhánh `feature/foundation`, kiểm trên HEAD `9e076f1` (sau B9) rồi sửa ở `77e0526`. App kiểm thử chạy riêng cổng 5012 (Release, Development, SQL Server container `sql-homestay`), không đụng cổng 5011. Ảnh chụp không commit, nằm ở `<thư mục tạm>/qa/` (thư mục tạm của phiên).
 
 ## Tóm tắt
 
@@ -91,7 +91,7 @@ Ngày 19/10/2026, nhánh `feature/foundation`, kiểm trên HEAD `9e076f1` (sau 
 
 ## Bảng route × vai trò × kích thước × chế độ màu
 
-S = sáng, T = tối. ✓ = đạt mọi kiểm tự động; ✗ = lỗi ở lượt đầu (đều đã sửa và chạy lại 375px đạt). Ảnh: `/private/tmp/claude-501/-Users-phamngocphu-Downloads-LTW/d5b5bcfe-95ef-4718-b0eb-3298b33edca2/scratchpad/qa/shots/<tên file>` (thay `1280-light` bằng `375-dark`… cho cấu hình khác); ảnh 375px sau sửa ở `/private/tmp/claude-501/-Users-phamngocphu-Downloads-LTW/d5b5bcfe-95ef-4718-b0eb-3298b33edca2/scratchpad/qa/shots375/`.
+S = sáng, T = tối. ✓ = đạt mọi kiểm tự động; ✗ = lỗi ở lượt đầu (đều đã sửa và chạy lại 375px đạt). Ảnh: `<thư mục tạm>/qa/shots/<tên file>` (thay `1280-light` bằng `375-dark`… cho cấu hình khác); ảnh 375px sau sửa ở `<thư mục tạm>/qa/shots375/`.
 
 | Vai trò | Route | 375 S/T | 768 S/T | 1280 S/T | Kết quả | Ảnh (1280 sáng) |
 |---|---|---|---|---|---|---|

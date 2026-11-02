@@ -1,6 +1,6 @@
 # Prompt: Xây lại giao diện Fuji Homestay (Razor + Bootstrap 5)
 
-> Dán toàn bộ phần dưới đường kẻ cho Codex (hoặc Claude Code). Chạy **từng giai đoạn một**: mỗi lần chỉ giao một giai đoạn (`Giai đoạn N`), review kết quả rồi mới giao giai đoạn tiếp theo.
+> Dán toàn bộ phần dưới đường kẻ cho Codex. Chạy **từng giai đoạn một**: mỗi lần chỉ giao một giai đoạn (`Giai đoạn N`), review kết quả rồi mới giao giai đoạn tiếp theo.
 > Chỉ bắt đầu khi backend đã xong (thứ tự đã chốt: DB → backend → giao diện). Từ bước `02` cần B8 (`docs/prompts/b8-backend-ui-gaps.md`) đã xong.
 
 ---
