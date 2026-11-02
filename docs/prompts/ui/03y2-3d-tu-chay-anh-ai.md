@@ -5,7 +5,7 @@
 > Bước 03y đã làm theo bản prompt đầu, trong đó 3D đi theo con trỏ chuột và theo tiến độ cuộn. Sau khi xem, người dùng chốt (18/10/2026):
 > 1. **Không muốn** 3D theo chuột: không nghiêng thẻ, không vệt sáng, không lệch lớp theo con trỏ.
 > 2. Muốn **ảnh tự chuyển động trong không gian 3D**, theo nhịp thời gian.
-> 3. **Ảnh trang trí do ChatGPT tự tạo.**
+> 3. **Ảnh trang trí tạo bằng AI.**
 >
 > Mục 4 và mục 5 của `docs/prompts/ui/03y-phong-cach-moi.md` đã được viết lại theo ý này. Bước này chỉ làm phần chênh giữa code hiện tại và hai mục đó. **Không làm lại** token, font, component, layout của 03y.
 

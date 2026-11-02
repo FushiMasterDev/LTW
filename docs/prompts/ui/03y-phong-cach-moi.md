@@ -4,7 +4,7 @@
 >
 > Ngày 18/10/2026, người dùng chốt đổi nhận diện giao diện sang phong cách của bản mẫu Lovable https://lua-ivory-forest-capture.lovable.app, kèm nhiều chuyển động, ưu tiên **3D tự chạy** (ảnh tự chuyển động, không đi theo chuột). Quyết định này **thay thế** các luật cũ: "không đổi màu, font, bo góc", "chỉ một màu nhấn", "không scroll reveal", "thời lượng 0.06–0.45s" (DESIGN.md và `decisions.md` 02-D, 02x, 03-1). Tên thương hiệu vẫn là **Fuji Homestay**; "Lúa" chỉ là tên bản mẫu.
 
-> **Ghi chú 18/10, sau khi đã chạy bước này:** mục 4 (3D tự chạy, không theo chuột) và mục 5 (ảnh trang trí do ChatGPT tạo) đã được viết lại. Phần chênh so với code đã commit làm ở `03y2-3d-tu-chay-anh-ai.md`.
+> **Ghi chú 18/10, sau khi đã chạy bước này:** mục 4 (3D tự chạy, không theo chuột) và mục 5 (ảnh trang trí tạo bằng AI) đã được viết lại. Phần chênh so với code đã commit làm ở `03y2-3d-tu-chay-anh-ai.md`.
 
 Đọc trước:
 - `docs/prompts/ui-rebuild.md`, `DESIGN.md`, `docs/ui/decisions.md`, `docs/ui/03-trang-khach-report.md`.
@@ -183,7 +183,7 @@ Các thời lượng cũ (0.06–0.45s) giữ cho phản hồi nút và form.
 - **Ảnh:**
   - **Không lấy ảnh của bản mẫu** (không rõ giấy phép).
   - **Ảnh homestay, phòng, gallery, thẻ homestay, ảnh trong khối đối tác vẫn lấy từ dữ liệu.** Không dùng ảnh tạo bằng AI để giả làm phòng hay homestay đang bán, vì khách sẽ đặt phòng dựa trên ảnh đó.
-  - **Ảnh trang trí do ChatGPT tự tạo** (quyết định 18/10, thay luật "chỉ CC0/public domain, tối đa 4 ảnh" của 03-1). Dùng công cụ tạo ảnh AI. Danh sách ảnh cần tạo:
+  - **Ảnh trang trí tạo bằng AI** (quyết định 18/10, thay luật "chỉ CC0/public domain, tối đa 4 ảnh" của 03-1). Dùng công cụ tạo ảnh AI. Danh sách ảnh cần tạo:
 
     | Ảnh | Dùng ở | Nội dung gợi ý | Kích thước |
     |---|---|---|---|
@@ -204,11 +204,11 @@ Các thời lượng cũ (0.06–0.45s) giữ cho phản hồi nút và form.
     - ảnh hero ≤ 300 KB, ảnh khác ≤ 200 KB, `alt` mô tả đúng nội dung ảnh;
     - xóa ảnh trang trí cũ không còn dùng (`hero-hoan-kiem*`, `auth-veranda.webp`).
   - **Ghi nguồn:**
-    - `docs/ui/credits.md` ghi từng ảnh: "Tạo bằng AI (ChatGPT), ngày tạo", kèm nguyên văn lệnh tạo ảnh;
+    - `docs/ui/credits.md` ghi từng ảnh: "Tạo bằng AI, ngày tạo", kèm nguyên văn lệnh tạo ảnh;
     - thêm dòng vào `decisions.md`.
   - **Nếu phiên không có công cụ tạo ảnh:**
     - không tự tìm ảnh khác thay thế;
-    - viết đủ các lệnh tạo ảnh vào `docs/ui/image-prompts.md` để người dùng tự tạo bằng ChatGPT và bỏ vào `wwwroot/images/ai/` đúng tên file;
+    - viết đủ các lệnh tạo ảnh vào `docs/ui/image-prompts.md` để người dùng tự tạo bằng công cụ AI và bỏ vào `wwwroot/images/ai/` đúng tên file;
     - trong lúc chờ, dùng tạm ảnh hiện có;
     - nêu rõ việc này trong báo cáo.
 - **Câu chữ:**

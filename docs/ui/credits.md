@@ -17,7 +17,7 @@
 
 ## hero-hanoi.webp
 
-Tạo bằng AI (ChatGPT), ngày tạo 18/10/2026. Nén WebP bằng Pillow, giữ bản gốc ngoài repo.
+Tạo bằng AI, ngày tạo 18/10/2026. Nén WebP bằng Pillow, giữ bản gốc ngoài repo.
 
 Lệnh tạo ảnh nguyên văn:
 
@@ -25,7 +25,7 @@ Lệnh tạo ảnh nguyên văn:
 
 ## hero-hanoi-mobile.webp
 
-Tạo bằng AI (ChatGPT), ngày tạo 18/10/2026. Nén WebP bằng Pillow, giữ bản gốc ngoài repo.
+Tạo bằng AI, ngày tạo 18/10/2026. Nén WebP bằng Pillow, giữ bản gốc ngoài repo.
 
 Lệnh tạo ảnh nguyên văn:
 
@@ -33,7 +33,7 @@ Lệnh tạo ảnh nguyên văn:
 
 ## auth-veranda.webp
 
-Tạo bằng AI (ChatGPT), ngày tạo 18/10/2026. Nén WebP bằng Pillow, giữ bản gốc ngoài repo.
+Tạo bằng AI, ngày tạo 18/10/2026. Nén WebP bằng Pillow, giữ bản gốc ngoài repo.
 
 Lệnh tạo ảnh nguyên văn:
 
@@ -41,7 +41,7 @@ Lệnh tạo ảnh nguyên văn:
 
 ## partner-host.webp
 
-Tạo bằng AI (ChatGPT), ngày tạo 18/10/2026. Nén WebP bằng Pillow, giữ bản gốc ngoài repo.
+Tạo bằng AI, ngày tạo 18/10/2026. Nén WebP bằng Pillow, giữ bản gốc ngoài repo.
 
 Lệnh tạo ảnh nguyên văn:
 
@@ -49,7 +49,7 @@ Lệnh tạo ảnh nguyên văn:
 
 ## area-inner-city.webp
 
-Tạo bằng AI (ChatGPT), ngày tạo 18/10/2026. Nén WebP bằng Pillow, giữ bản gốc ngoài repo.
+Tạo bằng AI, ngày tạo 18/10/2026. Nén WebP bằng Pillow, giữ bản gốc ngoài repo.
 
 Lệnh tạo ảnh nguyên văn:
 
@@ -57,7 +57,7 @@ Lệnh tạo ảnh nguyên văn:
 
 ## area-suburb.webp
 
-Tạo bằng AI (ChatGPT), ngày tạo 18/10/2026. Nén WebP bằng Pillow, giữ bản gốc ngoài repo.
+Tạo bằng AI, ngày tạo 18/10/2026. Nén WebP bằng Pillow, giữ bản gốc ngoài repo.
 
 Lệnh tạo ảnh nguyên văn:
 
@@ -65,7 +65,7 @@ Lệnh tạo ảnh nguyên văn:
 
 ## area-other-province.webp
 
-Tạo bằng AI (ChatGPT), ngày tạo 18/10/2026. Nén WebP bằng Pillow, giữ bản gốc ngoài repo.
+Tạo bằng AI, ngày tạo 18/10/2026. Nén WebP bằng Pillow, giữ bản gốc ngoài repo.
 
 Lệnh tạo ảnh nguyên văn:
 
@@ -73,7 +73,7 @@ Lệnh tạo ảnh nguyên văn:
 
 ## status-lost.webp
 
-Tạo bằng AI (ChatGPT), ngày tạo 18/10/2026. Nén WebP bằng Pillow, giữ bản gốc ngoài repo.
+Tạo bằng AI, ngày tạo 18/10/2026. Nén WebP bằng Pillow, giữ bản gốc ngoài repo.
 
 Lệnh tạo ảnh nguyên văn:
 
