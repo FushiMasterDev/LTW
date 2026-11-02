@@ -1,6 +1,6 @@
 # Bàn giao bước 03: trang dành cho khách
 
-Ngày: 18/10/2026. Phạm vi: `docs/prompts/ui/03-trang-khach.md`, chạy bằng Claude Code. Dừng trước bước 04.
+Ngày: 18/10/2026. Phạm vi: `docs/prompts/ui/03-trang-khach.md`. Dừng trước bước 04.
 
 ## Commit
 
@@ -76,7 +76,7 @@ Từ `layout-public.css`: `hero-photo`, `hero-copy`, `hero-credit`, `hero-search
   - Chưa đăng nhập: trang chủ → chọn ngày bằng Flatpickr → tìm → chi tiết → đặt (`FJ261018-001`, SĐT 0988123456) → đơn có QR → tra cứu lại bằng mã + SĐT. Đơn này tự hết hạn giữ phòng sau 15 phút nên bước hủy chỉ kiểm trên trang (nút hủy có hộp xác nhận); không bấm hủy thật.
   - `0987000001`: Đơn của tôi (3 tab) → `FJ261011-010` → đổi ngày, xem báo giá → gửi yêu cầu (tạo CR6, chờ quản lý duyệt).
   - Đối tác: SĐT mới 0977123456 tạo hồ sơ #1002, tải 3 giấy tờ, gửi hồ sơ.
-- Ảnh (không commit) ở `/private/tmp/claude-501/-Users-phamngocphu-Downloads-LTW/d5b5bcfe-95ef-4718-b0eb-3298b33edca2/scratchpad/shots/final/`: 7 trang của luồng × 375/768/1280 × sáng/tối, cộng bộ tiếng Anh 1280 (`final-en-*`), ảnh gửi yêu cầu đổi. Không trang nào tràn ngang ở 375/768.
+- Ảnh (không commit) ở `<thư mục tạm>/shots/final/`: 7 trang của luồng × 375/768/1280 × sáng/tối, cộng bộ tiếng Anh 1280 (`final-en-*`), ảnh gửi yêu cầu đổi. Không trang nào tràn ngang ở 375/768.
 
 ## Dữ liệu đã ghi vào database Development (v5)
 
