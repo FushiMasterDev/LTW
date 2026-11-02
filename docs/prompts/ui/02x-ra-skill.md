@@ -1,6 +1,6 @@
 # Bước 2x – Rà lại thư viện component theo skill thiết kế
 
-> Chạy **sau khi bước 02 đã commit đủ nhóm A–D**, trong **phiên Codex mới** (để Codex nạp skill trong `.agents/skills/`). Bước 01–02 đã làm khi Codex chưa có các skill dưới đây; bước này chỉ rà và chỉnh phần nhìn, không làm thêm component. Ngoại lệ duy nhất: các lỗi ở mục "Sửa từ review bước 02".
+> Chạy **sau khi bước 02 đã commit đủ nhóm A–D**, trong **phiên mới** (để nạp skill trong `.agents/skills/`). Bước 01–02 đã làm khi chưa có các skill dưới đây; bước này chỉ rà và chỉnh phần nhìn, không làm thêm component. Ngoại lệ duy nhất: các lỗi ở mục "Sửa từ review bước 02".
 
 Đọc `docs/prompts/ui-rebuild.md`, `DESIGN.md`, `docs/prompts/ui/02-component.md`, `docs/ui/decisions.md`. Mở `/Dev/UiKit`.
 

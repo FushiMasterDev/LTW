@@ -1,0 +1,15 @@
+flowchart LR
+  classDef actor fill:#fff,stroke:#333,stroke-width:1.5px
+  classDef uc fill:#eef4ee,stroke:#2f5d3a
+  TV(["👤 Nhân viên tư vấn"]):::actor
+  subgraph S1["Tư vấn (/Staff)"]
+    direction TB
+    C1([Đặt hộ khách qua điện thoại/Zalo]):::uc
+    C2([Tìm, giao, cập nhật trạng thái đơn]):::uc
+    C3([Tra phòng trống toàn hệ thống]):::uc
+    C4([Xử lý trùng phòng, đề xuất thay thế]):::uc
+    C5([Gửi yêu cầu đổi/hủy thay khách]):::uc
+    C6([Thẩm định hồ sơ đối tác]):::uc
+    C7([Quản lý thông tin khách hàng]):::uc
+  end
+  TV --- C1 & C2 & C3 & C4 & C5 & C6 & C7

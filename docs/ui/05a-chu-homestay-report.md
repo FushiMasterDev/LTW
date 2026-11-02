@@ -116,7 +116,7 @@ Giá đã có hiệu lực không được ghi đè và mở khóa toàn bộ ph
 - `4580f42` — Đánh giá và trả lời khách.
 - Commit cuối — Dashboard, sidebar, link đánh giá, cập nhật inventory và báo cáo này (xem HEAD).
 
-Mọi commit có dòng kết thúc `Co-Authored-By: Codex <noreply@openai.com>`. App kiểm tra chỉ chạy cổng 5012. Lần đầu trong sandbox bị chậm khi kết nối localhost, đã dừng đúng PID 10961/10930 rồi chạy lại với môi trường đầy đủ. Lần kiểm tra chính dùng app PID **10992**, tiến trình `dotnet run` PID **10990**; đã gửi `TERM` đúng PID 10992 sau kiểm tra, xác nhận app và tiến trình cha kết thúc, cổng 5012 không còn listener. Đã đóng riêng browser `fuji-resume`; container `sql-homestay` vẫn Up. Không có lệnh dừng app 5011 hoặc dừng/xóa container SQL Server.
+App kiểm tra chỉ chạy cổng 5012. Lần đầu trong sandbox bị chậm khi kết nối localhost, đã dừng đúng PID 10961/10930 rồi chạy lại với môi trường đầy đủ. Lần kiểm tra chính dùng app PID **10992**, tiến trình `dotnet run` PID **10990**; đã gửi `TERM` đúng PID 10992 sau kiểm tra, xác nhận app và tiến trình cha kết thúc, cổng 5012 không còn listener. Đã đóng riêng browser `fuji-resume`; container `sql-homestay` vẫn Up. Không có lệnh dừng app 5011 hoặc dừng/xóa container SQL Server.
 
 Một lần chạy test riêng trong sandbox bị dừng để chạy lại ngoài sandbox; kết quả nghiệm thu là lần chạy đầy đủ kết thúc exit 0, không dùng log của lần bị dừng để khẳng định pass. Hai lỗi định vị/timing của script chụp (trùng nút mở/đóng menu, nút EN ẩn trên điện thoại) đã sửa trong script tạm và chạy lại thành công; không phải thay đổi nghiệp vụ hay mã sản phẩm.
 

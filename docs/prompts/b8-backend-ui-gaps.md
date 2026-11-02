@@ -1,6 +1,6 @@
 # B8 – Lấp gap backend cho giao diện
 
-> Dán phần dưới cho Codex **trước bước UI `02-component`**. Bước `01-nen` không phụ thuộc B8.
+> Dán phần dưới vào phiên làm việc mới **trước bước UI `02-component`**. Bước `01-nen` không phụ thuộc B8.
 
 ---
 

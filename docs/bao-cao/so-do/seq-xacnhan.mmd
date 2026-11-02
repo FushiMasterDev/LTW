@@ -1,0 +1,31 @@
+sequenceDiagram
+  autonumber
+  actor CH as Chủ homestay
+  participant V as Trình duyệt
+  participant OC as Owner/BookingsController
+  participant BS as BookingService
+  participant NS as NotificationService
+  participant DB as SQL Server
+  participant J as BookingTimeoutJob
+  Note over DB: Đơn Deposited, ConfirmDeadlineAt = DepositedAt + 30 phút
+  CH->>V: Mở thông báo / danh sách đơn chờ xác nhận
+  V->>OC: GET /Owner/Bookings/Details/{id}
+  OC->>DB: Kiểm đơn thuộc homestay của chủ (không thì 404)
+  OC-->>V: Chi tiết đơn, phòng gán, nút Xác nhận / Từ chối
+  alt Xác nhận
+    CH->>V: Bấm "Xác nhận" (có thể đổi phòng cùng loại)
+    V->>OC: POST Confirm/{id} hoặc POST /api/bookings/{id}/confirm
+    OC->>BS: ConfirmAsync(booking, newRoomId, actor)
+    BS->>DB: Status = Confirmed, ghi BookingStatusHistory, chuyển RoomNights nếu đổi phòng
+    BS->>NS: Báo khách (mở địa chỉ, SĐT homestay – BR-13)
+  else Từ chối
+    CH->>V: Nhập lý do, bấm "Từ chối"
+    V->>OC: POST Reject/{id}
+    OC->>BS: ChangeStatusAsync(Rejected)
+    BS->>DB: Nhả RoomNights, ghi nghĩa vụ hoàn 100% cọc
+    BS->>NS: Báo khách và kế toán
+  end
+  loop Mỗi phút
+    J->>BS: AlertOverdueConfirmationsAsync()
+    BS->>NS: Quá 30 phút chưa xác nhận → cảnh báo nhân viên phụ trách (BR-06)
+  end

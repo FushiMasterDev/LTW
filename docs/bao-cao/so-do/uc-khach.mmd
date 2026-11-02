@@ -1,0 +1,18 @@
+flowchart LR
+  classDef actor fill:#fff,stroke:#333,stroke-width:1.5px
+  classDef uc fill:#eef4ee,stroke:#2f5d3a
+  KH(["👤 Khách hàng"]):::actor
+  subgraph S["Phân hệ khách hàng"]
+    direction TB
+    A1([Tìm kiếm, lọc, sắp xếp homestay]):::uc
+    A2([Xem chi tiết, lịch trống, báo giá]):::uc
+    A3([Đặt phòng không cần tài khoản]):::uc
+    A4([Thanh toán cọc QR / tải ảnh bill]):::uc
+    A5([Tra cứu đơn bằng mã + SĐT]):::uc
+    A6([Hủy đơn, xem tiền hoàn]):::uc
+    A7([Gửi yêu cầu đổi ngày/loại phòng]):::uc
+    A8([Đánh giá sau khi trả phòng]):::uc
+    A9([Đăng ký tài khoản, đổi ngôn ngữ]):::uc
+    A10([Đăng ký làm đối tác]):::uc
+  end
+  KH --- A1 & A2 & A3 & A4 & A5 & A6 & A7 & A8 & A9 & A10

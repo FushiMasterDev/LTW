@@ -1,0 +1,74 @@
+classDiagram
+  direction LR
+  class BookingsController {
+    +Create(model)
+    +Details(code)
+    +UploadReceipt(code, file)
+    +Cancel(code)
+  }
+  class Owner_BookingsController {
+    +Index()
+    +Details(id)
+    +Confirm(id)
+    +Reject(id)
+  }
+  class RoomsApiController {
+    +Availability(roomTypeId, from, to)
+    +Quote(roomTypeId, checkIn, checkOut)
+  }
+  class BookingService {
+    +CreateAsync(CreateBookingRequest) Booking
+    +ConfirmAsync(booking, newRoomId, actor)
+    +ChangeStatusAsync(booking, to, actor)
+    +ExpireOverdueHoldsAsync() int
+    +AlertOverdueConfirmationsAsync() int
+  }
+  class PricingService {
+    +QuoteAsync(roomTypeId, checkIn, checkOut) PriceQuote
+  }
+  class AvailabilityService {
+    +SearchAsync(query)
+    +FreeRoomsAsync()
+    +BlockedDatesAsync()
+  }
+  class RefundService {
+    +SelectPolicyAsync()
+    +QuoteCancellationAsync(booking)
+  }
+  class BookingCodeGenerator {
+    +NextAsync(date) string
+  }
+  class ReceiptReviewService {
+    +SubmitAsync()
+    +ApproveAsync()
+    +RejectAsync()
+  }
+  class BankMatchingService {
+    +ProcessAsync(IncomingBankTransaction)
+  }
+  class NotificationService {
+    +Add()
+    +UnreadCountAsync()
+  }
+  class ApplicationDbContext {
+    +DbSet~Booking~ Bookings
+    +DbSet~RoomNight~ RoomNights
+    …
+  }
+  class BookingTimeoutJob {
+    #ExecuteAsync(token)
+  }
+  BookingsController ..> BookingService
+  BookingsController ..> ReceiptReviewService
+  Owner_BookingsController ..> BookingService
+  RoomsApiController ..> PricingService
+  RoomsApiController ..> AvailabilityService
+  BookingService --> PricingService
+  BookingService --> RefundService
+  BookingService --> BookingCodeGenerator
+  BookingService --> NotificationService
+  BankMatchingService --> BookingService
+  ReceiptReviewService --> BookingService
+  BookingTimeoutJob ..> BookingService
+  BookingService --> ApplicationDbContext
+  PricingService --> ApplicationDbContext

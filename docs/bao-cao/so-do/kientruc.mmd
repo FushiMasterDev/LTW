@@ -1,0 +1,29 @@
+flowchart TB
+  B["Trình duyệt<br/>(Razor HTML · Bootstrap 5 · jQuery · fetch AJAX)"]
+  subgraph APP["ASP.NET Core MVC (.NET 10) — một project HomestayBooking.Web"]
+    MW["Middleware: HTTPS · Static files · Localization (vi/en) · Session<br/>Authentication (Identity cookie) · Authorization (role + policy) · Antiforgery"]
+    subgraph P["Tầng trình bày"]
+      C1["Controllers MVC<br/>Home, Homestays, Bookings, Account, Partner"]
+      C2["Areas: Owner · Staff · Accounting · Admin"]
+      C3["Web API [ApiController]<br/>/api/homestays, /api/rooms, /api/bookings…"]
+      V["Views Razor · Tag Helper · View Component<br/>ViewModel + Data Annotation"]
+    end
+    subgraph SV["Tầng nghiệp vụ (Services)"]
+      S1["BookingService · PricingService · AvailabilityService"]
+      S2["BankMatchingService · ReceiptReviewService · SettlementService"]
+      S3["HomestayContentService · OwnerRegistrationService · ReportService …"]
+    end
+    J["BookingTimeoutJob (BackgroundService)<br/>hết hạn giữ phòng · cảnh báo 30 phút · nhắc lịch · lập đối soát"]
+    subgraph DA["Tầng truy cập dữ liệu"]
+      D["ApplicationDbContext (EF Core 10, Code First, Migrations)"]
+    end
+  end
+  DB[("SQL Server 2022<br/>45 bảng")]
+  EXT["Bên ngoài: VietQR (ảnh QR) · SePay webhook (giao dịch ngân hàng)"]
+  B -- "HTTP request / JSON" --> MW --> P
+  C1 & C2 & C3 --> SV
+  C1 & C2 --> V
+  SV --> D
+  J --> SV
+  D --> DB
+  EXT -. "POST /api/bank-webhook/sepay" .-> C3

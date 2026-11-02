@@ -1,6 +1,6 @@
 # Kiểm thử trước khi ra mắt (pre-launch) — Fuji Homestay
 
-> Chạy trong **phiên Codex mới**, trên nhánh `feature/foundation` (HEAD `e54def1` hoặc mới hơn). Mục tiêu: dùng thử toàn bộ hệ thống **như người dùng thật trước ngày ra mắt**, tìm lỗi, sửa các lỗi rõ ràng, và kết luận **có ra mắt được không**.
+> Chạy trong **phiên mới**, trên nhánh `feature/foundation` (HEAD `e54def1` hoặc mới hơn). Mục tiêu: dùng thử toàn bộ hệ thống **như người dùng thật trước ngày ra mắt**, tìm lỗi, sửa các lỗi rõ ràng, và kết luận **có ra mắt được không**.
 
 Đọc trước:
 - `README.md`;

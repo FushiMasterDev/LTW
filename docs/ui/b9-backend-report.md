@@ -69,11 +69,11 @@ Trước B9: **77 đơn**, toàn bộ CreatedAt năm **2026**; 2027/2028 không 
 
 ## Kết thúc và kiểm chứng cuối
 
-Phiên Codex hết hạn mức ChatGPT trong vòng kiểm cuối (sau khi đã commit phần backend `8b984e8`). Làm nốt vòng kiểm và commit phần nối UI:
+Phiên đầu dừng giữa vòng kiểm cuối (sau khi đã commit phần backend `8b984e8`). Phiên sau làm nốt vòng kiểm và commit phần nối UI:
 
 - `dotnet build -c Release -p:UseSharedCompilation=false`: 0 cảnh báo, 0 lỗi. `dotnet test HomestayBooking.sln -c Release --no-build`: **1.719 pass + 1 skip, 0 fail** (1.720 tổng).
 - `rg`: 0 `style="` trong Views/Areas, 0 mã màu ngoài `tokens.css`; không có file trong `Migrations/`, `Data/`, `Models/Entities/`.
 - `python3 -I tools/ui-crawl.py http://localhost:5012`: 840 trang, 7 vai trò, không có 500; đúng 4 lỗi 404 đã biết.
 - Chụp lại các điểm yếu đã sửa: dashboard chủ 375px thẻ 2 cột có "Chờ xác nhận 3 · 2 đơn quá hạn"; danh sách đơn Staff hiện tên homestay/phòng/người phụ trách, lọc homestay theo tên; chi tiết đối soát #52 hiện "Ba Vì Mountain Lodge · Lê Văn Hùng", khoản bù `0đ`, trạng thái rỗng không lồng thẻ, lịch sử có "Kế toán xác nhận thay chủ"; báo cáo 2028 hiện trạng thái rỗng thay biểu đồ trống. Không lỗi JavaScript.
 - Còn một điểm nhỏ: mục "Đã chuyển tiền" trong lịch sử đối soát hiện nguyên chuỗi audit ("Số tiền: 120000; ngày chuyển UTC: 2026-10-19T14:10:49…") thay vì định dạng tiền/ngày giờ Việt Nam — để bước 06 QA.
-- App 5012 đã dừng đúng PID; trình duyệt kiểm thử Codex để lại đã đóng. Không đụng app 5011, container `sql-homestay` vẫn chạy.
+- App 5012 đã dừng đúng PID; trình duyệt kiểm thử phiên trước để lại đã đóng. Không đụng app 5011, container `sql-homestay` vẫn chạy.

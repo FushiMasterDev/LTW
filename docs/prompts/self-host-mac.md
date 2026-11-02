@@ -1,6 +1,6 @@
 # Chạy Fuji Homestay thật trên máy Mac của chủ dự án
 
-> Chạy trong **phiên Codex mới**, trên `main` (HEAD `86d574f` hoặc mới hơn). Người dùng chốt ngày 20/10/2026: **dùng chính máy Mac này làm máy chủ** (macOS 15, SQL Server 2022 đang chạy trong container Docker `sql-homestay`). Mục tiêu: chuẩn bị đầy đủ để app chạy ổn định ở chế độ **Production** trên máy này, mở ra Internet bằng **Cloudflare Tunnel** (có HTTPS, không cần mở cổng router), và diễn tập trọn vẹn trên máy.
+> Chạy trong **phiên mới**, trên `main` (HEAD `86d574f` hoặc mới hơn). Người dùng chốt ngày 20/10/2026: **dùng chính máy Mac này làm máy chủ** (macOS 15, SQL Server 2022 đang chạy trong container Docker `sql-homestay`). Mục tiêu: chuẩn bị đầy đủ để app chạy ổn định ở chế độ **Production** trên máy này, mở ra Internet bằng **Cloudflare Tunnel** (có HTTPS, không cần mở cổng router), và diễn tập trọn vẹn trên máy.
 
 Đọc trước:
 - `README.md`, `database/README.md` (mục B7 "Quản trị viên đầu tiên", mục 5–7);

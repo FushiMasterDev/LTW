@@ -71,6 +71,6 @@ Mật khẩu tạm sinh bằng RandomNumberGenerator, qua TempData mã hóa, đ�
 
 ## Kết thúc phiên
 
-- Đã commit riêng hợp đồng, duyệt nội dung/hồ sơ, báo cáo, tài khoản và dashboard/nghiệm thu với tiền tố `feat(admin):`; mỗi commit kết thúc bằng `Co-Authored-By: Codex <noreply@openai.com>`.
+- Đã commit riêng hợp đồng, duyệt nội dung/hồ sơ, báo cáo, tài khoản và dashboard/nghiệm thu với tiền tố `feat(admin):`.
 - Đã dừng đúng app QA PID **17691** ở 5012, đóng ba browser CLI riêng `fuji05d`, `fuji05d-admin`, `fuji05d-owner`. Không chạy pkill/killall, không dừng app 5011. Container `sql-homestay` vẫn Up 44 hours khi kiểm tra cuối.
 - Không đổi nhánh, không push, không commit ảnh/video/trace. Các hạn chế nghiệm thu SQL và quyết định cần người dùng nằm ở các mục trên; không báo chúng là đã hoàn tất.
