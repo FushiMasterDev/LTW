@@ -1,0 +1,34 @@
+@model HomestaySearchViewModel
+@* Kết quả tìm homestay: Index render lần đầu, HomestaysController.Index trả riêng partial này khi stays-search.js gọi AJAX. *@
+@{ var q = Model.Query; }
+
+@if (ViewData["SearchError"] is string error)
+{
+    <partial name="_Alert" model="@(new AlertModel(error, "danger", Dismissible: false))" />
+}
+
+@if (Model.Results.TotalCount == 0)
+{
+    <partial name="_EmptyState" model='new EmptyStateModel("Không có homestay phù hợp.", "Hãy thử đổi ngày, bớt số khách hoặc chọn khu vực khác.", "house-x", "Xóa bộ lọc", Url.Action("Index"))' />
+}
+else
+{
+    <p class="stays-summary" role="status">
+        @if (q.HasDates)
+        {
+            @L["{0} homestay còn phòng từ {1} đến {2}", Model.Results.TotalCount, q.CheckIn!.Value.ToString("dd/MM"), q.CheckOut!.Value.ToString("dd/MM/yyyy")]
+        }
+        else
+        {
+            @L["{0} homestay phù hợp. Chọn ngày để xem phòng trống.", Model.Results.TotalCount]
+        }
+    </p>
+
+    <div class="fx-homestay-grid">
+        @foreach (var h in Model.Results)
+        {
+            <partial name="_HomestayCard" model="@HomestayCardModel.From(h, q)" />
+        }
+    </div>
+    <partial name="_Pager" model="Model.Results" />
+}

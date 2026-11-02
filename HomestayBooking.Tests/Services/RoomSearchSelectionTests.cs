@@ -69,4 +69,25 @@ public sealed class RoomSearchSelectionTests
         Assert.IsType<HomestaySearchViewModel>(view.Model);
         Assert.Equal("Khoảng giá không hợp lệ.", view.ViewData["SearchError"]);
     }
+
+    [Fact]
+    public async Task AjaxSearchReturnsOnlyResultsPartialIncludingError()
+    {
+        // stays-search.js gửi X-Requested-With: chỉ trả _Results (kể cả khi bộ lọc sai), request thường vẫn trả cả trang.
+        using var db = new ApplicationDbContext(new DbContextOptionsBuilder<ApplicationDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var clock = new TestClock { Now = new(2026, 11, 10, 3, 0, 0, TimeSpan.Zero) };
+        var options = Options.Create(new BookingOptions());
+        HomestaysController Controller(bool ajax)
+        {
+            var http = new Microsoft.AspNetCore.Http.DefaultHttpContext();
+            if (ajax) http.Request.Headers.XRequestedWith = "XMLHttpRequest";
+            return new(db, new PricingService(db, options), clock, options) { ControllerContext = new() { HttpContext = http } };
+        }
+        var partial = Assert.IsType<PartialViewResult>(await Controller(true).Index(new HomestaySearchQuery()));
+        Assert.Equal("_Results", partial.ViewName);
+        Assert.IsType<HomestaySearchViewModel>(partial.Model);
+        var bad = Assert.IsType<PartialViewResult>(await Controller(true).Index(new HomestaySearchQuery { MinPrice = 900000, MaxPrice = 100000 }));
+        Assert.Equal("Khoảng giá không hợp lệ.", bad.ViewData["SearchError"]);
+        Assert.IsType<ViewResult>(await Controller(false).Index(new HomestaySearchQuery()));
+    }
 }
