@@ -1,0 +1,30 @@
+sequenceDiagram
+  autonumber
+  actor K as Khách hàng
+  participant V as Trình duyệt (Razor + JS)
+  participant API as RoomsApiController
+  participant C as BookingsController
+  participant BS as BookingService
+  participant PS as PricingService
+  participant DB as SQL Server
+  K->>V: Chọn loại phòng, ngày nhận/trả, số khách
+  V->>API: GET /api/rooms/{id}/quote?checkIn&checkOut (AJAX)
+  API->>PS: QuoteAsync()
+  PS->>DB: Giá 3 mức, ngày lễ, đêm đã kín
+  PS-->>V: JSON: giá từng đêm, tổng tiền, cọc 30%, số phòng trống
+  K->>V: Nhập họ tên, SĐT, bấm "Đặt phòng"
+  V->>C: POST /Bookings/Create (antiforgery token)
+  C->>C: ModelState.IsValid (Required, VietnamesePhone…)
+  C->>BS: CreateAsync(request)
+  BS->>DB: BEGIN TRANSACTION · kiểm hợp đồng, sức chứa, phòng trống
+  BS->>PS: QuoteAsync() chốt giá
+  BS->>DB: INSERT Bookings + BookingNights + RoomNights (unique RoomId+Date)
+  alt Trùng đêm (vi phạm unique)
+    DB-->>BS: lỗi → thử phòng khác cùng loại / báo hết phòng
+  else Giữ phòng thành công
+    BS->>DB: COMMIT (AwaitingPayment, giữ 15 phút)
+  end
+  BS-->>C: Booking (mã FJyyMMdd-nnn)
+  C-->>V: Redirect /Bookings/Details/{code}: QR VietQR + đếm ngược
+  K->>V: Chuyển khoản / tải ảnh bill
+  Note over K,V: Webhook khớp tiền hoặc kế toán duyệt bill → Deposited

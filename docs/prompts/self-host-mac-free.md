@@ -1,6 +1,6 @@
 # Chạy trên máy Mac: phương án miễn phí (Tailscale Funnel, không tên miền, không SePay)
 
-> Chạy **sau** `docs/prompts/self-host-mac.md` (nhánh `deploy/self-host-mac` đã có code + `deploy/mac/` + runbook + báo cáo diễn tập), trong phiên Codex mới, trên **cùng nhánh** đó.
+> Chạy **sau** `docs/prompts/self-host-mac.md` (nhánh `deploy/self-host-mac` đã có code + `deploy/mac/` + runbook + báo cáo diễn tập), trong phiên mới, trên **cùng nhánh** đó.
 >
 > Ngày 20/10/2026 người dùng chốt: **chỉ dùng thứ miễn phí**.
 > - Không mua tên miền, **không dùng Cloudflare Tunnel làm đường chính**.

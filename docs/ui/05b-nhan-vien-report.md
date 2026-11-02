@@ -73,7 +73,7 @@ Prompt B9 hiện chỉ là tài liệu cho bước backend tiếp theo. Báo cá
 
 ## Commit và kết thúc phiên
 
-Chia hai nhóm vì màn đơn/đặt hộ/phòng trống/khách/trùng phòng dùng chung actor và component, còn bộ integration test nối xuyên hồ sơ/dashboard/lời mời. Nhóm đầu có bản sao đúng nội dung staged ở `/private/tmp/fuji-05b/commit1-verify` để build và chạy toàn bộ test độc lập; nhóm sau xác minh trên working tree hoàn chỉnh. Các sửa ngắt nội dung dài sau rà giao diện nằm trong nhóm sau. Mỗi commit có dòng kết thúc `Co-Authored-By: Codex <noreply@openai.com>`.
+Chia hai nhóm vì màn đơn/đặt hộ/phòng trống/khách/trùng phòng dùng chung actor và component, còn bộ integration test nối xuyên hồ sơ/dashboard/lời mời. Nhóm đầu có bản sao đúng nội dung staged ở `/private/tmp/fuji-05b/commit1-verify` để build và chạy toàn bộ test độc lập; nhóm sau xác minh trên working tree hoàn chỉnh. Các sửa ngắt nội dung dài sau rà giao diện nằm trong nhóm sau.
 
 - `d0a2561` — nhóm đơn/đặt hộ/phòng trống/khách hàng/trùng phòng và component: build 0 cảnh báo, **1.639 pass + 1 skip, 0 fail**; log `commit1-build.log`, `commit1-tests.log`. Patch staged đã được so sánh byte với patch xuất sang bản kiểm tra trước khi commit.
 - Commit cuối (HEAD) — thẩm định/kích hoạt, dashboard, điều hướng, chặn FR-27, sửa UX, integration test và báo cáo: build 0 cảnh báo, **1.655 pass + 1 skip, 0 fail**. Các thay đổi sau lượt test cuối chỉ là bổ sung bằng chứng vào báo cáo.

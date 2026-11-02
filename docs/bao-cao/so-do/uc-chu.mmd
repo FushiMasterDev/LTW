@@ -1,0 +1,19 @@
+flowchart LR
+  classDef actor fill:#fff,stroke:#333,stroke-width:1.5px
+  classDef uc fill:#eef4ee,stroke:#2f5d3a
+  CH(["👤 Chủ homestay"]):::actor
+  subgraph S["Phân hệ chủ homestay (/Owner)"]
+    direction TB
+    B0([Đăng nhập bằng SĐT]):::uc
+    B1([Sửa thông tin, vị trí homestay]):::uc
+    B2([Quản lý loại phòng, phòng, giá 3 mức]):::uc
+    B3([Tải ảnh, giấy tờ; chọn tiện nghi]):::uc
+    B4([Đặt chính sách hủy riêng]):::uc
+    B5([Khóa/mở ngày trên lịch phòng]):::uc
+    B6([Xác nhận/từ chối đơn đã cọc]):::uc
+    B7([Ghi nhận nhận phòng, trả phòng]):::uc
+    B8([Xem lịch nhận – trả theo ngày]):::uc
+    B9([Xem, xác nhận bảng đối soát]):::uc
+    B10([Trả lời đánh giá]):::uc
+  end
+  CH --- B0 & B1 & B2 & B3 & B4 & B5 & B6 & B7 & B8 & B9 & B10

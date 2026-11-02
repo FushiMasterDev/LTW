@@ -2,7 +2,7 @@
 
 Đọc `docs/prompts/ui-rebuild.md`, `DESIGN.md`, `docs/design/airbnb-reference.md` (chỉ lấy bố cục), `docs/ui/inventory.md`, `docs/ui/decisions.md`. Xem `/Dev/UiKit` để dùng lại component đã có.
 
-Skill: `design-taste-frontend` (chạy đủ vòng chụp → sửa), `ui-animation`, `full-output-enforcement`. Nếu chạy trong Codex có thể dùng thêm `image-to-code`, nhưng ảnh thiết kế phải theo `DESIGN.md` và `tokens.css`.
+Skill: `design-taste-frontend` (chạy đủ vòng chụp → sửa), `ui-animation`, `full-output-enforcement`. Có thể dùng thêm `image-to-code`, nhưng ảnh thiết kế phải theo `DESIGN.md` và `tokens.css`.
 
 Giới hạn khi dùng skill (như bước 02x): chỉ dùng house style, `scripts/inspect.mjs` và vòng chụp → sửa của `design-taste-frontend`. **Không** chạy `draw.mjs`, không lấy hướng/bảng màu/font/hero mà skill "chia bài": nhận diện đã chốt ở `DESIGN.md` + `tokens.css`. Chuyển động chỉ dùng thời lượng có trong `motion.css` (0.06–0.45s) và `--fx-ease`.
 

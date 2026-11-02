@@ -1,6 +1,6 @@
 # Mẫu – Sửa lỗi sau review
 
-> Dán phần dưới cho **cùng phiên Codex** vừa làm bước đó (hoặc phiên mới nếu đã đóng). Thay `<...>` và dán danh sách lỗi từ review.
+> Dán phần dưới vào **cùng phiên** vừa làm bước đó (hoặc phiên mới nếu đã đóng). Thay `<...>` và dán danh sách lỗi từ review.
 
 ---
 

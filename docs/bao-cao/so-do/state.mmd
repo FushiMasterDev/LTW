@@ -1,0 +1,17 @@
+stateDiagram-v2
+  direction TB
+  [*] --> AwaitingPayment: Tạo đơn, giữ đêm 15 phút
+  AwaitingPayment --> PaymentSubmitted: Tải ảnh bill
+  AwaitingPayment --> Deposited: Webhook khớp tiền
+  PaymentSubmitted --> Deposited: Kế toán duyệt
+  PaymentSubmitted --> AwaitingPayment: Bill bị từ chối (lần 1)
+  AwaitingPayment --> Expired: Quá hạn / bill bị từ chối lần 2
+  Deposited --> Confirmed: Chủ xác nhận
+  Deposited --> Rejected: Chủ từ chối (hoàn 100%)
+  Confirmed --> CheckedIn: Nhận phòng
+  CheckedIn --> Completed: Trả phòng
+  Confirmed --> NoShow: Khách không đến
+  AwaitingPayment --> Cancelled: Khách hủy
+  Deposited --> Cancelled: Khách hủy (hoàn theo BR-04)
+  Confirmed --> Cancelled: Khách hủy (hoàn theo BR-04)
+  Completed --> [*]

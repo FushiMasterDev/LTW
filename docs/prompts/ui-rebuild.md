@@ -1,6 +1,6 @@
 # Prompt: Xây lại giao diện Fuji Homestay (Razor + Bootstrap 5)
 
-> Dán toàn bộ phần dưới đường kẻ cho Codex. Chạy **từng giai đoạn một**: mỗi lần chỉ giao một giai đoạn (`Giai đoạn N`), review kết quả rồi mới giao giai đoạn tiếp theo.
+> Dán toàn bộ phần dưới đường kẻ vào phiên làm việc. Chạy **từng giai đoạn một**: mỗi lần chỉ giao một giai đoạn (`Giai đoạn N`), review kết quả rồi mới giao giai đoạn tiếp theo.
 > Chỉ bắt đầu khi backend đã xong (thứ tự đã chốt: DB → backend → giao diện). Từ bước `02` cần B8 (`docs/prompts/b8-backend-ui-gaps.md`) đã xong.
 
 ---
@@ -28,7 +28,7 @@ Bạn là front-end engineer cho dự án ASP.NET Core MVC (.NET 10) `HomestayBo
 | Việc | Skill |
 |---|---|
 | Lên phương án trước mỗi giai đoạn | `superpowers:brainstorming` (ngắn), `ui-ux-pro-max` (tra quy tắc UX, dùng stack `laravel` làm gần nhất với Razor) |
-| Trang khách | `design-taste-frontend` + `DESIGN.md` (nếu chạy Codex: có thể dùng `image-to-code`, nhưng ảnh thiết kế phải theo `DESIGN.md`) |
+| Trang khách | `design-taste-frontend` + `DESIGN.md` (có thể dùng thêm `image-to-code`, nhưng ảnh thiết kế phải theo `DESIGN.md`) |
 | Dashboard nội bộ | `minimalist-ui` |
 | Biểu đồ | `dataviz` (vẽ bằng Chart.js) |
 | Chuyển động | `ui-animation`, theo các mức thời lượng đã có trong `motion.css` |

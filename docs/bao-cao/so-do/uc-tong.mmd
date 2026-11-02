@@ -1,0 +1,29 @@
+flowchart LR
+  classDef actor fill:#fff,stroke:#333,stroke-width:1.5px
+  classDef uc fill:#eef4ee,stroke:#2f5d3a
+  KH(["👤 Khách hàng"]):::actor
+  CH(["👤 Chủ homestay"]):::actor
+  TV(["👤 Nhân viên tư vấn"]):::actor
+  QL(["👤 Quản lý"]):::actor
+  KT(["👤 Kế toán"]):::actor
+  QT(["👤 Quản trị viên"]):::actor
+  HT(["⚙ Hệ thống / Ngân hàng"]):::actor
+  subgraph S["Hệ thống đặt phòng Fuji Homestay"]
+    direction TB
+    G1([Tìm kiếm và đặt phòng]):::uc
+    G2([Tra cứu, đổi/hủy, đánh giá đơn]):::uc
+    G3([Đăng ký và thẩm định đối tác]):::uc
+    G4([Quản lý cơ sở lưu trú và lịch phòng]):::uc
+    G5([Xử lý đơn đặt phòng]):::uc
+    G6([Quản lý thanh toán và đối soát]):::uc
+    G7([Hợp đồng, duyệt nội dung, báo cáo]):::uc
+    G8([Quản trị tài khoản và danh mục]):::uc
+    G9([Tác vụ tự động]):::uc
+  end
+  KH --- G1 & G2 & G3
+  CH --- G4 & G5 & G6
+  TV --- G5 & G3
+  QL --- G7 & G3
+  KT --- G6
+  QT --- G8
+  HT --- G9

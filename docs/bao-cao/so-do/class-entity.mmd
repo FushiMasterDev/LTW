@@ -1,0 +1,119 @@
+classDiagram
+  direction LR
+  class Owner {
+    +int Id
+    +int PersonId
+    +string BankName
+    +string BankAccountNo
+  }
+  class Homestay {
+    +int Id
+    +int OwnerId
+    +int AreaId
+    +string Name
+    +string Address
+    +HomestayStatus Status
+  }
+  class RoomType {
+    +int Id
+    +int HomestayId
+    +string Name
+    +int MaxGuests
+    +bool IsActive
+  }
+  class RoomTypePrice {
+    +int RoomTypeId
+    +DayType DayType
+    +decimal Price
+    +DateOnly EffectiveFrom
+  }
+  class Room {
+    +int Id
+    +int RoomTypeId
+    +string RoomCode
+    +bool IsActive
+  }
+  class Customer {
+    +int Id
+    +int PersonId
+    +string Note
+  }
+  class Booking {
+    +int Id
+    +string Code
+    +BookingStatus Status
+    +DateOnly CheckIn
+    +DateOnly CheckOut
+    +int Guests
+    +decimal TotalAmount
+    +decimal DepositAmount
+    +decimal CommissionRate
+    +DateTime HoldExpiresAt
+    +DateTime? ConfirmDeadlineAt
+    +decimal AmountDue()
+  }
+  class BookingNight {
+    +DateOnly Date
+    +DayType DayType
+    +decimal Price
+  }
+  class RoomNight {
+    +int RoomId
+    +DateOnly Date
+    +int? BookingId
+    +int? RoomBlockId
+  }
+  class RoomBlock {
+    +int RoomId
+    +DateOnly StartDate
+    +DateOnly EndDate
+    +BlockReason Reason
+  }
+  class Payment {
+    +int Id
+    +PaymentType Type
+    +decimal Amount
+    +PaymentStatus Status
+    +string ReceiptImageUrl
+  }
+  class Review {
+    +int Rating
+    +string Comment
+    +string OwnerReply
+    +bool IsHidden
+  }
+  class Contract {
+    +string ContractNo
+    +decimal CommissionRate
+    +DateOnly StartDate
+    +DateOnly EndDate
+  }
+  class Settlement {
+    +int HomestayId
+    +int Year
+    +int Month
+    +int PeriodNo
+    +decimal PayoutAmount
+    +SettlementStatus Status
+  }
+  class Employee {
+    +int Id
+    +string EmployeeCode
+    +Position Position
+    +EmploymentStatus EmploymentStatus
+  }
+  Owner "1" --> "*" Homestay
+  Homestay "1" --> "*" RoomType
+  Homestay "1" --> "*" Contract
+  RoomType "1" --> "*" RoomTypePrice
+  RoomType "1" --> "*" Room
+  Room "1" --> "*" RoomNight
+  Room "1" --> "*" RoomBlock
+  Customer "1" --> "*" Booking
+  Room "1" --> "*" Booking
+  Booking "1" --> "*" BookingNight
+  Booking "1" --> "*" RoomNight : giữ đêm
+  Booking "1" --> "*" Payment
+  Booking "1" --> "0..1" Review
+  Employee "0..1" --> "*" Booking : tạo / phụ trách
+  Homestay "1" --> "*" Settlement

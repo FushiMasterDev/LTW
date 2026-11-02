@@ -1,6 +1,6 @@
 # B9 – Lấp gap backend phát sinh ở bước 05
 
-> Chạy trong **phiên Codex mới**, **sau khi bước 05d đã commit và được review**. Không chạy song song với bất kỳ bước UI nào, vì bước này sửa `Services/`.
+> Chạy trong **phiên mới**, **sau khi bước 05d đã commit và được review**. Không chạy song song với bất kỳ bước UI nào, vì bước này sửa `Services/`.
 >
 > Ngày 19/10/2026, người dùng chốt làm backend cho các gap ghi lại trong bước 05: G-16 → G-25 (trừ G-19), G-26, G-27 của 05d, và mọi gap mới khác vào `docs/ui/backend-gaps.md`. Sau phần backend, nối kết quả vào đúng chỗ UI đang làm tạm và sửa các điểm yếu ở mục "Sửa các điểm yếu".
 

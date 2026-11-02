@@ -1,0 +1,18 @@
+flowchart LR
+  classDef actor fill:#fff,stroke:#333,stroke-width:1.5px
+  classDef uc fill:#eef4ee,stroke:#2f5d3a
+  QL(["👤 Quản lý"]):::actor
+  QT(["👤 Quản trị viên"]):::actor
+  subgraph S3["Quản lý / Quản trị (/Admin)"]
+    direction TB
+    E1([Duyệt yêu cầu đổi/hủy]):::uc
+    E2([Ký, gia hạn, chấm dứt hợp đồng]):::uc
+    E3([Duyệt nội dung homestay]):::uc
+    E4([Xem báo cáo, biểu đồ]):::uc
+    E5([Quản lý voucher]):::uc
+    E6([Quản lý tài khoản nhân viên]):::uc
+    E7([Quản lý danh mục: khu vực, loại phòng, tiện nghi, ngày lễ]):::uc
+    C6b([Thẩm định hồ sơ đối tác]):::uc
+  end
+  QL --- E1 & E2 & E3 & E4 & E5 & C6b
+  QT --- E6 & E7

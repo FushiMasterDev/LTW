@@ -1,6 +1,6 @@
 # Bước 3y2 – Đổi sang 3D tự chạy và ảnh trang trí tạo bằng AI
 
-> Chạy trong **phiên Codex mới**, sau khi bước 03y đã commit (`470e14e` → `269d413`), trước bước 04.
+> Chạy trong **phiên mới**, sau khi bước 03y đã commit (`470e14e` → `269d413`), trước bước 04.
 >
 > Bước 03y đã làm theo bản prompt đầu, trong đó 3D đi theo con trỏ chuột và theo tiến độ cuộn. Sau khi xem, người dùng chốt (18/10/2026):
 > 1. **Không muốn** 3D theo chuột: không nghiêng thẻ, không vệt sáng, không lệch lớp theo con trỏ.
