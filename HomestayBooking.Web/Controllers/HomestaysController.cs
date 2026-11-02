@@ -28,15 +28,18 @@ public class HomestaysController : Controller
 
     public async Task<IActionResult> Index(HomestaySearchQuery query)
     {
+        // stays-search.js lọc/phân trang bằng AJAX: chỉ trả phần kết quả, không cả trang
+        IActionResult Render(HomestaySearchViewModel model) =>
+            HttpContext?.Request.Headers.XRequestedWith.ToString() == "XMLHttpRequest" ? PartialView("_Results", model) : View(model);
         try
         {
-            return View(await _availability.SearchAsync(query));
+            return Render(await _availability.SearchAsync(query));
         }
         catch (BookingException ex)
         {
             // Bộ lọc sai (khoảng giá, ngày quá dài, cách sắp xếp): báo lỗi và tìm lại theo phần lọc còn hợp lệ, không trả 500.
             ViewData["SearchError"] = ex.ResourceKey;
-            return View(await _availability.SearchAsync(new HomestaySearchQuery
+            return Render(await _availability.SearchAsync(new HomestaySearchQuery
             {
                 AreaId = query.AreaId, Guests = query.Guests, CategoryId = query.CategoryId, AmenityIds = query.AmenityIds, Q = query.Q,
             }));

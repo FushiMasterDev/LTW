@@ -276,6 +276,19 @@
   margin-bottom: 1.25rem;
 }
 
+/* Đang tải kết quả bằng AJAX (stays-search.js) */
+[data-stays-results] {
+  transition: opacity 0.2s;
+}
+
+[data-stays-results][aria-busy="true"] {
+  opacity: 0.55;
+}
+
+[data-stays-results]:focus {
+  outline: none;
+}
+
 /* ---------- Chi tiết homestay ---------- */
 .stay-head {
   margin: 1rem 0 1.5rem;

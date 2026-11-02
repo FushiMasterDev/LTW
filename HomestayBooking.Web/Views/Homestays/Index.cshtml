@@ -42,40 +42,14 @@
 <partial name="_SearchBar" model="@(new SearchBarModel("stays-search", areas, q))" />
 <partial name="_FilterBar" model="@(new FilterBarModel("stays-filter", fields))" />
 
-@if (ViewData["SearchError"] is string error)
-{
-    <partial name="_Alert" model="@(new AlertModel(error, "danger", Dismissible: false))" />
-}
-
-@if (Model.Results.TotalCount == 0)
-{
-    <partial name="_EmptyState" model='new EmptyStateModel("Không có homestay phù hợp.", "Hãy thử đổi ngày, bớt số khách hoặc chọn khu vực khác.", "house-x", "Xóa bộ lọc", Url.Action("Index"))' />
-}
-else
-{
-    <p class="stays-summary" role="status">
-        @if (q.HasDates)
-        {
-            @L["{0} homestay còn phòng từ {1} đến {2}", Model.Results.TotalCount, q.CheckIn!.Value.ToString("dd/MM"), q.CheckOut!.Value.ToString("dd/MM/yyyy")]
-        }
-        else
-        {
-            @L["{0} homestay phù hợp. Chọn ngày để xem phòng trống.", Model.Results.TotalCount]
-        }
-    </p>
-
-    <div class="fx-homestay-grid">
-        @foreach (var h in Model.Results)
-        {
-            <partial name="_HomestayCard" model="@HomestayCardModel.From(h, q)" />
-        }
-    </div>
-    <partial name="_Pager" model="Model.Results" />
-}
+<div data-stays-results tabindex="-1">
+    <partial name="_Results" />
+</div>
 
 @section Scripts {
     <script src="~/lib/flatpickr/flatpickr.min.js"></script>
     <script src="~/lib/flatpickr/l10n/vn.min.js"></script>
     <script src="~/js/components/date-range-picker.js" asp-append-version="true"></script>
     <script src="~/js/components/guest-picker.js" asp-append-version="true"></script>
+    <script src="~/js/components/stays-search.js" asp-append-version="true"></script>
 }
